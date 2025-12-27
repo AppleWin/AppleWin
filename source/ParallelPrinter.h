@@ -35,6 +35,21 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
+	bool operator== (const ParallelPrinterCard& other) const
+	{
+		return m_szPrintFilename == other.m_szPrintFilename &&
+			m_printerIdleLimit == other.m_printerIdleLimit &&
+			m_bDumpToPrinter == other.m_bDumpToPrinter &&
+			m_bConvertEncoding == other.m_bConvertEncoding &&
+			m_bFilterUnprintable == other.m_bFilterUnprintable &&
+			m_bPrinterAppend == other.m_bPrinterAppend;
+	}
+
+	bool operator!= (const ParallelPrinterCard& other) const
+	{
+		return !operator==(other);
+	}
+
 	const std::string& GetFilename(void);
 	void SetFilename(const std::string& prtFilename);
 	UINT GetIdleLimit(void);

@@ -987,8 +987,8 @@ void CSuperSerialCard::Reset(const bool /* powerCycle */)
 
 //===========================================================================
 
-// dwNewSerialPortItem is the drop-down list item
-void CSuperSerialCard::CommSetSerialPort(DWORD dwNewSerialPortItem)
+// dwNewSerialPortItem is the Config's drop-down list item
+void CSuperSerialCard::SetSerialPortItem(DWORD dwNewSerialPortItem)
 {
 	if (m_dwSerialPortItem == dwNewSerialPortItem)
 		return;

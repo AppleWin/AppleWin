@@ -661,11 +661,8 @@ INT_PTR CPageSound::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, L
 		case IDC_SERIALPORT:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				CSuperSerialCard* pSSC = GetCardMgr().GetSSC();
-				_ASSERT(pSSC);
-				if (!pSSC) break;
-				const uint32_t uNewSerialPort = (uint32_t)SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
-				pSSC->CommSetSerialPort(uNewSerialPort);
+				const UINT serialPortItem = (UINT)SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
+				m_PropertySheetHelper.GetConfigNew().m_serialPortItem = serialPortItem;
 			}
 			break;
 
@@ -691,7 +688,8 @@ INT_PTR CPageSound::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, L
 			CSuperSerialCard* card = GetCardMgr().GetSSC();
 			_ASSERT(card);
 			if (!card) return TRUE;
-			m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, card->GetSerialPortChoices().c_str(), card->GetSerialPort());
+			const UINT serialPortItem = m_PropertySheetHelper.GetConfigNew().m_serialPortItem;
+			m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, card->GetSerialPortChoices().c_str(), serialPortItem);
 			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !card->IsActive() ? TRUE : FALSE);
 			break;
 		}
@@ -745,20 +743,18 @@ INT_PTR CPageSound::DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wpara
 
 	case WM_INITDIALOG:
 		{
-			ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
-			_ASSERT(card);
-			if (!card) break;
+			ParallelPrinterCard& card = m_PropertySheetHelper.GetConfigNew().m_parallelPrinterCard;
 
-			CheckDlgButton(hWnd, IDC_DUMPTOPRINTER, card->GetDumpToPrinter() ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_PRINTER_CONVERT_ENCODING, card->GetConvertEncoding() ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE, card->GetFilterUnprintable() ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_PRINTER_APPEND, card->GetPrinterAppend() ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_DUMPTOPRINTER, card.GetDumpToPrinter() ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_PRINTER_CONVERT_ENCODING, card.GetConvertEncoding() ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE, card.GetFilterUnprintable() ? BST_CHECKED : BST_UNCHECKED);
+			CheckDlgButton(hWnd, IDC_PRINTER_APPEND, card.GetPrinterAppend() ? BST_CHECKED : BST_UNCHECKED);
 			SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETRANGE, 0, MAKELONG(999, 0));
-			SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(card->GetIdleLimit(), 0));
-			SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)card->GetFilename().c_str());
+			SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(card.GetIdleLimit(), 0));
+			SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)card.GetFilename().c_str());
 
 			// Need to specify cmd-line switch: -printer-real to enable this control
-			EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), card->GetEnableDumpToRealPrinter() ? TRUE : FALSE);
+			EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), card.GetEnableDumpToRealPrinter() ? TRUE : FALSE);
 		}
 		break;
 
@@ -771,9 +767,7 @@ INT_PTR CPageSound::DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wpara
 
 void CPageSound::DlgPrinterOK(HWND hWnd)
 {
-	ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
-	_ASSERT(card);
-	if (!card) return;
+	ParallelPrinterCard& card = m_PropertySheetHelper.GetConfigNew().m_parallelPrinterCard;
 
 	// Update printer dump filename
 	{
@@ -788,18 +782,15 @@ void CPageSound::DlgPrinterOK(HWND hWnd)
 		nLineLength = nLineLength > sizeof(szFilename) - 1 ? sizeof(szFilename) - 1 : nLineLength;
 		szFilename[nLineLength] = 0x00;
 
-		card->SetFilename(szFilename);
+		card.SetFilename(szFilename);
 	}
 
-	card->SetDumpToPrinter(IsDlgButtonChecked(hWnd, IDC_DUMPTOPRINTER) ? true : false);
-	card->SetConvertEncoding(IsDlgButtonChecked(hWnd, IDC_PRINTER_CONVERT_ENCODING) ? true : false);
-	card->SetFilterUnprintable(IsDlgButtonChecked(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE) ? true : false);
-	card->SetPrinterAppend(IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND) ? true : false);
+	card.SetDumpToPrinter(IsDlgButtonChecked(hWnd, IDC_DUMPTOPRINTER) ? true : false);
+	card.SetConvertEncoding(IsDlgButtonChecked(hWnd, IDC_PRINTER_CONVERT_ENCODING) ? true : false);
+	card.SetFilterUnprintable(IsDlgButtonChecked(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE) ? true : false);
+	card.SetPrinterAppend(IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND) ? true : false);
 
-	card->SetIdleLimit((short)SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_GETPOS, 0, 0));
-
-	// Now save all the above to Registry
-	card->SetRegistryConfig();
+	card.SetIdleLimit((short)SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_GETPOS, 0, 0));
 }
 
 //===========================================================================

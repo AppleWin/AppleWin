@@ -361,6 +361,19 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 			PCapBackend::SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
 			Uthernet2::SetRegistryVirtualDNS(slot, ConfigNew.m_tfeVirtualDNS);
 		}
+
+		if (ConfigNew.m_Slot[slot] == CT_SSC &&
+			(ConfigOld.m_Slot[slot] != ConfigNew.m_Slot[slot] || CONFIG_CHANGED_LOCAL(m_serialPortItem)))	// Card is new in slot OR card's config has changed
+		{
+			GetCardMgr().GetSSC()->SetSerialPortItem(ConfigNew.m_serialPortItem);
+		}
+
+		if (ConfigNew.m_Slot[slot] == CT_GenericPrinter &&
+			(ConfigOld.m_Slot[slot] != ConfigNew.m_Slot[slot] || CONFIG_CHANGED_LOCAL(m_parallelPrinterCard)))	// Card is new in slot OR card's config has changed
+		{
+			CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(ConfigNew);
+			config.m_parallelPrinterCard.SetRegistryConfig();
+		}
 	}
 
 	if (CONFIG_CHANGED_LOCAL(m_SlotAux))
@@ -376,12 +389,15 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
 }
 
+// Called from Snapshot_LoadState_v2()
+// . A convenient way to save newly loaded state to Registry
 void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
 {
 	SaveComputerType(ConfigNew.m_Apple2Type);
 	SaveCpuType(ConfigNew.m_CpuType);
 	REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);
 	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
+	SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
 }
 
 void CPropertySheetHelper::ApplyNewConfig(void)
@@ -414,9 +430,23 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 		SetSlot(slot, m_ConfigOld.m_Slot[slot]);
 
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (m_ConfigOld.m_Slot[slot] == CT_Uthernet || m_ConfigOld.m_Slot[slot] == CT_Uthernet2)
+		{
+			// Assume only one CT_Uthernet or CT_Uthernet2 inserted
+			PCapBackend::SetRegistryInterface(slot, m_ConfigOld.m_tfeInterface);
+			Uthernet2::SetRegistryVirtualDNS(slot, m_ConfigOld.m_tfeVirtualDNS);
+			break;
+		}
+	}
+
 	SetSlot(SLOT_AUX, m_ConfigOld.m_SlotAux);
 
-	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
+	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);// -- not applied yet, so do nothing
+
+	//m_ConfigOld.m_videoRefreshRate -- not applied yet, so do nothing
+	//m_ConfigOld.m_RamWorksMemorySize -- not applied yet, so do nothing
 }
 
 bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
@@ -490,6 +520,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_RamWorksMemorySize))
 			strMsgMain += ". RamWorks III memory size changed\n";
+
+		if (CONFIG_CHANGED(m_parallelPrinterCard))
+			strMsgMain += ". Parallel Printer config has changed\n";
 	}
 
 	std::string strMsgPost("\n");

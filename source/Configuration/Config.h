@@ -2,6 +2,8 @@
 
 #include "../Core.h"
 #include "../CPU.h"
+#include "../ParallelPrinter.h"
+#include "../SerialComms.h"
 #include "../Video.h"
 
 class CConfigNeedingRestart
@@ -19,7 +21,6 @@ public:
 	const CConfigNeedingRestart& operator= (const CConfigNeedingRestart& other);
 
 	bool operator== (const CConfigNeedingRestart& other) const;
-
 	bool operator!= (const CConfigNeedingRestart& other) const;
 
 	eApple2Type	m_Apple2Type;
@@ -32,4 +33,6 @@ public:
 	UINT m_uSaveLoadStateMsg;
 	VideoRefreshRate_e m_videoRefreshRate;
 	uint32_t m_RamWorksMemorySize;
+	ParallelPrinterCard m_parallelPrinterCard;	// Use entire card object, as there are many config vars
+	UINT m_serialPortItem;	// SSC: Just one config var for this card (at the moment)
 };
