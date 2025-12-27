@@ -32,8 +32,8 @@ include:
 
   ################################## CELLULAR ################################
   # Android
-#  - project: 'libretro-infrastructure/ci-templates'
-#    file: '/android-cmake.yml'
+  - project: 'libretro-infrastructure/ci-templates'
+    file: '/android-cmake.yml'
 
   # iOS
 #  - project: 'libretro-infrastructure/ci-templates'
@@ -121,19 +121,17 @@ libretro-build-linux-i686:
 ################################### CELLULAR #################################
 
 # Android ARMv8a
-#android-arm64-v8a:
-#  extends:
-#    - .libretro-android-cmake-arm64-v8a
-#    - .core-defs
-#  before_script:
-#    - export NUMPROC=$(($(nproc)/5))
-#    - echo "deb http://deb.debian.org/debian bullseye-backports main" >> /etc/apt/sources.list
-#    - apt-get update -qy
-#    - apt-get install -qy cmake/bullseye-backports
-#  variables:
-#    CXXFLAGS: -Wno-deprecated-declarations -Wno-unknown-attributes
-#    API_LEVEL: 24
-  # The Android runners are based on Debian, not Ubuntu
+android-arm64-v8a:
+  extends:
+    - .libretro-android-cmake-arm64-v8a
+    - .core-defs
+  before_script:
+    - export NUMPROC=$(($(nproc)/5))
+  variables:
+    CXXFLAGS: -Wno-deprecated-declarations -Wno-unknown-attributes
+    API_LEVEL: 24
+    EXTRA_PATH: source/frontends/libretro
+# The Android runners are based on Debian, not Ubuntu
 
 # Android 64-bit x86
 #android-x86_64:
