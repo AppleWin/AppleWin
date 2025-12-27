@@ -443,8 +443,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 
 	SetSlot(SLOT_AUX, m_ConfigOld.m_SlotAux);
 
-	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);// -- not applied yet, so do nothing
-
+	//GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);// -- not applied yet, so do nothing
 	//m_ConfigOld.m_videoRefreshRate -- not applied yet, so do nothing
 	//m_ConfigOld.m_RamWorksMemorySize -- not applied yet, so do nothing
 }
@@ -523,6 +522,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_parallelPrinterCard))
 			strMsgMain += ". Parallel Printer config has changed\n";
+
+		if (CONFIG_CHANGED(m_serialPortItem))
+			strMsgMain += ". SSC config has changed\n";
 	}
 
 	std::string strMsgPost("\n");
