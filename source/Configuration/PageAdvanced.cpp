@@ -111,6 +111,13 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 
 		//
 
+		case IDC_CIDERPRESS_BROWSE:
+			{
+				std::string CiderPressLoc = m_PropertySheetHelper.BrowseToFile(hWnd, "Select path to CiderPress", REGVALUE_CIDERPRESSLOC, "Applications (*.exe)\0*.exe\0" "All Files\0*.*\0");
+				SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM)CiderPressLoc.c_str());
+			}
+			break;
+
 		case IDC_THE_FREEZES_F8_ROM_FW:
 			{
 				const UINT uNewState = IsDlgButtonChecked(hWnd, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
@@ -144,6 +151,10 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 
 			CheckDlgButton(hWnd, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
 
+			char pathToCiderPress[MAX_PATH];
+			RegLoadString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, pathToCiderPress, MAX_PATH, "");
+			SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM)pathToCiderPress);
+
 			InitOptions(hWnd);
 
 			break;
@@ -160,6 +171,22 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 		// NB. if SaveStateSelectImage() was called (by pressing the "Save State -> Browse..." button)
 		// and a new save-state file was selected ("OK" from the openfilename dialog) then m_bSSNewFilename etc. will have been set
 		m_PropertySheetHelper.SaveStateUpdate();
+	}
+
+	// Update CiderPress pathname
+	{
+		char szFilename[MAX_PATH];
+		memset(szFilename, 0, sizeof(szFilename));
+		*(USHORT*)szFilename = sizeof(szFilename);
+
+		LRESULT nLineLength = SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, EM_LINELENGTH, 0, 0);
+
+		SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, EM_GETLINE, 0, (LPARAM)szFilename);
+
+		nLineLength = nLineLength > sizeof(szFilename) - 1 ? sizeof(szFilename) - 1 : nLineLength;
+		szFilename[nLineLength] = 0x00;
+
+		RegSaveString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, szFilename);
 	}
 
 	g_bSaveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;

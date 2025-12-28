@@ -171,12 +171,6 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 		case IDC_HDD_SWAP:
 			HandleHDDSwap(hWnd);
 			break;
-		case IDC_CIDERPRESS_BROWSE:
-			{
-				std::string CiderPressLoc = m_PropertySheetHelper.BrowseToFile(hWnd, "Select path to CiderPress", REGVALUE_CIDERPRESSLOC, "Applications (*.exe)\0*.exe\0" "All Files\0*.*\0" );
-				SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM) CiderPressLoc.c_str());
-			}
-			break;
 		}
 		break;
 
@@ -192,10 +186,6 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 				EnableFloppyDrive(hWnd, FALSE, slot);	// disable if slot6 is empty (or has some other card in it)
 
 			InitComboHDD(hWnd, SLOT7);
-
-			char PathToCiderPress[MAX_PATH];
-			RegLoadString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, PathToCiderPress, MAX_PATH, "");
-			SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME ,WM_SETTEXT, 0, (LPARAM)PathToCiderPress);
 
 			CheckDlgButton(hWnd, IDC_HDD_ENABLE, (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD) ? BST_CHECKED : BST_UNCHECKED);
 
@@ -258,22 +248,6 @@ void CPageDisk::InitComboHDD(HWND hWnd, UINT /*slot*/)
 
 void CPageDisk::DlgOK(HWND hWnd)
 {
-	// Update CiderPress pathname
-	{
-		char szFilename[MAX_PATH];
-		memset(szFilename, 0, sizeof(szFilename));
-		* (USHORT*) szFilename = sizeof(szFilename);
-
-		LRESULT nLineLength = SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, EM_LINELENGTH, 0, 0);
-
-		SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, EM_GETLINE, 0, (LPARAM)szFilename);
-
-		nLineLength = nLineLength > sizeof(szFilename)-1 ? sizeof(szFilename)-1 : nLineLength;
-		szFilename[nLineLength] = 0x00;
-
-		RegSaveString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, szFilename);
-	}
-
 	const bool bNewEnhanceDisk = IsDlgButtonChecked(hWnd, IDC_ENHANCE_DISK_ENABLE) ? true : false;
 	if (bNewEnhanceDisk != GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk())
 	{
