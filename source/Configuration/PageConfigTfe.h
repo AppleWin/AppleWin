@@ -1,8 +1,6 @@
 #pragma once
 
 #include "IPropertySheetPage.h"
-#include "../Tfe/Uilib.h"
-
 #include <string>
 
 class CPageConfigTfe : private IPropertySheetPage

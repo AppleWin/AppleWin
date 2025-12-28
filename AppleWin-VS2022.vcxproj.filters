@@ -151,9 +151,6 @@
     <ClCompile Include="source\Tfe\tfesupp.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
-    <ClCompile Include="source\Tfe\Uilib.cpp">
-      <Filter>Source Files\Uthernet</Filter>
-    </ClCompile>
     <ClCompile Include="source\Video.cpp">
       <Filter>Source Files\Video</Filter>
     </ClCompile>
@@ -487,9 +484,6 @@
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Tfe\tfesupp.h">
-      <Filter>Source Files\Uthernet</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Tfe\Uilib.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Video.h">
