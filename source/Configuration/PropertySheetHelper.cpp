@@ -361,14 +361,12 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 			Uthernet2::SetRegistryVirtualDNS(slot, ConfigNew.m_tfeVirtualDNS);
 		}
 
-		if (ConfigNew.m_Slot[slot] == CT_SSC &&
-			(ConfigOld.m_Slot[slot] != ConfigNew.m_Slot[slot] || CONFIG_CHANGED_LOCAL(m_serialPortItem)))	// Card is new in slot OR card's config has changed
+		if (ConfigNew.m_Slot[slot] == CT_SSC)
 		{
 			GetCardMgr().GetSSC()->SetSerialPortItem(ConfigNew.m_serialPortItem);
 		}
 
-		if (ConfigNew.m_Slot[slot] == CT_GenericPrinter &&
-			(ConfigOld.m_Slot[slot] != ConfigNew.m_Slot[slot] || CONFIG_CHANGED_LOCAL(m_parallelPrinterCard)))	// Card is new in slot OR card's config has changed
+		if (ConfigNew.m_Slot[slot] == CT_GenericPrinter)
 		{
 			CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(ConfigNew);
 			config.m_parallelPrinterCard.SetRegistryConfig();
@@ -398,7 +396,7 @@ void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestar
 {
 	SaveComputerType(ConfigNew.m_Apple2Type);
 	SaveCpuType(ConfigNew.m_CpuType);
-	REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);
+	//REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);	// Not currently in save-state
 	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
 	SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
 }
@@ -441,6 +439,17 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 			PCapBackend::SetRegistryInterface(slot, m_ConfigOld.m_tfeInterface);
 			Uthernet2::SetRegistryVirtualDNS(slot, m_ConfigOld.m_tfeVirtualDNS);
 			break;
+		}
+
+		if (m_ConfigOld.m_Slot[slot] == CT_SSC)
+		{
+			GetCardMgr().GetSSC()->SetSerialPortItem(m_ConfigOld.m_serialPortItem);
+		}
+
+		if (m_ConfigOld.m_Slot[slot] == CT_GenericPrinter)
+		{
+			CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(m_ConfigOld);
+			config.m_parallelPrinterCard.SetRegistryConfig();
 		}
 	}
 
