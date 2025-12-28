@@ -104,7 +104,6 @@
 #define IDC_MOUSE_RESTRICT_TO_WINDOW    1049
 #define IDC_CIDERPRESS_BROWSE           1050
 #define IDC_CIDERPRESS_FILENAME         1051
-#define IDC_CPM_CONFIG                  1052
 #define IDC_DUMPTOPRINTER               1053
 #define IDC_PRINTER_DUMP_FILENAME       1054
 #define IDC_PRINTER_DUMP_FILENAME_BROWSE 1055
@@ -130,8 +129,6 @@
 #define IDC_CHECK_50HZ_VIDEO            1084
 #define IDC_COMBO_DISK1_SLOT5           1085
 #define IDC_COMBO_DISK2_SLOT5           1086
-#define IDC_FOURPLAY_CONFIG             1087
-#define IDC_SNESMAX_CONFIG              1088
 #define IDC_CHECK_TFE_VIRTUAL_DNS       1090
 #define IDC_TFE_NPCAP_INFO              1091
 #define IDC_COMBO_GAME_IO_CONNECTOR     1092

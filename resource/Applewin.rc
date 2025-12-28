@@ -133,10 +133,6 @@ BEGIN
     CONTROL         "Swap 0/1",IDC_SWAPBUTTONS0AND1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,162,75,41,10
     CONTROL         "Auto-fire (all 3 buttons)",IDC_AUTOFIRE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,90,89,10
     CONTROL         "Keyboard auto-centering",IDC_CENTERINGCONTROL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,102,90,96,10
-    LTEXT           "4Play Joystick card:",IDC_STATIC,8,108,84,10
-    COMBOBOX        IDC_FOURPLAY_CONFIG,93,106,55,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "SNES MAX card:",IDC_STATIC,8,123,82,10
-    COMBOBOX        IDC_SNESMAX_CONFIG,93,122,55,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     CONTROL         "&Scroll Lock acts as toggle for full-speed CPU",IDC_SCROLLLOCK_TOGGLE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,147,166,10
     CONTROL         "&Mouse interface in slot 4",IDC_MOUSE_IN_SLOT4,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,161,106,10
@@ -144,8 +140,6 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,175,159,10
     CONTROL         "&Restrict mouse to Apple window",IDC_MOUSE_RESTRICT_TO_WINDOW,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,189,121,10
-    LTEXT           "Microsoft CP/M SoftCard:",IDC_STATIC,8,204,83,10
-    COMBOBOX        IDC_CPM_CONFIG,93,202,55,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Paste &From Clipboard",IDC_PASTE_FROM_CLIPBOARD,8,219,81,14
     LTEXT           "(Shift+Insert during emulation)",IDC_STATIC,93,222,111,8
 END
