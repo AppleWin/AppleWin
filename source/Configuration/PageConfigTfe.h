@@ -2,7 +2,6 @@
 
 #include "IPropertySheetPage.h"
 #include "../Tfe/Uilib.h"
-#include "../Card.h"
 
 #include <string>
 
@@ -12,16 +11,16 @@ public:
 	CPageConfigTfe()
 	{
 		CPageConfigTfe::ms_this = this;
-		m_tfe_selected = CT_Empty;
 		m_tfe_virtual_dns = false;
+		m_enableVirtualDnsCheckbox = false;
 	}
 	virtual ~CPageConfigTfe(){}
 
 	static INT_PTR CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 
-	SS_CARDTYPE m_tfe_selected;
 	std::string m_tfe_interface_name;
 	bool m_tfe_virtual_dns;
+	bool m_enableVirtualDnsCheckbox;
 
 protected:
 	// IPropertySheetPage
@@ -36,7 +35,4 @@ private:
 	void save_tfe_dialog(HWND hwnd);
 
 	static CPageConfigTfe* ms_this;
-	static uilib_localize_dialog_param ms_dialog[];
-	static uilib_dialog_group ms_leftgroup[];
-	static uilib_dialog_group ms_rightgroup[];
 };

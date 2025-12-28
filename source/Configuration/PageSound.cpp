@@ -178,8 +178,8 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				}
 				else if (cardInSlot == CT_Uthernet || cardInSlot == CT_Uthernet2)
 				{
+					m_PageConfigTfe.m_enableVirtualDnsCheckbox = (cardInSlot == CT_Uthernet2);
 					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hWnd, CPageConfigTfe::DlgProc);
-					//m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = m_PageConfigTfe.m_tfe_selected;
 					m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
 					m_PropertySheetHelper.GetConfigNew().m_tfeVirtualDNS = m_PageConfigTfe.m_tfe_virtual_dns;
 				}
@@ -311,8 +311,6 @@ void CPageSound::InitOptions(HWND hWnd)
 			break;
 		}
 	}
-
-	//m_PageConfigTfe.m_tfe_selected = card;
 }
 
 //===========================================================================
