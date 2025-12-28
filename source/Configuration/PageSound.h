@@ -50,6 +50,7 @@ private:
 	void InitComboFloppyDrive(HWND hWnd, UINT slot);
 	void HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);
 	void EnableFloppyDrive(HWND hWnd, BOOL enable);
+	void HandleFloppyDriveSwap(HWND hWnd, UINT slot);
 
 	void InitComboHDD(HWND hWnd, UINT slot);
 	void HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);

@@ -345,6 +345,7 @@ INT_PTR CPageSound::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 			break;
 
 		case IDC_SLOT_OPT_DISK_SWAP:
+			HandleFloppyDriveSwap(hWnd, ms_slot);
 			break;
 
 		case IDOK:
@@ -463,6 +464,17 @@ void CPageSound::EnableFloppyDrive(HWND hWnd, BOOL enable)
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK1), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK2), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_DISK_SWAP), enable);
+}
+
+void CPageSound::HandleFloppyDriveSwap(HWND hWnd, UINT slot)
+{
+	if (!RemovalConfirmation(IDC_SLOT_OPT_DISK_SWAP))
+		return;
+
+	if (!dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).DriveSwap())
+		return;
+
+	InitComboFloppyDrive(hWnd, slot);
 }
 
 //===========================================================================
@@ -617,7 +629,7 @@ void CPageSound::EnableHDD(HWND hWnd, BOOL enable)
 
 void CPageSound::HandleHDDSwap(HWND hWnd, UINT slot)
 {
-	if (!RemovalConfirmation(IDC_HDD_SWAP))
+	if (!RemovalConfirmation(IDC_SLOT_OPT_HDD_SWAP))
 		return;
 
 	if (!dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).ImageSwap())
@@ -643,9 +655,11 @@ UINT CPageSound::RemovalConfirmation(UINT command)
 	std::string strText;
 	if (isFloppyDisk)
 		strText = StrFormat("Do you really want to eject the disk in drive-%c ?", '1' + drive);
+	else if (command == IDC_SLOT_OPT_DISK_SWAP)
+		strText = "Do you really want to swap the floppy disks?";
 	else if (command == IDC_SLOT_OPT_COMBO_HDD1 || command == IDC_SLOT_OPT_COMBO_HDD2)
 		strText = StrFormat("Do you really want to unplug harddisk-%c ?", '1' + command - IDC_SLOT_OPT_COMBO_HDD1);
-	else if (command == IDC_HDD_SWAP)
+	else if (command == IDC_SLOT_OPT_HDD_SWAP)
 		strText = "Do you really want to swap the harddisk images?";
 	else
 		bMsgBox = false;
