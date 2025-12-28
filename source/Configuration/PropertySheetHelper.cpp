@@ -131,7 +131,6 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 			return;
 
 		GetCardMgr().Insert(slot, newCardType);
-		GetCardMgr().GetRef(slot).InitializeIO(GetCxRomPeripheral());
 	}
 	else if (slot == SLOT_AUX)
 	{
@@ -376,6 +375,10 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		}
 	}
 
+	// Initialize I/O after setting config
+	// NB. Uthernet cards check network interface in InitializeIO(), so need SetRegistryInterface() called first
+	GetCardMgr().InitializeIO(GetCxRomPeripheral());
+
 	if (CONFIG_CHANGED_LOCAL(m_SlotAux))
 		SetSlot(SLOT_AUX, ConfigNew.m_SlotAux);
 
@@ -440,6 +443,8 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 			break;
 		}
 	}
+
+	GetCardMgr().InitializeIO(GetCxRomPeripheral());
 
 	SetSlot(SLOT_AUX, m_ConfigOld.m_SlotAux);
 
