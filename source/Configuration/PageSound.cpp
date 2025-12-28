@@ -343,6 +343,10 @@ INT_PTR CPageSound::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 				GetFrame().FrameRefreshStatus(DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 			}
 			break;
+
+		case IDC_SLOT_OPT_DISK_SWAP:
+			break;
+
 		case IDOK:
 			EndDialog(hWnd, 0);
 			break;
@@ -490,6 +494,10 @@ INT_PTR CPageSound::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wpar
 			}
 			break;
 
+		case IDC_SLOT_OPT_HDD_SWAP:
+			HandleHDDSwap(hWnd, ms_slot);
+			break;
+
 		case IDOK:
 			EndDialog(hWnd, 0);
 			break;
@@ -523,7 +531,7 @@ void CPageSound::InitComboHDD(HWND hWnd, UINT slot)
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_HDD1, m_defaultHDDOptions, -1);
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_HDD2, m_defaultHDDOptions, -1);
 
-	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7));
+	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
 
 	if (!card.GetFullName(HARDDISK_1).empty())
 	{
@@ -540,7 +548,7 @@ void CPageSound::InitComboHDD(HWND hWnd, UINT slot)
 
 void CPageSound::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot)
 {
-	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(SLOT7));
+	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
 
 	// Search from "select hard drive"
 	uint32_t dwOpenDialogIndex = (uint32_t)SendDlgItemMessage(hWnd, comboSelected, CB_FINDSTRINGEXACT, -1, (LPARAM)&m_defaultHDDOptions[0]);
@@ -605,6 +613,17 @@ void CPageSound::EnableHDD(HWND hWnd, BOOL enable)
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD1), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD2), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_HDD_SWAP), enable);
+}
+
+void CPageSound::HandleHDDSwap(HWND hWnd, UINT slot)
+{
+	if (!RemovalConfirmation(IDC_HDD_SWAP))
+		return;
+
+	if (!dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).ImageSwap())
+		return;
+
+	InitComboHDD(hWnd, slot);
 }
 
 //===========================================================================

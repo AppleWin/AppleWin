@@ -54,6 +54,7 @@ private:
 	void InitComboHDD(HWND hWnd, UINT slot);
 	void HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);
 	void EnableHDD(HWND hWnd, BOOL enable);
+	void HandleHDDSwap(HWND hWnd, UINT slot);
 
 	void DlgPrinterOK(HWND hWnd);
 	void DlgRamWorks3OK(HWND hWnd);
