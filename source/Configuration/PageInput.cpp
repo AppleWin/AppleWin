@@ -140,15 +140,6 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			m_uScrollLockToggle = IsDlgButtonChecked(hWnd, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
 			break;
 
-		case IDC_MOUSE_IN_SLOT4:
-			{
-				const UINT uNewState = IsDlgButtonChecked(hWnd, IDC_MOUSE_IN_SLOT4) ? 1 : 0;
-				m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT4] = uNewState ? CT_MouseInterface : CT_Empty;
-
-				InitOptions(hWnd);	// re-init
-			}
-			break;
-
 		case IDC_PASTE_FROM_CLIPBOARD:
 			ClipboardInitiatePaste();
 			break;
@@ -205,8 +196,6 @@ void CPageInput::DlgOK(HWND hWnd)
 	m_bmAutofire = IsDlgButtonChecked(hWnd, IDC_AUTOFIRE) ? 7 : 0;	// bitmap of 3 bits
 	m_bSwapButtons0and1 = IsDlgButtonChecked(hWnd, IDC_SWAPBUTTONS0AND1) ? true : false;
 	m_uCenteringControl = IsDlgButtonChecked(hWnd, IDC_CENTERINGCONTROL) ? 1 : 0;
-	m_uMouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
-	m_uMouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
 
 	REGSAVE(REGVALUE_PDL_XTRIM, JoyGetTrim(true));
 	REGSAVE(REGVALUE_PDL_YTRIM, JoyGetTrim(false));
@@ -215,8 +204,6 @@ void CPageInput::DlgOK(HWND hWnd)
 	REGSAVE(REGVALUE_AUTOFIRE, m_bmAutofire);
 	REGSAVE(REGVALUE_SWAP_BUTTONS_0_AND_1, m_bSwapButtons0and1);
 	REGSAVE(REGVALUE_CENTERING_CONTROL, m_uCenteringControl);
-	REGSAVE(REGVALUE_MOUSE_CROSSHAIR, m_uMouseShowCrosshair);
-	REGSAVE(REGVALUE_MOUSE_RESTRICT_TO_WINDOW, m_uMouseRestrictToWindow);
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
@@ -314,18 +301,6 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 
 void CPageInput::InitSlotOptions(HWND hWnd)
 {
-	const SS_CARDTYPE slot4 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT4];
-
-	const bool bIsSlot4Mouse = slot4 == CT_MouseInterface;
-	CheckDlgButton(hWnd, IDC_MOUSE_IN_SLOT4, bIsSlot4Mouse ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hWnd, IDC_MOUSE_CROSSHAIR, m_uMouseShowCrosshair ? BST_CHECKED : BST_UNCHECKED);
-	CheckDlgButton(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW, m_uMouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
-
-	const bool bIsSlot4Empty = slot4 == CT_Empty;
-	EnableWindow(GetDlgItem(hWnd, IDC_MOUSE_IN_SLOT4), ((bIsSlot4Mouse || bIsSlot4Empty) && !JoyUsingMouse()) ? TRUE : FALSE);
-	EnableWindow(GetDlgItem(hWnd, IDC_MOUSE_CROSSHAIR), bIsSlot4Mouse ? TRUE : FALSE);
-	EnableWindow(GetDlgItem(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW), bIsSlot4Mouse ? TRUE : FALSE);
-
 	InitJoystickChoices(hWnd, JN_JOYSTICK0, IDC_JOYSTICK0);
 	InitJoystickChoices(hWnd, JN_JOYSTICK1, IDC_JOYSTICK1);
 

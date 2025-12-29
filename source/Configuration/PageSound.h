@@ -12,7 +12,9 @@ class CPageSound : private IPropertySheetPage
 public:
 	CPageSound(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_SOUND),
-		m_PropertySheetHelper(PropertySheetHelper)
+		m_PropertySheetHelper(PropertySheetHelper),
+		m_mouseShowCrosshair(0),
+		m_mouseRestrictToWindow(0)
 	{
 		CPageSound::ms_this = this;
 		ms_slot = NUM_SLOTS;	// invalid
@@ -20,6 +22,11 @@ public:
 	virtual ~CPageSound(){}
 
 	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+
+	UINT GetMouseShowCrosshair(void) { return m_mouseShowCrosshair; }
+	void SetMouseShowCrosshair(UINT uValue) { m_mouseShowCrosshair = uValue; }
+	UINT GetMouseRestrictToWindow(void) { return m_mouseRestrictToWindow; }
+	void SetMouseRestrictToWindow(UINT uValue) { m_mouseRestrictToWindow = uValue; }
 
 	uint32_t GetVolumeMax(void){ return VOLUME_MAX; }
 
@@ -44,6 +51,8 @@ private:
 	INT_PTR DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	static INT_PTR CALLBACK DlgProcPrinter(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	INT_PTR DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	static INT_PTR CALLBACK DlgProcMouseCard(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	INT_PTR DlgProcMouseCardInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	static INT_PTR CALLBACK DlgProcRamWorks3(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	INT_PTR DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
@@ -58,6 +67,7 @@ private:
 	void HandleHDDSwap(HWND hWnd, UINT slot);
 
 	void DlgPrinterOK(HWND hWnd);
+	void DlgMouseCardOK(HWND hWnd);
 	void DlgRamWorks3OK(HWND hWnd);
 
 	UINT RemovalConfirmation(UINT command);
@@ -77,4 +87,7 @@ private:
 	static const char m_defaultHDDOptions[];
 
 	std::vector<SS_CARDTYPE> choicesList[NUM_SLOTS];
+
+	UINT m_mouseShowCrosshair;
+	UINT m_mouseRestrictToWindow;
 };

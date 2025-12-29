@@ -71,7 +71,8 @@
 #define IDD_HARD_DISK_DRIVES            168
 #define IDD_SSC                         169
 #define IDD_PRINTER                     170
-#define IDD_RAMWORKS3                   171
+#define IDD_MOUSECARD                   171
+#define IDD_RAMWORKS3                   172
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -97,7 +98,6 @@
 #define IDS_OK                          1041
 #define IDS_CANCEL                      1042
 #define IDC_SCROLLLOCK_TOGGLE           1044
-#define IDC_MOUSE_IN_SLOT4              1045
 #define IDC_THE_FREEZES_F8_ROM_FW       1046
 #define IDC_MOUSE_CROSSHAIR             1047
 #define IDC_CLONETYPE                   1048
@@ -201,7 +201,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        172
+#define _APS_NEXT_RESOURCE_VALUE        173
 #define _APS_NEXT_COMMAND_VALUE         40026
 #define _APS_NEXT_CONTROL_VALUE         1131
 #define _APS_NEXT_SYMED_VALUE           101

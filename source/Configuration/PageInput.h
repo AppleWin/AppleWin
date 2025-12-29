@@ -16,9 +16,7 @@ public:
 		m_uCursorControl(1),
 		m_uCenteringControl(JOYSTICK_MODE_CENTERING),
 		m_bmAutofire(0),
-		m_bSwapButtons0and1(false),
-		m_uMouseShowCrosshair(0),
-		m_uMouseRestrictToWindow(0)
+		m_bSwapButtons0and1(false)
 	{
 		CPageInput::ms_this = this;
 	}
@@ -36,10 +34,6 @@ public:
 	void SetAutofire(UINT uValue) { m_bmAutofire = uValue; }					// Set all buttons
 	bool GetButtonsSwapState(void){ return m_bSwapButtons0and1; }
 	void SetButtonsSwapState(bool value){ m_bSwapButtons0and1 = value; }
-	UINT GetMouseShowCrosshair(void){ return m_uMouseShowCrosshair; }
-	void SetMouseShowCrosshair(UINT uValue){ m_uMouseShowCrosshair = uValue; }
-	UINT GetMouseRestrictToWindow(void){ return m_uMouseRestrictToWindow; }
-	void SetMouseRestrictToWindow(UINT uValue){ m_uMouseRestrictToWindow = uValue; }
 
 protected:
 	// IPropertySheetPage
@@ -78,6 +72,4 @@ private:
 	UINT m_uCenteringControl;	// 1 = Centering, 0=Floating (when using keyboard for joystick emu)
 	UINT m_bmAutofire;			// bitmask b2:0
 	bool m_bSwapButtons0and1;
-	UINT m_uMouseShowCrosshair;
-	UINT m_uMouseRestrictToWindow;
 };

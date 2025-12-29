@@ -47,10 +47,10 @@ public:
 	virtual void SetAutofire(UINT uValue) { m_PageInput.SetAutofire(uValue); }
 	virtual bool GetButtonsSwapState(void) { return m_PageInput.GetButtonsSwapState(); }
 	virtual void SetButtonsSwapState(bool value) { m_PageInput.SetButtonsSwapState(value); }
-	virtual UINT GetMouseShowCrosshair(void){ return m_PageInput.GetMouseShowCrosshair(); }
-	virtual void SetMouseShowCrosshair(UINT uValue){ m_PageInput.SetMouseShowCrosshair(uValue); }
-	virtual UINT GetMouseRestrictToWindow(void){ return m_PageInput.GetMouseRestrictToWindow(); }
-	virtual void SetMouseRestrictToWindow(UINT uValue){ m_PageInput.SetMouseRestrictToWindow(uValue); }
+	virtual UINT GetMouseShowCrosshair(void){ return m_PageSound.GetMouseShowCrosshair(); }
+	virtual void SetMouseShowCrosshair(UINT uValue) { m_PageSound.SetMouseShowCrosshair(uValue); }
+	virtual UINT GetMouseRestrictToWindow(void){ return m_PageSound.GetMouseRestrictToWindow(); }
+	virtual void SetMouseRestrictToWindow(UINT uValue){ m_PageSound.SetMouseRestrictToWindow(uValue); }
 	virtual UINT GetTheFreezesF8Rom(void){ return m_PageAdvanced.GetTheFreezesF8Rom(); }
 	virtual void SetTheFreezesF8Rom(UINT uValue){ m_PageAdvanced.SetTheFreezesF8Rom(uValue); }
 

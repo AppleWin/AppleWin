@@ -191,6 +191,10 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				{
 					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_PRINTER, hWnd, CPageSound::DlgProcPrinter);
 				}
+				else if (cardInSlot == CT_MouseInterface)
+				{
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_MOUSECARD, hWnd, CPageSound::DlgProcMouseCard);
+				}
 			}
 			break;
 
@@ -822,6 +826,62 @@ void CPageSound::DlgPrinterOK(HWND hWnd)
 	card.SetPrinterAppend(IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND) ? true : false);
 
 	card.SetIdleLimit((short)SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_GETPOS, 0, 0));
+}
+
+//===========================================================================
+
+INT_PTR CALLBACK CPageSound::DlgProcMouseCard(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	// Switch from static func to our instance
+	return CPageSound::ms_this->DlgProcMouseCardInternal(hWnd, message, wparam, lparam);
+}
+
+INT_PTR CPageSound::DlgProcMouseCardInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	switch (message)
+	{
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
+		case IDOK:
+			DlgMouseCardOK(hWnd);
+			EndDialog(hWnd, 0);
+			break;
+
+		case IDCANCEL:
+			EndDialog(hWnd, 0);
+			break;
+
+		default:
+			return FALSE;
+		}
+		break;
+
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		break;
+
+	case WM_INITDIALOG:
+	{
+		CheckDlgButton(hWnd, IDC_MOUSE_CROSSHAIR, m_mouseShowCrosshair ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW, m_mouseRestrictToWindow ? BST_CHECKED : BST_UNCHECKED);
+	}
+	break;
+
+	default:
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+void CPageSound::DlgMouseCardOK(HWND hWnd)
+{
+	m_mouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
+	m_mouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
+
+	REGSAVE(REGVALUE_MOUSE_CROSSHAIR, m_mouseShowCrosshair);
+	REGSAVE(REGVALUE_MOUSE_RESTRICT_TO_WINDOW, m_mouseRestrictToWindow);
 }
 
 //===========================================================================
