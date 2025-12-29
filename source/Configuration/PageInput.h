@@ -12,7 +12,6 @@ public:
 	CPageInput(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_INPUT),
 		m_PropertySheetHelper(PropertySheetHelper),
-		m_uScrollLockToggle(0),
 		m_uCursorControl(1),
 		m_uCenteringControl(JOYSTICK_MODE_CENTERING),
 		m_bmAutofire(0),
@@ -24,8 +23,6 @@ public:
 
 	static INT_PTR CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 
-	UINT GetScrollLockToggle(void){ return m_uScrollLockToggle; }
-	void SetScrollLockToggle(UINT uValue){ m_uScrollLockToggle = uValue; }
 	UINT GetJoystickCursorControl(void){ return m_uCursorControl; }
 	void SetJoystickCursorControl(UINT uValue){ m_uCursorControl = uValue; }
 	UINT GetJoystickCenteringControl(void){ return m_uCenteringControl; }
@@ -67,7 +64,6 @@ private:
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
 
-	UINT m_uScrollLockToggle;
 	UINT m_uCursorControl;		// 1 = Allow AppleII to read cursor keys from $C000 (when using keyboard for joystick emu)
 	UINT m_uCenteringControl;	// 1 = Centering, 0=Floating (when using keyboard for joystick emu)
 	UINT m_bmAutofire;			// bitmask b2:0

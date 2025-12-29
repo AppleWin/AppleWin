@@ -136,10 +136,6 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			}
 			break;
 
-		case IDC_SCROLLLOCK_TOGGLE:
-			m_uScrollLockToggle = IsDlgButtonChecked(hWnd, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
-			break;
-
 		case IDC_PASTE_FROM_CLIPBOARD:
 			ClipboardInitiatePaste();
 			break;
@@ -158,10 +154,8 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			CheckDlgButton(hWnd, IDC_AUTOFIRE, m_bmAutofire ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_SWAPBUTTONS0AND1, m_bSwapButtons0and1 ? BST_CHECKED : BST_UNCHECKED);
 			CheckDlgButton(hWnd, IDC_CENTERINGCONTROL, m_uCenteringControl == JOYSTICK_MODE_CENTERING ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
 
 			InitOptions(hWnd);
-
 			break;
 		}
 	}
@@ -199,7 +193,6 @@ void CPageInput::DlgOK(HWND hWnd)
 
 	REGSAVE(REGVALUE_PDL_XTRIM, JoyGetTrim(true));
 	REGSAVE(REGVALUE_PDL_YTRIM, JoyGetTrim(false));
-	REGSAVE(REGVALUE_SCROLLLOCK_TOGGLE, m_uScrollLockToggle);
 	REGSAVE(REGVALUE_CURSOR_CONTROL, m_uCursorControl);
 	REGSAVE(REGVALUE_AUTOFIRE, m_bmAutofire);
 	REGSAVE(REGVALUE_SWAP_BUTTONS_0_AND_1, m_bSwapButtons0and1);

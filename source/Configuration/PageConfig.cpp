@@ -119,6 +119,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		case IDC_CHECK_VERTICAL_BLEND:
 		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
 		case IDC_CHECK_50HZ_VIDEO:
+		case IDC_SCROLLLOCK_TOGGLE:
 			// Checked in DlgOK()
 			break;
 
@@ -206,6 +207,8 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? BST_CHECKED : BST_UNCHECKED);
 
 			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideo().GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
+
+			CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
 
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,TRUE,MAKELONG(0,40));
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
@@ -331,6 +334,15 @@ void CPageConfig::DlgOK(HWND hWnd)
 	{
 		GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
 		REGSAVE(REGVALUE_ENHANCE_DISK_SPEED, (uint32_t)bNewEnhanceDisk);
+	}
+
+	//
+
+	const UINT newScrollLockToggle = IsDlgButtonChecked(hWnd, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
+	if (newScrollLockToggle != m_uScrollLockToggle)
+	{
+		m_uScrollLockToggle = newScrollLockToggle;
+		REGSAVE(REGVALUE_SCROLLLOCK_TOGGLE, m_uScrollLockToggle);
 	}
 
 	//

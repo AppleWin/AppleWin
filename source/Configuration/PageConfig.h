@@ -11,13 +11,17 @@ class CPageConfig : private IPropertySheetPage
 public:
 	CPageConfig(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_CONFIG),
-		m_PropertySheetHelper(PropertySheetHelper)
+		m_PropertySheetHelper(PropertySheetHelper),
+		m_uScrollLockToggle(0)
 	{
 		CPageConfig::ms_this = this;
 	}
 	virtual ~CPageConfig(){}
 
 	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+
+	UINT GetScrollLockToggle(void) { return m_uScrollLockToggle; }
+	void SetScrollLockToggle(UINT uValue) { m_uScrollLockToggle = uValue; }
 
 protected:
 	// IPropertySheetPage
@@ -37,4 +41,5 @@ private:
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
-};
+	UINT m_uScrollLockToggle;
+ };

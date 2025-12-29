@@ -37,8 +37,8 @@ public:
 		m_PropertySheetHelper.ConfigSaveApple2Type(apple2Type);
 	}
 
-	virtual UINT GetScrollLockToggle(void){ return m_PageInput.GetScrollLockToggle(); }
-	virtual void SetScrollLockToggle(UINT uValue){ m_PageInput.SetScrollLockToggle(uValue); }
+	virtual UINT GetScrollLockToggle(void){ return m_PageConfig.GetScrollLockToggle(); }
+	virtual void SetScrollLockToggle(UINT uValue){ m_PageConfig.SetScrollLockToggle(uValue); }
 	virtual UINT GetJoystickCursorControl(void){ return m_PageInput.GetJoystickCursorControl(); }
 	virtual void SetJoystickCursorControl(UINT uValue){ m_PageInput.SetJoystickCursorControl(uValue); }
 	virtual UINT GetJoystickCenteringControl(void){ return m_PageInput.GetJoystickCenteringControl(); }
