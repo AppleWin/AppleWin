@@ -35,9 +35,10 @@ namespace common2
 
         void LoadSnapshot() override;
 
+        virtual bool CanDoFullSpeed();
+
     protected:
         virtual void SetFullSpeed(const bool value);
-        virtual bool CanDoFullSpeed();
 
         void ExecuteInRunningMode(const int64_t microseconds);
         void ExecuteInDebugMode(const int64_t microseconds);
