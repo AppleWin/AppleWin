@@ -99,9 +99,9 @@ BEGIN
     CONTROL         "Vertical blend",IDC_CHECK_VERTICAL_BLEND,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,142,48,62,10
     CONTROL         "Full-Screen: Show drive/keyboard status",IDC_CHECK_FS_SHOW_SUBUNIT_STATUS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,64,140,10
-    GROUPBOX        "Emulation Speed Control",IDC_STATIC,5,149,200,85
-    CONTROL         "Use &Authentic Machine Speed",IDC_AUTHENTIC_SPEED,
-                    "Button",BS_AUTORADIOBUTTON,15,160,115,10
+    GROUPBOX        "Emulation Speed Control",IDC_STATIC,5,133,200,100
+    CONTROL         "&Enhanced floppy disk access speed (all drives)",IDC_ENHANCE_DISK_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,146,160,10
+    CONTROL         "Use &Authentic Machine Speed",IDC_AUTHENTIC_SPEED,"Button",BS_AUTORADIOBUTTON,15,160,115,10
     CONTROL         "Select C&ustom Speed (in MHz)",IDC_CUSTOM_SPEED,"Button",BS_AUTORADIOBUTTON,15,172,115,10
     CONTROL         "Generic2",IDC_SLIDER_CPU_SPEED,"msctls_trackbar32",TBS_AUTOTICKS | WS_TABSTOP,25,183,160,15
     CTEXT           "0.5",IDC_0_5_MHz,23,199,20,10
@@ -180,7 +180,6 @@ CAPTION "Disk"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
     GROUPBOX        "Floppy Disk Drives",IDC_STATIC,5,7,200,125
-    CONTROL         "&Enhanced disk access speed (all drives)",IDC_ENHANCE_DISK_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,19,135,10
     CONTROL         "Show status",IDC_DISKII_STATUS_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,150,19,50,10
 
     LTEXT           "Disk 1:",IDC_STATIC,10,36,23,8
