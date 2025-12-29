@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../resource/resource.h"
 #include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
+#include "../Windows/Win32Frame.h"
 
 CPageSound* CPageSound::ms_this = nullptr;	// reinit'd in ctor
 UINT CPageSound::ms_slot = 0;
@@ -379,6 +380,10 @@ INT_PTR CPageSound::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 		break;
 
 	case WM_INITDIALOG:
+		if (ms_slot == SLOT5 || ms_slot == SLOT6)
+			CheckDlgButton(hWnd, IDC_DISKII_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiStatus() ? BST_CHECKED : BST_UNCHECKED);
+		else
+			EnableWindow(GetDlgItem(hWnd, IDC_DISKII_STATUS_ENABLE), FALSE);
 		InitComboFloppyDrive(hWnd, ms_slot);
 		break;
 
@@ -496,6 +501,23 @@ void CPageSound::DlgDisk2OK(HWND hWnd)
 
 	for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
 		m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[i] = card.DiskGetFullPathName(i);
+
+	//
+
+	if (ms_slot == SLOT5 || ms_slot == SLOT6)
+	{
+		Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+		const bool bNewDiskiiStatus = IsDlgButtonChecked(hWnd, IDC_DISKII_STATUS_ENABLE) ? true : false;
+
+		if (win32Frame.GetWindowedModeShowDiskiiStatus() != bNewDiskiiStatus)
+		{
+			REGSAVE(REGVALUE_SHOW_DISKII_STATUS, bNewDiskiiStatus ? 1 : 0);
+			win32Frame.SetWindowedModeShowDiskiiStatus(bNewDiskiiStatus);
+
+			if (!win32Frame.IsFullScreen())
+				win32Frame.FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
+		}
+	}
 }
 
 //===========================================================================

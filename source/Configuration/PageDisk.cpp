@@ -176,7 +176,7 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 
 	case WM_INITDIALOG:
 		{
-			CheckDlgButton(hWnd, IDC_DISKII_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiStatus() ? BST_CHECKED : BST_UNCHECKED);
+//			CheckDlgButton(hWnd, IDC_DISKII_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiStatus() ? BST_CHECKED : BST_UNCHECKED);
 
 			const UINT slot = SLOT6;
 			if (GetCardMgr().QuerySlot(slot) == CT_Disk2)	// NB. SLOT6 not setup in m_PropertySheetHelper.GetConfigNew().m_Slot[]
@@ -247,6 +247,7 @@ void CPageDisk::InitComboHDD(HWND hWnd, UINT /*slot*/)
 
 void CPageDisk::DlgOK(HWND hWnd)
 {
+#if 0
 	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
 	const bool bNewDiskiiStatus = IsDlgButtonChecked(hWnd, IDC_DISKII_STATUS_ENABLE) ? true : false;
 
@@ -258,6 +259,7 @@ void CPageDisk::DlgOK(HWND hWnd)
 		if (!win32Frame.IsFullScreen())
 			win32Frame.FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 	}
+#endif
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
