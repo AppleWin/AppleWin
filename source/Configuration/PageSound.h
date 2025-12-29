@@ -66,6 +66,8 @@ private:
 	void EnableHDD(HWND hWnd, BOOL enable);
 	void HandleHDDSwap(HWND hWnd, UINT slot);
 
+	void DlgDisk2OK(HWND hWnd);
+	void DlgHarddiskOK(HWND hWnd);
 	void DlgPrinterOK(HWND hWnd);
 	void DlgMouseCardOK(HWND hWnd);
 	void DlgRamWorks3OK(HWND hWnd);

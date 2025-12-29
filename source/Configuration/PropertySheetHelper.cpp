@@ -354,6 +354,8 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
 			SetSlot(slot, ConfigNew.m_Slot[slot]);
 
+		// Keep going, as card may not have changed, but card's config could have
+
 		if (ConfigNew.m_Slot[slot] == CT_Uthernet || ConfigNew.m_Slot[slot] == CT_Uthernet2)
 		{
 			// NB. Assume we don't have both cards inserted
@@ -370,6 +372,18 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		{
 			CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(ConfigNew);
 			config.m_parallelPrinterCard.SetRegistryConfig();
+		}
+
+		if (ConfigNew.m_Slot[slot] == CT_Disk2)
+		{
+			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).InsertDisk(i, ConfigNew.m_slotInfoForFDC[slot].pathname[i], false, false);
+		}
+
+		if (ConfigNew.m_Slot[slot] == CT_GenericHDD)
+		{
+			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Insert(i, ConfigNew.m_slotInfoForHDC[slot].pathname[i]);
 		}
 	}
 
@@ -438,7 +452,6 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 			// Assume only one CT_Uthernet or CT_Uthernet2 inserted
 			PCapBackend::SetRegistryInterface(slot, m_ConfigOld.m_tfeInterface);
 			Uthernet2::SetRegistryVirtualDNS(slot, m_ConfigOld.m_tfeVirtualDNS);
-			break;
 		}
 
 		if (m_ConfigOld.m_Slot[slot] == CT_SSC)
@@ -450,6 +463,18 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 		{
 			CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(m_ConfigOld);
 			config.m_parallelPrinterCard.SetRegistryConfig();
+		}
+
+		if (m_ConfigOld.m_Slot[slot] == CT_Disk2)
+		{
+			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).InsertDisk(i, m_ConfigOld.m_slotInfoForFDC[slot].pathname[i], false, false);
+		}
+
+		if (m_ConfigOld.m_Slot[slot] == CT_GenericHDD)
+		{
+			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Insert(i, m_ConfigOld.m_slotInfoForHDC[slot].pathname[i]);
 		}
 	}
 

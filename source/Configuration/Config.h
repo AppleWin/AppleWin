@@ -2,9 +2,21 @@
 
 #include "../Core.h"
 #include "../CPU.h"
+#include "../Disk.h"
+#include "../Harddisk.h"
 #include "../ParallelPrinter.h"
 #include "../SerialComms.h"
 #include "../Video.h"
+
+struct SlotInfoForFDC
+{
+	std::string pathname[NUM_DRIVES];
+};
+
+struct SlotInfoForHDC
+{
+	std::string pathname[NUM_HARDDISKS];
+};
 
 class CConfigNeedingRestart
 {
@@ -35,4 +47,7 @@ public:
 	uint32_t m_RamWorksMemorySize;
 	ParallelPrinterCard m_parallelPrinterCard;	// Use entire card object, as there are many config vars
 	UINT m_serialPortItem;	// SSC: Just one config var for this card (at the moment)
+
+	SlotInfoForFDC m_slotInfoForFDC [NUM_SLOTS];
+	SlotInfoForHDC m_slotInfoForHDC [NUM_SLOTS];
 };

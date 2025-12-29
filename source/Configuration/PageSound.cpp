@@ -127,9 +127,6 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 
 				m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = newCard;
 
-				if (newCard == CT_Disk2 || newCard == CT_GenericHDD)
-					m_PropertySheetHelper.SetSlot(slot, m_PropertySheetHelper.GetConfigNew().m_Slot[slot]);
-
 				InitOptions(hWnd);
 			}
 			break;
@@ -166,6 +163,17 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			{
 				const UINT slot = (LOWORD(wparam) - IDC_SLOT0_OPTION) / 2;
 				const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_Slot[slot];
+
+				if (cardInSlot == CT_Disk2 || cardInSlot == CT_GenericHDD)
+				{
+					if (GetCardMgr().GetRef(slot).QueryType() != cardInSlot)
+					{
+						// NB. Unusual as we create slot object when slot-option is clicked (instead of after OK)
+						// Needed as we need a Disk2InterfaceCard or HarddiskInterfaceCard object so that images can be inserted/ejected
+						m_PropertySheetHelper.SetSlot(slot, cardInSlot);
+					}
+				}
+
 				if (cardInSlot == CT_Disk2)
 				{
 					ms_slot = slot;
@@ -353,6 +361,7 @@ INT_PTR CPageSound::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 			break;
 
 		case IDOK:
+			DlgDisk2OK(hWnd);
 			EndDialog(hWnd, 0);
 			break;
 
@@ -481,6 +490,14 @@ void CPageSound::HandleFloppyDriveSwap(HWND hWnd, UINT slot)
 	InitComboFloppyDrive(hWnd, slot);
 }
 
+void CPageSound::DlgDisk2OK(HWND hWnd)
+{
+	Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(ms_slot));
+
+	for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+		m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[i] = card.DiskGetFullPathName(i);
+}
+
 //===========================================================================
 
 INT_PTR CALLBACK CPageSound::DlgProcHarddisk(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -515,6 +532,7 @@ INT_PTR CPageSound::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wpar
 			break;
 
 		case IDOK:
+			DlgHarddiskOK(hWnd);
 			EndDialog(hWnd, 0);
 			break;
 
@@ -640,6 +658,14 @@ void CPageSound::HandleHDDSwap(HWND hWnd, UINT slot)
 		return;
 
 	InitComboHDD(hWnd, slot);
+}
+
+void CPageSound::DlgHarddiskOK(HWND hWnd)
+{
+	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(ms_slot));
+
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+		m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[i] = card.HarddiskGetFullPathName(i);
 }
 
 //===========================================================================

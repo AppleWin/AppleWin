@@ -29,6 +29,7 @@
 #include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
 
+
 // zero initialise
 CConfigNeedingRestart::CConfigNeedingRestart()
 	: m_parallelPrinterCard(SLOT1)	// slot not important
@@ -71,9 +72,19 @@ void CConfigNeedingRestart::Reload()
 			// Assume only one CT_Uthernet or CT_Uthernet2 inserted
 			m_tfeInterface = PCapBackend::GetRegistryInterface(slot);
 			m_tfeVirtualDNS = Uthernet2::GetRegistryVirtualDNS(slot);
-			break;
+		}
+		else if (m_Slot[slot] == CT_Disk2)
+		{
+			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+				m_slotInfoForFDC[slot].pathname[i] = dynamic_cast<Disk2InterfaceCard&>(cardManager.GetRef(slot)).DiskGetFullPathName(i);
+		}
+		else if (m_Slot[slot] == CT_GenericHDD)
+		{
+			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+				m_slotInfoForHDC[slot].pathname[i] = dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(slot)).HarddiskGetFullPathName(i);
 		}
 	}
+
 	m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_uSaveLoadStateMsg = 0;
 	m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
@@ -100,6 +111,13 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_RamWorksMemorySize = other.m_RamWorksMemorySize;
 	m_parallelPrinterCard = other.m_parallelPrinterCard;
 	m_serialPortItem = other.m_serialPortItem;
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+			m_slotInfoForFDC[slot].pathname[i] = other.m_slotInfoForFDC[slot].pathname[i];
+		for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+			m_slotInfoForHDC[slot].pathname[i] = other.m_slotInfoForHDC[slot].pathname[i];
+	}
 	return *this;
 }
 
