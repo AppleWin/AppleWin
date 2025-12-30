@@ -1,4 +1,15 @@
 /*
+2.9.4.1 Fixed right arrow follow data
+    Example:
+        222A:2C 22 34
+        DA 222A
+        R PC 222A
+        Right-Arrow
+    And
+        2220:41 42 42 00
+        ASC 2220:2220+3
+        R PC 2220
+        Right-Arrow
 2.9.4.0 Fixed right arrow follow branch address when target branch address was negative ($81 .. $FF)
     Example:
         2FE:90 81
