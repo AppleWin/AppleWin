@@ -88,7 +88,7 @@ private:
 	static const char m_defaultDiskOptions[];
 	static const char m_defaultHDDOptions[];
 
-	std::vector<SS_CARDTYPE> choicesList[NUM_SLOTS];
+	std::vector<SS_CARDTYPE> m_choicesList[NUM_SLOTS];
 
 	UINT m_mouseShowCrosshair;
 	UINT m_mouseRestrictToWindow;
