@@ -1,4 +1,11 @@
 /*
+2.9.4.0 Fixed right arrow follow branch address when target branch address was negative ($81 .. $FF)
+    Example:
+        2FE:90 81
+        2FE:90 FF
+
+2.9.3.4 Released with AppleWin 1.31.0.0
+
 2.9.3.4 Added: LOG to display debugger's current output level.
 2.9.3.3 Fixed: VERSION is always displayed regardless of console output level.
 2.9.3.2 Fixed: Duplicate symbols' address is displayed as an error.

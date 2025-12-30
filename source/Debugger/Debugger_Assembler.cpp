@@ -782,7 +782,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 				if (nTarget8 <= _6502_BRANCH_POS)
 					*pTargetPointer_ += nTarget8; // +
 				else
-					*pTargetPointer_ -= nTarget8; // -
+					*pTargetPointer_ -= (256 - nTarget8); // -  Two's complement
 
 				*pTargetPointer_ &= _6502_MEM_END;
 
