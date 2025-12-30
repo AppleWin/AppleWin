@@ -65,6 +65,7 @@ public:
 	bool IsParallelPrinterCardInstalled(void) { return m_pParallelPrinterCard != NULL; }
 	class VidHDCard* GetVidHDCard(void) { return m_pVidHDCard; }
 	void GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::string& choices, std::vector<SS_CARDTYPE>& choicesList);
+	void GetCardChoicesForAuxSlot(std::string& choices, std::vector<SS_CARDTYPE>& choicesList);
 
 	void InitializeIO(LPBYTE pCxRomPeripheral);
 	void Destroy(void);

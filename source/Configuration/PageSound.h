@@ -37,10 +37,7 @@ protected:
 	virtual void DlgCANCEL(HWND hWnd){}
 
 private:
-	enum AUXCARDCHOICE { SC_80COL = 0, SC_EXT80COL, SC_RAMWORKS, SC_AUX_EMPTY };
-
 	void InitOptions(HWND hWnd);
-	AUXCARDCHOICE AuxCardTypeToComboItem(SS_CARDTYPE card);
 	int CardTypeToComboItem(UINT slot);
 
 	static INT_PTR CALLBACK DlgProcDisk2(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
@@ -83,12 +80,12 @@ private:
 
 	static const UINT VOLUME_MIN = 0;
 	static const UINT VOLUME_MAX = 59;
-	static const char m_auxChoices[];
 
 	static const char m_defaultDiskOptions[];
 	static const char m_defaultHDDOptions[];
 
 	std::vector<SS_CARDTYPE> m_choicesList[NUM_SLOTS];
+	std::vector<SS_CARDTYPE> m_choicesListAux;
 
 	UINT m_mouseShowCrosshair;
 	UINT m_mouseRestrictToWindow;

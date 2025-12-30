@@ -434,3 +434,30 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 
 	choices += '\0';
 }
+
+void CardManager::GetCardChoicesForAuxSlot(std::string& choices, std::vector<SS_CARDTYPE>& choicesList)
+{
+	// Availability & order of cards in drop-down menu:
+	const SS_CARDTYPE cards[] =
+	{
+	CT_Empty,
+	CT_80Col,
+	CT_Extended80Col,
+	CT_RamWorksIII
+	};
+
+	choicesList.clear();
+
+	for (UINT i = 0; i < sizeof(cards) / sizeof(cards[0]); i++)
+	{
+		const SS_CARDTYPE thisCard = cards[i];
+
+		std::string name = Card::GetCardName(thisCard);
+		choices += name;
+		choices += '\0';
+
+		choicesList.push_back(thisCard);
+	}
+
+	choices += '\0';
+}

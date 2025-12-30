@@ -53,11 +53,6 @@ const char CPageSound::m_defaultHDDOptions[] =
 				"Select Hard Disk Image...\0"
 				"Unplug Hard Disk Image\0";
 
-const char CPageSound::m_auxChoices[] =	"80-column (1KB)\0"
-										"Extended 80-column (64KB)\0"
-										"RamWorks III\0"
-										"Empty\0";
-
 INT_PTR CALLBACK CPageSound::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
@@ -138,14 +133,10 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				const uint32_t newChoiceItem = (uint32_t)SendDlgItemMessage(hWnd, LOWORD(wparam), CB_GETCURSEL, 0, 0);
 
 				SS_CARDTYPE newCard = CT_Empty;
-				switch (newChoiceItem)
-				{
-				case SC_80COL: newCard = CT_80Col; break;
-				case SC_EXT80COL: newCard = CT_Extended80Col; break;
-				case SC_RAMWORKS: newCard = CT_RamWorksIII; break;
-				case SC_AUX_EMPTY: newCard = CT_Empty; break;
-				default: _ASSERT(0); break;
-				}
+				if (newChoiceItem < m_choicesListAux.size())
+					newCard = m_choicesListAux[newChoiceItem];
+				else
+					_ASSERT(0);
 
 				m_PropertySheetHelper.GetConfigNew().m_SlotAux = newCard;
 
@@ -247,24 +238,23 @@ void CPageSound::DlgOK(HWND hWnd)
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
-CPageSound::AUXCARDCHOICE CPageSound::AuxCardTypeToComboItem(SS_CARDTYPE card)
-{
-	switch (card)
-	{
-	case CT_80Col: return SC_80COL;
-	case CT_Extended80Col: return SC_EXT80COL;
-	case CT_RamWorksIII: return SC_RAMWORKS;
-	case CT_Empty: return SC_AUX_EMPTY;
-	default: _ASSERT(0); return SC_AUX_EMPTY;
-	}
-}
-
 int CPageSound::CardTypeToComboItem(UINT slot)
 {
 	int currentChoice = 0;
-	for (UINT i = 0; i < m_choicesList[slot].size(); i++)
-		if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == m_choicesList[slot][i])
-			currentChoice = i;
+
+	if (slot < NUM_SLOTS)
+	{
+		for (UINT i = 0; i < m_choicesList[slot].size(); i++)
+			if (m_PropertySheetHelper.GetConfigNew().m_Slot[slot] == m_choicesList[slot][i])
+				currentChoice = i;
+	}
+	else
+	{
+		_ASSERT(slot == SLOT_AUX);
+		for (UINT i = 0; i < m_choicesListAux.size(); i++)
+			if (m_PropertySheetHelper.GetConfigNew().m_SlotAux == m_choicesListAux[i])
+				currentChoice = i;
+	}
 
 	return currentChoice;
 }
@@ -298,8 +288,10 @@ void CPageSound::InitOptions(HWND hWnd)
 
 	if (IsAppleIIe(GetApple2Type()))
 	{
-		const SS_CARDTYPE slotAux = m_PropertySheetHelper.GetConfigNew().m_SlotAux;
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOTAUX, m_auxChoices, (int)AuxCardTypeToComboItem(slotAux));
+		std::string choices;
+		GetCardMgr().GetCardChoicesForAuxSlot(choices, m_choicesListAux);
+		int currentChoice = CardTypeToComboItem(SLOT_AUX);
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOTAUX, choices.c_str(), currentChoice);
 	}
 	else
 	{
