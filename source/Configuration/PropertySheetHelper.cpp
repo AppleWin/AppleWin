@@ -333,7 +333,10 @@ bool CPropertySheetHelper::CheckChangesForRestart(HWND hWnd)
 void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
 {
 	if (CONFIG_CHANGED_LOCAL(m_Apple2Type))
+	{
 		SaveComputerType(ConfigNew.m_Apple2Type);
+		SetApple2Type(ConfigNew.m_Apple2Type);	// Needed by InitializeIO() so that SLOT0 LC matches Apple2Type
+	}
 
 	if (CONFIG_CHANGED_LOCAL(m_CpuType))
 		SaveCpuType(ConfigNew.m_CpuType);

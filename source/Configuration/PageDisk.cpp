@@ -176,8 +176,6 @@ INT_PTR CPageDisk::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARA
 
 	case WM_INITDIALOG:
 		{
-//			CheckDlgButton(hWnd, IDC_DISKII_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiStatus() ? BST_CHECKED : BST_UNCHECKED);
-
 			const UINT slot = SLOT6;
 			if (GetCardMgr().QuerySlot(slot) == CT_Disk2)	// NB. SLOT6 not setup in m_PropertySheetHelper.GetConfigNew().m_Slot[]
 				InitComboFloppyDrive(hWnd, slot);

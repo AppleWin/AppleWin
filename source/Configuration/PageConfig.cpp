@@ -127,12 +127,12 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		case IDC_COMPUTER:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const uint32_t NewComputerMenuItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
-				const eApple2Type NewApple2Type = GetApple2Type(NewComputerMenuItem);
-				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewApple2Type;
-				if (NewApple2Type != A2TYPE_CLONE)
+				const uint32_t newComputerMenuItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
+				const eApple2Type newApple2Type = GetApple2Type(newComputerMenuItem);
+				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = newApple2Type;
+				if (newApple2Type != A2TYPE_CLONE)
 				{
-					m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewApple2Type);
+					m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(newApple2Type);
 				}
 				else // A2TYPE_CLONE
 				{
@@ -140,6 +140,13 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 					// - Set correctly in PageAdvanced.cpp for IDC_CLONETYPE
 					m_PropertySheetHelper.GetConfigNew().m_CpuType = CPU_UNKNOWN;
 				}
+
+				if (IsApple2Original(newApple2Type))
+					m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT0] = CT_Empty;
+				else if (IsApple2PlusOrClone(newApple2Type))
+					m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT0] = CT_LanguageCard;
+				else
+					m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT0] = CT_LanguageCardIIe;
 			}
 			break;
 

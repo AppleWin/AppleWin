@@ -241,22 +241,26 @@ int CPageSound::CardTypeToComboItem(UINT slot)
 
 void CPageSound::InitOptions(HWND hWnd)
 {
+	BOOL enable = FALSE;
+
 	SS_CARDTYPE currConfig[NUM_SLOTS];
 	for (int i = SLOT0; i < NUM_SLOTS; i++)
 		currConfig[i] = m_PropertySheetHelper.GetConfigNew().m_Slot[i];
 
-	if (IsApple2PlusOrClone(GetApple2Type()))
+	if (IsApple2PlusOrClone(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
 	{
 		std::string choices;
 		GetCardMgr().GetCardChoicesForSlot(SLOT0, currConfig, choices, m_choicesList[SLOT0]);
 		int currentChoice = CardTypeToComboItem(SLOT0);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0, choices.c_str(), currentChoice);
+		enable = TRUE;
 	}
 	else
 	{
-		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0), FALSE);
-		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0_OPTION), FALSE);
+		enable = FALSE;
 	}
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT0), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT0_OPTION), enable);
 
 	for (int slot = SLOT1; slot < NUM_SLOTS; slot++)
 	{
@@ -266,18 +270,20 @@ void CPageSound::InitOptions(HWND hWnd)
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0 + slot * 2, choices.c_str(), currentChoice);
 	}
 
-	if (IsAppleIIe(GetApple2Type()))
+	if (IsAppleIIe(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
 	{
 		std::string choices;
 		GetCardMgr().GetCardChoicesForAuxSlot(choices, m_choicesListAux);
 		int currentChoice = CardTypeToComboItem(SLOT_AUX);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOTAUX, choices.c_str(), currentChoice);
+		enable = TRUE;
 	}
 	else
 	{
-		EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX), FALSE);
-		EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX_OPTION), FALSE);
+		enable = FALSE;
 	}
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX_OPTION), enable);
 
 	//
 
