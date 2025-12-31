@@ -737,10 +737,9 @@ static void RepeatInitialization(void)
 	// Init palette color
 	VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
-	// Allow the 4 hardcoded slots to be configurated as empty
+	// Allow the slots to be configured as empty
 	// NB. this state *is* persisted to the Registry/conf.ini (just like '-s7 empty' is)
-	// TODO: support bSlotEmpty[] for slots: 0
-	for (UINT i = SLOT1; i < NUM_SLOTS; i++)
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
 		if (g_cmdLine.bSlotEmpty[i])
 			GetCardMgr().Remove(i);
@@ -961,12 +960,10 @@ static void RepeatInitialization(void)
 			LogFileOutput("Main: HookFilterForKeyboard()\n");
 	}
 
-	// Need to test if it's safe to call ResetMachineState(). In the meantime, just call Disk2Card's Reset():
-	GetCardMgr().GetDisk2CardMgr().Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
-	LogFileOutput("Main: DiskReset()\n");
-	if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
-		GetCardMgr().GetRef(SLOT7).Reset(true);	// GH#515
-	LogFileOutput("Main: HDDReset()\n");
+	// Need to test if it's safe to call ResetMachineState(). In the meantime, just Reset() all cards:
+	// . Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor; and GH#515 (for HDCs)
+	GetCardMgr().Reset(true);
+	LogFileOutput("Main: GetCardMgr().Reset()\n");
 
 	if (!g_bSysClkOK)
 	{

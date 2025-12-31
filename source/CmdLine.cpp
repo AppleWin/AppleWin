@@ -162,7 +162,9 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)
+			if (strcmp(lpCmdLine, "empty") == 0)
+				g_cmdLine.bSlotEmpty[SLOT0] = true;
+			else if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)
 				g_cmdLine.uSaturnBanks = Saturn128K::kMaxSaturnBanks;
 			else if (strcmp(lpCmdLine, "saturn64") == 0)
 				g_cmdLine.uSaturnBanks = Saturn128K::kMaxSaturnBanks / 2;

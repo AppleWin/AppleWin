@@ -312,7 +312,7 @@ static void SetExpansionMemTypeDefault(void)
 	SetExpansionMemType(defaultType);
 }
 
-// Called from SetExpansionMemTypeDefault(), MemLoadSnapshotAux(), SaveState.cpp_ParseSlots(), cmd-line switch
+// Called from SetExpansionMemTypeDefault(), LoadConfiguration(), RepeatInitialization(), MemLoadSnapshotAux(), SaveState.cpp_ParseSlots(), cmd-line switch
 void SetExpansionMemType(const SS_CARDTYPE type, bool updateRegistry/*=true*/)
 {
 	SS_CARDTYPE newSlot0Card;
