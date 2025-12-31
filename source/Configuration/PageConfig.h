@@ -23,6 +23,8 @@ public:
 	UINT GetScrollLockToggle(void) { return m_uScrollLockToggle; }
 	void SetScrollLockToggle(UINT uValue) { m_uScrollLockToggle = uValue; }
 
+	uint32_t GetVolumeMax(void) { return VOLUME_MAX; }
+
 protected:
 	// IPropertySheetPage
 	virtual INT_PTR DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
@@ -38,6 +40,9 @@ private:
 
 	static CPageConfig* ms_this;
 	static const char m_ComputerChoices[];
+
+	static const UINT VOLUME_MIN = 0;
+	static const UINT VOLUME_MAX = 59;
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;

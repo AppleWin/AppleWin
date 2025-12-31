@@ -87,7 +87,7 @@ void CPropertySheet::Init(void)
 
 uint32_t CPropertySheet::GetVolumeMax()
 {
-	return m_PageSound.GetVolumeMax();
+	return m_PageConfig.GetVolumeMax();
 }
 
 // Called when F11/F12 is pressed

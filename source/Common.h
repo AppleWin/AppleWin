@@ -69,9 +69,9 @@ enum AppMode_e
 #define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
 #define  REGVALUE_FS_SHOW_SUBUNIT_STATUS "Full-screen show subunit status"
 #define  REGVALUE_SHOW_DISKII_STATUS "Show Disk II Status"
-#define  REGVALUE_SOUND_EMULATION    "Sound Emulation"
-#define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
-#define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
+//#define  REGVALUE_SOUND_EMULATION    "Sound Emulation"	// Deprecated from 1.31.1
+#define  REGVALUE_MASTER_VOLUME      "Master volume"
+#define  REGVALUE_SPKR_VOLUME        "Speaker Volume"		// Deprecated from 1.31.1
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"		// Deprecated from 1.30.5

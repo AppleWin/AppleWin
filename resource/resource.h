@@ -77,8 +77,8 @@
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
 #define IDC_SAVESTATE_FILENAME          1008
-#define IDC_SPKR_VOLUME                 1009
-#define IDC_MB_VOLUME                   1010
+#define IDC_MASTER_VOLUME_T             1009
+#define IDC_SLIDER_MASTER_VOLUME        1010
 #define IDC_SAVESTATE_BROWSE            1011
 #define IDC_MONOCOLOR                   1012
 #define IDC_DISKII_SLOT5_ENABLE         1019

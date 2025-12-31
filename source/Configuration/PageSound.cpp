@@ -32,11 +32,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Harddisk.h"
 #include "../Interface.h"
 #include "../Memory.h"
-#include "../Mockingboard.h"
 #include "../ParallelPrinter.h"
 #include "../Registry.h"
 #include "../SerialComms.h"
-#include "../Speaker.h"
 #include "../resource/resource.h"
 #include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
@@ -96,12 +94,6 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 	case WM_COMMAND:
 		switch (LOWORD(wparam))
 		{
-#if 0
-		case IDC_SPKR_VOLUME:
-			break;
-		case IDC_MB_VOLUME:
-			break;
-#endif
 		case IDC_SLOT0:
 		case IDC_SLOT1:
 		case IDC_SLOT2:
@@ -223,18 +215,6 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 
 void CPageSound::DlgOK(HWND hWnd)
 {
-	uint32_t dwSoundType = REG_SOUNDTYPE_WAVE;
-	REGSAVE(REGVALUE_SOUND_EMULATION, dwSoundType);
-
-	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
-	const uint32_t dwSpkrVolume = 0;
-	SpkrSetVolume(dwSpkrVolume, VOLUME_MAX);
-	const uint32_t dwMBVolume = 0;
-	GetCardMgr().GetMockingboardCardMgr().SetVolume(dwMBVolume, VOLUME_MAX);
-
-	REGSAVE(REGVALUE_SPKR_VOLUME, SpkrGetVolume());
-	REGSAVE(REGVALUE_MB_VOLUME, GetCardMgr().GetMockingboardCardMgr().GetVolume());
-
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 

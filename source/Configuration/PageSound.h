@@ -28,8 +28,6 @@ public:
 	UINT GetMouseRestrictToWindow(void) { return m_mouseRestrictToWindow; }
 	void SetMouseRestrictToWindow(UINT uValue) { m_mouseRestrictToWindow = uValue; }
 
-	uint32_t GetVolumeMax(void){ return VOLUME_MAX; }
-
 protected:
 	// IPropertySheetPage
 	virtual INT_PTR DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
@@ -77,9 +75,6 @@ private:
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
 	CPageConfigTfe m_PageConfigTfe;
-
-	static const UINT VOLUME_MIN = 0;
-	static const UINT VOLUME_MAX = 59;
 
 	static const char m_defaultDiskOptions[];
 	static const char m_defaultHDDOptions[];

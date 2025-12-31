@@ -171,21 +171,6 @@ void LoadConfiguration(bool loadImages)
 	else
 		SetCopyProtectionDongleType(DT_EMPTY);
 
-	uint32_t dwSoundType;
-	REGLOAD_DEFAULT(REGVALUE_SOUND_EMULATION, &dwSoundType, REG_SOUNDTYPE_WAVE);
-	switch (dwSoundType)
-	{
-	case REG_SOUNDTYPE_NONE:
-	case REG_SOUNDTYPE_DIRECT:	// Not supported from 1.26
-	case REG_SOUNDTYPE_SMART:	// Not supported from 1.26
-	default:
-		soundtype = SOUND_NONE;
-		break;
-	case REG_SOUNDTYPE_WAVE:
-		soundtype = SOUND_WAVE;
-		break;
-	}
-
 	REGLOAD_DEFAULT(REGVALUE_EMULATION_SPEED, &g_dwSpeed, SPEED_NORMAL);
 	GetVideo().Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
@@ -294,11 +279,12 @@ void LoadConfiguration(bool loadImages)
 		}
 	}
 
-	if(REGLOAD(REGVALUE_SPKR_VOLUME, &dwTmp))
+	if (REGLOAD(REGVALUE_MASTER_VOLUME, &dwTmp) ||	// Try MASTER_VOLUME
+		REGLOAD(REGVALUE_SPKR_VOLUME, &dwTmp))		// ...else try older SPKR_VOLUME
+	{
 		SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
-
-	if(REGLOAD(REGVALUE_MB_VOLUME, &dwTmp))
 		GetCardMgr().GetMockingboardCardMgr().SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
+	}
 
 	// Load save-state pathname *before* inserting any harddisk/disk images (for both init & reinit cases)
 	// NB. inserting harddisk/disk can change snapshot pathname

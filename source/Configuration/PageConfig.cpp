@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Registry.h"
 #include "../CardManager.h"
 #include "../Interface.h"
+#include "../Speaker.h"
 #include "../resource/resource.h"
 
 CPageConfig* CPageConfig::ms_this = 0;	// reinit'd in ctor
@@ -167,10 +168,6 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		} // switch( (LOWORD(wparam))
 		break; // WM_COMMAND
 
-	case WM_HSCROLL:
-		CheckRadioButton(hWnd, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);	// FirstButton, LastButton, CheckButton
-		break;
-
 	case WM_INITDIALOG:
 		{
 			// Convert Apple2 type to menu item
@@ -207,6 +204,15 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? BST_CHECKED : BST_UNCHECKED);
 
 			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideo().GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
+
+			//
+
+			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETRANGE, TRUE, MAKELONG(VOLUME_MIN, VOLUME_MAX));
+			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPAGESIZE, 0, 10);
+			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETTICFREQ, 10, 0);
+			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPOS, TRUE, VOLUME_MAX - SpkrGetVolume());	// Invert: L=MIN, R=MAX
+
+			//
 
 			CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
 
@@ -326,6 +332,15 @@ void CPageConfig::DlgOK(HWND hWnd)
 		REGSAVE(REGVALUE_CONFIRM_REBOOT, bNewConfirmReboot);
 		win32Frame.g_bConfirmReboot = bNewConfirmReboot;
 	}
+
+	//
+
+	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
+	const uint32_t masterVolume = VOLUME_MAX - (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_GETPOS, 0, 0);	// Invert: L=MIN, R=MAX
+	SpkrSetVolume(masterVolume, VOLUME_MAX);
+	GetCardMgr().GetMockingboardCardMgr().SetVolume(masterVolume, VOLUME_MAX);
+
+	REGSAVE(REGVALUE_MASTER_VOLUME, masterVolume);
 
 	//
 
