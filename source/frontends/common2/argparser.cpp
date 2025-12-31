@@ -250,7 +250,7 @@ namespace common2
             {
                 if (optind < argc)
                 {
-                    std::cerr << "Uexpected positional argument: '" << argv[optind] << "'" << std::endl << std::endl;
+                    std::cerr << "Unexpected positional argument: '" << argv[optind] << "'" << std::endl << std::endl;
                     printHelp(allOptions);
                     return false;
                 }
