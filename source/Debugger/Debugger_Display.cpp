@@ -2985,9 +2985,9 @@ void DrawStack ( int line)
 	if (! ((g_iWindowThis == WINDOW_CODE) || ((g_iWindowThis == WINDOW_DATA))))
 		return;
 
-	unsigned nAddress = regs.sp;
+	unsigned nStackAddress = regs.sp;
 #if DEBUG_FORCE_DISPLAY // Stack
-	nAddress = 0x100;
+	nStackAddress = _6502_STACK_BEGIN;
 #endif
 
 	int nFontWidth = g_aFontConfig[ FONT_INFO ]._nFontWidthAvg;
@@ -2995,29 +2995,51 @@ void DrawStack ( int line)
 	// 2.6.0.0 Alpha - Stack was dark cyan BG_DATA_1
 	DebuggerSetColorBG( DebuggerGetColor( BG_DATA_1 )); // BG_INFO // recessed 3d look
 
+	// 2.9.4.3 Normally we would display a maximum of 8 lines ending when we hit the stack end $200 ...
+	//     [ S, min(S+8,$1FF) ], or
+	//     [ S, min(S+8,$200) )
+	// ... but we need to handle two edge cases:
+	//     S = $1FE   Display $1FF, $100  NonInclusiveEnd = $101
+	//     S = $1FF   Display $100, $101  NonInclusiveEnd = $102
+	//    DrawStack()
+	//    DrawTargets()
+/*
+; Repro
+   MD1 100
+   MD2 1FC
+   100:61 FA
+   1FD:FD FE FF 00
+   R PC FBFC
+   R S FD   ; FFFF sans overflow
+   R S FE   ; 6200 with overflow
+   R S FF   ; FA62 with overflow
+*/
+	const unsigned nHead    = nStackAddress + MAX_DISPLAY_STACK_LINES;
+	const unsigned nTail    = _6502_STACK_END + 1;
+	const unsigned nEndAddr = (nStackAddress >= (_6502_STACK_END - 1))
+		? ((nStackAddress & 1) + 1) | _6502_STACK_BEGIN
+		: min( nHead, nTail );
+
 	int    iStack = 0;
 	while (iStack < MAX_DISPLAY_STACK_LINES)
 	{
-		nAddress++;
+		nStackAddress++;
+		if (nStackAddress == nEndAddr)
+			break;
+		nStackAddress &= _6502_STACK_END;
+		nStackAddress |= _6502_STACK_BEGIN;
 
 		RECT rect;
 		rect.left   = DISPLAY_STACK_COLUMN;
 		rect.top    = (iStack+line) * g_nFontHeight;
-		rect.right = rect.left + (10 * nFontWidth) + 1;
+		rect.right  = rect.left + (10 * nFontWidth) + 1;
 		rect.bottom = rect.top + g_nFontHeight;
 
 		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_TITLE )); // [COLOR_STATIC
+		PrintTextCursorX( StrFormat( "%04X: ", nStackAddress ).c_str(), rect );
 
-		if (nAddress <= _6502_STACK_END)
-		{
-			PrintTextCursorX( StrFormat( "%04X: ", nAddress ).c_str(), rect );
-		}
-
-		if (nAddress <= _6502_STACK_END)
-		{
-			DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // COLOR_FG_DATA_TEXT
-			PrintTextCursorX(StrFormat("  %02X", ReadByteFromMemory(nAddress)).c_str(), rect);
-		}
+		DebuggerSetColorFG( DebuggerGetColor( FG_INFO_OPCODE )); // COLOR_FG_DATA_TEXT
+		PrintTextCursorX(StrFormat("  %02X", ReadByteFromMemory(nStackAddress)).c_str(), rect);
 		iStack++;
 	}
 }
@@ -3058,7 +3080,24 @@ void DrawTargets ( int line)
 			if (iAddress)
 				sData = ByteToHexStr(ReadByteFromMemory(aTarget[iAddress]));
 			else
-				sData = WordToHexStr(ReadWordFromMemory(aTarget[iAddress]));
+			{
+				WORD nAddr = aTarget[iAddress];
+				WORD nData = ReadWordFromMemory(nAddr);
+
+				// 2.9.4.3 Handle stack wrap around for edge cases of fetching 16-bit return address when SP == 0x1FF
+				// See:
+				//    DrawStack()
+				//    DrawTargets()
+				if (nAddr == _6502_STACK_END)
+				{
+					int nRTSLo = ReadByteFromMemory( ((nAddr + 0) & _6502_STACK_END) | _6502_STACK_BEGIN );
+					int nRTSHi = ReadByteFromMemory( ((nAddr + 1) & _6502_STACK_END) | _6502_STACK_BEGIN );
+					int nRTS   = (nRTSHi << 8) | nRTSLo;
+					nData = ++nRTS & _6502_MEM_END; // /!\ NOTE: 6502 increments return address when popping from stack
+				}
+
+				sData = WordToHexStr(nData);
+			}
 		}
 
 		rect.left   = DISPLAY_TARGETS_COLUMN;
