@@ -822,12 +822,26 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 //===========================================================================
 bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 {
-	int iOpcode;
-	int iOpmode;
-	int nOpbytes;
-	iOpcode = _6502_GetOpmodeOpbyte( nAddress, iOpmode, nOpbytes );
-
-	// Composite string that has the target nAddress
+	      int              iOpcode;
+	      int              iOpmode;
+	      AddressingMode_e eOpmode;
+	      int              nOpbytes;
+	const DisasmData_t    *pDisasmData = NULL;
+	iOpcode = _6502_GetOpmodeOpbyte( nAddress, iOpmode, nOpbytes, &pDisasmData );
+	eOpmode = (AddressingMode_e) iOpmode;
+	if (eOpmode == AM_DATA)
+	{
+		// We have pure data, such as a string, that has no target address
+		// TODO: UI: We should flash the cursor line red to signal the user that we can't follow a nonexistent target address.
+		return false;
+	}
+	else
+	if (pDisasmData && nOpbytes)
+	{
+		// User marked bytes up as custom data
+		nTarget_ = pDisasmData->nTargetAddress;
+		return true;
+	}
 
 	if ((iOpmode != AM_IMPLIED) &&
 		(iOpmode != AM_1) &&
