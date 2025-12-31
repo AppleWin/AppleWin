@@ -179,7 +179,7 @@ namespace common2
                  {"d1",                      required_argument,    '1',              "Disk in S6D1 drive"},
                  {"d2",                      required_argument,    '2',              "Disk in S6D2 drive"},
                  {"h1",                      required_argument,    DISK_H1,          "Hard Disk in 1st drive"},
-                 {"h2",                      required_argument,    DISK_H2,          "Hard Disk in 1st drive"},
+                 {"h2",                      required_argument,    DISK_H2,          "Hard Disk in 2nd drive"},
              }},
             {"Snapshot",
              {
