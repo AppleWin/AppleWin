@@ -3806,7 +3806,20 @@ Update_t CmdCursorPageUp4K (int nArgs)
 Update_t CmdCursorSetPC (int nArgs)
 {
 	regs.pc = g_nDisasmCurAddress; // set PC to current cursor address
-	return UPDATE_DISASM;
+
+	// 2.9.4.4 Fixed: Ctrl Right-Arrow now updates targets.
+	// We can't | UPDATE_TARGETS as that erases most of the INFO window!
+	// We really should add an UPDATE_INFO flag but for now UPDATE_ALL is good enough.
+/* Repro
+   1FD:FD FE FF 00
+   R PC FBFB
+   R S FC
+   Down-arrow
+   CTRL Right-arrow
+   Up-arrow
+   CTRL Right-arrow
+*/
+	return UPDATE_ALL;
 }
 
 
