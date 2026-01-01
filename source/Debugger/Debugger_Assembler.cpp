@@ -868,6 +868,38 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 			return true;
 		}
 	}
+	else
+	if (iOpcode == OPCODE_RTS)
+	{
+		int nStackAddr  = regs.sp + 1;
+		int nReturnAddr = ReadWordFromMemory( nStackAddr );
+
+		// Handle stack wrap around for edge cases of fetching 16-bit return address when SP == 0x1FE or 0x1FF
+		//    $100: 61
+		//    $101: FA
+		//         :
+		//    $1FD: FD
+		//    $1FE: FE
+		//    $1FF: FF
+		//    $200: 00
+		// Repro
+		//   100:61 FA
+		//   1FD:FD FE FF 00
+		//   R PC FBFC
+		//   R S FD   ; FFFF sans overflow
+		//   R S FE   ; 6200 with overflow
+		//   R S FF   ; FA62 with overflow
+		if (nStackAddr >= (_6502_STACK_END - 1))
+		{
+			int RetLo = ReadByteFromMemory( ((nStackAddr + 0) & _6502_STACK_END) | _6502_STACK_BEGIN );
+			int RetHi = ReadByteFromMemory( ((nStackAddr + 1) & _6502_STACK_END) | _6502_STACK_BEGIN );
+			nReturnAddr = (RetHi << 8) | RetLo;
+		}
+
+		nTarget_ = ++nReturnAddr & _6502_MEM_END; // /!\ NOTE: 6502 increments return address when popping from stack
+		return true;
+	}
+
 	return false;
 }
 
