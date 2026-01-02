@@ -13,7 +13,7 @@ public:
 
     struct TapeInfo
     {
-        std::string filename;
+        std::string_view filename;
         size_t size;
         size_t pos;
         int frequency;

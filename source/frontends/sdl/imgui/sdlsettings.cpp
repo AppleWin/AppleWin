@@ -706,7 +706,7 @@ namespace sa2
                         ImGui::ProgressBar(fraction, ImVec2(-FLT_MIN, 0), buf);
                         ImGui::PopStyleColor();
 
-                        ImGui::LabelText("Filename", "%s", info.filename.c_str());
+                        ImGui::LabelText("Filename", "%s", info.filename.data());
                         ImGui::LabelText("Frequency", "%d Hz", info.frequency);
                         ImGui::LabelText("Auto Play", "%s", "ON");
 
