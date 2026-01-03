@@ -6,6 +6,7 @@
 // some #ifdefs are still present in the code, where this is easier to handle
 
 #ifdef SA2_SDL3
+
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_opengl.h>
 #include <SDL3_image/SDL_image.h>
@@ -18,6 +19,7 @@
 #define SA2_CONTROLLER_BUTTON(e) e.gbutton.button
 #define SA2_BUTTON_DOWN(e) e.down
 #define SA2_DROP_FILE(d) d.data
+#define SA2_FREE_DROP(d) (void)0
 #define SA2_RENDERER_LOGICAL_SIZE(r, w, h) SDL_RenderSetLogicalSize(r, w, h, SDL_LOGICAL_PRESENTATION_STRETCH)
 #define SA2_IMAGE_BITS(s) SDL_GetPixelFormatDetails(s->format)->bits_per_pixel
 #define SA2_KEY_CODE(e) e.key
@@ -31,7 +33,9 @@ inline bool sa2_ok(const bool r)
 
 typedef SDL_FRect Renderer_Rect_t;
 typedef SDL_PixelFormat PixelFormat_t;
+
 #else
+
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <SDL_image.h>
@@ -44,6 +48,7 @@ typedef SDL_PixelFormat PixelFormat_t;
 #define SA2_CONTROLLER_BUTTON(e) e.cbutton.button
 #define SA2_BUTTON_DOWN(e) (e.state == SDL_PRESSED)
 #define SA2_DROP_FILE(d) d.file
+#define SA2_FREE_DROP(d) SDL_free(d.file)
 #define SA2_RENDERER_LOGICAL_SIZE(r, w, h) SDL_RenderSetLogicalSize(r, w, h)
 #define SA2_IMAGE_BITS(s) s->format->BitsPerPixel
 #define SA2_KEY_CODE(e) e.keysym.sym
@@ -57,6 +62,7 @@ inline bool sa2_ok(const int r)
 
 typedef SDL_Rect Renderer_Rect_t;
 typedef SDL_PixelFormatEnum PixelFormat_t;
+
 #endif
 
 namespace common2

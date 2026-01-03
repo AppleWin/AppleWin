@@ -313,9 +313,7 @@ namespace sa2
         case SDL_DROPFILE:
         {
             ProcessDropEvent(e.drop);
-#if !SDL_VERSION_ATLEAST(3, 0, 0)
-            SDL_free(e.drop.file);
-#endif
+            SA2_FREE_DROP(e.drop);
             break;
         }
         case SDL_CONTROLLERBUTTONDOWN:

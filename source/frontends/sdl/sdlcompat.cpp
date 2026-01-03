@@ -10,6 +10,7 @@ namespace sa2
     {
 
 #if SDL_VERSION_ATLEAST(3, 0, 0)
+
         int getNumJoysticks()
         {
             int count = 0;

@@ -59,11 +59,12 @@ namespace
 #if SDL_VERSION_ATLEAST(3, 0, 0)
         static void staticAudioCallback3(
             void *userdata, SDL_AudioStream *stream, int additional_amount, int total_amount);
-        SDL_AudioStream *myAudioStream;
+        std::shared_ptr<SDL_AudioStream> myAudioStream;
 #endif
 
         std::vector<uint8_t> myMixerBuffer;
         SDL_AudioSpec myAudioSpec;
+        int mySilence;
 
         size_t myBytesPerSecond;
 
@@ -120,12 +121,7 @@ namespace
         const size_t gap = len - bytesRead;
         if (gap)
         {
-#if SDL_VERSION_ATLEAST(3, 0, 0)
-            const auto silence = SDL_GetSilenceValueForFormat(myAudioSpec.format);
-#else
-            const auto &silence = myAudioSpec.silence;
-#endif
-            memset(stream, silence, gap);
+            memset(stream, mySilence, gap);
         }
     }
 
@@ -142,12 +138,15 @@ namespace
         myAudioSpec.freq = mySampleRate;
         myAudioSpec.format = AUDIO_S16LSB;
         myAudioSpec.channels = myChannels;
-        myAudioStream =
-            SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &myAudioSpec, staticAudioCallback3, this);
+        myAudioStream.reset(
+            SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &myAudioSpec, staticAudioCallback3, this),
+            SDL_DestroyAudioStream);
+
         if (myAudioStream)
         {
-            myAudioDevice = SDL_GetAudioStreamDevice(myAudioStream);
+            myAudioDevice = SDL_GetAudioStreamDevice(myAudioStream.get());
             myBytesPerSecond = getBytesPerSecond(myAudioSpec);
+            mySilence = SDL_GetSilenceValueForFormat(myAudioSpec.format);
         }
         else
         {
@@ -170,6 +169,7 @@ namespace
         if (myAudioDevice)
         {
             myBytesPerSecond = getBytesPerSecond(myAudioSpec);
+            mySilence = myAudioSpec.silence;
         }
         else
         {
@@ -183,9 +183,6 @@ namespace
         activeSoundGenerators.erase(this);
         sa2::compat::pauseAudioDevice(myAudioDevice);
         SDL_CloseAudioDevice(myAudioDevice);
-#if SDL_VERSION_ATLEAST(3, 0, 0)
-        SDL_DestroyAudioStream(myAudioStream);
-#endif
     }
 
     HRESULT DirectSoundGenerator::Stop()
