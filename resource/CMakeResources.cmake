@@ -27,18 +27,19 @@ function(add_resources out_var id)
 
   while(options)
     list(POP_FRONT options resource_id in_f_bin)
+    get_filename_component(in_f_name "${in_f_bin}" NAME)
 
-    set(out_f_cpp "${CMAKE_CURRENT_BINARY_DIR}/${in_f_bin}.cpp")
+    set(out_f_cpp "${CMAKE_CURRENT_BINARY_DIR}/${in_f_name}.cpp")
     add_custom_command(
       OUTPUT ${out_f_cpp}
-      COMMAND xxd -i ${in_f_bin} > ${out_f_cpp}
+      COMMAND xxd -i -n ${in_f_name} ${in_f_bin} > ${out_f_cpp}
       COMMENT "Adding resource: ${in_f_bin} -> ${out_f_cpp}"
       DEPENDS ${binary_file}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 
     # this is the same as what xxd does re. filename
-    string(REGEX REPLACE "[ ./-]" "_" symbol ${in_f_bin})
+    string(REGEX REPLACE "[ ./-]" "_" symbol ${in_f_name})
 
     string(APPEND content_cpp_private
       "// ${in_f_bin}\n"
