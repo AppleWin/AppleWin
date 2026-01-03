@@ -173,3 +173,6 @@
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
+
+// Added manually, to avoid conflicts
+#define IDB_IMGUI_FONT_COUSINE          10001

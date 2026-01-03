@@ -100,12 +100,16 @@ namespace sa2
         ImGui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
 
-        io.Fonts->AddFontDefault();
-        const auto debug6502TTF = GetResourceData(IDB_DEBUG_FONT_7_by_8);
         ImFontConfig fontConfig;
         fontConfig.FontDataOwnedByAtlas = false;
+
+        const auto cousineTTF = GetResourceData(IDB_IMGUI_FONT_COUSINE);
+        io.Fonts->AddFontFromMemoryTTF(
+            const_cast<unsigned char *>(cousineTTF.first), cousineTTF.second, 18.0f, &fontConfig);
+
+        const auto debug6502TTF = GetResourceData(IDB_DEBUG_FONT_7_by_8);
         myDebuggerFont = io.Fonts->AddFontFromMemoryTTF(
-            const_cast<unsigned char *>(debug6502TTF.first), debug6502TTF.second, 13, &fontConfig);
+            const_cast<unsigned char *>(debug6502TTF.first), debug6502TTF.second, 13.0f, &fontConfig);
 
         myIniFileLocation = common2::getConfigFile("imgui.ini").string();
         if (myIniFileLocation.empty())
