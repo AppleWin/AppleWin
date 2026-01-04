@@ -197,8 +197,8 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				{
 					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_RAMWORKS3, hWnd, CPageSound::DlgProcRamWorks3);
 				}
-				break;
 			}
+			break;
 
 		case IDC_SLOT_DEFAULT_CARDS:
 			{
@@ -209,8 +209,8 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 					m_PropertySheetHelper.GetConfigNew().m_SlotAux = GetCardMgr().QueryDefaultCardForSlot(SLOT_AUX, m_PropertySheetHelper.GetConfigNew().m_Apple2Type);
 
 				InitOptions(hWnd);
-				break;
 			}
+			break;
 		}
 		break;
 

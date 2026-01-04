@@ -613,23 +613,37 @@ std::string CPropertySheetHelper::GetSlot(const UINT slot)
 		return "Error: Illegal Slot!";
 	}
 
-	if (oldCardType == CT_Empty || newCardType == CT_Empty)
-	{
-		if (newCardType == CT_Empty)
-		{
-			strMsg += Card::GetCardName(oldCardType);
-			strMsg += " card removed\n";
-		}
-		else
-		{
-			strMsg += Card::GetCardName(newCardType);
-			strMsg += " card added\n";
-		}
-	}
-	else if (oldCardType == CT_LanguageCardIIe || newCardType == CT_LanguageCardIIe)
+	if (oldCardType == CT_LanguageCardIIe || newCardType == CT_LanguageCardIIe)
 	{
 		// Switch model: II/II+ (slot 0) <-> //e (no slot 0)
 		if (newCardType == CT_LanguageCardIIe)
+		{
+			if (oldCardType != CT_Empty)
+			{
+				strMsg += Card::GetCardName(oldCardType);
+				strMsg += " card removed\n";
+			}
+			else
+			{
+				strMsg = "";
+			}
+		}
+		else
+		{
+			if (newCardType != CT_Empty)
+			{
+				strMsg += Card::GetCardName(newCardType);
+				strMsg += " card added\n";
+			}
+			else
+			{
+				strMsg = "";
+			}
+		}
+	}
+	else if (oldCardType == CT_Empty || newCardType == CT_Empty)
+	{
+		if (newCardType == CT_Empty)
 		{
 			strMsg += Card::GetCardName(oldCardType);
 			strMsg += " card removed\n";
