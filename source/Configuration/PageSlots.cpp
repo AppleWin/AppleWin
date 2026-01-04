@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
-#include "PageSound.h"
+#include "PageSlots.h"
 #include "PropertySheet.h"
 
 #include "../Common.h"
@@ -40,24 +40,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Tfe/PCapBackend.h"
 #include "../Windows/Win32Frame.h"
 
-CPageSound* CPageSound::ms_this = nullptr;	// reinit'd in ctor
-UINT CPageSound::ms_slot = 0;
+CPageSlots* CPageSlots::ms_this = nullptr;	// reinit'd in ctor
+UINT CPageSlots::ms_slot = 0;
 
-const char CPageSound::m_defaultDiskOptions[] =
+const char CPageSlots::m_defaultDiskOptions[] =
 				"Select Disk...\0"
 				"Eject Disk\0";
 
-const char CPageSound::m_defaultHDDOptions[] =
+const char CPageSlots::m_defaultHDDOptions[] =
 				"Select Hard Disk Image...\0"
 				"Unplug Hard Disk Image\0";
 
-INT_PTR CALLBACK CPageSound::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageSlots::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
-	return CPageSound::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
+	return CPageSlots::ms_this->DlgProcInternal(hWnd, message, wparam, lparam);
 }
 
-INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
@@ -166,12 +166,12 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				if (cardInSlot == CT_Disk2)
 				{
 					ms_slot = slot;
-					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_FLOPPY_DISK_DRIVES, hWnd, CPageSound::DlgProcDisk2);
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_FLOPPY_DISK_DRIVES, hWnd, CPageSlots::DlgProcDisk2);
 				}
 				else if (cardInSlot == CT_GenericHDD)
 				{
 					ms_slot = slot;
-					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, CPageSound::DlgProcHarddisk);
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, CPageSlots::DlgProcHarddisk);
 				}
 				else if (cardInSlot == CT_Uthernet || cardInSlot == CT_Uthernet2)
 				{
@@ -182,15 +182,15 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				}
 				else if (cardInSlot == CT_SSC)
 				{
-					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_SSC, hWnd, CPageSound::DlgProcSSC);
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_SSC, hWnd, CPageSlots::DlgProcSSC);
 				}
 				else if (cardInSlot == CT_GenericPrinter)
 				{
-					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_PRINTER, hWnd, CPageSound::DlgProcPrinter);
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_PRINTER, hWnd, CPageSlots::DlgProcPrinter);
 				}
 				else if (cardInSlot == CT_MouseInterface)
 				{
-					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_MOUSECARD, hWnd, CPageSound::DlgProcMouseCard);
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_MOUSECARD, hWnd, CPageSlots::DlgProcMouseCard);
 				}
 			}
 			break;
@@ -200,7 +200,7 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_SlotAux;
 				if (cardInSlot == CT_RamWorksIII)
 				{
-					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_RAMWORKS3, hWnd, CPageSound::DlgProcRamWorks3);
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_RAMWORKS3, hWnd, CPageSlots::DlgProcRamWorks3);
 				}
 			}
 			break;
@@ -230,12 +230,12 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 	return TRUE;
 }
 
-void CPageSound::DlgOK(HWND hWnd)
+void CPageSlots::DlgOK(HWND hWnd)
 {
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
-int CPageSound::CardTypeToComboItem(UINT slot)
+int CPageSlots::CardTypeToComboItem(UINT slot)
 {
 	int currentChoice = 0;
 
@@ -256,7 +256,7 @@ int CPageSound::CardTypeToComboItem(UINT slot)
 	return currentChoice;
 }
 
-void CPageSound::InitOptions(HWND hWnd)
+void CPageSlots::InitOptions(HWND hWnd)
 {
 	BOOL enable = FALSE;
 
@@ -323,13 +323,13 @@ void CPageSound::InitOptions(HWND hWnd)
 
 //===========================================================================
 
-INT_PTR CALLBACK CPageSound::DlgProcDisk2(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageSlots::DlgProcDisk2(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
-	return CPageSound::ms_this->DlgProcDisk2Internal(hWnd, message, wparam, lparam);
+	return CPageSlots::ms_this->DlgProcDisk2Internal(hWnd, message, wparam, lparam);
 }
 
-INT_PTR CPageSound::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageSlots::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
@@ -389,7 +389,7 @@ INT_PTR CPageSound::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 	return TRUE;
 }
 
-void CPageSound::InitComboFloppyDrive(HWND hWnd, UINT slot)
+void CPageSlots::InitComboFloppyDrive(HWND hWnd, UINT slot)
 {
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_DISK1, m_defaultDiskOptions, -1);
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_DISK2, m_defaultDiskOptions, -1);
@@ -409,7 +409,7 @@ void CPageSound::InitComboFloppyDrive(HWND hWnd, UINT slot)
 	}
 }
 
-void CPageSound::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot)
+void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot)
 {
 	Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 
@@ -472,14 +472,14 @@ void CPageSound::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 	}
 }
 
-void CPageSound::EnableFloppyDrive(HWND hWnd, BOOL enable)
+void CPageSlots::EnableFloppyDrive(HWND hWnd, BOOL enable)
 {
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK1), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK2), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_DISK_SWAP), enable);
 }
 
-void CPageSound::HandleFloppyDriveSwap(HWND hWnd, UINT slot)
+void CPageSlots::HandleFloppyDriveSwap(HWND hWnd, UINT slot)
 {
 	if (!RemovalConfirmation(IDC_SLOT_OPT_DISK_SWAP))
 		return;
@@ -490,7 +490,7 @@ void CPageSound::HandleFloppyDriveSwap(HWND hWnd, UINT slot)
 	InitComboFloppyDrive(hWnd, slot);
 }
 
-void CPageSound::DlgDisk2OK(HWND hWnd)
+void CPageSlots::DlgDisk2OK(HWND hWnd)
 {
 	Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(ms_slot));
 
@@ -517,13 +517,13 @@ void CPageSound::DlgDisk2OK(HWND hWnd)
 
 //===========================================================================
 
-INT_PTR CALLBACK CPageSound::DlgProcHarddisk(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageSlots::DlgProcHarddisk(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
-	return CPageSound::ms_this->DlgProcHarddiskInternal(hWnd, message, wparam, lparam);
+	return CPageSlots::ms_this->DlgProcHarddiskInternal(hWnd, message, wparam, lparam);
 }
 
-INT_PTR CPageSound::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageSlots::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
@@ -577,7 +577,7 @@ INT_PTR CPageSound::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wpar
 	return TRUE;
 }
 
-void CPageSound::InitComboHDD(HWND hWnd, UINT slot)
+void CPageSlots::InitComboHDD(HWND hWnd, UINT slot)
 {
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_HDD1, m_defaultHDDOptions, -1);
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_HDD2, m_defaultHDDOptions, -1);
@@ -597,7 +597,7 @@ void CPageSound::InitComboHDD(HWND hWnd, UINT slot)
 	}
 }
 
-void CPageSound::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot)
+void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot)
 {
 	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
 
@@ -659,14 +659,14 @@ void CPageSound::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 	}
 }
 
-void CPageSound::EnableHDD(HWND hWnd, BOOL enable)
+void CPageSlots::EnableHDD(HWND hWnd, BOOL enable)
 {
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD1), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD2), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_HDD_SWAP), enable);
 }
 
-void CPageSound::HandleHDDSwap(HWND hWnd, UINT slot)
+void CPageSlots::HandleHDDSwap(HWND hWnd, UINT slot)
 {
 	if (!RemovalConfirmation(IDC_SLOT_OPT_HDD_SWAP))
 		return;
@@ -677,7 +677,7 @@ void CPageSound::HandleHDDSwap(HWND hWnd, UINT slot)
 	InitComboHDD(hWnd, slot);
 }
 
-void CPageSound::DlgHarddiskOK(HWND hWnd)
+void CPageSlots::DlgHarddiskOK(HWND hWnd)
 {
 	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(ms_slot));
 
@@ -687,7 +687,7 @@ void CPageSound::DlgHarddiskOK(HWND hWnd)
 
 //===========================================================================
 
-UINT CPageSound::RemovalConfirmation(UINT command)
+UINT CPageSlots::RemovalConfirmation(UINT command)
 {
 	bool bMsgBox = true;
 
@@ -723,13 +723,13 @@ UINT CPageSound::RemovalConfirmation(UINT command)
 
 //===========================================================================
 
-INT_PTR CALLBACK CPageSound::DlgProcSSC(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageSlots::DlgProcSSC(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
-	return CPageSound::ms_this->DlgProcSSCInternal(hWnd, message, wparam, lparam);
+	return CPageSlots::ms_this->DlgProcSSCInternal(hWnd, message, wparam, lparam);
 }
 
-INT_PTR CPageSound::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageSlots::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
@@ -781,13 +781,13 @@ INT_PTR CPageSound::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, L
 
 //===========================================================================
 
-INT_PTR CALLBACK CPageSound::DlgProcPrinter(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageSlots::DlgProcPrinter(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
-	return CPageSound::ms_this->DlgProcPrinterInternal(hWnd, message, wparam, lparam);
+	return CPageSlots::ms_this->DlgProcPrinterInternal(hWnd, message, wparam, lparam);
 }
 
-INT_PTR CPageSound::DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageSlots::DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
@@ -843,7 +843,7 @@ INT_PTR CPageSound::DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wpara
 	return TRUE;
 }
 
-void CPageSound::DlgPrinterOK(HWND hWnd)
+void CPageSlots::DlgPrinterOK(HWND hWnd)
 {
 	ParallelPrinterCard& card = m_PropertySheetHelper.GetConfigNew().m_parallelPrinterCard;
 
@@ -873,13 +873,13 @@ void CPageSound::DlgPrinterOK(HWND hWnd)
 
 //===========================================================================
 
-INT_PTR CALLBACK CPageSound::DlgProcMouseCard(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageSlots::DlgProcMouseCard(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
-	return CPageSound::ms_this->DlgProcMouseCardInternal(hWnd, message, wparam, lparam);
+	return CPageSlots::ms_this->DlgProcMouseCardInternal(hWnd, message, wparam, lparam);
 }
 
-INT_PTR CPageSound::DlgProcMouseCardInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageSlots::DlgProcMouseCardInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
@@ -918,7 +918,7 @@ INT_PTR CPageSound::DlgProcMouseCardInternal(HWND hWnd, UINT message, WPARAM wpa
 	return TRUE;
 }
 
-void CPageSound::DlgMouseCardOK(HWND hWnd)
+void CPageSlots::DlgMouseCardOK(HWND hWnd)
 {
 	m_mouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
 	m_mouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
@@ -929,13 +929,13 @@ void CPageSound::DlgMouseCardOK(HWND hWnd)
 
 //===========================================================================
 
-INT_PTR CALLBACK CPageSound::DlgProcRamWorks3(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CALLBACK CPageSlots::DlgProcRamWorks3(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
-	return CPageSound::ms_this->DlgProcRamWorks3Internal(hWnd, message, wparam, lparam);
+	return CPageSlots::ms_this->DlgProcRamWorks3Internal(hWnd, message, wparam, lparam);
 }
 
-INT_PTR CPageSound::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+INT_PTR CPageSlots::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	switch (message)
 	{
@@ -982,7 +982,7 @@ INT_PTR CPageSound::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wpa
 	return TRUE;
 }
 
-void CPageSound::DlgRamWorks3OK(HWND hWnd)
+void CPageSlots::DlgRamWorks3OK(HWND hWnd)
 {
 	const uint32_t size = (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_GETPOS, 0, 0);
 	m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize = size * 16;	// Convert from MB to 64K banks

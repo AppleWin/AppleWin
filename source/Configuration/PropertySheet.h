@@ -4,7 +4,7 @@
 #include "PropertySheetHelper.h"
 #include "PageConfig.h"
 #include "PageInput.h"
-#include "PageSound.h"
+#include "PageSlots.h"
 #include "PageDisk.h"
 #include "PageAdvanced.h"
 
@@ -14,7 +14,7 @@ public:
 	CPropertySheet() :
 		m_PageConfig(m_PropertySheetHelper),
 		m_PageInput(m_PropertySheetHelper),
-		m_PageSound(m_PropertySheetHelper),
+		m_PageSlots(m_PropertySheetHelper),
 		m_PageDisk(m_PropertySheetHelper),
 		m_PageAdvanced(m_PropertySheetHelper)
 	{
@@ -47,10 +47,10 @@ public:
 	virtual void SetAutofire(UINT uValue) { m_PageInput.SetAutofire(uValue); }
 	virtual bool GetButtonsSwapState(void) { return m_PageInput.GetButtonsSwapState(); }
 	virtual void SetButtonsSwapState(bool value) { m_PageInput.SetButtonsSwapState(value); }
-	virtual UINT GetMouseShowCrosshair(void){ return m_PageSound.GetMouseShowCrosshair(); }
-	virtual void SetMouseShowCrosshair(UINT uValue) { m_PageSound.SetMouseShowCrosshair(uValue); }
-	virtual UINT GetMouseRestrictToWindow(void){ return m_PageSound.GetMouseRestrictToWindow(); }
-	virtual void SetMouseRestrictToWindow(UINT uValue){ m_PageSound.SetMouseRestrictToWindow(uValue); }
+	virtual UINT GetMouseShowCrosshair(void){ return m_PageSlots.GetMouseShowCrosshair(); }
+	virtual void SetMouseShowCrosshair(UINT uValue) { m_PageSlots.SetMouseShowCrosshair(uValue); }
+	virtual UINT GetMouseRestrictToWindow(void){ return m_PageSlots.GetMouseRestrictToWindow(); }
+	virtual void SetMouseRestrictToWindow(UINT uValue){ m_PageSlots.SetMouseRestrictToWindow(uValue); }
 	virtual UINT GetTheFreezesF8Rom(void){ return m_PageAdvanced.GetTheFreezesF8Rom(); }
 	virtual void SetTheFreezesF8Rom(UINT uValue){ m_PageAdvanced.SetTheFreezesF8Rom(uValue); }
 
@@ -58,7 +58,7 @@ private:
 	CPropertySheetHelper m_PropertySheetHelper;
 	CPageConfig m_PageConfig;
 	CPageInput m_PageInput;
-	CPageSound m_PageSound;
+	CPageSlots m_PageSlots;
 	CPageDisk m_PageDisk;
 	CPageAdvanced m_PageAdvanced;
 };

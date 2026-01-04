@@ -51,11 +51,11 @@ void CPropertySheet::Init(void)
 	PropSheetPages[PG_INPUT].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_INPUT);
 	PropSheetPages[PG_INPUT].pfnDlgProc = CPageInput::DlgProc;
 
-	PropSheetPages[PG_SOUND].dwSize = sizeof(PROPSHEETPAGE);
-	PropSheetPages[PG_SOUND].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_SOUND].hInstance = GetFrame().g_hInstance;
-	PropSheetPages[PG_SOUND].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SOUND);
-	PropSheetPages[PG_SOUND].pfnDlgProc = CPageSound::DlgProc;
+	PropSheetPages[PG_SLOTS].dwSize = sizeof(PROPSHEETPAGE);
+	PropSheetPages[PG_SLOTS].dwFlags = PSP_DEFAULT;
+	PropSheetPages[PG_SLOTS].hInstance = GetFrame().g_hInstance;
+	PropSheetPages[PG_SLOTS].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SOUND);
+	PropSheetPages[PG_SLOTS].pfnDlgProc = CPageSlots::DlgProc;
 
 	PropSheetPages[PG_DISK].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_DISK].dwFlags = PSP_DEFAULT;

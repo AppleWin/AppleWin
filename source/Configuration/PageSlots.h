@@ -7,19 +7,19 @@
 
 class CPropertySheetHelper;
 
-class CPageSound : private IPropertySheetPage
+class CPageSlots : private IPropertySheetPage
 {
 public:
-	CPageSound(CPropertySheetHelper& PropertySheetHelper) :
-		m_Page(PG_SOUND),
+	CPageSlots(CPropertySheetHelper& PropertySheetHelper) :
+		m_Page(PG_SLOTS),
 		m_PropertySheetHelper(PropertySheetHelper),
 		m_mouseShowCrosshair(0),
 		m_mouseRestrictToWindow(0)
 	{
-		CPageSound::ms_this = this;
+		CPageSlots::ms_this = this;
 		ms_slot = NUM_SLOTS;	// invalid
 	}
-	virtual ~CPageSound(){}
+	virtual ~CPageSlots(){}
 
 	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
@@ -69,7 +69,7 @@ private:
 
 	UINT RemovalConfirmation(UINT command);
 
-	static CPageSound* ms_this;
+	static CPageSlots* ms_this;
 	static UINT ms_slot;
 
 	const PAGETYPE m_Page;

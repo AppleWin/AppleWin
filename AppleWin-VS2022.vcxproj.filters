@@ -103,7 +103,7 @@
     <ClCompile Include="source\Configuration\PageInput.cpp">
       <Filter>Source Files\Configuration</Filter>
     </ClCompile>
-    <ClCompile Include="source\Configuration\PageSound.cpp">
+    <ClCompile Include="source\Configuration\PageSlots.cpp">
       <Filter>Source Files\Configuration</Filter>
     </ClCompile>
     <ClCompile Include="source\ProDOS_Utils.cpp">
@@ -423,7 +423,7 @@
     <ClInclude Include="source\Configuration\PageInput.h">
       <Filter>Source Files\Configuration</Filter>
     </ClInclude>
-    <ClInclude Include="source\Configuration\PageSound.h">
+    <ClInclude Include="source\Configuration\PageSlots.h">
       <Filter>Source Files\Configuration</Filter>
     </ClInclude>
     <ClInclude Include="source\ParallelPrinter.h">
