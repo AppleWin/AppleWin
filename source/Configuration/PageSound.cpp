@@ -132,6 +132,11 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 
 				m_PropertySheetHelper.GetConfigNew().m_SlotAux = newCard;
 
+				if (newCard == CT_RamWorksIII)
+					m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize = kDefaultExMemoryBanksRealRW3;
+				else
+					m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize = 1;	// Must be 1 for all others (Empty, 80Col, Extended80Col)
+
 				//InitOptions(hWnd);	// Not needed, since card in this slot don't affect other slots
 			}
 			break;

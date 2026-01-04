@@ -549,6 +549,8 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_SlotAux))
 			strMsgMain += GetSlot(SLOT_AUX);
+		else if (m_ConfigNew.m_SlotAux == CT_RamWorksIII && CONFIG_CHANGED(m_RamWorksMemorySize))
+			strMsgMain += ". RamWorks III memory size changed\n";
 
 		if (CONFIG_CHANGED(m_tfeInterface))
 			strMsgMain += ". Uthernet interface has changed\n";
@@ -558,9 +560,6 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
-
-		if (CONFIG_CHANGED(m_RamWorksMemorySize))
-			strMsgMain += ". RamWorks III memory size changed\n";
 
 		if (CONFIG_CHANGED(m_parallelPrinterCard))
 			strMsgMain += ". Parallel Printer config has changed\n";
