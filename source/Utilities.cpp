@@ -225,7 +225,10 @@ void LoadConfiguration(bool loadImages)
 
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
-			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
+			if (slot == SLOT0)
+				SetExpansionMemType((SS_CARDTYPE)dwTmp, false);
+			else
+				GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
 		}
 		else	// new install or legacy (AppleWin 1.30.3 or earlier)
 		{
@@ -259,6 +262,7 @@ void LoadConfiguration(bool loadImages)
 
 	// Aux slot
 
+	if (IsAppleIIe(GetApple2Type()))
 	{
 		std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
 
