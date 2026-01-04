@@ -626,6 +626,20 @@ std::string CPropertySheetHelper::GetSlot(const UINT slot)
 			strMsg += " card added\n";
 		}
 	}
+	else if (oldCardType == CT_LanguageCardIIe || newCardType == CT_LanguageCardIIe)
+	{
+		// Switch model: II/II+ (slot 0) <-> //e (no slot 0)
+		if (newCardType == CT_LanguageCardIIe)
+		{
+			strMsg += Card::GetCardName(oldCardType);
+			strMsg += " card removed\n";
+		}
+		else
+		{
+			strMsg += Card::GetCardName(newCardType);
+			strMsg += " card added\n";
+		}
+	}
 	else
 	{
 		strMsg += Card::GetCardName(oldCardType);
