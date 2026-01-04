@@ -5,7 +5,6 @@
 #include "PageConfig.h"
 #include "PageInput.h"
 #include "PageSlots.h"
-#include "PageDisk.h"
 #include "PageAdvanced.h"
 
 class CPropertySheet : public IPropertySheet
@@ -15,7 +14,6 @@ public:
 		m_PageConfig(m_PropertySheetHelper),
 		m_PageInput(m_PropertySheetHelper),
 		m_PageSlots(m_PropertySheetHelper),
-		m_PageDisk(m_PropertySheetHelper),
 		m_PageAdvanced(m_PropertySheetHelper)
 	{
 	}
@@ -59,6 +57,5 @@ private:
 	CPageConfig m_PageConfig;
 	CPageInput m_PageInput;
 	CPageSlots m_PageSlots;
-	CPageDisk m_PageDisk;
 	CPageAdvanced m_PageAdvanced;
 };

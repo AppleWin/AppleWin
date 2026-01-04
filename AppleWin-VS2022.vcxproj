@@ -55,7 +55,6 @@
     <ClInclude Include="source\Configuration\PageAdvanced.h" />
     <ClInclude Include="source\Configuration\PageConfig.h" />
     <ClInclude Include="source\Configuration\PageConfigTfe.h" />
-    <ClInclude Include="source\Configuration\PageDisk.h" />
     <ClInclude Include="source\Configuration\PageInput.h" />
     <ClInclude Include="source\Configuration\PageSlots.h" />
     <ClInclude Include="source\Configuration\PropertySheet.h" />
@@ -175,7 +174,6 @@
     <ClCompile Include="source\Configuration\PageAdvanced.cpp" />
     <ClCompile Include="source\Configuration\PageConfig.cpp" />
     <ClCompile Include="source\Configuration\PageConfigTfe.cpp" />
-    <ClCompile Include="source\Configuration\PageDisk.cpp" />
     <ClCompile Include="source\Configuration\PageInput.cpp" />
     <ClCompile Include="source\Configuration\PageSlots.cpp" />
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />

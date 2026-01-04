@@ -97,9 +97,6 @@
     <ClCompile Include="source\Configuration\PageConfigTfe.cpp">
       <Filter>Source Files\Configuration</Filter>
     </ClCompile>
-    <ClCompile Include="source\Configuration\PageDisk.cpp">
-      <Filter>Source Files\Configuration</Filter>
-    </ClCompile>
     <ClCompile Include="source\Configuration\PageInput.cpp">
       <Filter>Source Files\Configuration</Filter>
     </ClCompile>
@@ -415,9 +412,6 @@
       <Filter>Source Files\Configuration</Filter>
     </ClInclude>
     <ClInclude Include="source\Configuration\PageConfigTfe.h">
-      <Filter>Source Files\Configuration</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Configuration\PageDisk.h">
       <Filter>Source Files\Configuration</Filter>
     </ClInclude>
     <ClInclude Include="source\Configuration\PageInput.h">
