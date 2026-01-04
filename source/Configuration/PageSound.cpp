@@ -957,13 +957,13 @@ INT_PTR CPageSound::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wpa
 
 	case WM_INITDIALOG:
 	{
-		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETRANGE, TRUE, MAKELONG(1, 32));
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETRANGE, TRUE, MAKELONG(1, 16));
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETPAGESIZE, 0, 4);
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 1);
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 4);
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 8);
+		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 12);
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 16);
-		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 24);
-		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 32);
 
 		const uint32_t size = m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize;
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETPOS, TRUE, size);

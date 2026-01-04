@@ -169,8 +169,6 @@
 #define IDC_RW3_4MB                     1127
 #define IDC_RW3_8MB                     1128
 #define IDC_RW3_16MB                    1129
-#define IDC_RW3_24MB                    1130
-#define IDC_RW3_32MB                    1131
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
@@ -204,7 +202,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        173
 #define _APS_NEXT_COMMAND_VALUE         40026
-#define _APS_NEXT_CONTROL_VALUE         1132
+#define _APS_NEXT_CONTROL_VALUE         1130
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
