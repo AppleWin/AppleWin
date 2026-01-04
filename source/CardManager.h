@@ -66,6 +66,7 @@ public:
 	class VidHDCard* GetVidHDCard(void) { return m_pVidHDCard; }
 	void GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::string& choices, std::vector<SS_CARDTYPE>& choicesList);
 	void GetCardChoicesForAuxSlot(std::string& choices, std::vector<SS_CARDTYPE>& choicesList);
+	SS_CARDTYPE QueryDefaultCardForSlot(UINT slot, eApple2Type model);
 
 	void InitializeIO(LPBYTE pCxRomPeripheral);
 	void Destroy(void);

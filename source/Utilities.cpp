@@ -233,12 +233,7 @@ void LoadConfiguration(bool loadImages)
 		else	// new install or legacy (AppleWin 1.30.3 or earlier)
 		{
 			// New install:
-			if (slot == SLOT1)
-				GetCardMgr().Insert(SLOT1, CT_GenericPrinter);
-			if (slot == SLOT2)
-				GetCardMgr().Insert(SLOT2, CT_SSC);
-			if (slot == SLOT6)
-				GetCardMgr().Insert(SLOT6, CT_Disk2);
+			GetCardMgr().Insert(slot, GetCardMgr().QueryDefaultCardForSlot(slot, GetApple2Type()));
 
 			// Legacy:
 			if (slot == SLOT3)

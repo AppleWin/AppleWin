@@ -320,6 +320,37 @@ void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	}
 }
 
+SS_CARDTYPE CardManager::QueryDefaultCardForSlot(UINT slot, eApple2Type model)
+{
+	const SS_CARDTYPE defaultCards[] = {
+	CT_Empty,	// or LC or LC//e
+	CT_GenericPrinter,
+	CT_SSC,
+	CT_Empty,
+	CT_MockingboardC,
+	CT_Empty,
+	CT_Disk2,
+	CT_Empty,
+	};
+
+	if (slot == SLOT0)
+	{
+		if (IsApple2Original(model))
+			return CT_Empty;
+		if (IsApple2PlusOrClone(model))
+			return CT_LanguageCard;
+		return CT_LanguageCardIIe;
+	}
+	else if (slot <= SLOT7)
+	{
+		return defaultCards[slot];
+	}
+
+	// SLOT_AUX
+	_ASSERT(slot == SLOT_AUX);
+	return CT_Extended80Col;
+}
+
 bool CardManager::IsSingleInstanceCard(SS_CARDTYPE card)
 {
 	const SS_CARDTYPE uniqueCards[] = {

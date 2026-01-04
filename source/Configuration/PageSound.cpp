@@ -199,6 +199,18 @@ INT_PTR CPageSound::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				}
 				break;
 			}
+
+		case IDC_SLOT_DEFAULT_CARDS:
+			{
+				for (UINT slot=SLOT0; slot<NUM_SLOTS; slot++)
+					m_PropertySheetHelper.GetConfigNew().m_Slot[slot] = GetCardMgr().QueryDefaultCardForSlot(slot, m_PropertySheetHelper.GetConfigNew().m_Apple2Type);
+
+				if (IsAppleIIe(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
+					m_PropertySheetHelper.GetConfigNew().m_SlotAux = GetCardMgr().QueryDefaultCardForSlot(SLOT_AUX, m_PropertySheetHelper.GetConfigNew().m_Apple2Type);
+
+				InitOptions(hWnd);
+				break;
+			}
 		}
 		break;
 
