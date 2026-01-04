@@ -965,7 +965,7 @@ INT_PTR CPageSound::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wpa
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 12);
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETTIC, 0, 16);
 
-		const uint32_t size = m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize;
+		const uint32_t size = m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize / 16;	// Convert from 64K banks to MB
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETPOS, TRUE, size);
 	}
 	break;
@@ -980,5 +980,5 @@ INT_PTR CPageSound::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wpa
 void CPageSound::DlgRamWorks3OK(HWND hWnd)
 {
 	const uint32_t size = (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_GETPOS, 0, 0);
-	m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize = size;
+	m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize = size * 16;	// Convert from MB to 64K banks
 }
