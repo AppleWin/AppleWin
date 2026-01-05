@@ -175,6 +175,7 @@
     <ClCompile Include="source\CopyProtectionDongles.cpp" />
     <ClCompile Include="source\Core.cpp" />
     <ClCompile Include="source\CPU.cpp" />
+    <ClCompile Include="source\Debugger\BreakpointCard.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Disassembler.cpp" />
     <ClCompile Include="source\Debugger\Debugger_Win32.cpp" />
     <ClCompile Include="source\Disk2CardManager.cpp" />
