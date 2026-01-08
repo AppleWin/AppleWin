@@ -155,7 +155,7 @@ Overview
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_isFirmwareV1or2(false), m_useHdcFirmwareV1(false), m_useHdcFirmwareV2(false), m_useHdcFirmwareMode(HdcDefault)
 {
-	if (m_slot != SLOT5 && m_slot != SLOT7)	// fixme
+	if (m_slot == SLOT0)
 		ThrowErrorInvalidSlot();
 
 	m_unitNum = (HARDDISK_1 << 7) | (m_slot << 4);	// b7=unit, b6:4=slot

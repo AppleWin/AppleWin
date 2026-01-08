@@ -25,11 +25,14 @@
 #include "Config.h"
 #include "../CardManager.h"
 #include "../Interface.h"	// VideoRefreshRate_e, GetVideoRefreshRate()
+#include "../Memory.h"
 #include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
 
+
 // zero initialise
 CConfigNeedingRestart::CConfigNeedingRestart()
+	: m_parallelPrinterCard(SLOT1)	// slot not important
 {
 	m_Apple2Type = A2TYPE_APPLE2;
 	m_CpuType = CPU_UNKNOWN;
@@ -39,9 +42,11 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_bEnableTheFreezesF8Rom = 0;
 	m_uSaveLoadStateMsg = 0;
 	m_videoRefreshRate = VR_NONE;
+	m_RamWorksMemorySize = 0;
 }
 
 // create from current global configuration
+// . called from Snapshot_LoadState_v2()
 CConfigNeedingRestart CConfigNeedingRestart::Create()
 {
 	CConfigNeedingRestart config;
@@ -54,15 +59,42 @@ void CConfigNeedingRestart::Reload()
 {
 	m_Apple2Type = GetApple2Type();
 	m_CpuType = GetMainCpu();
+
 	CardManager& cardManager = GetCardMgr();
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 		m_Slot[slot] = cardManager.QuerySlot(slot);
 	m_SlotAux = cardManager.QueryAux();
-	m_tfeInterface = PCapBackend::GetRegistryInterface(SLOT3);
-	m_tfeVirtualDNS = Uthernet2::GetRegistryVirtualDNS(SLOT3);
+
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (m_Slot[slot] == CT_Uthernet || m_Slot[slot] == CT_Uthernet2)
+		{
+			// Assume only one CT_Uthernet or CT_Uthernet2 inserted
+			m_tfeInterface = PCapBackend::GetRegistryInterface(slot);
+			m_tfeVirtualDNS = Uthernet2::GetRegistryVirtualDNS(slot);
+		}
+		else if (m_Slot[slot] == CT_Disk2)
+		{
+			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+				m_slotInfoForFDC[slot].pathname[i] = dynamic_cast<Disk2InterfaceCard&>(cardManager.GetRef(slot)).DiskGetFullPathName(i);
+		}
+		else if (m_Slot[slot] == CT_GenericHDD)
+		{
+			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+				m_slotInfoForHDC[slot].pathname[i] = dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(slot)).HarddiskGetFullPathName(i);
+		}
+	}
+
 	m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_uSaveLoadStateMsg = 0;
 	m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
+	m_RamWorksMemorySize = GetRamWorksMemorySize();
+
+	if (cardManager.IsParallelPrinterCardInstalled())
+		m_parallelPrinterCard = *cardManager.GetParallelPrinterCard();	// copy object
+
+	if (cardManager.IsSSCInstalled())
+		m_serialPortItem = cardManager.GetSSC()->GetSerialPortItem();
 }
 
 const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeedingRestart& other)
@@ -76,6 +108,16 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_bEnableTheFreezesF8Rom = other.m_bEnableTheFreezesF8Rom;
 	m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
 	m_videoRefreshRate = other.m_videoRefreshRate;
+	m_RamWorksMemorySize = other.m_RamWorksMemorySize;
+	m_parallelPrinterCard = other.m_parallelPrinterCard;
+	m_serialPortItem = other.m_serialPortItem;
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+			m_slotInfoForFDC[slot].pathname[i] = other.m_slotInfoForFDC[slot].pathname[i];
+		for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+			m_slotInfoForHDC[slot].pathname[i] = other.m_slotInfoForHDC[slot].pathname[i];
+	}
 	return *this;
 }
 
@@ -89,7 +131,10 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 		m_tfeVirtualDNS == other.m_tfeVirtualDNS &&
 		m_bEnableTheFreezesF8Rom == other.m_bEnableTheFreezesF8Rom &&
 		m_uSaveLoadStateMsg == other.m_uSaveLoadStateMsg &&
-		m_videoRefreshRate == other.m_videoRefreshRate;
+		m_videoRefreshRate == other.m_videoRefreshRate &&
+		m_RamWorksMemorySize == other.m_RamWorksMemorySize &&
+		m_parallelPrinterCard == other.m_parallelPrinterCard &&	// NB. no restart required if any of this changes
+		m_serialPortItem == other.m_serialPortItem;
 }
 
 bool CConfigNeedingRestart::operator!= (const CConfigNeedingRestart& other) const

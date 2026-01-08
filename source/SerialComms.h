@@ -35,10 +35,9 @@ public:
 	virtual void	SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool	LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
-	void    CommSetSerialPort(DWORD dwNewSerialPortItem);
-
 	std::string const& GetSerialPortChoices();
-	DWORD	GetSerialPort() { return m_dwSerialPortItem; }	// Drop-down list item
+	DWORD	GetSerialPortItem() { return m_dwSerialPortItem; }	// Config's drop-down list item
+	void    SetSerialPortItem(DWORD dwNewSerialPortItem);
 	const std::string& GetSerialPortName() { return m_currentSerialPortName; }
 	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
 	void	SupportDCD(bool bEnable) { m_bCfgSupportDCD = bEnable; }	// Status
