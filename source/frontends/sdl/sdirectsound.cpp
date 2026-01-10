@@ -239,12 +239,7 @@ namespace
         const double logVolume = GetLogarithmicVolume();
         // same formula as QAudio::convertVolume()
         const double linVolume = logVolume > 0.99 ? 1.0 : -std::log(1.0 - logVolume) / std::log(100.0);
-
-#if SDL_VERSION_ATLEAST(3, 0, 0)
-        const float svolume = linVolume;
-#else
-        const uint8_t svolume = uint8_t(linVolume * SDL_MIX_MAXVOLUME);
-#endif
+        const auto svolume = SA2_MIX_VOLUME(linVolume);
 
         const size_t len = myMixerBuffer.size();
         memset(stream, 0, len);

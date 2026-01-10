@@ -14,6 +14,7 @@ private:
 
     size_t myPlayPosition = 0;
     size_t myWritePosition = 0;
+    size_t myLastLockCursor = 0;
     WORD myStatus = 0;
     LONG myVolume = 0;
 

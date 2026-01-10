@@ -16,15 +16,16 @@
 #define ImGui_ImplSDLX_NewFrame ImGui_ImplSDL3_NewFrame
 #define ImGui_ImplSDLX_ProcessEvent ImGui_ImplSDL3_ProcessEvent
 
-#define SA2_CONTROLLER_BUTTON(e) e.gbutton.button
-#define SA2_BUTTON_DOWN(e) e.down
-#define SA2_DROP_FILE(d) d.data
+#define SA2_CONTROLLER_BUTTON(e) ((e).gbutton.button)
+#define SA2_BUTTON_DOWN(e) ((e).down)
+#define SA2_DROP_FILE(d) ((d).data)
 #define SA2_FREE_DROP(d) (void)0
-#define SA2_RENDERER_LOGICAL_SIZE(r, w, h) SDL_RenderSetLogicalSize(r, w, h, SDL_LOGICAL_PRESENTATION_STRETCH)
-#define SA2_IMAGE_BITS(s) SDL_GetPixelFormatDetails(s->format)->bits_per_pixel
-#define SA2_KEY_CODE(e) e.key
-#define SA2_KEY_MOD(e) e.mod
+#define SA2_RENDERER_LOGICAL_SIZE(r, w, h) SDL_RenderSetLogicalSize((r), (w), (h), SDL_LOGICAL_PRESENTATION_STRETCH)
+#define SA2_IMAGE_BITS(s) (SDL_GetPixelFormatDetails((s)->format)->bits_per_pixel)
+#define SA2_KEY_CODE(e) ((e).key)
+#define SA2_KEY_MOD(e) ((e).mod)
 #define SA2_INIT_GAMEPAD SDL_INIT_GAMEPAD
+#define SA2_MIX_VOLUME(v) (v)
 
 inline bool sa2_ok(const bool r)
 {
@@ -45,15 +46,16 @@ typedef SDL_PixelFormat PixelFormat_t;
 #define ImGui_ImplSDLX_NewFrame ImGui_ImplSDL2_NewFrame
 #define ImGui_ImplSDLX_ProcessEvent ImGui_ImplSDL2_ProcessEvent
 
-#define SA2_CONTROLLER_BUTTON(e) e.cbutton.button
-#define SA2_BUTTON_DOWN(e) (e.state == SDL_PRESSED)
-#define SA2_DROP_FILE(d) d.file
-#define SA2_FREE_DROP(d) SDL_free(d.file)
-#define SA2_RENDERER_LOGICAL_SIZE(r, w, h) SDL_RenderSetLogicalSize(r, w, h)
-#define SA2_IMAGE_BITS(s) s->format->BitsPerPixel
-#define SA2_KEY_CODE(e) e.keysym.sym
-#define SA2_KEY_MOD(e) e.keysym.mod
+#define SA2_CONTROLLER_BUTTON(e) ((e).cbutton.button)
+#define SA2_BUTTON_DOWN(e) ((e).state == SDL_PRESSED)
+#define SA2_DROP_FILE(d) ((d).file)
+#define SA2_FREE_DROP(d) SDL_free((d).file)
+#define SA2_RENDERER_LOGICAL_SIZE(r, w, h) SDL_RenderSetLogicalSize((r), (w), (h))
+#define SA2_IMAGE_BITS(s) ((s)->format->BitsPerPixel)
+#define SA2_KEY_CODE(e) ((e).keysym.sym)
+#define SA2_KEY_MOD(e) ((e).keysym.mod)
 #define SA2_INIT_GAMEPAD SDL_INIT_GAMECONTROLLER
+#define SA2_MIX_VOLUME(v) uint8_t((v) * SDL_MIX_MAXVOLUME)
 
 inline bool sa2_ok(const int r)
 {

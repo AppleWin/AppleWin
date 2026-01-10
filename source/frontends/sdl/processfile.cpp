@@ -94,12 +94,13 @@ namespace
     {
         SDL_AudioSpec wavSpec;
         Uint32 wavLength;
-        Uint8 *wavBuffer;
-        if (!SDL_LoadWAV(filename, &wavSpec, &wavBuffer, &wavLength))
+        Uint8 *tmpBuffer;
+        if (!SDL_LoadWAV(filename, &wavSpec, &tmpBuffer, &wavLength))
         {
             frame->FrameMessageBox("Could not open wav file", "ERROR", MB_OK);
             return;
         }
+        std::shared_ptr<Uint8> wavBuffer(tmpBuffer, SDL_FreeWAV);
 
         // tested with all formats from https://asciiexpress.net/
         // 8 bit mono is just enough
@@ -110,20 +111,20 @@ namespace
         const SDL_AudioSpec dstSpec = {format, wavSpec.channels, wavSpec.freq};
         Uint8 *dstData = NULL;
         int dstLen = 0;
-        if (SDL_ConvertAudioSamples(&wavSpec, wavBuffer, wavLength, &dstSpec, &dstData, &dstLen) < 0)
+        if (SDL_ConvertAudioSamples(&wavSpec, wavBuffer.get(), wavLength, &dstSpec, &dstData, &dstLen) < 0)
         {
             frame->FrameMessageBox("Could not convert wav file", "ERROR", MB_OK);
             SDL_free(dstData);
         }
         std::vector<CassetteTape::tape_data_t> output(dstLen / sizeof(CassetteTape::tape_data_t));
-        std::memcpy(output.data(), wavBuffer, dstLen);
+        std::memcpy(output.data(), wavBuffer.get(), dstLen);
 #else
         SDL_AudioCVT cvt;
         const int res =
             SDL_BuildAudioCVT(&cvt, wavSpec.format, wavSpec.channels, wavSpec.freq, format, 1, wavSpec.freq);
         cvt.len = wavLength;
         std::vector<CassetteTape::tape_data_t> output(cvt.len_mult * cvt.len / sizeof(CassetteTape::tape_data_t));
-        std::memcpy(output.data(), wavBuffer, cvt.len);
+        std::memcpy(output.data(), wavBuffer.get(), cvt.len);
 
         if (res)
         {
@@ -133,7 +134,6 @@ namespace
         }
 #endif
 
-        SDL_FreeWAV(wavBuffer);
         CassetteTape::instance().setData(filename, output, wavSpec.freq);
     }
 
