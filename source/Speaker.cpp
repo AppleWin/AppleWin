@@ -182,6 +182,34 @@ inline short DCFilter(short sample_in)
 
 //=============================================================================
 
+static void QueueOneFrame(short sample_in)
+{
+	// add one frame to the speaker buffer
+	const short sample = DCFilter(sample_in);
+	short * begin = &g_pSpeakerBuffer[g_nBufferIdx * g_nSPKR_NumChannels];
+	std::fill_n(begin, g_nSPKR_NumChannels, sample);
+	// and advance its position
+	g_nBufferIdx++;
+}
+
+static void PadNFrames(short* buffer, uint32_t bufferSizeBytes)
+{
+	if (bufferSizeBytes)
+	{
+		const UINT numSamples = bufferSizeBytes / (sizeof(short) * g_nSPKR_NumChannels);
+		for (UINT i = 0; i < numSamples; i++)
+		{
+			const short sample = DCFilter(g_nSpeakerData);
+			short * begin = buffer + (i * g_nSPKR_NumChannels);
+			std::fill_n(begin, g_nSPKR_NumChannels, sample);
+		}
+		if (g_bSpkrOutputToRiff)
+			RiffPutSamples(buffer, numSamples);
+	}
+}
+
+//=============================================================================
+
 static void SetClksPerSpkrSample()
 {
 //	// 23.191 clks for 44.1Khz (when 6502 CLK=1.0Mhz)
@@ -350,17 +378,7 @@ static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 
 			if (g_nBufferIdx < SPKR_SAMPLE_RATE - 1)
 			{
-				if (g_nSPKR_NumChannels == 1)
-				{
-					g_pSpeakerBuffer[g_nBufferIdx] = DCFilter((short)nSampleMean);
-				}
-				else
-				{
-					const short sample = DCFilter((short)nSampleMean);
-					g_pSpeakerBuffer[g_nBufferIdx * 2 + 0] = sample;
-					g_pSpeakerBuffer[g_nBufferIdx * 2 + 1] = sample;
-				}
-				g_nBufferIdx++;
+				QueueOneFrame((short)nSampleMean);
 			}
 		}
 	}
@@ -380,17 +398,7 @@ static void UpdateSpkr()
 
 	  while ((nNumSamples--) && (g_nBufferIdx < SPKR_SAMPLE_RATE - 1))
 	  {
-		  if (g_nSPKR_NumChannels == 1)
-		  {
-			  g_pSpeakerBuffer[g_nBufferIdx] = DCFilter(g_nSpeakerData);
-		  }
-		  else
-		  {
-			  const short sample = DCFilter(g_nSpeakerData);
-			  g_pSpeakerBuffer[g_nBufferIdx * 2 + 0] = sample;
-			  g_pSpeakerBuffer[g_nBufferIdx * 2 + 1] = sample;
-		  }
-		  g_nBufferIdx++;
+			QueueOneFrame((short)g_nSpeakerData);
 	  }
 
 	  ReinitRemainderBuffer(nCyclesRemaining);	// Partially fill 1Mhz sample buffer
@@ -663,47 +671,8 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 			dwBufferSize0 = dwDSLockedBufferSize0 - dwBufferSize0;
 			dwBufferSize1 = dwDSLockedBufferSize1 - dwBufferSize1;
 
-			if(dwBufferSize0)
-			{
-				const UINT numSamples = dwBufferSize0 / (sizeof(short) * g_nSPKR_NumChannels);
-				if (g_nSPKR_NumChannels == 1)
-				{
-					std::fill_n(pDSLockedBuffer0, numSamples, DCFilter(g_nSpeakerData));
-				}
-				else
-				{
-					for (UINT i = 0; i < numSamples; i++)
-					{
-						const short sample = DCFilter(g_nSpeakerData);
-						pDSLockedBuffer0[i * 2 + 0] = sample;
-						pDSLockedBuffer0[i * 2 + 1] = sample;
-					}
-				}
-
-				if (g_bSpkrOutputToRiff)
-					RiffPutSamples(pDSLockedBuffer0, numSamples);
-			}
-
-			if(pDSLockedBuffer1)
-			{
-				const UINT numSamples = dwBufferSize0 / (sizeof(short) * g_nSPKR_NumChannels);
-				if (g_nSPKR_NumChannels == 1)
-				{
-					std::fill_n(pDSLockedBuffer1, numSamples, DCFilter(g_nSpeakerData));
-				}
-				else
-				{
-					for (UINT i = 0; i < numSamples; i++)
-					{
-						const short sample = DCFilter(g_nSpeakerData);
-						pDSLockedBuffer1[i * 2 + 0] = sample;
-						pDSLockedBuffer1[i * 2 + 1] = sample;
-					}
-				}
-
-				if (g_bSpkrOutputToRiff)
-					RiffPutSamples(pDSLockedBuffer1, numSamples);
-			}
+			PadNFrames(pDSLockedBuffer0, dwBufferSize0);
+			PadNFrames(pDSLockedBuffer1, dwBufferSize1);
 		}
 
 		// Commit sound buffer
