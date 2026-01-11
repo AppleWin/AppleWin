@@ -167,9 +167,9 @@ int main(int argc, char *argv[])
 #endif
 
     // First we need to start up SDL, and make sure it went ok
-    const Uint32 flags = SDL_INIT_VIDEO | SA2_INIT_GAMEPAD | SDL_INIT_AUDIO | SDL_INIT_EVENTS;
+    const Uint32 flags = SDL_INIT_VIDEO | SA2_INIT_GAMEPAD | SDL_INIT_AUDIO | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK;
 
-    if (!sa2_ok(SDL_Init(flags)))
+    if (!SA2_OK(SDL_Init(flags)))
     {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return 1;

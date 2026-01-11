@@ -209,7 +209,7 @@ namespace sa2
 
     bool SDLFrame::setGLSwapInterval(const int interval)
     {
-        const bool res = sa2_ok(SDL_GL_SetSwapInterval(interval));
+        const bool res = SA2_OK(SDL_GL_SetSwapInterval(interval));
         return res;
     }
 

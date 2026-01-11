@@ -11,16 +11,24 @@ namespace sa2
 
 #if SDL_VERSION_ATLEAST(3, 0, 0)
 
-        int getNumJoysticks()
+        std::vector<SDL_JoystickID> getGameControllers()
         {
             int count = 0;
-            SDL_JoystickID *joy = SDL_GetJoysticks(&count);
-            if (!joy)
+            SDL_JoystickID *ids = SDL_GetJoysticks(&count);
+            if (!ids)
             {
                 throw std::runtime_error(decorateSDLError("SDL_GetJoysticks"));
             }
-            SDL_free(joy);
-            return count;
+            std::vector<SDL_JoystickID> result;
+            for (int i = 0; i < count; ++i)
+            {
+                if (SDL_IsGamepad(ids[i]))
+                {
+                    result.push_back(ids[i]);
+                }
+            }
+            SDL_free(ids);
+            return result;
         }
 
         int getGLSwapInterval()
@@ -108,9 +116,22 @@ namespace sa2
 
 #else
 
-        int getNumJoysticks()
+        std::vector<int> getGameControllers()
         {
-            return SDL_NumJoysticks();
+            const int count = SDL_NumJoysticks();
+            if (count < 0)
+            {
+                throw std::runtime_error(decorateSDLError("SDL_NumJoysticks"));
+            }
+            std::vector<int> result;
+            for (int i = 0; i < count; ++i)
+            {
+                if (SDL_IsGameController(i))
+                {
+                    result.push_back(i);
+                }
+            }
+            return result;
         }
 
         int getGLSwapInterval()
@@ -120,7 +141,7 @@ namespace sa2
 
         const SDL_DisplayMode *getCurrentDisplayMode(SDL_DisplayMode &dummy)
         {
-            if (!sa2_ok(SDL_GetCurrentDisplayMode(0, &dummy)))
+            if (SDL_GetCurrentDisplayMode(0, &dummy))
             {
                 throw std::runtime_error(sa2::decorateSDLError("SDL_GetCurrentDisplayMode"));
             }

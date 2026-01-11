@@ -5,6 +5,8 @@
 // SDL2 / SDL3 compatibility layer
 // some #ifdefs are still present in the code, where this is easier to handle
 
+#include <vector>
+
 #ifdef SA2_SDL3
 
 #include <SDL3/SDL.h>
@@ -26,14 +28,11 @@
 #define SA2_KEY_MOD(e) ((e).mod)
 #define SA2_INIT_GAMEPAD SDL_INIT_GAMEPAD
 #define SA2_MIX_VOLUME(v) (v)
-
-inline bool sa2_ok(const bool r)
-{
-    return r;
-}
+#define SA2_OK(r) (r)
 
 typedef SDL_FRect Renderer_Rect_t;
 typedef SDL_PixelFormat PixelFormat_t;
+typedef SDL_JoystickID Joystick_t;
 
 #else
 
@@ -56,14 +55,11 @@ typedef SDL_PixelFormat PixelFormat_t;
 #define SA2_KEY_MOD(e) ((e).keysym.mod)
 #define SA2_INIT_GAMEPAD SDL_INIT_GAMECONTROLLER
 #define SA2_MIX_VOLUME(v) uint8_t((v) * SDL_MIX_MAXVOLUME)
-
-inline bool sa2_ok(const int r)
-{
-    return r == 0;
-}
+#define SA2_OK(r) (r == 0)
 
 typedef SDL_Rect Renderer_Rect_t;
 typedef SDL_PixelFormatEnum PixelFormat_t;
+typedef int Joystick_t;
 
 #endif
 
@@ -77,7 +73,7 @@ namespace sa2
     namespace compat
     {
 
-        int getNumJoysticks();
+        std::vector<Joystick_t> getGameControllers();
         int getGLSwapInterval();
         const SDL_DisplayMode *getCurrentDisplayMode(SDL_DisplayMode &dummy);
         void pauseAudioDevice(SDL_AudioDeviceID dev);
