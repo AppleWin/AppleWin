@@ -21,7 +21,6 @@
 #define SA2_CONTROLLER_BUTTON(e) ((e).gbutton.button)
 #define SA2_BUTTON_DOWN(e) ((e).down)
 #define SA2_DROP_FILE(d) ((d).data)
-#define SA2_FREE_DROP(d) (void)0
 #define SA2_RENDERER_LOGICAL_SIZE(r, w, h) SDL_RenderSetLogicalSize((r), (w), (h), SDL_LOGICAL_PRESENTATION_STRETCH)
 #define SA2_IMAGE_BITS(s) (SDL_GetPixelFormatDetails((s)->format)->bits_per_pixel)
 #define SA2_KEY_CODE(e) ((e).key)
@@ -48,7 +47,6 @@ typedef SDL_JoystickID Joystick_t;
 #define SA2_CONTROLLER_BUTTON(e) ((e).cbutton.button)
 #define SA2_BUTTON_DOWN(e) ((e).state == SDL_PRESSED)
 #define SA2_DROP_FILE(d) ((d).file)
-#define SA2_FREE_DROP(d) SDL_free((d).file)
 #define SA2_RENDERER_LOGICAL_SIZE(r, w, h) SDL_RenderSetLogicalSize((r), (w), (h))
 #define SA2_IMAGE_BITS(s) ((s)->format->BitsPerPixel)
 #define SA2_KEY_CODE(e) ((e).keysym.sym)
@@ -72,6 +70,14 @@ namespace sa2
 {
     namespace compat
     {
+
+        template <typename T> void maybeSDLfree(T *ptr)
+        {
+            if constexpr (!std::is_const_v<T>)
+            {
+                SDL_free(ptr);
+            }
+        }
 
         std::vector<Joystick_t> getGameControllers();
         int getGLSwapInterval();

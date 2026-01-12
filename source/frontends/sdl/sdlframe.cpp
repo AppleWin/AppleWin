@@ -313,7 +313,6 @@ namespace sa2
         case SDL_DROPFILE:
         {
             ProcessDropEvent(e.drop);
-            SA2_FREE_DROP(e.drop);
             break;
         }
         case SDL_CONTROLLERBUTTONDOWN:
@@ -418,7 +417,9 @@ namespace sa2
 
     void SDLFrame::ProcessDropEvent(const SDL_DropEvent &drop)
     {
-        processFile(this, SA2_DROP_FILE(drop), myDragAndDropSlot, myDragAndDropDrive);
+        const auto file = SA2_DROP_FILE(drop);
+        processFile(this, file, myDragAndDropSlot, myDragAndDropDrive);
+        sa2::compat::maybeSDLfree(file);
     }
 
     void SDLFrame::ProcessKeyDown(const SDL_KeyboardEvent &key, bool &quit)
@@ -556,20 +557,12 @@ namespace sa2
                 }
                 else if (modifiers == KMOD_SHIFT)
                 {
-#ifdef SA2_SDL3
-                    const char *text = SDL_GetClipboardText();
+                    const auto text = SDL_GetClipboardText();
                     if (text)
                     {
                         addTextToBuffer(text);
+                        sa2::compat::maybeSDLfree(text);
                     }
-#else
-                    char *text = SDL_GetClipboardText();
-                    if (text)
-                    {
-                        addTextToBuffer(text);
-                        SDL_free(text);
-                    }
-#endif
                 }
                 else if (modifiers == KMOD_CTRL)
                 {
