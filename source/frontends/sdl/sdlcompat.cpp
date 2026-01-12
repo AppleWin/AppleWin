@@ -3,6 +3,7 @@
 #include "frontends/common2/programoptions.h"
 
 #include <stdexcept>
+#include <cstring>
 
 namespace sa2
 {
@@ -114,6 +115,26 @@ namespace sa2
             return surface;
         }
 
+        bool convertAudio(
+            const SDL_AudioSpec &wavSpec, const Uint8 *wavBuffer, const Uint32 wavLength, std::vector<int8_t> &output)
+        {
+            const SDL_AudioFormat format = sizeof(int8_t) == 1 ? AUDIO_S8 : AUDIO_S16SYS;
+
+            const SDL_AudioSpec dstSpec = {format, wavSpec.channels, wavSpec.freq};
+            Uint8 *dstData = nullptr;
+            int dstLen = 0;
+            const bool ok = SDL_ConvertAudioSamples(&wavSpec, wavBuffer, wavLength, &dstSpec, &dstData, &dstLen);
+            std::shared_ptr<Uint8> dstBuffer(dstData, SDL_free);
+
+            if (ok)
+            {
+                output.resize(dstLen / sizeof(int8_t));
+                std::memcpy(output.data(), dstBuffer.get(), dstLen);
+            }
+
+            return ok;
+        }
+
 #else
 
         std::vector<int> getGameControllers()
@@ -187,6 +208,33 @@ namespace sa2
                 throw std::runtime_error(decorateSDLError("IMG_Load_RW"));
             }
             return surface;
+        }
+
+        bool convertAudio(
+            const SDL_AudioSpec &wavSpec, const Uint8 *wavBuffer, const Uint32 wavLength, std::vector<int8_t> &output)
+        {
+            const SDL_AudioFormat format = sizeof(int8_t) == 1 ? AUDIO_S8 : AUDIO_S16SYS;
+
+            SDL_AudioCVT cvt;
+            const int res =
+                SDL_BuildAudioCVT(&cvt, wavSpec.format, wavSpec.channels, wavSpec.freq, format, 1, wavSpec.freq);
+            if (res < 0)
+            {
+                return false;
+            }
+
+            cvt.len = wavLength;
+            output.resize(cvt.len_mult * cvt.len / sizeof(int8_t));
+            std::memcpy(output.data(), wavBuffer, cvt.len);
+
+            if (cvt.needed)
+            {
+                cvt.buf = reinterpret_cast<Uint8 *>(output.data());
+                SDL_ConvertAudio(&cvt);
+                output.resize(cvt.len_cvt / sizeof(int8_t));
+            }
+
+            return true;
         }
 
 #endif

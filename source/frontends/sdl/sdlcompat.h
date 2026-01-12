@@ -83,5 +83,8 @@ namespace sa2
         SDL_Renderer *createRenderer(SDL_Window *window, const int index);
         SDL_Surface *createSurfaceFromResource(const unsigned char *data, unsigned int size);
 
+        bool convertAudio(
+            const SDL_AudioSpec &wavSpec, const Uint8 *wavBuffer, const Uint32 wavLength, std::vector<int8_t> &output);
+
     } // namespace compat
 } // namespace sa2
