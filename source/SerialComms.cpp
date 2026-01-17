@@ -74,7 +74,7 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	m_pExpansionRom(NULL),
 	m_hFrameWindow(NULL)
 {
-	if (m_slot != 2)	// fixme
+	if (m_slot == SLOT0)
 		ThrowErrorInvalidSlot();
 
 	m_dwSerialPortItem = 0;
@@ -987,8 +987,8 @@ void CSuperSerialCard::Reset(const bool /* powerCycle */)
 
 //===========================================================================
 
-// dwNewSerialPortItem is the drop-down list item
-void CSuperSerialCard::CommSetSerialPort(DWORD dwNewSerialPortItem)
+// dwNewSerialPortItem is the Config's drop-down list item
+void CSuperSerialCard::SetSerialPortItem(DWORD dwNewSerialPortItem)
 {
 	if (m_dwSerialPortItem == dwNewSerialPortItem)
 		return;

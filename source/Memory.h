@@ -91,6 +91,9 @@ bool    MemGetAnnunciator(UINT annunciator);
 bool    MemHasNoSlotClock(void);
 void    MemInsertNoSlotClock(void);
 void    MemRemoveNoSlotClock(void);
+const std::string& MemGetSnapshotCardName80Col();
+const std::string& MemGetSnapshotCardNameExtended80Col();
+const std::string& MemGetSnapshotCardNameRamWorksIII();
 const std::string& MemGetSnapshotUnitAuxSlotName(void);
 void    MemSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 bool    MemLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT unitVersion);
@@ -108,6 +111,7 @@ BYTE __stdcall IO_F8xx(WORD programcounter, WORD address, BYTE write, BYTE value
 void	SetExpansionMemType(const SS_CARDTYPE type, bool updateRegistry=true);
 SS_CARDTYPE GetCurrentExpansionMemType(void);
 
+UINT	GetRamWorksMemorySize();
 void	SetRamWorksMemorySize(UINT banks, bool updateRegistry=true);
 UINT	GetRamWorksActiveBank(void);
 void	SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain=false);

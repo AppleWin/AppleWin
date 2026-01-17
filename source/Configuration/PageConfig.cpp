@@ -26,14 +26,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PageConfig.h"
 #include "PropertySheet.h"
 
-#include "../Windows/AppleWin.h"
 #include "../Windows/Win32Frame.h"
 #include "../Registry.h"
-#include "../SerialComms.h"
 #include "../CardManager.h"
-#include "../Uthernet2.h"
-#include "../Tfe/PCapBackend.h"
 #include "../Interface.h"
+#include "../Speaker.h"
 #include "../resource/resource.h"
 
 CPageConfig* CPageConfig::ms_this = 0;	// reinit'd in ctor
@@ -114,14 +111,6 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			PropSheet_PressButton(GetParent(hWnd), PSBTN_OK);
 			break;
 
-		case IDC_ETHERNET:
-			ui_tfe_settings_dialog(hWnd);
-			m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = m_PageConfigTfe.m_tfe_selected;
-			m_PropertySheetHelper.GetConfigNew().m_tfeInterface = m_PageConfigTfe.m_tfe_interface_name;
-			m_PropertySheetHelper.GetConfigNew().m_tfeVirtualDNS = m_PageConfigTfe.m_tfe_virtual_dns;
-			InitOptions(hWnd);
-			break;
-
 		case IDC_MONOCOLOR:
 			Win32Frame::GetWin32Frame().ChooseMonochromeColor();
 			break;
@@ -131,26 +120,19 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		case IDC_CHECK_VERTICAL_BLEND:
 		case IDC_CHECK_FS_SHOW_SUBUNIT_STATUS:
 		case IDC_CHECK_50HZ_VIDEO:
+		case IDC_SCROLLLOCK_TOGGLE:
 			// Checked in DlgOK()
-			break;
-
-		case IDC_CHECK_VIDHD_IN_SLOT3:
-			{
-				const UINT newState = IsDlgButtonChecked(hWnd, IDC_CHECK_VIDHD_IN_SLOT3) ? 1 : 0;
-				m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3] = newState ? CT_VidHD : CT_Empty;
-				InitOptions(hWnd);
-			}
 			break;
 
 		case IDC_COMPUTER:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const uint32_t NewComputerMenuItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
-				const eApple2Type NewApple2Type = GetApple2Type(NewComputerMenuItem);
-				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewApple2Type;
-				if (NewApple2Type != A2TYPE_CLONE)
+				const uint32_t newComputerMenuItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_COMPUTER, CB_GETCURSEL, 0, 0);
+				const eApple2Type newApple2Type = GetApple2Type(newComputerMenuItem);
+				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = newApple2Type;
+				if (newApple2Type != A2TYPE_CLONE)
 				{
-					m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewApple2Type);
+					m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(newApple2Type);
 				}
 				else // A2TYPE_CLONE
 				{
@@ -158,6 +140,13 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 					// - Set correctly in PageAdvanced.cpp for IDC_CLONETYPE
 					m_PropertySheetHelper.GetConfigNew().m_CpuType = CPU_UNKNOWN;
 				}
+
+				if (IsApple2Original(newApple2Type))
+					m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT0] = CT_Empty;
+				else if (IsApple2PlusOrClone(newApple2Type))
+					m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT0] = CT_LanguageCard;
+				else
+					m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT0] = CT_LanguageCardIIe;
 			}
 			break;
 
@@ -185,10 +174,6 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 #endif
 		} // switch( (LOWORD(wparam))
 		break; // WM_COMMAND
-
-	case WM_HSCROLL:
-		CheckRadioButton(hWnd, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);	// FirstButton, LastButton, CheckButton
-		break;
 
 	case WM_INITDIALOG:
 		{
@@ -223,23 +208,25 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
 			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (GetVideo().GetVideoType() == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
 
-			if (GetCardMgr().IsSSCInstalled())
-			{
-				CSuperSerialCard* pSSC = GetCardMgr().GetSSC();
-				m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, pSSC->GetSerialPortChoices().c_str(), pSSC->GetSerialPort());
-				EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !pSSC->IsActive() ? TRUE : FALSE);
-			}
-			else
-			{
-				EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), FALSE);
-			}
+			CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? BST_CHECKED : BST_UNCHECKED);
 
 			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideo().GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
 
-			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,1,MAKELONG(0,40));
+			//
+
+			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETRANGE, TRUE, MAKELONG(VOLUME_MIN, VOLUME_MAX));
+			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPAGESIZE, 0, 10);
+			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETTICFREQ, 10, 0);
+			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPOS, TRUE, VOLUME_MAX - SpkrGetVolume());	// Invert: L=MIN, R=MAX
+
+			//
+
+			CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
+
+			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,TRUE,MAKELONG(0,40));
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
 			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETTICFREQ,10,0);
-			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPOS,1,g_dwSpeed);
+			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPOS,TRUE,g_dwSpeed);
 
 			{
 				BOOL bCustom = TRUE;
@@ -254,24 +241,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 				EnableTrackbar(hWnd, bCustom);
 			}
 
-			{
-				SS_CARDTYPE cardInSlot3 = GetCardMgr().QuerySlot(SLOT3);
-				switch (cardInSlot3) {
-				case CT_Uthernet:
-				case CT_Uthernet2:
-					m_PageConfigTfe.m_tfe_selected = cardInSlot3;
-					break;
-				default:
-					m_PageConfigTfe.m_tfe_selected = CT_Empty;
-					break;
-				}
-
-				m_PageConfigTfe.m_tfe_interface_name = PCapBackend::GetRegistryInterface(SLOT3);
-				m_PageConfigTfe.m_tfe_virtual_dns = Uthernet2::GetRegistryVirtualDNS(SLOT3);
-			}
-
 			InitOptions(hWnd);
-
 			break;
 		}
 
@@ -372,10 +342,29 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	//
 
-	if (GetCardMgr().IsSSCInstalled())
+	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
+	const uint32_t masterVolume = VOLUME_MAX - (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_GETPOS, 0, 0);	// Invert: L=MIN, R=MAX
+	SpkrSetVolume(masterVolume, VOLUME_MAX);
+	GetCardMgr().GetMockingboardCardMgr().SetVolume(masterVolume, VOLUME_MAX);
+
+	REGSAVE(REGVALUE_MASTER_VOLUME, masterVolume);
+
+	//
+
+	const bool bNewEnhanceDisk = IsDlgButtonChecked(hWnd, IDC_ENHANCE_DISK_ENABLE) ? true : false;
+	if (bNewEnhanceDisk != GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk())
 	{
-		const uint32_t uNewSerialPort = (uint32_t) SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
-		GetCardMgr().GetSSC()->CommSetSerialPort(uNewSerialPort);
+		GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
+		REGSAVE(REGVALUE_ENHANCE_DISK_SPEED, (uint32_t)bNewEnhanceDisk);
+	}
+
+	//
+
+	const UINT newScrollLockToggle = IsDlgButtonChecked(hWnd, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
+	if (newScrollLockToggle != m_uScrollLockToggle)
+	{
+		m_uScrollLockToggle = newScrollLockToggle;
+		REGSAVE(REGVALUE_SCROLLLOCK_TOGGLE, m_uScrollLockToggle);
 	}
 
 	//
@@ -383,7 +372,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 	if (IsDlgButtonChecked(hWnd, IDC_AUTHENTIC_SPEED))
 		g_dwSpeed = SPEED_NORMAL;
 	else
-		g_dwSpeed = (uint32_t) SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED,TBM_GETPOS, 0, 0);
+		g_dwSpeed = (uint32_t) SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_GETPOS, 0, 0);
 
 	SetCurrentCLK6502();
 
@@ -395,14 +384,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 void CPageConfig::InitOptions(HWND hWnd)
 {
-	const SS_CARDTYPE slot3 = m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT3];
-	const BOOL enableUthernetDialog = slot3 == CT_Empty || slot3 == CT_Uthernet || slot3 == CT_Uthernet2;
-	EnableWindow(GetDlgItem(hWnd, IDC_ETHERNET), enableUthernetDialog);
-
-	const bool bIsSlot3VidHD = slot3 == CT_VidHD;
-	CheckDlgButton(hWnd, IDC_CHECK_VIDHD_IN_SLOT3, bIsSlot3VidHD ? BST_CHECKED : BST_UNCHECKED);
-	const BOOL enableVidHD = slot3 == CT_Empty || bIsSlot3VidHD;
-	EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VIDHD_IN_SLOT3), enableVidHD);
 }
 
 // Config->Computer: Menu item to eApple2Type

@@ -32,30 +32,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 CPageConfigTfe* CPageConfigTfe::ms_this = 0;	// reinit'd in ctor
 
-uilib_localize_dialog_param CPageConfigTfe::ms_dialog[] =
-{
-	{0, IDS_TFE_CAPTION, -1},
-	{IDC_TFE_SETTINGS_ENABLE_T, IDS_TFE_ETHERNET, 0},
-	{IDC_TFE_SETTINGS_INTERFACE_T, IDS_TFE_INTERFACE, 0},
-	{IDOK, IDS_OK, 0},
-	{IDCANCEL, IDS_CANCEL, 0},
-	{0, 0, 0}
-};
-
-uilib_dialog_group CPageConfigTfe::ms_leftgroup[] =
-{
-	{IDC_TFE_SETTINGS_ENABLE_T, 0},
-	{IDC_TFE_SETTINGS_INTERFACE_T, 0},
-	{0, 0}
-};
-
-uilib_dialog_group CPageConfigTfe::ms_rightgroup[] =
-{
-	{IDC_TFE_SETTINGS_ENABLE, 0},
-	{IDC_TFE_SETTINGS_INTERFACE, 0},
-	{0, 0}
-};
-
 INT_PTR CALLBACK CPageConfigTfe::DlgProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
@@ -78,9 +54,6 @@ INT_PTR CPageConfigTfe::DlgProcInternal(HWND hwnd, UINT msg, WPARAM wparam, LPAR
 			return TRUE;
 
 		case IDC_TFE_SETTINGS_INTERFACE:
-			/* FALL THROUGH */
-
-		case IDC_TFE_SETTINGS_ENABLE:
 			gray_ungray_items(hwnd);
 			break;
 		}
@@ -137,41 +110,21 @@ BOOL CPageConfigTfe::get_tfename(int number, std::string & name, std::string & d
 
 void CPageConfigTfe::gray_ungray_items(HWND hwnd)
 {
-	const LRESULT enable = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
+	const int number = (int)SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), CB_GETCURSEL, 0, 0);
+	std::string name;
+	std::string description;
 
-	if (enable)
+	if (get_tfename(number, name, description))
 	{
-		std::string name;
-		std::string description;
-
-		const int number = (int) SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), CB_GETCURSEL, 0, 0);
-
-		if (get_tfename(number, name, description))
-		{
-			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), name.c_str());
-			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), description.c_str());
-		}
-	}
-	else
-	{
-		SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), "");
-		SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), "");
+		SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), name.c_str());
+		SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), description.c_str());
 	}
 
-	EnableWindow(GetDlgItem(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS), enable == 2);
+	EnableWindow(GetDlgItem(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS), m_enableVirtualDnsCheckbox ? TRUE : FALSE);
 }
 
 void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 {
-	HWND temp_hwnd;
-	int active_value;
-
-	int xsize, ysize;
-
-	uilib_get_group_extent(hwnd, ms_leftgroup, &xsize, &ysize);
-	uilib_adjust_group_width(hwnd, ms_leftgroup);
-	uilib_move_group(hwnd, ms_rightgroup, xsize + 30);
-
 	if (PCapBackend::tfe_is_npcap_loaded())
 	{
 		const char * version = PCapBackend::tfe_lib_version();
@@ -189,26 +142,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 			"or select Uthernet II with Virtual DNS.");
 	}
 
-	switch (m_tfe_selected)
-	{
-	case CT_Uthernet:
-		active_value = 1;
-		break;
-	case CT_Uthernet2:
-		active_value = 2;
-		break;
-	default:
-		active_value = 0;
-		break;
-	}
-
 	CheckDlgButton(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS, m_tfe_virtual_dns ? BST_CHECKED : BST_UNCHECKED);
-
-	temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_ENABLE);
-	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Disabled");
-	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Uthernet");
-	SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)"Uthernet II");
-	SendMessage(temp_hwnd, CB_SETCURSEL, (WPARAM)active_value, 0);
 
 	if (PCapBackend::tfe_enumadapter_open())
 	{
@@ -217,7 +151,7 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 		std::string name;
 		std::string description;
 
-		temp_hwnd=GetDlgItem(hwnd,IDC_TFE_SETTINGS_INTERFACE);
+		HWND temp_hwnd = GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE);
 
 		for (cnt = 0; PCapBackend::tfe_enumadapter(name, description); cnt++)
 		{
@@ -247,26 +181,9 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 
 void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 {
-	char buffer[256];
-
-	buffer[255] = 0;
-	GetDlgItemText(hwnd, IDC_TFE_SETTINGS_INTERFACE, buffer, sizeof(buffer)-1);
+	char buffer[256] = {};
+	GetDlgItemText(hwnd, IDC_TFE_SETTINGS_INTERFACE, buffer, sizeof(buffer) - 1);
 
 	m_tfe_interface_name = buffer;
-
-	LRESULT active_value = SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_ENABLE), CB_GETCURSEL, 0, 0);
-	switch (active_value)
-	{
-	case 1:
-		m_tfe_selected = CT_Uthernet;
-		break;
-	case 2:
-		m_tfe_selected = CT_Uthernet2;
-		break;
-	default:
-		m_tfe_selected = CT_Empty;
-		break;
-	}
-
-	m_tfe_virtual_dns = IsDlgButtonChecked(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS) ? 1 : 0;
+	m_tfe_virtual_dns = IsDlgButtonChecked(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS) ? true : false;
 }
