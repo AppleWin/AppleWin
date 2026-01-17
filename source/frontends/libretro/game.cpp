@@ -304,6 +304,11 @@ namespace ra2
         return myInputRemapper;
     }
 
+    size_t Game::getFrameBufferLinePeriod() const
+    {
+        return myFrame->GetFrameBufferLinePeriod();
+    }
+
     void Game::flushMemory()
     {
         // if not using shadow areas, all reads/writes will occur directly on memmain
