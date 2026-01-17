@@ -181,7 +181,6 @@ namespace
     DirectSoundGenerator::~DirectSoundGenerator()
     {
         activeSoundGenerators.erase(this);
-        sa2::compat::pauseAudioDevice(myAudioDevice);
         SDL_CloseAudioDevice(myAudioDevice);
     }
 
