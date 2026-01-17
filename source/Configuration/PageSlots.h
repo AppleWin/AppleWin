@@ -37,6 +37,7 @@ protected:
 private:
 	void InitOptions(HWND hWnd);
 	int CardTypeToComboItem(UINT slot);
+	BOOL CardTypeHasOptions(SS_CARDTYPE card);
 
 	static INT_PTR CALLBACK DlgProcDisk2(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	INT_PTR DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);

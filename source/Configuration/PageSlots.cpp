@@ -137,7 +137,7 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				else
 					m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize = 1;	// Must be 1 for all others (Empty, 80Col, Extended80Col)
 
-				//InitOptions(hWnd);	// Not needed, since card in this slot don't affect other slots
+				InitOptions(hWnd);	// Needed to enable/disable the options button (depending on card)
 			}
 			break;
 
@@ -162,6 +162,9 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 						m_PropertySheetHelper.SetSlot(slot, cardInSlot);
 					}
 				}
+
+				if (!CardTypeHasOptions(cardInSlot))
+					break;
 
 				if (cardInSlot == CT_Disk2)
 				{
@@ -198,6 +201,10 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_SLOTAUX_OPTION:
 			{
 				const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_SlotAux;
+
+				if (!CardTypeHasOptions(cardInSlot))
+					break;
+
 				if (cardInSlot == CT_RamWorksIII)
 				{
 					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_RAMWORKS3, hWnd, CPageSlots::DlgProcRamWorks3);
@@ -256,9 +263,21 @@ int CPageSlots::CardTypeToComboItem(UINT slot)
 	return currentChoice;
 }
 
+BOOL CPageSlots::CardTypeHasOptions(SS_CARDTYPE card)
+{
+	return (card == CT_Disk2 ||
+		card == CT_GenericHDD ||
+		card == CT_SSC ||
+		card == CT_GenericPrinter ||
+		card == CT_MouseInterface ||
+		card == CT_Uthernet ||
+		card == CT_Uthernet2 ||
+		card == CT_RamWorksIII) ? TRUE : FALSE;
+}
+
 void CPageSlots::InitOptions(HWND hWnd)
 {
-	BOOL enable = FALSE;
+	BOOL enable = FALSE, enableOpt = FALSE;
 
 	SS_CARDTYPE currConfig[NUM_SLOTS];
 	for (int i = SLOT0; i < NUM_SLOTS; i++)
@@ -270,14 +289,17 @@ void CPageSlots::InitOptions(HWND hWnd)
 		GetCardMgr().GetCardChoicesForSlot(SLOT0, currConfig, choices, m_choicesList[SLOT0]);
 		int currentChoice = CardTypeToComboItem(SLOT0);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0, choices.c_str(), currentChoice);
+
 		enable = TRUE;
+		enableOpt = CardTypeHasOptions(m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT0]);
 	}
 	else
 	{
 		enable = FALSE;
+		enableOpt = FALSE;
 	}
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT0), enable);
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT0_OPTION), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT0_OPTION), enableOpt);
 
 	for (int slot = SLOT1; slot < NUM_SLOTS; slot++)
 	{
@@ -285,6 +307,9 @@ void CPageSlots::InitOptions(HWND hWnd)
 		GetCardMgr().GetCardChoicesForSlot(slot, currConfig, choices, m_choicesList[slot]);
 		int currentChoice = CardTypeToComboItem(slot);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0 + slot, choices.c_str(), currentChoice);
+
+		enableOpt = CardTypeHasOptions(m_PropertySheetHelper.GetConfigNew().m_Slot[slot]);
+		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0_OPTION + slot), enableOpt);
 	}
 
 	if (IsAppleIIe(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
@@ -293,14 +318,17 @@ void CPageSlots::InitOptions(HWND hWnd)
 		GetCardMgr().GetCardChoicesForAuxSlot(choices, m_choicesListAux);
 		int currentChoice = CardTypeToComboItem(SLOT_AUX);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOTAUX, choices.c_str(), currentChoice);
+
 		enable = TRUE;
+		enableOpt = CardTypeHasOptions(m_PropertySheetHelper.GetConfigNew().m_SlotAux);
 	}
 	else
 	{
 		enable = FALSE;
+		enableOpt = FALSE;
 	}
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX), enable);
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX_OPTION), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX_OPTION), enableOpt);
 
 	//
 
