@@ -104,7 +104,7 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_SLOT7:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const UINT slot = (LOWORD(wparam) - IDC_SLOT0) / 2;
+				const UINT slot = LOWORD(wparam) - IDC_SLOT0;
 				const uint32_t newChoiceItem = (uint32_t)SendDlgItemMessage(hWnd, LOWORD(wparam), CB_GETCURSEL, 0, 0);
 
 				SS_CARDTYPE newCard = CT_Empty;
@@ -150,7 +150,7 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_SLOT6_OPTION:
 		case IDC_SLOT7_OPTION:
 			{
-				const UINT slot = (LOWORD(wparam) - IDC_SLOT0_OPTION) / 2;
+				const UINT slot = LOWORD(wparam) - IDC_SLOT0_OPTION;
 				const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_Slot[slot];
 
 				if (cardInSlot == CT_Disk2 || cardInSlot == CT_GenericHDD)
@@ -284,7 +284,7 @@ void CPageSlots::InitOptions(HWND hWnd)
 		std::string choices;
 		GetCardMgr().GetCardChoicesForSlot(slot, currConfig, choices, m_choicesList[slot]);
 		int currentChoice = CardTypeToComboItem(slot);
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0 + slot * 2, choices.c_str(), currentChoice);
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0 + slot, choices.c_str(), currentChoice);
 	}
 
 	if (IsAppleIIe(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
