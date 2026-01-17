@@ -15,7 +15,7 @@ public:
     void putString(const std::string &section, const std::string &key, const std::string &value) override;
     void putDWord(const std::string &section, const std::string &key, const uint32_t value) override;
 
-    std::map<std::string, std::map<std::string, std::string>> getAllValues() const override;
+    const std::map<std::string, std::map<std::string, std::string>> &getAllValues() const override;
 
     std::string getLocation() const override;
 

@@ -916,7 +916,7 @@ void MockingboardCard::Update(const ULONG executedCycles)
 // Called by:
 // . CpuExecute() every ~1000 cycles @ 1MHz (or ~3 cycles when MODE_STEPPING)
 // . MB_SyncEventCallback() on a TIMER1/2 underflow
-// . MB_Read() / MB_Write() (for both normal & full-speed)
+// . IORead() / IOWrite() (for both normal & full-speed)
 void MockingboardCard::UpdateCycles(ULONG executedCycles)
 {
 	CpuCalcCycles(executedCycles);
@@ -1151,7 +1151,8 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE 
 //    SSI263::m_currentMode changed (added bit5 = enableInts)
 //13: Removed SS_YAML_KEY_SSI263_ACTIVE_PHONEME
 //    Removed SS_YAML_KEY_VOTRAX_PHONEME (as this has been present in the SC01 subunit since v12!)
-const UINT kUNIT_VERSION = 13;
+//14: Added: SSI263: Type
+const UINT kUNIT_VERSION = 14;
 
 #define SS_YAML_KEY_MB_UNIT "Unit"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"

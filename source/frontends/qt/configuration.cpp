@@ -57,7 +57,7 @@ std::string Configuration::getLocation() const
     return std::string();
 }
 
-std::map<std::string, std::map<std::string, std::string>> Configuration::getAllValues() const
+const std::map<std::string, std::map<std::string, std::string>> &Configuration::getAllValues() const
 {
     throw std::runtime_error("Configuration::getAllValues not implemented.");
 }

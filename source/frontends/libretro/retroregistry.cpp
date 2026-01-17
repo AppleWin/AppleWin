@@ -13,6 +13,7 @@
 
 #include <list>
 #include <sstream>
+#include <functional>
 
 namespace
 {

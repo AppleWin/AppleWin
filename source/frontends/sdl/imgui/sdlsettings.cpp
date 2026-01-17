@@ -26,7 +26,7 @@ namespace
 {
 
     const char *ourShortcutHeaders[6] = {
-        "Key", "Normal", "Control", "Shift", "Both", "Alt",
+        "Key", "Normal", "Control", "Shift", "Control+Shift", "Alt",
     };
 
     const char *ourShortcutKeys[][6] = {
@@ -40,7 +40,8 @@ namespace
         {"F3", "Disks"},
         {"F4", nullptr, nullptr, nullptr, nullptr, "Quit"},
         {"F5", "Swap S6 disks"},
-        {"F6", "Fullscreen", "2x", nullptr, "50 scan lines"},
+        {"F6", "Fullscreen", "2x", nullptr, "50% scan lines"},
+        {"F7", "Debugger"},
         {"F8", "Settings"},
         {"F9", "Cycle video type", "Toggle mouse cursor"},
         {"F11", "Save snapshot"},
@@ -202,13 +203,13 @@ namespace sa2
                     ImGui::PopStyleColor(1);
 
                     ImGui::SameLine();
-                    if (ImGui::Button("ResetMachineState"))
+                    if (ImGui::Button("Reset Machine State"))
                     {
                         frame->FrameResetMachineState();
                     }
 
                     ImGui::SameLine();
-                    if (ImGui::Button("CtrlReset"))
+                    if (ImGui::Button("Ctrl-Reset"))
                     {
                         CtrlReset();
                     }
@@ -268,10 +269,8 @@ namespace sa2
 
                 if (ImGui::BeginTabItem("Hardware"))
                 {
-                    ImGui::LabelText("Option", "Value");
-
                     comboIterator(
-                        "Apple 2", GetApple2Type(), getAapple2Types(),
+                        "Model", GetApple2Type(), getAapple2Types(),
                         [](eApple2Type x)
                         {
                             SetApple2Type(x);
@@ -311,7 +310,7 @@ namespace sa2
                     ImGui::Separator();
 
                     comboIterator(
-                        "Copy protection", GetCopyProtectionDongleType(), getDongleTypes(),
+                        "Game I/O Connector", GetCopyProtectionDongleType(), getDongleTypes(),
                         [](DONGLETYPE x)
                         {
                             SetCopyProtectionDongleType(x);
@@ -707,7 +706,7 @@ namespace sa2
                         ImGui::ProgressBar(fraction, ImVec2(-FLT_MIN, 0), buf);
                         ImGui::PopStyleColor();
 
-                        ImGui::LabelText("Filename", "%s", info.filename.c_str());
+                        ImGui::LabelText("Filename", "%s", info.filename.data());
                         ImGui::LabelText("Frequency", "%d Hz", info.frequency);
                         ImGui::LabelText("Auto Play", "%s", "ON");
 
@@ -915,7 +914,7 @@ namespace sa2
                 ImGui::MenuItem("Settings", "F8", &myShowSettings);
                 ImGui::MenuItem("Memory viewer", nullptr, &myMemoryViewer.show);
                 ImGui::MenuItem("Memory editor", nullptr, &myShowMemoryEditor);
-                if (ImGui::MenuItem("Debugger", nullptr, &myDebugger.showDebugger))
+                if (ImGui::MenuItem("Debugger", "F7", &myDebugger.showDebugger))
                 {
                     myDebugger.syncDebuggerState(frame);
                 }
@@ -1016,6 +1015,12 @@ namespace sa2
     void ImGuiSettings::toggleShortcuts()
     {
         myShowShortcuts = !myShowShortcuts;
+    }
+
+    void ImGuiSettings::toggleDebugger(SDLFrame *frame)
+    {
+        myDebugger.showDebugger = !myDebugger.showDebugger;
+        myDebugger.syncDebuggerState(frame);
     }
 
 } // namespace sa2

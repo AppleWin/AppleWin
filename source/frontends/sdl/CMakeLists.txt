@@ -11,8 +11,8 @@ find_package(SDL2 REQUIRED)
 pkg_search_module(SDL2_IMAGE REQUIRED SDL2_image)
 
 
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # only OpenGL supported on MacOS
+if ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR (${CMAKE_SYSTEM_NAME} MATCHES "Windows"))
+  # only OpenGL supported on MacOS and Windows
   set (SA2_OPENGL ON)
 else()
   option(SA2_OPENGL "Prefer OpenGL over OpenGL ES" OFF)
@@ -60,19 +60,12 @@ target_link_libraries(sa2 PRIVATE
 
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
-  ${ZLIB_LIBRARIES}
 
   ${SDL2_LIBRARIES}
   ${SDL2_IMAGE_LIBRARIES}
   ${GLES2_LIBRARIES}
   OpenGL::GL
   )
-
-if (NOT WIN32)
-  target_link_libraries(sa2 PUBLIC
-    windows
-    )
-endif()
 
 target_link_directories(sa2 PRIVATE
   ${SDL2_LIBRARY_DIRS}
@@ -101,7 +94,7 @@ target_sources(sa2 PRIVATE
   imgui/sdlsettings.h
   imgui/sdldebugger.h
   imgui/sdlmemory.h
-  imgui/imconfig.h
+  imgui/sa2_imconfig.h
   imgui/glselector.h
   imgui/inputtexthistory.h
   imgui/cycletabitems.h
@@ -125,7 +118,7 @@ target_include_directories(sa2 PRIVATE
   )
 
 target_compile_definitions(sa2 PRIVATE
-  IMGUI_USER_CONFIG="frontends/sdl/imgui/imconfig.h"
+  IMGUI_USER_CONFIG="frontends/sdl/imgui/sa2_imconfig.h"
   )
 
 install(TARGETS sa2

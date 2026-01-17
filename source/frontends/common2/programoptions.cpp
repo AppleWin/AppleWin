@@ -1,5 +1,4 @@
 #include "frontends/common2/programoptions.h"
-#include "frontends/common2/utils.h"
 #include "linux/paddle.h"
 
 #include "StdAfx.h"
@@ -17,7 +16,6 @@ namespace common2
     EmulatorOptions::EmulatorOptions()
     {
         memclear = g_nMemoryClearType;
-        configurationFile = getConfigFile("applewin.conf");
     }
 
     void applyOptions(const EmulatorOptions &options)

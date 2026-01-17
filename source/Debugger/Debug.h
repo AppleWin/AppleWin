@@ -14,6 +14,7 @@
 #include "Debugger_Display.h"
 #include "Debugger_Symbols.h"
 #include "Util_MemoryTextFile.h"
+#include "BreakpointCard.h"
 
 // Globals __________________________________________________________________
 
@@ -45,8 +46,6 @@
 		, BP_DMA_FROM_MEM                       = (1 << 11)
 		, BP_HIT_VIDEO_POS                      = (1 << 12)
 	};
-
-	extern int          g_bDebugBreakpointHit;
 
 	extern int          g_nBreakpoints;
 	extern Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
@@ -178,6 +177,7 @@
 	void	DebugDisplay ( BOOL bInitDisasm = FALSE );
 	void	DebugInitialize ();
 	void	DebugReset(void);
+	bool	DebugQueryAnyBreakpointsSet ();
 
 	void	DebuggerInputConsoleChar( char ch );
 	void	DebuggerProcessKey( int keycode );
@@ -192,3 +192,7 @@
 	bool	DebuggerCheckMemBreakpoints(WORD nAddress, WORD nSize, bool isDmaToMemory);
 
 	void	ClearTempBreakpoints();
+	void	DebugSetAutoRunScript(std::string& sAutoRunScriptFilename);
+
+	typedef void(*CBFUNCTION)(uint8_t slot, INTERCEPTBREAKPOINT interceptBreakpoint);
+	void	InterceptBreakpoints(uint8_t slot, CBFUNCTION cbfunction);

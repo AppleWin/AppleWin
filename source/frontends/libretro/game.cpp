@@ -10,6 +10,7 @@
 
 #include "Registry.h"
 #include "Interface.h"
+#include "Memory.h"
 
 #include "linux/keyboardbuffer.h"
 #include "linux/paddle.h"
@@ -17,7 +18,7 @@
 
 #include "libretro.h"
 
-#define APPLEWIN_RETRO_CONF "/tmp/applewin.retro.conf"
+#define APPLEWIN_RETRO_CONF "/tmp/applewin.retro.yaml"
 
 namespace
 {
@@ -26,7 +27,7 @@ namespace
     {
         try
         {
-            registry.saveToINIFile(APPLEWIN_RETRO_CONF);
+            registry.saveToYamlFile(APPLEWIN_RETRO_CONF);
             ra2::display_message("Configuration saved to: " APPLEWIN_RETRO_CONF);
         }
         catch (const std::exception &e)
@@ -46,6 +47,7 @@ namespace ra2
         : myInputRemapper(supportsInputBitmasks)
         , myKeyboardType(KeyboardType::ASCII)
         , myMouseSpeed(1.0)
+        , myMainMemoryReference(nullptr)
     {
         myLoggerContext = std::make_unique<LoggerContext>(true);
         myRegistry = createRetroRegistry();
@@ -277,6 +279,9 @@ namespace ra2
     void Game::start()
     {
         myFrame->Begin();
+
+        // memmain is not exposed, but is returned by this function, so store it for later use
+        myMainMemoryReference = MemGetBankPtr(0, true);
     }
 
     void Game::restart()
@@ -299,9 +304,37 @@ namespace ra2
         return myInputRemapper;
     }
 
-    size_t Game::getFrameBufferLinePeriod() const
+    void Game::flushMemory()
     {
-        return myFrame->GetFrameBufferLinePeriod();
+        // if not using shadow areas, all reads/writes will occur directly on memmain
+        if (!GetIsMemCacheValid())
+            return;
+
+        // force flush (mem -> memmain) so frontend can see the current state of memory
+        MemGetBankPtr(0, true);
+    }
+
+    void Game::checkForMemoryWrites()
+    {
+        // if not using shadow areas, all reads/writes will occur directly on memmain
+        if (!GetIsMemCacheValid())
+            return;
+
+        // the libretro interface exposes memmain. for any pages that have a copy in mem,
+        // copy the memmain back into mem in case it was changed between frames (by cheats,
+        // debuggers, or other forms of memory editing)
+        LPBYTE memMainPtr = myMainMemoryReference;
+        for (UINT loop = 0; loop < _6502_NUM_PAGES; loop++)
+        {
+            LPBYTE altptr = MemGetMainPtr(loop * _6502_PAGE_SIZE);
+            if (altptr != memMainPtr)
+            {
+                // because this ensures mem and memmain match, we don't have to set the dirty flag
+                memcpy(altptr, memMainPtr, _6502_PAGE_SIZE);
+            }
+
+            memMainPtr += _6502_PAGE_SIZE;
+        }
     }
 
 } // namespace ra2

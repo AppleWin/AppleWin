@@ -91,7 +91,32 @@ namespace
             ch = 0x09;
             break;
         }
-        case SDLK_a ... SDLK_z:
+        case SDLK_a:
+        case SDLK_b:
+        case SDLK_c:
+        case SDLK_d:
+        case SDLK_e:
+        case SDLK_f:
+        case SDLK_g:
+        case SDLK_h:
+        case SDLK_i:
+        case SDLK_j:
+        case SDLK_k:
+        case SDLK_l:
+        case SDLK_m:
+        case SDLK_n:
+        case SDLK_o:
+        case SDLK_p:
+        case SDLK_q:
+        case SDLK_r:
+        case SDLK_s:
+        case SDLK_t:
+        case SDLK_u:
+        case SDLK_v:
+        case SDLK_w:
+        case SDLK_x:
+        case SDLK_y:
+        case SDLK_z:
         {
             // same logic as AW
             // CAPS is forced when the emulator starts
@@ -576,9 +601,54 @@ namespace sa2
             const char key = text.text[0];
             switch (key)
             {
-            case 0x20 ... 0x40:
-            case 0x5b ... 0x60:
-            case 0x7b ... 0x7e:
+            // 0x20 ... 0x40
+            case 0x20:
+            case 0x21:
+            case 0x22:
+            case 0x23:
+            case 0x24:
+            case 0x25:
+            case 0x26:
+            case 0x27:
+            case 0x28:
+            case 0x29:
+            case 0x2A:
+            case 0x2B:
+            case 0x2C:
+            case 0x2D:
+            case 0x2E:
+            case 0x2F:
+            case 0x30:
+            case 0x31:
+            case 0x32:
+            case 0x33:
+            case 0x34:
+            case 0x35:
+            case 0x36:
+            case 0x37:
+            case 0x38:
+            case 0x39:
+            case 0x3A:
+            case 0x3B:
+            case 0x3C:
+            case 0x3D:
+            case 0x3E:
+            case 0x3F:
+            case 0x40:
+
+            // 0x5B ... 0x60
+            case 0x5B:
+            case 0x5C:
+            case 0x5D:
+            case 0x5E:
+            case 0x5F:
+            case 0x60:
+
+            // 0x7B ... 0x7E
+            case 0x7B:
+            case 0x7C:
+            case 0x7D:
+            case 0x7E:
             {
                 // not the letters
                 // this is very simple, but one cannot handle CRTL-key combination.
@@ -655,8 +725,7 @@ namespace sa2
         const int sh = video.GetFrameBufferBorderlessHeight();
 
         // initialise with defaults
-        common2::Geometry actual = {
-            .width = sw * 2, .height = sh * 2, .x = SDL_WINDOWPOS_UNDEFINED, .y = SDL_WINDOWPOS_UNDEFINED};
+        common2::Geometry actual = {sw * 2, sh * 2, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED};
 
         // add registry information
         loadGeometryFromRegistry("sa2", actual);

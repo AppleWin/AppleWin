@@ -42,7 +42,7 @@
 
 namespace
 {
-    const char * MAXIMISED_KEY = "QApple/emulator/maximised";
+    const char *MAXIMISED_KEY = "QApple/emulator/maximised";
 
     void initialiseEmulator()
     {

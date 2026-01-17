@@ -5,7 +5,18 @@ AppleWin
 
 AppleWin is a fully-featured emulator supporting different Apple II models and clones. A variety of peripheral cards and video display modes are supported (eg. NTSC, RGB); and there's an extensive built-in symbolic debugger.
 
+Apple II models supported include:
+
+* ][
+* ][+
+* //e
+* //e Enhanced
+* Various clones (Pravets, TK3000, Base 64)
+
+There is currently no support for the //c, //c+, Laser 128, Laser 128EX, Laser 128EX2, or Apple IIgs.
+
 Peripheral cards and add-on hardware supported:
+
 - Mockingboard, Phasor and SAM sound cards
 - Disk II interface for floppy disk drives
 - Hard disk controller
@@ -22,22 +33,41 @@ Peripheral cards and add-on hardware supported:
 - No Slot Clock (NSC)
 - Game I/O Connector copy protection dongles 
 
+Running
+=======
 
-Download latest (stable) release: [AppleWin v1.30.20.0](https://github.com/AppleWin/AppleWin/releases/download/v1.30.20.0/AppleWin1.30.20.0.zip)
+Download latest (stable) release: [AppleWin v1.30.21.0](https://github.com/AppleWin/AppleWin/releases/download/v1.30.21.0/AppleWin1.30.21.0.zip)
 
-Release Notes: [v1.30.20.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.30.20.0)
+Release Notes: [v1.30.21.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.30.21.0)
 
 
 Building
 ========
-To compile from source see:
+To compile for Windows from source see:
 
 * [docs/compiling.txt](https://github.com/AppleWin/AppleWin/blob/master/docs/compiling.txt)
 
+Debugging
+=========
+If you are experencing a system-wide input unresponsiveness when debugging under MSVC 2022 then use the command-line argument `-no-hook-system-key` to prevent an input thread for system keys. See `g_bHookSystemKey`, `HookFilter::HookFilterForKeyboard()` and `HookFilter::HookThread()`.
+
+Alternative work arounds include:
+
+* Debug with MSVC 2026,
+* Debug with MSVC 2019, or
+* Manually use the older v5.01 Windows Common Controls.
+
+Unofficial Ports
+================
+
+These ports will allow you to build and run AppleWin on other platforms:
+
+* [Linux](https://github.com/audetto/AppleWin)
+* [macOS](https://github.com/sh95014/AppleWin)
 
 Contributing
 ============
-Please see the [CONTRIBUTING](https://github.com/AppleWin/AppleWin/blob/master/CONTRIBUTING.md) doc before raising new bugs, features and _especially_ PRs.
+Please see the [CONTRIBUTING](https://github.com/AppleWin/AppleWin/blob/master/CONTRIBUTING.md) document before raising new bugs, features and _especially_ PRs (Pull Requests).
 
 
 Next Version
@@ -50,10 +80,8 @@ Please report [new issues](https://github.com/AppleWin/AppleWin/issues/new)
 Previous Versions
 =================
 
-Last version supporting Windows 2000:
+Last version supporting Windows XP: [AppleWin v1.30.21.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.30.21.0)
 
-* [AppleWin v1.29.16.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.29.16.0)
+Last version supporting Windows 2000: [AppleWin v1.29.16.0](https://github.com/AppleWin/AppleWin/releases/tag/v1.29.16.0)
 
-Last version supporting Windows 98/ME:
-
-* [AppleWin v1.25.0.4](https://github.com/AppleWin/AppleWin/releases/tag/v1.25.0.4)
+Last version supporting Windows 98/ME: [AppleWin v1.25.0.4](https://github.com/AppleWin/AppleWin/releases/tag/v1.25.0.4)

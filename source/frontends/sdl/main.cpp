@@ -166,7 +166,7 @@ void run_sdl(int argc, char *const argv[])
 #endif
 }
 
-int main(int argc, char *const argv[])
+int main(int argc, char *argv[])
 {
     // First we need to start up SDL, and make sure it went ok
     const Uint32 flags = SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_EVENTS;

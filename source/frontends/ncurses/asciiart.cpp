@@ -48,8 +48,8 @@ namespace na2
 
             myRows = rows;
 
-            myValues.resize(boost::extents[myRows][myColumns]);
-            myChars.resize(boost::extents[rows][columns]);
+            myValues.assign(myRows, std::vector<Blocks>(myColumns));
+            myChars.assign(rows, std::vector<Character>(columns));
         }
     }
 
@@ -75,7 +75,10 @@ namespace na2
 
     const ASCIIArt::array_val_t &ASCIIArt::getQuadrantValues(const unsigned char *address) const
     {
-        std::fill(myValues.origin(), myValues.origin() + myValues.num_elements(), 0);
+        for (auto &row : myValues)
+        {
+            std::fill(row.begin(), row.end(), Blocks());
+        }
 
         const int linesPerRow = 8 / myRows;
         const int linesPerQuadrant = linesPerRow / 2;
@@ -146,8 +149,8 @@ namespace na2
 
     const ASCIIArt::array_char_t &ASCIIArt::getCharacters(const array_val_t &values)
     {
-        const int rows = values.shape()[0];
-        const int columns = values.shape()[1];
+        const int rows = values.size();
+        const int columns = values.empty() ? 0 : values[0].size();
 
         for (size_t i = 0; i < rows; ++i)
         {

@@ -83,6 +83,12 @@
 		NB. For enhanced //e, the firmware will support SmartPort commands (and up to 8 hard disk devices).<br><br>
 		-d1-disconnected, -d2-disconnected<br>
 		Disconnect drive-1 and/or drive-2 from the Disk II controller card in slot 6.<br><br>
+		-s&lt;N&gt; socket1=&lt;empty|ssi263p|ssi263ap&gt;<br>
+		Configure the SSI263 speech chip socket at $Cn40 (main location) for the Mockingboard or Phasor card in slot-N (N=1-7).<br><br>
+		-s&lt;N&gt; socket0=&lt;empty|ssi263p|ssi263ap&gt;<br>
+		Configure the SSI263 speech chip socket at $Cn20 (secondary location) for the Mockingboard or Phasor card in slot-N (N=1-7).<br><br>
+		-s&lt;N&gt; &lt;no-sc01|sc01&gt;<br>
+		Configure an SC01 speech chip for the Mockingboard or Phasor card in slot-N (N=1-7).<br><br>
 		-harddisknumblocks &lt;number of ProDOS blocks&gt;<br>
 		Set the number of blocks returned by a ProDOS status call. Use -harddisknumblocks 32767 to have the same autoexpanding behavior as older AppleWin versions.<br><br>
 		-no-nsc<br>
@@ -226,8 +232,8 @@
 		Save the speaker audio to a .wav file.<br>
 		Warning: there's no file size limit, so it just keeps saving until AppleWin exits (~10MB per minute).<br>
 		<br>
-		Save the Mockingboard audio (but not speech) to a .wav file.<br>
 		-wav-mockingboard &lt;file.wav&gt;<br>
+		Save the Mockingboard audio (but not speech) to a .wav file.<br>
 		Warning: there's no file size limit, so it just keeps saving until AppleWin exits (~10MB per minute).<br>
 		<br>
 

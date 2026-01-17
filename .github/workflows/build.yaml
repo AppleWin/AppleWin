@@ -61,8 +61,8 @@ jobs:
             cmake:p
             ninja:p
             pkg-config:p
-            zlib:p
-            boost:p
+            SDL2:p
+            SDL2_image:p
 
       - name: cmake version
         run: cmake --version

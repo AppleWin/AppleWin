@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CardManager.h"
 #include "Registry.h"
 
+#include "BreakpointCard.h"
 #include "Disk.h"
 #include "FourPlay.h"
 #include "Harddisk.h"
@@ -132,7 +133,9 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 			m_slot[slot] = new Saturn128K(slot, Saturn128K::kMaxSaturnBanks);
 		}
 		break;
-
+	case CT_BreakpointCard:
+		m_slot[slot] = new BreakpointCard(slot);
+		break;
 	default:
 		_ASSERT(0);
 		break;
@@ -221,6 +224,11 @@ void CardManager::InsertAuxInternal(SS_CARDTYPE type)
 
 void CardManager::InsertAux(SS_CARDTYPE type, bool updateRegistry/*=true*/)
 {
+	// Only update aux slot if a //e or above (GH#1428)
+	// ...otherwise we'll lose the card in the aux slot when switching //e -> II+ -> //e
+	if (!IsAppleIIeOrAbove(GetApple2Type()))
+		return;
+
 	InsertAuxInternal(type);
 	if (updateRegistry)
 	{

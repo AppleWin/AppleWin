@@ -27,13 +27,7 @@
 #ifndef _Z80MEM_H
 #define _Z80MEM_H
 
-#ifdef WATCOM_COMPILE
-#include "../mem.h"
-#else
 #include "../CommonVICE/mem.h"		// [AppleWin-TC]
-#endif
-
-#include "../CommonVICE/types.h"	// [AppleWin-TC]
 
 extern int z80mem_resources_init(void);
 extern int z80mem_cmdline_options_init(void);
@@ -52,8 +46,8 @@ extern store_func_ptr_t *_z80mem_write_tab_ptr;
 extern BYTE **_z80mem_read_base_tab_ptr;
 extern int *z80mem_read_limit_tab_ptr;
 
-extern BYTE REGPARM1 bios_read(WORD addr);
-extern void REGPARM2 bios_store(WORD addr, BYTE value);
+extern BYTE bios_read(WORD addr);
+extern void bios_store(WORD addr, BYTE value);
 
 extern store_func_ptr_t io_write_tab[];
 extern read_func_ptr_t io_read_tab[];

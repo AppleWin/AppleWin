@@ -365,9 +365,8 @@ namespace na2
 
         const ASCIIArt::array_char_t &chs = myAsciiArt->getCharacters(base);
 
-        const auto shape = chs.shape();
-        const size_t rows = shape[0];
-        const size_t cols = shape[1];
+        const int rows = chs.size();
+        const int cols = chs.empty() ? 0 : chs[0].size();
 
         Init(24 * rows, 40 * cols);
         WINDOW *win = myFrame.get();

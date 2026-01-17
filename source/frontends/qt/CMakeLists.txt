@@ -71,18 +71,11 @@ target_link_libraries(qapple PRIVATE
 
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
-  ${ZLIB_LIBRARIES}
 
   Qt::Widgets
   Qt::Multimedia
   QHexView
   )
-
-if (NOT WIN32)
-  target_link_libraries(qapple PUBLIC
-    windows
-    )
-endif()
 
 if(Qt5_FOUND)
   target_sources(qapple PRIVATE

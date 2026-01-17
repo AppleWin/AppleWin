@@ -12,6 +12,8 @@ set(SOURCE_FILES
   utils.cpp
   timer.cpp
   speed.cpp
+  yamlmap.cpp
+  yamlselftest.cpp
   )
 
 set(HEADER_FILES
@@ -26,6 +28,7 @@ set(HEADER_FILES
   utils.h
   timer.h
   speed.h
+  yamlmap.h
   )
 
 add_library(common2 STATIC
@@ -33,11 +36,8 @@ add_library(common2 STATIC
   ${HEADER_FILES}
   )
 
-find_package(Boost REQUIRED)
-
 target_include_directories(common2 PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
-  ${Boost_INCLUDE_DIRS}
   )
 
 target_link_libraries(common2 PRIVATE
@@ -45,16 +45,20 @@ target_link_libraries(common2 PRIVATE
   apple2roms
   )
 
-if (NOT WIN32)
-  target_link_libraries(common2 PUBLIC
-    windows
-    )
-endif()
-
 file(RELATIVE_PATH ROOT_PATH ${CMAKE_BINARY_DIR} ${CMAKE_SOURCE_DIR})
 if ("${ROOT_PATH}" STREQUAL "")
   # if the 2 paths are the same
   set(ROOT_PATH "./")
 endif()
+
+# yaml parsing is so complicated that we need a test!
+add_executable(testyaml
+  yamlmap.cpp
+  yamlselftest.cpp
+  )
+
+target_link_libraries(testyaml PRIVATE
+  yaml
+  )
 
 configure_file(common_config.h.in common_config.h)

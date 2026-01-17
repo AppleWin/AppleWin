@@ -568,7 +568,7 @@ uint32_t CImageBase::NibblizeTrack(LPBYTE trackimagebuffer, SectorOrder_e Sector
 		sector++;
 	}
 
-	return imageptr-trackimagebuffer;
+	return (uint32_t)(imageptr-trackimagebuffer);
 }
 
 //-------------------------------------
@@ -1371,7 +1371,7 @@ public:
 			CWOZHelper::WOZChunkHdr* pTrksHdr = (CWOZHelper::WOZChunkHdr*) (&pImageInfo->pImageBuffer[pImageInfo->uOffset] - sizeof(CWOZHelper::WOZChunkHdr));
 			pTrksHdr->size += trkExtendedSize;
 
-			hdrExtendedSize = ((BYTE*)pTRKS + sizeof(CWOZHelper::Trks) - pNewImageBuffer) - sizeof(CWOZHelper::WOZHeader);
+			hdrExtendedSize = (UINT) (((BYTE*)pTRKS + sizeof(CWOZHelper::Trks) - pNewImageBuffer) - sizeof(CWOZHelper::WOZHeader));
 		}
 
 		CWOZHelper::TRKv2* pTRKS = (CWOZHelper::TRKv2*) &pImageInfo->pImageBuffer[pImageInfo->uOffset];
@@ -1604,7 +1604,7 @@ void CImageHelperBase::GetCharLowerExt(char* pszExt, LPCTSTR pszImageFilename, c
 	strncpy(pszExt, pImageFileExt, uExtSize);
 	pszExt[uExtSize - 1] = 0;
 
-	CharLowerBuff(pszExt, strlen(pszExt));
+	CharLowerBuff(pszExt, (uint32_t)strlen(pszExt));
 }
 
 void CImageHelperBase::GetCharLowerExt2(char* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize)
@@ -2296,7 +2296,7 @@ BYTE* CWOZHelper::CreateEmptyDisk(uint32_t& size)
 	// INFO
 	ASSERT_OFFSET(infoHdr, 12);
 	pWOZ->infoHdr.id = INFO_CHUNK_ID;
-	pWOZ->infoHdr.size = (BYTE*)&pWOZ->tmapHdr - (BYTE*)&pWOZ->info;
+	pWOZ->infoHdr.size = (UINT32) ((BYTE*)&pWOZ->tmapHdr - (BYTE*)&pWOZ->info);
 	_ASSERT(pWOZ->infoHdr.size == INFO_CHUNK_SIZE);
 	pWOZ->info.v1.version = 2;
 	pWOZ->info.v1.diskType = InfoChunk::diskType5_25;
@@ -2348,7 +2348,7 @@ BYTE* CWOZHelper::CreateEmptyDiskv1(uint32_t& size)
 	// INFO
 	ASSERT_OFFSET(infoHdr, 12);
 	pWOZ->infoHdr.id = INFO_CHUNK_ID;
-	pWOZ->infoHdr.size = (BYTE*)&pWOZ->tmapHdr - (BYTE*)&pWOZ->info;
+	pWOZ->infoHdr.size = (UINT32) ((BYTE*)&pWOZ->tmapHdr - (BYTE*)&pWOZ->info);
 	_ASSERT(pWOZ->infoHdr.size == INFO_CHUNK_SIZE);
 	pWOZ->info.version = 1;
 	pWOZ->info.diskType = InfoChunk::diskType5_25;

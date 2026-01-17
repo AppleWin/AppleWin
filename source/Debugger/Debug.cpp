@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006-2010 Michael Pohoreski
+ * Author: Copyright (C) 2006-2025 Michael Pohoreski
  */
 
 // disable warning C4786: symbol greater than 255 character:
@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,8);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,4,3);
 
 
 // Public _________________________________________________________________________________________
@@ -84,8 +84,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static DebugBreakOnDMA g_DebugBreakOnDMA[NUM_BREAK_ON_DMA];
 	static DebugBreakOnDMA g_DebugBreakOnDMAIO;
 
-	int                  g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
-	static Breakpoint_t *g_pDebugBreakpointHit = nullptr; // NOTE: Only valid for BP_HIT_REG, see: CheckBreakpointsReg()
+	static int           g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
+	static Breakpoint_t *g_pDebugBreakpointHit = nullptr;
+
+	static WORD g_nBreakMemoryAddr = 0;
+	static std::string g_sBreakMemoryFullPrefixAddr;
+	static int g_breakpointHitID = -1;
 
 	int          g_nBreakpoints = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
@@ -135,8 +139,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"* ", // Read/Write
 	};
 
-	static WORD g_uBreakMemoryAddress = 0;
-
 // Commands _______________________________________________________________________________________
 
 	int g_iCommand; // last command (enum) // used for consecutive commands
@@ -163,7 +165,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const int  g_nInputCursor = sizeof( g_aInputCursor );
 
 	void DebuggerCursorUpdate();
-	char DebuggerCursorGet();
+	//char DebuggerCursorGet();
 
 // Cursor (Disasm) ____________________________________________________________
 
@@ -360,6 +362,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static bool g_bScriptReadOk = false;
 
+	static std::string g_sAutoRunScriptFilename("DebuggerAutoRun.txt");
+
+	static uint8_t g_interceptBreakpointsSlot = 0;
+	static CBFUNCTION g_InterceptBreakpointsCB = nullptr;
+
 // Private ________________________________________________________________________________________
 
 
@@ -370,6 +377,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	Update_t ExecuteCommand ( int nArgs );
 
 // Breakpoints
+	static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& pBP, WORD addr, DEVICE_e device, bool padding);
 	Update_t _BP_InfoNone ();
 	void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal );
 	void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled );
@@ -380,7 +388,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //	bool CheckBreakpoint (WORD address, BOOL memory);
 	bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen, bool bIsTempBreakpoint );
-	int  _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
+	int  _CmdBreakpointAddCommonArg ( const int nArg, int iArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
 
 // Config - Save
 	bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave );
@@ -1107,8 +1115,15 @@ bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakp
 }
 
 // returns the hit type if the breakpoint stops
-static BreakpointHit_t hitBreakpoint(Breakpoint_t * pBP, BreakpointHit_t eHitType)
+static BreakpointHit_t HitBreakpoint(Breakpoint_t * pBP, BreakpointHit_t eHitType, int iBreakpoint)
 {
+	if (pBP->bStop && g_breakpointHitID < 0)
+	{
+		g_breakpointHitID = iBreakpoint;
+		_ASSERT(g_pDebugBreakpointHit == nullptr);
+		g_pDebugBreakpointHit = pBP;
+	}
+
 	pBP->bHit = true;
 	++pBP->nHitCount;
 	return pBP->bStop ? eHitType : BP_HIT_NONE;
@@ -1157,6 +1172,126 @@ static void DebugEnterStepping()
 	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 }
 
+
+//===========================================================================
+bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
+{
+	bool bStatus = false;
+	int iCmp = pBP->eOperator;
+
+	bool isRead = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_READ_ONLY || pBP->eSource == BP_SRC_REG_PC;
+	bool isWrite = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_WRITE_ONLY;
+
+	// If no prefix filters, then BP hit
+	if (pBP->addrPrefix.nSlot     == AddressPrefix_t::kSlotInvalid
+	 && pBP->addrPrefix.nBank     == AddressPrefix_t::kBankInvalid
+	 && pBP->addrPrefix.nLangCard == AddressPrefix_t::kLangCardInvalid
+	 && pBP->addrPrefix.bIsROM    == false)
+		return true;
+
+	// Prefix filters only apply for BP_OP_EQUAL operation (for now)
+	if (iCmp != BP_OP_EQUAL)
+		return true;
+
+	// Apply any prefix filters
+
+	const UINT ramworksActiveBank = GetRamWorksActiveBank() + 1;	// [0x01..0x100]
+
+	if (nVal <= _6502_STACK_END)
+	{
+		if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
+			|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP)))
+		{
+			bStatus = true;
+		}
+	}
+	else if (TEXT_PAGE1_BEGIN <= nVal && nVal <= 0x7FF && (GetMemMode() & MF_80STORE))
+	{
+		if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_PAGE2))
+			|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
+		{
+			bStatus = true;
+		}
+	}
+	else if (HGR_PAGE1_BEGIN <= nVal && nVal <= 0x3FFF && ((GetMemMode() & (MF_80STORE | MF_HIRES)) == (MF_80STORE | MF_HIRES)))
+	{
+		if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_PAGE2))
+			|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
+		{
+			bStatus = true;
+		}
+	}
+	else if (nVal <= 0xBFFF)
+	{
+		if (isRead)
+		{
+			if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_AUXREAD))
+				|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_AUXREAD)))
+			{
+				bStatus = true;
+			}
+		}
+		if (isWrite)
+		{
+			if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_AUXWRITE))
+				|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_AUXWRITE)))
+			{
+				bStatus = true;
+			}
+		}
+	}
+	else if (nVal <= FIRMWARE_EXPANSION_END)
+	{
+		bStatus = true;
+	}
+	else if (0xD000 <= nVal && nVal <= _6502_MEM_END)
+	{
+		const bool bNoRamworksOrSaturnBank = pBP->addrPrefix.nSlot == AddressPrefix_t::kSlotInvalid && pBP->addrPrefix.nBank == AddressPrefix_t::kBankInvalid;
+
+		const UINT saturnActiveSlot = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC();
+		const UINT saturnActiveBank = GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetActiveBank();
+		const int saturnBank = pBP->addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid && pBP->addrPrefix.nBank != AddressPrefix_t::kBankInvalid ? pBP->addrPrefix.nBank : AddressPrefix_t::kBankInvalid;
+
+		if (GetMemMode() & MF_HIGHRAM)
+		{
+			if (bNoRamworksOrSaturnBank
+				|| (saturnBank < 0 && pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
+				|| (saturnBank < 0 && pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP))
+				|| (pBP->addrPrefix.nSlot == saturnActiveSlot && saturnBank == saturnActiveBank && !(GetMemMode() & MF_ALTZP)))
+			{
+				if ((pBP->addrPrefix.nLangCard == AddressPrefix_t::kLangCardInvalid)
+					|| (pBP->addrPrefix.nLangCard == 1 && !(GetMemMode() & MF_BANK2))
+					|| (pBP->addrPrefix.nLangCard == 2 && (GetMemMode() & MF_BANK2))
+					|| (nVal >= 0xE000))
+				{
+					if (pBP->addrPrefix.bIsROM == false)		// isROM==false means "don't care" whether it's ROM or not
+					{
+						if (isRead || isWrite && (GetMemMode() & MF_WRITERAM))
+							bStatus = true;
+					}
+				}
+			}
+		}
+		else // ROM switched in
+		{
+			if (!bNoRamworksOrSaturnBank
+				|| (pBP->addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid))
+				bStatus = false;
+			else
+				bStatus = true;
+		}
+	}
+	else
+	{
+		_ASSERT(0);	// some address not accounted for
+		bStatus = true;
+	}
+
+
+	return bStatus;
+}
+
+
 //===========================================================================
 bool _CheckBreakpointValue ( Breakpoint_t *pBP, int nVal )
 {
@@ -1193,10 +1328,14 @@ bool _CheckBreakpointValue ( Breakpoint_t *pBP, int nVal )
 			break;
 	}
 
-	return bStatus;
+	if (!bStatus)
+		return false;
+
+	return _CheckBreakpointValueWithPrefix(pBP, nVal);
 }
 
 //===========================================================================
+// Only called by DebuggerCheckMemBreakpoints()
 bool _CheckBreakpointRange (Breakpoint_t* pBP, int nVal, int nSize)
 {
 	bool bStatus = false;
@@ -1214,6 +1353,19 @@ bool _CheckBreakpointRange (Breakpoint_t* pBP, int nVal, int nSize)
 		break;
 	}
 
+	if (!bStatus)
+		return false;
+
+	// Now check the range (at 256 byte intervals) with full addr prefix
+	WORD checkAddr = nVal;
+	while (checkAddr < (nVal + nSize))
+	{
+		bStatus = _CheckBreakpointValueWithPrefix(pBP, checkAddr);
+		if (bStatus)
+			break;
+		checkAddr += _6502_PAGE_SIZE;
+	}
+
 	return bStatus;
 }
 
@@ -1221,6 +1373,7 @@ bool _CheckBreakpointRange (Breakpoint_t* pBP, int nVal, int nSize)
 
 static void DebuggerBreakOnDma (WORD nAddress, WORD nSize, bool isDmaToMemory, int iBreakpoint);
 
+// Only called by Hardisk.cpp
 bool DebuggerCheckMemBreakpoints (WORD nAddress, WORD nSize, bool isDmaToMemory)
 {
 	// NB. Caller handles when (addr+size) wraps on 64K
@@ -1247,19 +1400,17 @@ bool DebuggerCheckMemBreakpoints (WORD nAddress, WORD nSize, bool isDmaToMemory)
 //===========================================================================
 int CheckBreakpointsIO ()
 {
-	const int NUM_TARGETS = 3;
+	int iBreakpointHit = 0;
 
+	const int NUM_TARGETS = 3;
 	int aTarget[ NUM_TARGETS ] =
 	{
 		NO_6502_TARGET,
 		NO_6502_TARGET,
 		NO_6502_TARGET
 	};
-	int  nBytes;
-	int  bBreakpointHit = 0;
 
-	int  iTarget;
-	int  nAddress;
+	int  nBytes;
 
 	// bIncludeNextOpcodeAddress == false:
 	// . JSR addr16: ignore addr16 as a target
@@ -1268,9 +1419,9 @@ int CheckBreakpointsIO ()
 
 	if (nBytes)
 	{
-		for (iTarget = 0; iTarget < NUM_TARGETS; iTarget++ )
+		for (int iTarget = 0; iTarget < NUM_TARGETS; iTarget++ )
 		{
-			nAddress = aTarget[ iTarget ];
+			int nAddress = aTarget[ iTarget ];
 			if (nAddress != NO_6502_TARGET)
 			{
 				for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
@@ -1282,31 +1433,34 @@ int CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
-								g_uBreakMemoryAddress = (WORD) nAddress;
+								g_nBreakMemoryAddr = (WORD)nAddress;	// last BP hit
+								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP->addrPrefix, (WORD)nAddress, DEVICE_e::DEV_MEMORY, false);	// string is last BP hit
 								BYTE opcode = ReadByteFromMemory(regs.pc);
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
 								{
-									bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEM);
+									iBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEM, iBreakpoint);
 								}
 								else if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_RI|MEM_R))
 									{
-										bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMR);
+										iBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEMR, iBreakpoint);
 									}
 								}
 								else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_WI|MEM_W))
 									{
-										bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMW);
+										iBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEMW, iBreakpoint);
 									}
 								}
 								else
 								{
 									_ASSERT(0);
 								}
+
+								// Don't break - instead process all BPs so that all pBP->nHitCount's are correct
 							}
 						}
 					}
@@ -1314,15 +1468,13 @@ int CheckBreakpointsIO ()
 			}
 		}
 	}
-	return bBreakpointHit;
+	return iBreakpointHit;
 }
 
 // Returns true if a register breakpoint is triggered
 //===========================================================================
 int CheckBreakpointsReg ()
 {
-	g_pDebugBreakpointHit = nullptr;
-
 	int iAnyBreakpointHit = 0;
 
 	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
@@ -1332,7 +1484,7 @@ int CheckBreakpointsReg ()
 		if (! _BreakpointValid( pBP ))
 			continue;
 
-		bool bBreakpointHit = 0;
+		bool bBreakpointHit = false;
 
 		switch (pBP->eSource)
 		{
@@ -1360,8 +1512,8 @@ int CheckBreakpointsReg ()
 
 		if (bBreakpointHit)
 		{
-			iAnyBreakpointHit = hitBreakpoint(pBP, BP_HIT_REG);
-			g_pDebugBreakpointHit = pBP; // Save breakpoint so we can display which register triggered the breakpoint.
+			iAnyBreakpointHit = HitBreakpoint(pBP, BP_HIT_REG, iBreakpoint);
+			// Don't break - instead process all BPs so that all pBP->nHitCount's are correct
 		}
 	}
 
@@ -1387,8 +1539,9 @@ int CheckBreakpointsVideo ()
 		uint16_t vert = NTSC_GetVideoVertForDebugger();	// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
 		if (_CheckBreakpointValue(pBP, vert))
 		{
-			iBreakpointHit = hitBreakpoint(pBP, BP_HIT_VIDEO_POS);
+			iBreakpointHit = HitBreakpoint(pBP, BP_HIT_VIDEO_POS, iBreakpoint);
 			pBP->bEnabled = false;	// Disable, otherwise it'll trigger many times on this scan-line
+			// Don't break - instead process all BPs so that all pBP->nHitCount's are correct
 		}
 	}
 
@@ -1403,6 +1556,7 @@ static int CheckBreakpointsDmaToOrFromIOMemory (void)
 	return res;
 }
 
+// Only called by Hardisk.cpp
 void DebuggerBreakOnDmaToOrFromIoMemory (WORD nAddress, bool isDmaToMemory)
 {
 	g_DebugBreakOnDMAIO.isToOrFromMemory = isDmaToMemory ? BP_DMA_TO_IO_MEM : BP_DMA_FROM_IO_MEM;
@@ -1478,7 +1632,8 @@ Update_t CmdBreakpointAddSmart (int nArgs)
 
 
 //===========================================================================
-Update_t CmdBreakpointAddReg (int nArgs)
+// Pre: nArgs = last valid index into g_aArgs[]
+Update_t CmdBreakpointAddReg (const int nArgs)
 {
 	if (! nArgs)
 	{
@@ -1496,8 +1651,8 @@ Update_t CmdBreakpointAddReg (int nArgs)
 
 	int  nFound;
 
-	int  iArg   = 0;
-	while (iArg++ < nArgs)
+	int  iArg = 1;
+	while (iArg <= nArgs)
 	{
 		char *sArg = g_aArgs[iArg].sArg;
 
@@ -1539,12 +1694,16 @@ Update_t CmdBreakpointAddReg (int nArgs)
 
 		if ((! bHaveSrc) && (! bHaveCmp)) // Inverted/Convoluted logic: didn't find BOTH this pass, so we must have already found them.
 		{
-			int dArgs = _CmdBreakpointAddCommonArg( iArg, nArgs, iSrc, iCmp );
+			int dArgs = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
 			if (!dArgs)
 			{
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_REG );
 			}
 			iArg += dArgs;
+		}
+		else
+		{
+			iArg++;
 		}
 	}
 
@@ -1581,6 +1740,7 @@ bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoi
 		pBP->bStop     = true;
 		pBP->bHit      = false;
 		pBP->nHitCount = 0;
+		// NB. Address prefix args are set in parent _CmdBreakpointAddCommonArg()
 		bStatus = true;
 	}
 
@@ -1590,8 +1750,9 @@ bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoi
 
 // @return Number of args processed
 //===========================================================================
-int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint )
+int _CmdBreakpointAddCommonArg ( const int nArg, int iArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint )
 {
+	int dArgPrefix = 0;
 	int dArg = 0;
 
 	int iBreakpoint = 0;
@@ -1605,46 +1766,51 @@ int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, Br
 
 	if (iBreakpoint >= MAX_BREAKPOINTS)
 	{
-		ConsoleDisplayError("All Breakpoints slots are currently in use.");
-		return dArg;
+		ConsoleDisplayError("All Breakpoint slots are currently in use.");
+		return 0;	// error
 	}
+
+	pBP->Clear();
+
+	//
 
 	if (iArg <= nArg)
 	{
+		if (!Range_GetAllPrefixes(iArg, nArg, dArgPrefix, &pBP->addrPrefix))
+			return 0;	// error
+
 #if DEBUG_VAL_2
 		int nLen = g_aArgs[iArg].nVal2;
 #endif
-		WORD nAddress  = 0;
+		WORD nAddress = 0;
 		WORD nAddress2 = 0;
-		WORD nEnd      = 0;
-		int  nLen      = 0;
+		int  nLen = 0;
 
 		dArg = 1;
 		RangeType_t eRange = Range_Get( nAddress, nAddress2, iArg);
 		if ((eRange == RANGE_HAS_END) ||
 			(eRange == RANGE_HAS_LEN))
 		{
+			WORD nEnd = 0;	// unused
 			Range_CalcEndLen( eRange, nAddress, nAddress2, nEnd, nLen );
-			dArg = 2;
+			dArg = 3;
 		}
 
-		if ( !nLen)
-		{
+		if (!nLen)
 			nLen = 1;
-		}
 
-		if (! _CmdBreakpointAddReg( pBP, iSrc, iCmp, nAddress, nLen, bIsTempBreakpoint ))
-		{
-			dArg = 0;
-		}
-		g_nBreakpoints++;
+		if (!_CmdBreakpointAddReg( pBP, iSrc, iCmp, nAddress, nLen, bIsTempBreakpoint ))
+			dArgPrefix = dArg = 0;	// error
+		else
+			g_nBreakpoints++;
 	}
 
-	return dArg;
+	return dArgPrefix + dArg;
 }
 
 
 //===========================================================================
+// Pre: nArgs = last valid index into g_aArgs[]
 Update_t CmdBreakpointAddPC (int nArgs)
 {
 	BreakpointSource_t   iSrc = BP_SRC_REG_PC;
@@ -1660,10 +1826,10 @@ Update_t CmdBreakpointAddPC (int nArgs)
 //	int iParamSrc;
 	int iParamCmp;
 
-	int  nFound = 0;
+	int nFound = 0;
 
-	int  iArg   = 0;
-	while (iArg++ < nArgs)
+	int iArg = 1;
+	while (iArg <= nArgs)
 	{
 		char *sArg = g_aArgs[iArg].sArg;
 
@@ -1684,10 +1850,11 @@ Update_t CmdBreakpointAddPC (int nArgs)
 						break;
 				}
 			}
+			iArg++;
 		}
 		else
 		{
-			int dArg = _CmdBreakpointAddCommonArg( iArg, nArgs, iSrc, iCmp );
+			int dArg = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
 			if (! dArg)
 			{
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_PC );
@@ -1723,22 +1890,22 @@ Update_t CmdBreakpointAddMemW (int nArgs)
 	return CmdBreakpointAddMem(nArgs, BP_SRC_MEM_WRITE_ONLY);
 }
 //===========================================================================
-Update_t CmdBreakpointAddMem (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
+// Pre: nArgs = last valid index into g_aArgs[]
+Update_t CmdBreakpointAddMem (const int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
 {
 	BreakpointSource_t   iSrc = bpSrc;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL;
 
-	int iArg = 0;
-	
-	while (iArg++ < nArgs)
+	int iArg = 1;
+	while (iArg <= nArgs)
 	{
 		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
 		{
-				return Help_Arg_1( CMD_BREAKPOINT_ADD_MEM );
+			return Help_Arg_1( CMD_BREAKPOINT_ADD_MEM );
 		}
 		else
 		{
-			int dArg = _CmdBreakpointAddCommonArg( iArg, nArgs, iSrc, iCmp );
+			int dArg = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
 			if (! dArg)
 			{
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_MEM );
@@ -1751,14 +1918,14 @@ Update_t CmdBreakpointAddMem (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM
 }
 
 //===========================================================================
-Update_t CmdBreakpointAddVideo (int nArgs)
+// Pre: nArgs = last valid index into g_aArgs[]
+Update_t CmdBreakpointAddVideo (const int nArgs)
 {
 	BreakpointSource_t   iSrc = BP_SRC_VIDEO_SCANNER;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL;
 
-	int iArg = 0;
-
-	while (iArg++ < nArgs)
+	int iArg = 1;
+	while (iArg <= nArgs)
 	{
 		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
 		{
@@ -1766,7 +1933,7 @@ Update_t CmdBreakpointAddVideo (int nArgs)
 		}
 		else
 		{
-			int dArg = _CmdBreakpointAddCommonArg(iArg, nArgs, iSrc, iCmp);
+			int dArg = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
 			if (!dArg)
 			{
 				return Help_Arg_1(CMD_BREAKPOINT_ADD_VIDEO);
@@ -1924,6 +2091,91 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 }
 
 //===========================================================================
+// Called by:
+// . CheckBreakpointsIO(), padding=false - to set g_sBreakMemoryFullPrefixAddr (used later for 'stop reason')
+// . _BWZ_List(),          padding=true  - ie. 'bpl'
+// . _CmdMemoryDump(),     padding=false - ie. 'm1' to show current prefix for mini mem area
+static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPrefix, WORD address, DEVICE_e device, bool padding)
+{
+	char sSlot    [] = "sN/";	// Saturn slot
+	char sLangCard[] = "lN/";	// Language Card 4K bank
+	int prefixPad = 1;	// whitespace padding
+	std::string prefix = CHC_INFO;	// "sN/bbb/lN/" (10 chars) or "ROM/"
+
+	if (addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid)
+	{
+		sSlot[1] = addrPrefix.nSlot + '0';
+		prefix += sSlot;
+	}
+	else
+	{
+		prefixPad += 3;
+	}
+
+	if (addrPrefix.nBank != AddressPrefix_t::kBankInvalid)
+	{
+		if (addrPrefix.nBank < 0x100)
+		{
+			prefix += StrFormat("%02X", addrPrefix.nBank);
+		}
+		else
+		{
+			prefix += StrFormat("%03X", addrPrefix.nBank);
+			prefixPad--;
+		}
+		prefix += '/';
+	}
+	else
+	{
+		prefixPad += 3;
+	}
+
+	if (addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
+	{
+		sLangCard[1] = addrPrefix.nLangCard + '0';
+		prefix += sLangCard;
+	}
+	else
+	{
+		prefixPad += 3;
+	}
+
+	if (addrPrefix.bIsROM)
+	{
+		prefix += "ROM/";
+		prefixPad = 6;	// 10 chars in total
+	}
+
+	std::string prefixFinal;
+
+	if (padding)
+	{
+		while (prefixPad--)
+			prefixFinal += " ";
+	}
+
+	prefixFinal += prefix;
+
+	std::string addr;
+	if (device == DEV_MEMORY)
+	{
+		addr = StrFormat(CHC_ADDRESS "%04X", address);
+	}
+	else
+	{
+		if (device == DEV_MB_SUBUNIT)			addr = "MB-";
+		else if (device == DEV_AY8913_PAIR)		addr = "AY-";
+		else									addr = "UNKNOWN-";
+
+		if (address == 0)	addr += "A";
+		else				addr += "B";
+	}
+	prefixFinal += addr;
+
+	return prefixFinal;
+}
+
+//===========================================================================
 void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool bZeroBased )
 {
 	static const char sEnabledFlags[] = "-E";
@@ -1934,25 +2186,39 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 	std::string sAddressBuf;
 	std::string const& sSymbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, sAddressBuf);
 
-	const char *aMemAccess[4] =
+	const char *aMemAccess[5] =
 	{
-		 "R  "
+		 "R/W"
+		,"R  "
 		,"W  "
-		,"R/W"
+		,"Vid"
 		,"   "
 	};
 
 	int iBPM;
 	switch (aBreakWatchZero[iBWZ].eSource)
 	{
-		case BP_SRC_MEM_READ_ONLY : iBPM = 0; break;
-		case BP_SRC_MEM_WRITE_ONLY: iBPM = 1; break;
-		case BP_SRC_MEM_RW        : iBPM = 2; break;
-		default                   : iBPM = 3; break;
+		case BP_SRC_MEM_RW        : iBPM = 0; break;
+		case BP_SRC_MEM_READ_ONLY : iBPM = 1; break;
+		case BP_SRC_MEM_WRITE_ONLY: iBPM = 2; break;
+		case BP_SRC_VIDEO_SCANNER : iBPM = 3; break;
+		default                   : iBPM = 4; break;
 	}
 
-	// ID On Stop Temp HitCounter  Addr Mem Symbol
-	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X " CHC_ADDRESS " %04X " CHC_INFO "%s" CHC_SYMBOL " %s",
+	std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(aBreakWatchZero[iBWZ].addrPrefix, aBreakWatchZero[iBWZ].nAddress, DEVICE_e::DEV_MEMORY, true);
+	if (aBreakWatchZero[iBWZ].nLength > 1)
+	{
+		fullPrefixAddr += ":";
+		std::string addrEnd = StrFormat(CHC_ADDRESS "%04X", aBreakWatchZero[iBWZ].nAddress + aBreakWatchZero[iBWZ].nLength - 1);
+		fullPrefixAddr += addrEnd;
+	}
+	else
+	{
+		fullPrefixAddr += "     ";	// 5 spaces
+	}
+
+	// ID On Stop Temp HitCounter  Prefix/Addr Mem Symbol
+	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X %s " CHC_INFO "%s" CHC_SYMBOL " %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sEnabledFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
@@ -1960,7 +2226,7 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 		sTempFlags   [ aBreakWatchZero[ iBWZ ].bTemp    ? 1 : 0 ],
 		sHitFlags    [ aBreakWatchZero[ iBWZ ].bHit     ? 1 : 0 ],
 		               aBreakWatchZero[ iBWZ ].nHitCount,
-		               aBreakWatchZero[ iBWZ ].nAddress,
+		fullPrefixAddr.c_str(),
 		aMemAccess[ iBPM ],
 		sSymbol.c_str()
 	);
@@ -1968,10 +2234,10 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 
 void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax )
 {
-	ConsolePrintFormat( "  ID On Stop Temp HitCounter  Addr Mem Symbol" );
+	ConsolePrintFormat( "  ID On Stop Temp HitCounter    Prefix/Addr: End Mem Symbol" );
 
 	int iBWZ = 0;
-	while (iBWZ < nMax) // 
+	while (iBWZ < nMax)
 	{
 		if (aBreakWatchZero[ iBWZ ].bSet)
 		{
@@ -3269,7 +3535,7 @@ Update_t CmdCursorLineUp (int nArgs)
 			}
 		} while (iTop < MAX_LOOK_AHEAD);
 
-		int nCandidates = aTopCandidates.size();
+		size_t nCandidates = aTopCandidates.size();
 		if (nCandidates)
 		{
 			int iBest = NO_6502_TARGET;
@@ -3540,7 +3806,20 @@ Update_t CmdCursorPageUp4K (int nArgs)
 Update_t CmdCursorSetPC (int nArgs)
 {
 	regs.pc = g_nDisasmCurAddress; // set PC to current cursor address
-	return UPDATE_DISASM;
+
+	// 2.9.4.4 Fixed: Ctrl Right-Arrow now updates targets.
+	// We can't | UPDATE_TARGETS as that erases most of the INFO window!
+	// We really should add an UPDATE_INFO flag but for now UPDATE_ALL is good enough.
+/* Repro
+   1FD:FD FE FF 00
+   R PC FBFB
+   R S FC
+   Down-arrow
+   CTRL Right-arrow
+   Up-arrow
+   CTRL Right-arrow
+*/
+	return UPDATE_ALL;
 }
 
 
@@ -3775,72 +4054,103 @@ Update_t CmdDisk (int nArgs)
 // Memory _________________________________________________________________________________________
 
 
+//===========================================================================
+Update_t CmdMemoryCompare(int nArgs)
+{
+	if (nArgs < 3)
+		return Help_Arg_1(CMD_MEMORY_COMPARE);
+
+	WORD nSrcAddr = g_aArgs[1].nValue;
+	WORD nDstAddr = g_aArgs[3].nValue;
+
+	WORD nSrcSymAddr;
+	WORD nDstSymAddr;
+
+	if (!nSrcAddr)
+	{
+		nSrcSymAddr = GetAddressFromSymbol(g_aArgs[1].sArg);
+		if (nSrcAddr != nSrcSymAddr)
+			nSrcAddr = nSrcSymAddr;
+	}
+
+	if (!nDstAddr)
+	{
+		nDstSymAddr = GetAddressFromSymbol(g_aArgs[3].sArg);
+		if (nDstAddr != nDstSymAddr)
+			nDstAddr = nDstSymAddr;
+	}
+
+	//	if ((!nSrcAddr) || (!nDstAddr))
+	//		return Help_Arg_1( CMD_MEMORY_COMPARE );
+
+	return UPDATE_CONSOLE_DISPLAY;
+}
+
 // TO DO:
 // . Add support for dumping Disk][ device
 //===========================================================================
-bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
+bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
 {
-	if (! nArgs)
-		return false;
-
-	Arg_t *pArg = &g_aArgs[1];
+	Arg_t *pArg = &g_aArgs[iArg];
 	WORD nAddress = pArg->nValue;
 	bool bUpdate = false;
 
 	pArg->eDevice = DEV_MEMORY;						// Default
 
-	if (strncmp(g_aArgs[1].sArg, "MB", 2) == 0)		// Mockingboard sub-unit (6522+AY8913): "MBs" or "MBsn"
+	const char* const psArg = (char*) g_aArgs[iArg].sArg;
+
+	if (_strnicmp(psArg, "MB", 2) == 0)				// Mockingboard sub-unit (6522+AY8913): "MB" or "MBn"
 	{
-		UINT slot = (UINT)-1;
 		UINT subUnit = 0;							// Default to 6522-A
-		if (strlen(g_aArgs[1].sArg) >= 3)			// "MBs" where s = slot#
-			slot = g_aArgs[1].sArg[2] - '0';
-		if (strlen(g_aArgs[1].sArg) == 4)			// "MBsn" where s = slot#, n = SY6522 A or B eg. AY4A
-			subUnit = g_aArgs[1].sArg[3] - 'A';
-		if (slot <= 7 && subUnit <= 1)
+		if (strlen(psArg) == 3)						// "MBn" where n = SY6522 A or B eg. MBA
 		{
-			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
+			const char subUnitChar = psArg[2];
+			subUnit = (subUnitChar <= 'B') ? subUnitChar - 'A' : subUnitChar - 'a';
+		}
+		if (subUnit <= 1)
+		{
+			nAddress = subUnit;						// subUnit=[0..1]
 			pArg->eDevice = DEV_MB_SUBUNIT;
 			bUpdate = true;
 		}
 	}
-	else if (strncmp(g_aArgs[1].sArg, "AY", 2) == 0)	// AY8913: "AYs" or "AYsn"
+	else if (_strnicmp(psArg, "AY", 2) == 0)		// AY8913: "AY" or "AYn"
 	{
-		UINT slot = (UINT)-1;
 		UINT subUnit = 0;							// Default to 6522-A
-		if (strlen(g_aArgs[1].sArg) >= 3)			// "AYs" where s = slot#
-			slot = g_aArgs[1].sArg[2] - '0';
-		if (strlen(g_aArgs[1].sArg) == 4)			// "AYsn" where s = slot#, n = SY6522 A or B eg. AY4A
-			subUnit = g_aArgs[1].sArg[3] - 'A';
-		if (slot <= 7 && subUnit <= 1)
+		if (strlen(psArg) == 3)						// "AYn" where n = SY6522 A or B eg. AYA
 		{
-			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
+			const char subUnitChar = psArg[2];
+			subUnit = (subUnitChar <= 'B') ? subUnitChar - 'A' : subUnitChar - 'a';
+		}
+		if (subUnit <= 1)
+		{
+			nAddress = subUnit;						// subUnit=[0..1]
 			pArg->eDevice = DEV_AY8913_PAIR;		// for Phasor
 			bUpdate = true;
 		}
 	}
 #ifdef SUPPORT_Z80_EMU
-	else if (strcmp(g_aArgs[1].sArg, "*AF") == 0)
+	else if (strcmp(psArg, "*AF") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_AF);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*BC") == 0)
+	else if (strcmp(psArg, "*BC") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_BC);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*DE") == 0)
+	else if (strcmp(psArg, "*DE") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_DE);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*HL") == 0)
+	else if (strcmp(psArg, "*HL") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_HL);
 		bUpdate = true;
 	}
-	else if (strcmp(g_aArgs[1].sArg, "*IX") == 0)
+	else if (strcmp(psArg, "*IX") == 0)
 	{
 		nAddress = ReadWordFromMemory(REG_IX);
 		bUpdate = true;
@@ -3855,60 +4165,53 @@ bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 
 	if (pAddress_)
 	{
-			*pAddress_ = nAddress;
+		*pAddress_ = nAddress;
 	}
 
 	return true;
 }
 
 //===========================================================================
-Update_t CmdMemoryCompare (int nArgs )
-{
-	if (nArgs < 3)
-		return Help_Arg_1( CMD_MEMORY_COMPARE );
-
-	WORD nSrcAddr = g_aArgs[1].nValue;
-	WORD nDstAddr = g_aArgs[3].nValue;
-
-	WORD nSrcSymAddr;
-	WORD nDstSymAddr;
-
-	if (!nSrcAddr)
-	{
-		nSrcSymAddr = GetAddressFromSymbol( g_aArgs[1].sArg );
-		if (nSrcAddr != nSrcSymAddr)
-			nSrcAddr = nSrcSymAddr;
-	}
-
-	if (!nDstAddr)
-	{
-		nDstSymAddr = GetAddressFromSymbol( g_aArgs[3].sArg );
-		if (nDstAddr != nDstSymAddr)
-			nDstAddr = nDstSymAddr;
-	}
-
-//	if ((!nSrcAddr) || (!nDstAddr))
-//		return Help_Arg_1( CMD_MEMORY_COMPARE );
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
-//===========================================================================
 static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
 {
-	WORD nAddress = 0;
-
-	if ( ! MemoryDumpCheck(nArgs, & nAddress ) )
+	if (!nArgs)
 	{
-		return Help_Arg_1( g_iCommand );
+		// Output current prefixed-address
+		if (!g_aMemDump[iWhich].bActive)
+		{
+			ConsolePrintFormat("Mini memory area-%1d not set", iWhich+1);
+		}
+		else
+		{
+			std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(g_aMemDump[iWhich].addrPrefix, g_aMemDump[iWhich].nAddress, g_aMemDump[iWhich].eDevice, false);
+			ConsolePrintFormat("Mini memory area-%1d: %s", iWhich+1, fullPrefixAddr.c_str());
+		}
+		return ConsoleUpdate();
+	}
+
+	int iArg = 1;	// skip cmd
+	int dArgPrefix = 0;
+	g_aMemDump[iWhich].addrPrefix.Clear();
+	if (!Range_GetAllPrefixes(iArg, nArgs, dArgPrefix, &g_aMemDump[iWhich].addrPrefix, false))
+		return Help_Arg_1(g_iCommand);
+
+	WORD nAddress = 0;
+	if (!MemoryDumpCheck(iArg, &nAddress))
+		return Help_Arg_1(g_iCommand);
+
+	if (g_aMemDump[iWhich].addrPrefix.nSlot == AddressPrefix_t::kSlotInvalid &&
+	   (g_aArgs[iArg].eDevice == DEV_MB_SUBUNIT || g_aArgs[iArg].eDevice == DEV_AY8913_PAIR))
+	{
+		ConsolePrintFormat("Slot prefix required for MB or AY device");
+		return ConsoleUpdate();
 	}
 
 	g_aMemDump[iWhich].nAddress = nAddress;
-	g_aMemDump[iWhich].eDevice = g_aArgs[1].eDevice;
+	g_aMemDump[iWhich].eDevice = g_aArgs[iArg].eDevice;
 	g_aMemDump[iWhich].bActive = true;
 	g_aMemDump[iWhich].eView = (MemoryView_e) iView;
 
-	return UPDATE_MEM_DUMP; // TODO: This really needed? Don't think we do any actual ouput
+	return UPDATE_MEM_DUMP; // TODO: This really needed? Don't think we do any actual output
 }
 
 //===========================================================================
@@ -4057,8 +4360,7 @@ Update_t CmdMemoryFill (int nArgs)
 	}
 	else
 	{
-		RangeType_t eRange;
-		eRange = Range_Get( nAddressStart, nAddress2, 1 );
+		RangeType_t eRange = Range_Get( nAddressStart, nAddress2, 1 );
 
 		if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
 			return Help_Arg_1( CMD_MEMORY_MOVE );
@@ -4411,7 +4713,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	const KnownFileType_t *pFileType = NULL;
 
 	const char *pFileName = g_aArgs[ 1 ].sArg;
-	int   nLen = strlen( pFileName );
+	int   nLen = (int) strlen( pFileName );
 	const char *pEnd = pFileName + nLen - 1;
 	while ( pEnd > pFileName )
 	{
@@ -4479,7 +4781,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
-		size_t nFileBytes = _GetFileSize( hFile );
+		int nFileBytes = (int) _GetFileSize( hFile );
 
 		if (nFileBytes > _6502_MEM_END)
 			nFileBytes = _6502_MEM_END + 1; // Bank-switched RAM/ROM is only 16-bit
@@ -4556,8 +4858,7 @@ Update_t CmdMemoryMove (int nArgs)
 	WORD nAddressEnd = 0;
 	int  nAddressLen = 0;
 
-	RangeType_t eRange;
-	eRange = Range_Get( nAddressStart, nAddress2, 2 );
+	RangeType_t eRange = Range_Get( nAddressStart, nAddress2, 2 );
 
 //		if (eRange == RANGE_MISSING_ARG_2)
 	if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
@@ -4792,8 +5093,7 @@ Update_t CmdMemorySave (int nArgs)
 
 		std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
 
-		RangeType_t eRange;
-		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
+		RangeType_t eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
 
 //		if (eRange == RANGE_MISSING_ARG_2)
 		if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
@@ -4960,7 +5260,7 @@ size_t Util_GetDebuggerText ( char* &pText_ )
 	}
 
 	*pEnd = 0;
-	g_nTextScreen = pEnd - pBeg;
+	g_nTextScreen = (int) (pEnd - pBeg);
 	
 	pText_ = pBeg;
 	return g_nTextScreen;
@@ -5011,7 +5311,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	}
 	*pEnd = 0;
 
-	g_nTextScreen = pEnd - pBeg;
+	g_nTextScreen = (int) (pEnd - pBeg);
 	
 	pText_ = pBeg;
 	return g_nTextScreen;
@@ -5053,7 +5353,7 @@ Update_t CmdNTSC (int nArgs)
 #endif
 
 	const char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
-	int   nLen = strlen( pFileName );
+	int   nLen = (int) strlen( pFileName );
 	const char *pEnd = pFileName + nLen - 1;
 	while ( pEnd > pFileName )
 	{
@@ -5713,7 +6013,7 @@ int _SearchMemoryFind (
 
 		uint32_t nAddress2 = nAddress;
 
-		int nMemBlocks = vMemorySearchValues.size();
+		int nMemBlocks = (int) vMemorySearchValues.size();
 		for ( int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
 		{
 			MemorySearch_t ms = vMemorySearchValues.at( iBlock );
@@ -5800,7 +6100,7 @@ int _SearchMemoryFind (
 //===========================================================================
 Update_t _SearchMemoryDisplay (int nArgs)
 {
-	int const nFound = g_vMemorySearchResults.size() - 1;
+	int const nFound = (int) (g_vMemorySearchResults.size() - 1);
 
 	if (nFound > 0)
 	{
@@ -5859,8 +6159,7 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 	WORD nAddressEnd = 0;
 	int  nAddressLen = 0;
 
-	RangeType_t eRange;
-	eRange = Range_Get( nAddressStart, nAddress2 );
+	RangeType_t eRange = Range_Get( nAddressStart, nAddress2 );
 
 //	if (eRange == RANGE_MISSING_ARG_2)
 	if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen))
@@ -6178,6 +6477,79 @@ Update_t CmdOutputEcho (int nArgs)
 	return ConsoleUpdate();
 }
 
+/*
+Description:
+	Set the debugger's "error level logging" aka the console output level
+Usage:
+	LOG
+
+	LOG NONE
+	LOG ERROR
+	LOG WARN
+	LOG INFO
+	LOG DEFAULT
+	LOG ALL
+
+	LOG OFF  // command alias for NONE
+	LOG ON   // command alias for ALL
+*/
+//===========================================================================
+Update_t CmdOutputLog (int nArgs)
+{
+	int iParam;
+
+	enum OutputLogHelp_e
+	{
+		  OUTPUT_HELP_INVALID_PARAM
+		, OUTPUT_HELP_CURRENT_LEVEL
+		, NUM_OUTPUT_LOG_HELP
+	};
+	const char *aHelp[ NUM_OUTPUT_LOG_HELP ] =
+	{
+		CHC_ERROR "Invalid parameter"                    , // NOTE: Intentionally ignore extra param
+		CHC_INFO  "Verbosity level set to " CHC_COMMAND "%s"
+	};
+	const char *pHelp = NULL;
+
+	if (!nArgs)
+	{
+		// Display the current console ouput level logging
+		pHelp = aHelp[ OUTPUT_HELP_CURRENT_LEVEL ];
+	}
+	else
+	if (nArgs == 1)
+	{
+		int nFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_LOG_BEGIN, _PARAM_LOG_END );
+		if (nFound)
+		{
+			int eLevel = iParam - _PARAM_LOG_BEGIN;
+			if ((eLevel >= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_NONE)
+			&&  (eLevel <= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL ))
+			{
+				ConsoleOutputLevelSet( (ConsoleOutputLevel_e)eLevel );
+			}
+		}
+		else
+			pHelp = aHelp[ OUTPUT_HELP_INVALID_PARAM ];
+	}
+	else
+	{
+		return Help_Arg_1( CMD_OUTPUT_LOG ); // Display all valid params
+	}
+
+	if (pHelp)
+	{
+		// We need to push/pop the current output level since
+		// we need to display an output message and it could be muted with the current setting
+		ConsoleOutputLevel_e eLevel = ConsoleOutputLevelGet();
+		ConsoleOutputLevelSet( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
+			iParam = _PARAM_LOG_BEGIN + eLevel;
+			ConsolePrintFormat( pHelp, g_aParameters[ iParam ].m_sName );
+		ConsoleOutputLevelSet( eLevel );
+	}
+
+	return ConsoleUpdate();
+}
 
 enum PrintState_e
 {	  PS_LITERAL
@@ -6414,7 +6786,7 @@ Update_t CmdOutputRun (int nArgs)
 		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
 			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-			g_nConsoleInputChars = strlen( g_pConsoleInput );
+			g_nConsoleInputChars = (int) strlen( g_pConsoleInput );
 			bUpdateDisplay |= DebuggerProcessCommand( false );
 		}
 	}
@@ -6553,7 +6925,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					// start
 					pStart = pEnd + 1;
 					pEnd = const_cast<char*>( SkipUntilWhiteSpace( pStart ));
-					int nLen = (pEnd - pStart);
+					int nLen = (int) (pEnd - pStart);
 					if (nLen != 2)
 					{
 						break;
@@ -6596,7 +6968,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					pLabelEnd++;
 					pLabelStart++;
 					
-					int nLen = pLabelEnd - pLabelStart;
+					int nLen = (int) (pLabelEnd - pLabelStart);
 					nLen = MIN( nLen, MAX_SYMBOLS_LEN );
 					strncpy( sName, pLabelStart, nLen );
 					sName[ nLen - 1 ] = 0;
@@ -7692,7 +8064,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd, const bool bCaseSensitive /* false */ )
 {
 	int nFound = 0;
-	int nLen     = strlen( pLookupName );
+	int nLen     = (int) strlen( pLookupName );
 	int iParam = 0;
 
 	if (! nLen)
@@ -7759,7 +8131,7 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 	g_vPotentialCommands.clear();
 
 	int nFound   = 0;
-	int nLen     = strlen( pName );
+	int nLen     = (int) strlen( pName );
 	int iCommand = 0;
 
 	if (! nLen)
@@ -7924,7 +8296,7 @@ Update_t ExecuteCommand (int nArgs)
 					// with:    comamnd addr
 					pArg[1] = pArg[0];
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
-					pArg->nArgLen = strlen( pArg->sArg );
+					pArg->nArgLen = (int) strlen( pArg->sArg );
 
 					pArg++;
 					pArg->nValue = nAddress;
@@ -7943,7 +8315,7 @@ Update_t ExecuteCommand (int nArgs)
 					pArg[1] = pArg[0];
 
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
-					pArg->nArgLen = strlen( pArg->sArg );
+					pArg->nArgLen = (int) strlen( pArg->sArg );
 
 //					nCookMask &= ~ (1 << TOKEN_COLON);
 //					nArgs++;
@@ -8560,6 +8932,12 @@ void DebugBegin ()
 }
 
 //===========================================================================
+bool DebugQueryAnyBreakpointsSet()
+{
+	return g_nBreakpoints > 0;
+}
+
+//===========================================================================
 void DebugExitDebugger ()
 {
 	ClearTempBreakpoints();  // make sure we remove temp breakpoints before checking
@@ -8659,6 +9037,14 @@ static void UpdateLBR (void)
 		g_LBR = regs.pc;
 }
 
+static std::string GetBreakpointHitIdString(int id)
+{
+	std::string hitId = CHC_DEFAULT "[" CHC_ARG_SEP "B#" CHC_NUM_HEX "-" CHC_DEFAULT "]"; // "[B#-]";
+	if (id != -1)
+		hitId = StrFormat(CHC_DEFAULT "[" CHC_ARG_SEP "B#" CHC_NUM_HEX "%01X" CHC_DEFAULT "]", id);
+	return hitId;
+}
+
 void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 {
 	static bool bForceSingleStepNext = false; // Allow at least one instruction to execute so we don't trigger on the same invalid opcode
@@ -8733,6 +9119,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 					g_bDebugBreakpointHit |= BP_HIT_INTERRUPT;
 			}
 
+			g_pDebugBreakpointHit = nullptr;	// First BP hit
 			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg() | CheckBreakpointsVideo() | CheckBreakpointsDmaToOrFromIOMemory() | CheckBreakpointsDmaToOrFromMemory(-1);
 		}
 
@@ -8740,6 +9127,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 		{
 			std::string stopReason = "Unknown!";
 			bool skipStopReason = false;
+			INTERCEPTBREAKPOINT interceptBreakpoint;
 
 			if (regs.pc == g_nDebugStepUntil)
 				stopReason = StrFormat( CHC_DEFAULT "Register " CHC_REGS "PC" CHC_DEFAULT " matches '" CHC_INFO "Go until" CHC_DEFAULT "' address $" CHC_ADDRESS "%04X", g_nDebugStepUntil);
@@ -8749,27 +9137,33 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				stopReason = StrFormat("Opcode match at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", regs.pc);
 			else if (g_bDebugBreakpointHit & BP_HIT_REG)
 			{
-					if (g_pDebugBreakpointHit)
-					{
-						int iBreakpoint = (g_pDebugBreakpointHit - g_aBreakpoints);
-						stopReason = StrFormat( "Register %s%s%s matches breakpoint %s#%s%d",
-							CHC_REGS,
-							g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
-							CHC_DEFAULT,
-							CHC_ARG_SEP,
-							CHC_NUM_HEX,
-							iBreakpoint
-						);
-					}
-					else
-						stopReason = "Register matches value";
+				stopReason = "Register matches value";
+				if (g_pDebugBreakpointHit)
+				{
+					stopReason = StrFormat( "Register %s%s%s matches value",
+						CHC_REGS,
+						g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
+						CHC_DEFAULT
+					);
+					if (g_pDebugBreakpointHit->eSource == BP_SRC_REG_PC)
+						interceptBreakpoint.Set(BPTYPE_PC, regs.pc, BPACCESS_R);
+				}
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
-				stopReason = StrFormat("Memory access at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", g_uBreakMemoryAddress);
+			{
+				stopReason = StrFormat("Memory access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
+				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_RW);
+			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
-				stopReason = StrFormat("Write access at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", g_uBreakMemoryAddress);
+			{
+				stopReason = StrFormat("Write access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
+				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_W);
+			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
-				stopReason = StrFormat("Read access at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", g_uBreakMemoryAddress);
+			{
+				stopReason = StrFormat("Read access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
+				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_R);
+			}
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				stopReason = "PC reads from floating bus or I/O memory";
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
@@ -8785,7 +9179,14 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				skipStopReason = true;
 
 			if (!skipStopReason)
-				ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
+			{
+				if (g_InterceptBreakpointsCB != nullptr)
+					g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBreakpoint);
+
+				std::string hitId = GetBreakpointHitIdString(g_breakpointHitID);
+				ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
+				g_breakpointHitID = -1;
+			}
 
 			for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
 			{
@@ -8793,16 +9194,27 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				if (nDebugBreakpointHit)
 				{
 					if (nDebugBreakpointHit & BP_DMA_TO_MEM)
-						stopReason = StrFormat("HDD DMA to memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X" CHC_DEFAULT " (breakpoint %s#%s%d%s)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, CHC_ARG_SEP, CHC_NUM_HEX, g_DebugBreakOnDMA[i].BPid, CHC_DEFAULT);
+						stopReason = StrFormat("HDD DMA to memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd);
 					else if (nDebugBreakpointHit & BP_DMA_FROM_MEM)
-						stopReason = StrFormat("HDD DMA from memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X" CHC_DEFAULT " (breakpoint %s#%s%d%s)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, CHC_ARG_SEP, CHC_NUM_HEX, g_DebugBreakOnDMA[i].BPid, CHC_DEFAULT);
-					ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
+						stopReason = StrFormat("HDD DMA from memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd);
+					std::string hitId = GetBreakpointHitIdString(g_DebugBreakOnDMA[i].BPid);
+					ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
+
+					if (g_InterceptBreakpointsCB != nullptr)
+					{
+						const uint8_t access = (nDebugBreakpointHit & BP_DMA_FROM_MEM) ? BPACCESS_R : BPACCESS_W;
+						interceptBreakpoint.SetDMA(g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, access);
+						g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBreakpoint);
+					}
 				}
 			}
 
 			ConsoleUpdate();
 
-			g_nDebugSteps = 0;
+			//
+
+			if (g_InterceptBreakpointsCB == nullptr)
+				g_nDebugSteps = 0;
 		}
 
 		if (g_nDebugSteps > 0)
@@ -8847,11 +9259,7 @@ void DebugDestroy ()
 //	DeleteObject(g_hFontDebugger);
 //	DeleteObject(g_hFontWebDings);
 
-	// TODO: Symbols_Clear()
-	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
-	{
-		_CmdSymbolsClear( (SymbolTable_Index_e) iTable );
-	}
+	SymbolsClear();
 	// TODO: DataDisassembly_Clear()
 
 	ReleaseConsoleFontDC();
@@ -8927,39 +9335,17 @@ void DebugInitialize ()
 	WindowUpdateConsoleDisplayedSize();
 
 	// CLEAR THE BREAKPOINT AND WATCH TABLES
-	memset( g_aBreakpoints     , 0, MAX_BREAKPOINTS       * sizeof(Breakpoint_t));
+	g_nBreakMemoryAddr = 0;
+	g_breakpointHitID = -1;
+	for (int i = 0; i < MAX_BREAKPOINTS; i++)
+		g_aBreakpoints[i].Clear();
 	g_nBreakpoints = 0;
 	memset( g_aWatches         , 0, MAX_WATCHES           * sizeof(Watches_t) );
 	g_nWatches = 0;
 	memset( g_aZeroPagePointers, 0, MAX_ZEROPAGE_POINTERS * sizeof(ZeroPagePointers_t));
 	g_nZeroPagePointers = 0;
 
-	// Load Main, Applesoft, and User Symbols
-	g_bSymbolsDisplayMissingFile = false;
-
-	g_iCommand = CMD_SYMBOLS_ROM;
-	CmdSymbolsLoad(0);
-
-	g_iCommand = CMD_SYMBOLS_APPLESOFT;
-	CmdSymbolsLoad(0);
-
-	// 2.9.2.5 Added: Symbol table A2_DOS33.SYM2
-	g_iCommand = CMD_SYMBOLS_DOS33;
-	CmdSymbolsLoad(0);
-
-	// ,0x7,0xFF // Treat zero-page as data
-	// $00 GOWARM   JSR ...
-	// $01 LOC1 DW
-	// $03 GOSTROUT JSR ...
-	// $07..$B0
-	// $B1 CHRGET
-	// $C8
-	// $C9 RNDSEED DW
-	// $D0..$FF
-
-	g_iCommand = CMD_SYMBOLS_USER_1;
-	CmdSymbolsLoad(0);
-
+	CmdDebugStartup(0);
 	g_bSymbolsDisplayMissingFile = true;
 
 #if OLD_FONT
@@ -9030,10 +9416,10 @@ void DebugInitialize ()
 		const char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
 		if (pHelp)
 		{
-			int nLen = strlen( pHelp ) + 2;
+			int nLen = (int) (strlen( pHelp ) + 2);
 			if (nLen > (CONSOLE_WIDTH-1))
 			{
-				ConsoleBufferPushFormat( "Warning: %s help is %d chars", pHelp, nLen );
+				ConsoleBufferPushFormat( CHC_WARNING "Warning: %s help is %d chars", pHelp, nLen );
 			}
 		}
 	}
@@ -9049,11 +9435,9 @@ void DebugInitialize ()
 	{
 		doneAutoRun = true;
 
-		const std::string debuggerAutoRunName = "DebuggerAutoRun.txt";
-
 		// Look in g_sCurrentDir, otherwise try g_sProgramDir
 
-		std::string pathname = g_sCurrentDir + debuggerAutoRunName;
+		std::string pathname = g_sCurrentDir + g_sAutoRunScriptFilename;
 		errno_t error = strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), pathname.size());
 		if (error != 0)
 		{
@@ -9067,7 +9451,7 @@ void DebugInitialize ()
 
 		if (!g_bScriptReadOk)
 		{
-			pathname = g_sProgramDir + debuggerAutoRunName;
+			pathname = g_sProgramDir + g_sAutoRunScriptFilename;
 			error = strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), pathname.size());
 			if (error != 0)
 			{
@@ -9081,6 +9465,8 @@ void DebugInitialize ()
 		}
 	}
 
+	ConsoleOutputLevelSet( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
+
 	CmdMOTD(0);
 }
 
@@ -9089,6 +9475,44 @@ void DebugReset (void)
 {
 	g_videoScannerDisplayInfo.Reset();
 	g_LBR = LBR_UNDEFINED;
+}
+
+
+// Load debugger script files
+// Called from DebugInitialize()
+// User can also call
+//===========================================================================
+Update_t CmdDebugStartup (int nArgs)
+{
+	SymbolsClear();
+
+	// Load Main, Applesoft, and User Symbols
+	g_bSymbolsDisplayMissingFile = false;
+
+	g_iCommand = CMD_SYMBOLS_ROM;
+	CmdSymbolsLoad(0);
+
+	g_iCommand = CMD_SYMBOLS_APPLESOFT;
+	CmdSymbolsLoad(0);
+
+	// 2.9.2.5 Added: Symbol table A2_DOS33.SYM2
+	g_iCommand = CMD_SYMBOLS_DOS33;
+	CmdSymbolsLoad(0);
+
+	// ,0x7,0xFF // Treat zero-page as data
+	// $00 GOWARM   JSR ...
+	// $01 LOC1 DW
+	// $03 GOSTROUT JSR ...
+	// $07..$B0
+	// $B1 CHRGET
+	// $C8
+	// $C9 RNDSEED DW
+	// $D0..$FF
+
+	g_iCommand = CMD_SYMBOLS_USER_1;
+	CmdSymbolsLoad(0);
+
+	return UPDATE_NOTHING;
 }
 
 // Add character to the input line
@@ -9744,4 +10168,19 @@ void DebuggerCursorNext ()
 bool IsDebugSteppingAtFullSpeed (void)
 {
 	return (g_nAppMode == MODE_STEPPING) && g_bDebugFullSpeed;
+}
+
+
+//===========================================================================
+void DebugSetAutoRunScript (std::string& sAutoRunScriptFilename)
+{
+	g_sAutoRunScriptFilename = sAutoRunScriptFilename;
+}
+
+
+//===========================================================================
+void InterceptBreakpoints(uint8_t slot, CBFUNCTION cbfunction)
+{
+	g_interceptBreakpointsSlot = slot;
+	g_InterceptBreakpointsCB = cbfunction;
 }

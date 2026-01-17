@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger commands
  *
- * Author: Copyright (C) 2011 - 2011 Michael Pohoreski
+ * Author: Copyright (C) 2011 - 2025 Michael Pohoreski
  */
 
 #include "StdAfx.h"
@@ -215,11 +215,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{"NTSC"        , CmdNTSC              , CMD_NTSC                 , "Save/Load the NTSC palette"   },
 		{"TSAVE"       , CmdTextSave          , CMD_TEXT_SAVE            , "Save text screen"             },
 	// Output / Scripts
-		{"CALC"        , CmdOutputCalc        , CMD_OUTPUT_CALC          , "Display mini calc result"               },
-		{"ECHO"        , CmdOutputEcho        , CMD_OUTPUT_ECHO          , "Echo string to console"                 }, // or toggle command echoing"
-		{"PRINT"       , CmdOutputPrint       , CMD_OUTPUT_PRINT         , "Display string and/or hex values"       },
-		{"PRINTF"      , CmdOutputPrintf      , CMD_OUTPUT_PRINTF        , "Display formatted string"               },
-		{"RUN"         , CmdOutputRun         , CMD_OUTPUT_RUN           , "Run script file of debugger commands"   },
+		{"CALC"        , CmdOutputCalc        , CMD_OUTPUT_CALC          , "Display mini calc result"                    },
+		{"ECHO"        , CmdOutputEcho        , CMD_OUTPUT_ECHO          , "Echo string to console"                      }, // or toggle command echoing"
+		{"LOG"         , CmdOutputLog         , CMD_OUTPUT_LOG           , "Set the debugger verbosity level for output" },
+		{"PRINT"       , CmdOutputPrint       , CMD_OUTPUT_PRINT         , "Display string and/or hex values"            },
+		{"PRINTF"      , CmdOutputPrintf      , CMD_OUTPUT_PRINTF        , "Display formatted string"                    },
+		{"RUN"         , CmdOutputRun         , CMD_OUTPUT_RUN           , "Run script file of debugger commands"        },
 	// Source Level Debugging
 		{"SOURCE"      , CmdSource            , CMD_SOURCE               , "Starts/Stops source level debugging" },
 		{"SYNC"        , CmdSync              , CMD_SYNC                 , "Syncs the cursor to the source file" },
@@ -320,6 +321,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{"ZPL"         , CmdZeroPageList      , CMD_ZEROPAGE_POINTER_LIST  , "List all zero page pointers"            },
 //		{"ZPLOAD"      , CmdZeroPageLoad      , CMD_ZEROPAGE_POINTER_LOAD  , "Load zero page pointers"                }, // Cant use as param to ZP
 		{"ZPSAVE"      , CmdZeroPageSave      , CMD_ZEROPAGE_POINTER_SAVE  , "Save zero page pointers"                }, // due to symbol look-up
+	// Startup/Shutdown
+		{"STARTUP"     , CmdDebugStartup      , CMD_STARTUP              , "Run debugger startup scripts"          },
 
 //	{"TIMEDEMO",CmdTimeDemo, CMD_TIMEDEMO }, // CmdBenchmarkStart(), CmdBenchmarkStop()
 //	{"WC",CmdShowCodeWindow}, // Can't use since WatchClear
@@ -494,6 +497,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{"WATCHES"     , NULL, PARAM_CAT_WATCHES     },
 		{"WINDOW"      , NULL, PARAM_CAT_WINDOW      },
 		{"ZEROPAGE"    , NULL, PARAM_CAT_ZEROPAGE    },
+// (Console) Output Levels
+		{"NONE"       , NULL, PARAM_LOG_NONE        , "Show no output save for LOG status, VERSION, and MOTD" },
+		{"ERROR"      , NULL, PARAM_LOG_ERROR       , "Show errors only"                                      },
+		{"WARN"       , NULL, PARAM_LOG_WARN        , "Show warnings and errors"                              },
+		{"INFO"       , NULL, PARAM_LOG_INFO        , "Show info., warnings, and errors"                      },
+		{"DEFAULT"    , NULL, PARAM_LOG_DEFAULT     , "Show default messages, info., warnings, and errors"    },
+		{"ALL"        , NULL, PARAM_LOG_ALL         , "Show all messages"                                     },
+		{"OFF"        , NULL, PARAM_LOG_NONE        , "Alias for NONE -- show no output"                      }, // command alias for NONE
+		{"ON"         , NULL, PARAM_LOG_ALL         , "Alias for ALL -- show all output"                      }, // command alias for ALL
 // Memory
 		{"?"          , NULL, PARAM_MEM_SEARCH_WILD },
 //		{"*"          , NULL, PARAM_MEM_SEARCH_BYTE },
@@ -525,7 +537,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		{"SYMBOL1"    , NULL, PARAM_SYMBOL_1       }, //   -     x    code/data win   
 		{"SYMBOL2"    , NULL, PARAM_SYMBOL_2       }, //   -     x    code/data win   
 // Internal Consistency Check
-		{ DEBUGGER__PARAMS_VERIFY_TXT__, NULL, NUM_PARAMS     },
+		{ DEBUGGER__PARAMS_VERIFY_TXT__, NULL, NUM_PARAMS     }
 	};
 
 //===========================================================================

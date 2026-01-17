@@ -1,6 +1,7 @@
 #include "StdAfx.h"
 #include "frontends/common2/argparser.h"
 #include "frontends/common2/programoptions.h"
+#include "frontends/common2/utils.h"
 #include "linux/version.h"
 
 #include "Memory.h"
@@ -8,7 +9,6 @@
 #include <getopt.h>
 #include <regex>
 #include <iostream>
-#include <iomanip>
 #include <sstream>
 
 namespace
@@ -148,6 +148,7 @@ namespace common2
     {
         const std::string name = "Apple Emulator for " + edition + " (based on AppleWin " + getVersion() + ")";
 
+        options.configurationFile = getConfigFile("applewin.yaml");
         const std::string configurationFileDefault = options.configurationFile.string();
         const std::string audioBufferDefault = std::to_string(options.audioBuffer);
 
@@ -161,7 +162,6 @@ namespace common2
             {"Configuration",
              {
                  {"conf",                    required_argument,    'c',              "Select configuration file", configurationFileDefault.c_str()},
-                 {"qt-ini",                  no_argument,          'q',              "Use Qt ini file (read only)"},
                  {"registry",                required_argument,    'r',              "Registry options section.path=value"},
              }},
             {"Emulator",
@@ -179,7 +179,7 @@ namespace common2
                  {"d1",                      required_argument,    '1',              "Disk in S6D1 drive"},
                  {"d2",                      required_argument,    '2',              "Disk in S6D2 drive"},
                  {"h1",                      required_argument,    DISK_H1,          "Hard Disk in 1st drive"},
-                 {"h2",                      required_argument,    DISK_H2,          "Hard Disk in 1st drive"},
+                 {"h2",                      required_argument,    DISK_H2,          "Hard Disk in 2nd drive"},
              }},
             {"Snapshot",
              {
@@ -250,7 +250,7 @@ namespace common2
             {
                 if (optind < argc)
                 {
-                    std::cerr << "Uexpected positional argument: '" << argv[optind] << "'" << std::endl << std::endl;
+                    std::cerr << "Unexpected positional argument: '" << argv[optind] << "'" << std::endl << std::endl;
                     printHelp(allOptions);
                     return false;
                 }
@@ -297,11 +297,6 @@ namespace common2
             {
                 options.snapshotFilename = optarg;
                 options.loadSnapshot = true;
-                break;
-            }
-            case 'q':
-            {
-                options.useQtIni = true;
                 break;
             }
             case 'r':

@@ -3,4 +3,3 @@ g++
 vim
 ninja-build
 pkg-config
-libboost-dev

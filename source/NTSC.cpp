@@ -2072,7 +2072,11 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 	{
 		if (uVideoModeFlags & VF_TEXT)
 		{
-			g_nColorBurstPixels = 0;		// (For mid-line video mode change) Instantaneously kill color-burst! (not correct as TV's can take many lines)
+			if (GetVideo().GetVideoType() != VT_COLOR_TV)
+			{
+				// Instantaneously kill color-burst! Not TV's as they can take many lines (GH#1443)
+				g_nColorBurstPixels = 0;		// (For mid-line video mode change)
+			}
 
 			// Switching mid-line from graphics to TEXT
 			if (GetVideo().GetVideoType() == VT_COLOR_MONITOR_NTSC &&
@@ -2086,8 +2090,8 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 		}
 		else
 		{
-			if (!g_nVideoMixed || g_nVideoClockVert < VIDEO_SCANNER_Y_MIXED)	// 50HZ(PAL) will kill color-burst if 'mixed and >=160' - so don't re-enable color-burst! (GH#1131)
-				g_nColorBurstPixels = 1024;		// (For mid-line video mode change)
+			if (g_nVideoMixed && g_nVideoClockVert >= VIDEO_SCANNER_Y_MIXED)	// 50HZ(PAL) will kill color-burst if 'mixed and >=160' - so don't re-enable color-burst! (GH#1131)
+				g_nColorBurstPixels = 0;		// (For mid-line video mode change)
 
 			// Switching mid-line from TEXT to graphics
 			if (GetVideo().GetVideoType() == VT_COLOR_MONITOR_NTSC &&

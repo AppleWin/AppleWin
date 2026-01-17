@@ -285,7 +285,7 @@ std::string _CmdSymbolsInfoHeader ( int iTable, int nDisplaySize /* = 0 */ )
 {
 	// Common case is to use/calc the table size
 	bool bActive = (g_bDisplaySymbolTables & (1 << iTable)) ? true : false;
-	int nSymbols  = nDisplaySize ? nDisplaySize : g_aSymbols[ iTable ].size();
+	int nSymbols  = nDisplaySize ? nDisplaySize : (int)g_aSymbols[ iTable ].size();
 
 	// Short Desc: `MAIN`: `1000`
 	// // 2.6.2.19 Color for name of symbol table: _CmdPrintSymbol() "SYM HOME" _CmdSymbolsInfoHeader "SYM"
@@ -495,7 +495,7 @@ Update_t _CmdSymbolsListTables (int nArgs, int bSymbolTables )
 			{
 				if ( bTable & bSymbolTables )
 				{
-					int nSymbols = g_aSymbols[iTable].size();
+					int nSymbols = (int)g_aSymbols[iTable].size();
 					if (nSymbols)
 					{
 						SymbolTable_t :: iterator  iSymbol = g_aSymbols[iTable].begin();
@@ -616,7 +616,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 				p = strstr(szLine, " ");		// 1st space between name & value
 				if (p)
 				{
-					int nLen = p - szLine;
+					int nLen = (int) (p - szLine);
 					if (nLen > MAX_SYMBOLS_LEN)
 					{
 						memset(&szLine[MAX_SYMBOLS_LEN], ' ', nLen - MAX_SYMBOLS_LEN);	// sscanf fails for nAddress if string too long
@@ -632,10 +632,10 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 				continue;
 
 			// 2.9.0.11 Bug #479
-			int nLen = strlen( sName );
+			size_t nLen = strlen( sName );
 			if (nLen > nMaxLen)
 			{
-				ConsolePrintFormat( " %sWarn.: %s%s %s(%s%d %s> %s%d%s)"
+				ConsolePrintFormat( " %sWarn.: %s%s %s(%s%" SIZE_T_FMT " %s> %s%d%s)"
 					, CHC_WARNING
 					, CHC_SYMBOL
 					, sName
@@ -715,7 +715,7 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 				if ( !bDupSymbolHeader )
 				{
 					bDupSymbolHeader = true;
-					ConsolePrintFormat( " %sDup Symbol Name%s (%s%s%s) %s"
+					ConsolePrintFormat( "%s Dup Symbol Name%s (%s%s%s) %s"
 						, CHC_ERROR
 						, CHC_DEFAULT
 						, CHC_STRING
@@ -723,16 +723,25 @@ int ParseSymbolTable(const std::string & pPathFileName, SymbolTable_Index_e eSym
 						, CHC_DEFAULT
 						, pPathFileName.c_str()
 					);
+					ConsolePrintFormat( "%s  %s$%s%04X %s%-31s%s"
+						, CHC_ERROR
+						, CHC_ARG_SEP
+						, CHC_ADDRESS
+						, nAddress
+						, CHC_SYMBOL
+						, sName
+						, CHC_DEFAULT
+					);
 				}
-
-				ConsolePrintFormat( "  %s$%s%04X %s%-31s%s"
-					, CHC_ARG_SEP
-					, CHC_ADDRESS
-					, nAddress
-					, CHC_SYMBOL
-					, sName
-					, CHC_DEFAULT
-				);
+				else
+					ConsolePrintFormat( "  %s$%s%04X %s%-31s%s"
+						, CHC_ARG_SEP
+						, CHC_ADDRESS
+						, nAddress
+						, CHC_SYMBOL
+						, sName
+						, CHC_DEFAULT
+					);
 			}
 	
 			// else // It is not a bug to have duplicate addresses by different names
@@ -790,7 +799,7 @@ Update_t CmdSymbolsLoad (int nArgs)
 				for ( int iLine = 0; iLine < nLine; iLine++ )
 				{
 					script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-					g_nConsoleInputChars = strlen( g_pConsoleInput );
+					g_nConsoleInputChars = (int) strlen( g_pConsoleInput );
 					bUpdateDisplay |= DebuggerProcessCommand( false );
 				}
 			}
@@ -870,6 +879,14 @@ Update_t _CmdSymbolsClear( SymbolTable_Index_e eSymbolTable )
 	return UPDATE_SYMBOLS;
 }
 
+//===========================================================================
+void SymbolsClear ()
+{
+	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
+	{
+		_CmdSymbolsClear( (SymbolTable_Index_e) iTable );
+	}
+}
 
 //===========================================================================
 void SymbolUpdate ( SymbolTable_Index_e eSymbolTable, const char *pSymbolName, WORD nAddress, bool bRemoveSymbol, bool bUpdateSymbol )

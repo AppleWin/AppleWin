@@ -12,6 +12,7 @@ void strcpy_s(char *dest, size_t size, const char *source);
 
 #define _strtoui64 strtoull
 #define _stricmp strcasecmp
+#define _strnicmp strncasecmp
 #define sscanf_s sscanf
 
 inline bool IsCharLower(char ch)

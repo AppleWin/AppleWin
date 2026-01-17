@@ -36,7 +36,6 @@ target_include_directories(applen PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
   ${NCURSES_INCLUDE_DIRS}
   ${LIBEVDEV_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
   )
 
 target_compile_options(applen PRIVATE
@@ -47,12 +46,9 @@ target_compile_options(applen PRIVATE
 target_link_libraries(applen PRIVATE
   appleii
   common2
-  minizip
-  yaml
 
   ${PCAP_LIBRARIES}
   ${SLIRP_LIBRARIES}
-  ${ZLIB_LIBRARIES}
   
   ${NCURSES_LIBRARIES}
   ${LIBEVDEV_LIBRARIES}

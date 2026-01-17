@@ -350,7 +350,7 @@ static void GetProgramDirectory(void)
 
 	g_sProgramDir = programDir;
 
-	int loop = g_sProgramDir.size();
+	size_t loop = g_sProgramDir.size();
 	while (loop--)
 	{
 		if ((g_sProgramDir[loop] == PATH_SEPARATOR) || (g_sProgramDir[loop] == ':'))
@@ -430,7 +430,7 @@ void RegisterExtensions(void)
 	pValueName = "DiskImage\\shell\\open\\command";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ, command.c_str(), command.length() + 1);
+				REG_SZ, command.c_str(), (uint32_t)(command.length() + 1));
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 	pValueName = "DiskImage\\shell\\open\\ddeexec";
@@ -442,14 +442,14 @@ void RegisterExtensions(void)
 	pValueName = "DiskImage\\shell\\open\\ddeexec\\application";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ, "applewin", strlen("applewin") + 1);
+				REG_SZ, "applewin", (uint32_t)(strlen("applewin") + 1));
 //				REG_SZ, szModuleFileName, strlen(szModuleFileName)+1);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 	pValueName = "DiskImage\\shell\\open\\ddeexec\\topic";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ, "system", strlen("system") + 1);
+				REG_SZ, "system", (uint32_t)(strlen("system") + 1));
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 }
 
@@ -817,6 +817,15 @@ static void RepeatInitialization(void)
 				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UseBad6522A();
 			if (g_cmdLine.slotInfo[i].useBad6522B)
 				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UseBad6522B();
+			for (UINT socket = 0; socket < NUM_SSI263; socket++)
+			{
+				const SSI263Type type = g_cmdLine.slotInfo[i].socketSSI263[socket];
+				if (type != SSI263Unknown)
+					dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).SetSocketSSI263(socket, type);
+			}
+			const SSI263Type type = g_cmdLine.slotInfo[i].socketSC01;
+			if (type != SSI263Unknown)
+				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).SetSocketSC01(type);
 		}
 	}
 
@@ -921,6 +930,9 @@ static void RepeatInitialization(void)
 	if (g_cmdLine.useAltCpuEmulation)
 		ForceAltCpuEmulation();
 
+	if (!g_cmdLine.debuggerAutoRunScriptFilename.empty())
+		DebugSetAutoRunScript(g_cmdLine.debuggerAutoRunScriptFilename);
+
 	// Call DebugInitialize() after SetCurrentImageDir()
 	DebugInitialize();
 	LogFileOutput("Main: DebugInitialize()\n");
@@ -976,7 +988,7 @@ static void RepeatInitialization(void)
 	if (g_cmdLine.szSnapshotName)
 	{
 		std::string strPathname(g_cmdLine.szSnapshotName);
-		int nIdx = strPathname.find_last_of(PATH_SEPARATOR);
+		size_t nIdx = strPathname.find_last_of(PATH_SEPARATOR);
 		if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())	// path exists?
 		{
 			const std::string strPath = strPathname.substr(0, nIdx+1);

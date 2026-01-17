@@ -19,7 +19,7 @@ public:
     virtual void putString(const std::string &section, const std::string &key, const std::string &value) = 0;
     virtual void putDWord(const std::string &section, const std::string &key, const uint32_t value) = 0;
 
-    virtual std::map<std::string, std::map<std::string, std::string>> getAllValues() const = 0;
+    virtual const std::map<std::string, std::map<std::string, std::string>> &getAllValues() const = 0;
 
     virtual std::string getLocation() const = 0;
 };

@@ -4,32 +4,32 @@
 #include "frontends/common2/ptreeregistry.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/utils.h"
+#include "frontends/common2/yamlmap.h"
 
 #include "Log.h"
-#include "frontends/qt/applicationname.h"
-
-#include <boost/property_tree/ini_parser.hpp>
+#include <regex>
 
 namespace
 {
 
-    void parseOption(const std::string &s, std::string &path, std::string &value)
+    void parseOption(const std::string &s, std::string &section, std::string &key, std::string &value)
     {
-        const size_t pos = s.find('=');
-        if (pos == std::string::npos)
+        static const std::regex re(R"(^([^.=]+)\.([^.=]+)=(.*)$)");
+        std::smatch m;
+        if (!std::regex_match(s, m, re))
         {
             throw std::runtime_error("Invalid option format: " + s + ", expected: section.key=value");
         }
-        path = s.substr(0, pos);
-        std::replace(path.begin(), path.end(), '_', ' ');
-        value = s.substr(pos + 1);
-        std::replace(value.begin(), value.end(), '_', ' ');
+
+        section = m[1].str();
+        key = m[2].str();
+        value = m[3].str();
     }
 
     class Configuration : public common2::PTreeRegistry
     {
     public:
-        Configuration(const std::filesystem::path &filename, const bool saveOnExit);
+        Configuration(const std::filesystem::path &filename);
         ~Configuration();
 
         void addExtraOptions(const std::vector<std::string> &options);
@@ -38,16 +38,14 @@ namespace
 
     private:
         const std::filesystem::path myFilename;
-        bool mySaveOnExit;
     };
 
-    Configuration::Configuration(const std::filesystem::path &filename, const bool saveOnExit)
+    Configuration::Configuration(const std::filesystem::path &filename)
         : myFilename(filename)
-        , mySaveOnExit(saveOnExit)
     {
         if (std::filesystem::exists(myFilename))
         {
-            boost::property_tree::ini_parser::read_ini(myFilename.string(), myINI);
+            myData = common2::readMapFromYaml(myFilename.string());
         }
         else
         {
@@ -57,16 +55,13 @@ namespace
 
     Configuration::~Configuration()
     {
-        if (mySaveOnExit)
+        try
         {
-            try
-            {
-                saveToINIFile(myFilename.string());
-            }
-            catch (const std::exception &e)
-            {
-                LogFileOutput("Registry: cannot save settings to '%s': %s\n", myFilename.string().c_str(), e.what());
-            }
+            saveToYamlFile(myFilename.string());
+        }
+        catch (const std::exception &e)
+        {
+            LogFileOutput("Registry: cannot save settings to '%s': %s\n", myFilename.string().c_str(), e.what());
         }
     }
 
@@ -74,9 +69,9 @@ namespace
     {
         for (const std::string &option : options)
         {
-            std::string path, value;
-            parseOption(option, path, value);
-            myINI.put(path, value);
+            std::string section, key, value;
+            parseOption(option, section, key, value);
+            putString(section, key, value);
         }
     }
 
@@ -92,22 +87,10 @@ namespace common2
 
     std::shared_ptr<Registry> CreateFileRegistry(const EmulatorOptions &options)
     {
-        std::filesystem::path filename;
-        bool saveOnExit;
-
-        if (options.useQtIni)
-        {
-            filename = getSettingsRootDir() / ORGANIZATION_NAME / (std::string(APPLICATION_NAME) + ".conf");
-            saveOnExit = false;
-        }
-        else
-        {
-            filename = options.configurationFile;
-            saveOnExit = true;
-        }
+        const std::filesystem::path &filename = options.configurationFile;
 
         LogFileOutput("Reading configuration from: '%s'\n", filename.string().c_str());
-        std::shared_ptr<Configuration> config = std::make_shared<Configuration>(filename, saveOnExit);
+        std::shared_ptr<Configuration> config = std::make_shared<Configuration>(filename);
         config->addExtraOptions(options.registryOptions);
 
         return config;

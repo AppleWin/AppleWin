@@ -14,12 +14,14 @@
 @COPY /Y "%APPLEWIN_ROOT%\bin\ProDOS_2_4_3.po" "%~1"
 @COPY /Y "%APPLEWIN_ROOT%\docs\Debugger_Changelog.txt" "%~1"
 @COPY /Y "%APPLEWIN_ROOT%\help\AppleWin.chm" "%~1"
-@COPY /Y "%APPLEWIN_ROOT%\Release v141_xp\AppleWin.exe" "%~1"
+@COPY /Y "%APPLEWIN_ROOT%\Release\AppleWin.exe" "%~1"
+@COPY /Y "%APPLEWIN_ROOT%\x64\Release\AppleWin-x64.exe" "%~1"
 @MKDIR "%~1\snesmax"
 @COPY /Y "%APPLEWIN_ROOT%\snesmax\*" "%~1\snesmax"
 CD "%~1"
 "C:\Program Files\7-Zip\7z.exe" a ..\AppleWin"%~1".zip *
-"C:\Program Files\7-Zip\7z.exe" a ..\AppleWin"%~1"-PDB.zip "%APPLEWIN_ROOT%\Release v141_xp\AppleWin.pdb"
+"C:\Program Files\7-Zip\7z.exe" a ..\AppleWin"%~1"-PDB.zip "%APPLEWIN_ROOT%\Release\AppleWin.pdb"
+"C:\Program Files\7-Zip\7z.exe" a ..\AppleWin"%~1"-PDB.zip "%APPLEWIN_ROOT%\x64\Release\AppleWin-x64.pdb"
 CD ..
 @GOTO end
 
