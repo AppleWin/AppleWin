@@ -36,6 +36,7 @@ private:
 	void InitFreezeDlgButton(HWND hWnd);
 	void InitCloneDropdownMenu(HWND hWnd);
 	void InitGameIOConnectorDropdownMenu(HWND hWnd);
+	bool IsOkToBenchmark(HWND hWnd, const bool bConfigChanged);
 
 	static CPageAdvanced* ms_this;
 	static const char m_CloneChoices[];

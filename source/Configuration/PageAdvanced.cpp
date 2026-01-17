@@ -142,6 +142,13 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 				SetCopyProtectionDongleType(newCopyProtectionDongleMenuItem);
 			}
 			break;
+
+		case IDC_BENCHMARK:
+			if (!IsOkToBenchmark(hWnd, m_PropertySheetHelper.IsConfigChanged()))
+				break;
+			m_PropertySheetHelper.SetDoBenchmark();
+			PropSheet_PressButton(GetParent(hWnd), PSBTN_OK);
+			break;
 		}
 		break;
 
@@ -274,4 +281,31 @@ void CPageAdvanced::InitGameIOConnectorDropdownMenu(HWND hWnd)
 	// Set copy protection dongle menu choice
 	const int nCurrentChoice = GetCopyProtectionDongleType();
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_GAME_IO_CONNECTOR, m_gameIOConnectorChoices, nCurrentChoice);
+}
+
+bool CPageAdvanced::IsOkToBenchmark(HWND hWnd, const bool bConfigChanged)
+{
+	if (bConfigChanged)
+	{
+		if (MessageBox(hWnd,
+			"The hardware configuration has changed. Benchmarking will lose these changes.\n\n"
+			"Are you sure you want to do this?",
+			"Benchmarks",
+			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+			return false;
+	}
+
+	if (g_nAppMode == MODE_LOGO)
+		return true;
+
+	if (MessageBox(hWnd,
+		"Running the benchmarks will reset the state of "
+		"the emulated machine, causing you to lose any "
+		"unsaved work.\n\n"
+		"Are you sure you want to do this?",
+		"Benchmarks",
+		MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+		return false;
+
+	return true;
 }
