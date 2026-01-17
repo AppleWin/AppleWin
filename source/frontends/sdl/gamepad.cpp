@@ -13,7 +13,8 @@ namespace sa2
 
     std::shared_ptr<Gamepad> Gamepad::create(const std::optional<int> &index, const std::string &mappingFile)
     {
-        if (!index && SDL_NumJoysticks() <= 0)
+        const std::vector<Joystick_t> joysticks = compat::getGameControllers();
+        if (!index && joysticks.empty())
         {
             // default and no joysticks available
             return std::shared_ptr<Gamepad>();
@@ -29,9 +30,16 @@ namespace sa2
             std::cerr << "SDL Game Controller: Loaded " << res << " mappings" << std::endl;
         }
 
+        const int ind = index.value_or(0);
+        if (ind < 0 || size_t(ind) >= joysticks.size())
+        {
+            throw std::runtime_error("Requested game controller index is out of range");
+        }
+
         try
         {
-            return std::make_shared<Gamepad>(index.value_or(0));
+            const Joystick_t id = joysticks[ind];
+            return std::make_shared<Gamepad>(id);
         }
         catch (const std::runtime_error &e)
         {
@@ -46,11 +54,11 @@ namespace sa2
         }
     }
 
-    Gamepad::Gamepad(const int index)
+    Gamepad::Gamepad(const Joystick_t id)
         : myButtonCodes(2)
         , myAxisCodes(2)
     {
-        myController.reset(SDL_GameControllerOpen(index), SDL_GameControllerClose);
+        myController.reset(SDL_GameControllerOpen(id), SDL_GameControllerClose);
         if (!myController)
         {
             throw std::runtime_error(decorateSDLError("SDL_GameControllerOpen"));

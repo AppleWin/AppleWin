@@ -67,9 +67,7 @@ namespace sa2
         const SDL_WindowFlags windowFlags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
         const common2::Geometry geometry = getGeometryOrDefault(options.geometry);
 
-        myWindow.reset(
-            SDL_CreateWindow(g_pAppTitle.c_str(), geometry.x, geometry.y, geometry.width, geometry.height, windowFlags),
-            SDL_DestroyWindow);
+        myWindow.reset(compat::createWindow(g_pAppTitle.c_str(), geometry, windowFlags), SDL_DestroyWindow);
         if (!myWindow)
         {
             throw std::runtime_error(decorateSDLError("SDL_CreateWindow"));
@@ -126,7 +124,7 @@ namespace sa2
 
         ImGui::StyleColorsDark();
 
-        ImGui_ImplSDL2_InitForOpenGL(myWindow.get(), myGLContext);
+        ImGui_ImplSDLX_InitForOpenGL(myWindow.get(), myGLContext);
         ImGui_ImplOpenGL3_Init();
 
         myDeadTopZone = 0;
@@ -137,7 +135,7 @@ namespace sa2
     {
         glDeleteTextures(1, &myTexture);
         ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplSDL2_Shutdown();
+        ImGui_ImplSDLX_Shutdown();
         ImGui::DestroyContext();
         SDL_GL_DeleteContext(myGLContext);
     }
@@ -240,7 +238,7 @@ namespace sa2
         {
             myPresenting = true;
             ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplSDL2_NewFrame();
+            ImGui_ImplSDLX_NewFrame();
             ImGui::NewFrame();
 
             if (!myShowMouseCursor)
@@ -262,7 +260,7 @@ namespace sa2
 
     void SDLImGuiFrame::ProcessSingleEvent(const SDL_Event &event, bool &quit)
     {
-        ImGui_ImplSDL2_ProcessEvent(&event);
+        ImGui_ImplSDLX_ProcessEvent(&event);
 
         switch (event.type)
         {
@@ -302,7 +300,7 @@ namespace sa2
         {
             const size_t modifiers = getCanonicalModifiers(key);
 
-            switch (key.keysym.sym)
+            switch (SA2_KEY_CODE(key))
             {
             case SDLK_F8:
             {

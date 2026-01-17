@@ -3,6 +3,7 @@
 #include "frontends/sdl/sdlframe.h"
 #include "frontends/sdl/utils.h"
 #include "frontends/sdl/sdirectsound.h"
+#include "frontends/sdl/sdlcompat.h"
 #include "frontends/common2/programoptions.h"
 #include "frontends/common2/utils.h"
 
@@ -20,7 +21,7 @@
 #include "linux/keyboardbuffer.h"
 #include "linux/network/slirp2.h"
 
-#include <SDL_image.h>
+#include <algorithm>
 
 // #define KEY_LOGGING_VERBOSE
 
@@ -40,7 +41,7 @@ namespace
         // but this makes it impossible to detect CTRL-ASCII... more to follow
         BYTE ch = 0;
 
-        switch (key.keysym.sym)
+        switch (SA2_KEY_CODE(key))
         {
         case SDLK_RETURN:
         case SDLK_KP_ENTER:
@@ -122,10 +123,10 @@ namespace
             // CAPS is forced when the emulator starts
             // until is used the first time
             const bool capsLock = forceCapsLock || (SDL_GetModState() & KMOD_CAPS);
-            const bool upper = capsLock || (key.keysym.mod & KMOD_SHIFT);
+            const bool upper = capsLock || (SA2_KEY_MOD(key) & KMOD_SHIFT);
 
-            ch = (key.keysym.sym - SDLK_a) + 0x01;
-            if (key.keysym.mod & KMOD_CTRL)
+            ch = (SA2_KEY_CODE(key) - SDLK_a) + 0x01;
+            if (SA2_KEY_MOD(key) & KMOD_CTRL)
             {
                 // ok
             }
@@ -171,23 +172,27 @@ namespace sa2
 
     void SDLFrame::SetGLSynchronisation(const common2::EmulatorOptions &options)
     {
-        const int defaultGLSwap = SDL_GL_GetSwapInterval();
-        if (defaultGLSwap == 0)
+        std::vector<int> intervalsToTry;
+
+        if (!options.syncWithTimer)
         {
-            // sane default
-            mySynchroniseWithTimer = true;
-            myTargetGLSwap = 0;
+            intervalsToTry.push_back(options.glSwapInterval);
+            intervalsToTry.push_back(std::abs(options.glSwapInterval));
+            intervalsToTry.push_back(-1);
+            intervalsToTry.push_back(1);
         }
-        else if (options.syncWithTimer)
+        // fallback
+        intervalsToTry.push_back(0);
+
+        const auto it = std::find_if(intervalsToTry.begin(), intervalsToTry.end(), setGLSwapInterval);
+
+        if (it == intervalsToTry.end())
         {
-            mySynchroniseWithTimer = true;
-            myTargetGLSwap = 0;
+            throw std::runtime_error(decorateSDLError("SDL_GL_SetSwapInterval"));
         }
-        else
-        {
-            mySynchroniseWithTimer = false;
-            myTargetGLSwap = options.glSwapInterval;
-        }
+
+        myTargetGLSwap = *it;
+        mySynchroniseWithTimer = (myTargetGLSwap == 0) && options.syncWithTimer;
     }
 
     void SDLFrame::End()
@@ -202,12 +207,18 @@ namespace sa2
         }
     }
 
-    void SDLFrame::setGLSwapInterval(const int interval)
+    bool SDLFrame::setGLSwapInterval(const int interval)
     {
-        const int current = SDL_GL_GetSwapInterval();
+        const bool res = SA2_OK(SDL_GL_SetSwapInterval(interval));
+        return res;
+    }
+
+    void SDLFrame::changeGLSwapInterval(const int interval)
+    {
+        const int current = compat::getGLSwapInterval();
         // in QEMU with GL_RENDERER: llvmpipe (LLVM 12.0.0, 256 bits)
         // SDL_GL_SetSwapInterval() always fails
-        if (interval != current && SDL_GL_SetSwapInterval(interval))
+        if (interval != current && !setGLSwapInterval(interval))
         {
             throw std::runtime_error(decorateSDLError("SDL_GL_SetSwapInterval"));
         }
@@ -232,9 +243,8 @@ namespace sa2
     {
         const auto resource = GetResourceData(IDC_APPLEWIN_ICON);
 
-        SDL_RWops *ops = SDL_RWFromConstMem(resource.first, resource.second);
-
-        std::shared_ptr<SDL_Surface> icon(IMG_Load_RW(ops, 1), SDL_FreeSurface);
+        std::shared_ptr<SDL_Surface> icon(
+            compat::createSurfaceFromResource(resource.first, resource.second), SDL_FreeSurface);
         if (icon)
         {
             SDL_SetWindowIcon(myWindow.get(), icon.get());
@@ -303,12 +313,11 @@ namespace sa2
         case SDL_DROPFILE:
         {
             ProcessDropEvent(e.drop);
-            SDL_free(e.drop.file);
             break;
         }
         case SDL_CONTROLLERBUTTONDOWN:
         {
-            if (e.cbutton.button == SDL_CONTROLLER_BUTTON_BACK) // SELECT
+            if (SA2_CONTROLLER_BUTTON(e) == SDL_CONTROLLER_BUTTON_BACK) // SELECT
             {
                 quit = myControllerQuit.pressButton();
             }
@@ -328,7 +337,7 @@ namespace sa2
             case SDL_BUTTON_LEFT:
             case SDL_BUTTON_RIGHT:
             {
-                const eBUTTONSTATE state = (event.state == SDL_PRESSED) ? BUTTON_DOWN : BUTTON_UP;
+                const eBUTTONSTATE state = SA2_BUTTON_DOWN(event) ? BUTTON_DOWN : BUTTON_UP;
                 const eBUTTON button = (event.button == SDL_BUTTON_LEFT) ? BUTTON0 : BUTTON1;
                 cardManager.GetMouseCard()->SetButton(button, state);
                 break;
@@ -408,7 +417,9 @@ namespace sa2
 
     void SDLFrame::ProcessDropEvent(const SDL_DropEvent &drop)
     {
-        processFile(this, drop.file, myDragAndDropSlot, myDragAndDropDrive);
+        const auto file = SA2_DROP_FILE(drop);
+        processFile(this, file, myDragAndDropSlot, myDragAndDropDrive);
+        sa2::compat::maybeSDLfree(file);
     }
 
     void SDLFrame::ProcessKeyDown(const SDL_KeyboardEvent &key, bool &quit)
@@ -420,7 +431,7 @@ namespace sa2
         if (!key.repeat)
         {
             const size_t modifiers = getCanonicalModifiers(key);
-            switch (key.keysym.sym)
+            switch (SA2_KEY_CODE(key))
             {
             case SDLK_F12:
             {
@@ -467,7 +478,7 @@ namespace sa2
                 else if (modifiers == KMOD_NONE)
                 {
                     myFullscreen = !myFullscreen;
-                    SDL_SetWindowFullscreen(myWindow.get(), myFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+                    SDL_SetWindowFullscreen(myWindow.get(), myFullscreen ? SDL_TRUE : SDL_FALSE);
                 }
                 break;
             }
@@ -546,11 +557,11 @@ namespace sa2
                 }
                 else if (modifiers == KMOD_SHIFT)
                 {
-                    char *text = SDL_GetClipboardText();
+                    const auto text = SDL_GetClipboardText();
                     if (text)
                     {
                         addTextToBuffer(text);
-                        SDL_free(text);
+                        sa2::compat::maybeSDLfree(text);
                     }
                 }
                 else if (modifiers == KMOD_CTRL)
@@ -579,7 +590,7 @@ namespace sa2
 
     void SDLFrame::ProcessKeyUp(const SDL_KeyboardEvent &key)
     {
-        switch (key.keysym.sym)
+        switch (SA2_KEY_CODE(key))
         {
         case SDLK_LALT:
         {

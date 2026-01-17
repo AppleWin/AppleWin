@@ -1,7 +1,7 @@
 #pragma once
 
 #include "linux/paddle.h"
-#include <SDL.h>
+#include "frontends/sdl/sdlcompat.h"
 
 #include <vector>
 #include <memory>
@@ -15,7 +15,7 @@ namespace sa2
     {
     public:
         static std::shared_ptr<Gamepad> create(const std::optional<int> &index, const std::string &mappingFile);
-        Gamepad(const int index);
+        Gamepad(const Joystick_t id);
 
         bool getButton(int i) const override;
         double getAxis(int i) const override;
