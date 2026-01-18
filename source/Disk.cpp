@@ -69,7 +69,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
-	m_enhanceDisk = true;
+	m_enhanceDisk = kEnhanceDiskAccessSpeed_Default;
 	m_is13SectorFirmware = false;
 	m_force13SectorFirmware = false;
 	m_deferredStepperEvent = false;

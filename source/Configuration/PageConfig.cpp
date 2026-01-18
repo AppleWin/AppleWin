@@ -224,14 +224,14 @@ void CPageConfig::InitOptions(HWND hWnd)
 
 	CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, m_PropertySheetHelper.GetConfigNew().m_confirmReboot ? BST_CHECKED : BST_UNCHECKED);
 
-	//
+	// Master Volume
 
 	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETRANGE, TRUE, MAKELONG(VOLUME_MIN, VOLUME_MAX));
 	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPAGESIZE, 0, 10);
 	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETTICFREQ, 10, 0);
 	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPOS, TRUE, VOLUME_MAX - m_PropertySheetHelper.GetConfigNew().m_masterVolume);	// Invert: L=MIN, R=MAX
 
-	//
+	// Video
 
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_VIDEOTYPE, GetVideo().GetVideoChoices(), m_PropertySheetHelper.GetConfigNew().m_videoType);
 	const VideoStyle_e style = m_PropertySheetHelper.GetConfigNew().m_videoStyle;
@@ -242,21 +242,18 @@ void CPageConfig::InitOptions(HWND hWnd)
 
 	CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus ? BST_CHECKED : BST_UNCHECKED);
 
-	//
+	// Emulation Speed
 
-	CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? BST_CHECKED : BST_UNCHECKED);
-
-	CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, m_PropertySheetHelper.GetConfigNew().m_enhanceDiskAccessSpeed ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_PropertySheetHelper.GetConfigNew().m_scrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
 
 	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETRANGE, TRUE, MAKELONG(0, 40));
 	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPAGESIZE, 0, 5);
 	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETTICFREQ, 10, 0);
-	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPOS, TRUE, g_dwSpeed);
-
-	//
+	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPOS, TRUE, m_PropertySheetHelper.GetConfigNew().m_machineSpeed);
 
 	BOOL bCustom = TRUE;
-	if (g_dwSpeed == SPEED_NORMAL)
+	if (m_PropertySheetHelper.GetConfigNew().m_machineSpeed == SPEED_NORMAL)
 	{
 		uint32_t dwCustomSpeed;
 		REGLOAD_DEFAULT(REGVALUE_CUSTOM_SPEED, &dwCustomSpeed, 0);
@@ -431,6 +428,10 @@ void CPageConfig::ResetAllToDefault(HWND hWnd)
 	m_PropertySheetHelper.GetConfigNew().m_monochromeRGB = Video::MONO_COLOR_DEFAULT;
 
 	m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus = Win32Frame::kFullScreen_ShowSubunitStatus_Default;
+
+	m_PropertySheetHelper.GetConfigNew().m_enhanceDiskAccessSpeed = kEnhanceDiskAccessSpeed_Default;
+	m_PropertySheetHelper.GetConfigNew().m_scrollLockToggle = kScrollLockToggle_Default;
+	m_PropertySheetHelper.GetConfigNew().m_machineSpeed = kMachineSpeed_Default;
 
 	// Slots
 

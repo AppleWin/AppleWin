@@ -12,9 +12,10 @@ public:
 	CPageConfig(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_CONFIG),
 		m_PropertySheetHelper(PropertySheetHelper),
-		m_uScrollLockToggle(0)
+		m_uScrollLockToggle(kScrollLockToggle_Default)
 	{
 		CPageConfig::ms_this = this;
+		memset(m_customColors, 0, sizeof(m_customColors));
 	}
 	virtual ~CPageConfig(){}
 
@@ -43,6 +44,9 @@ private:
 
 	static const UINT VOLUME_MIN = 0;
 	static const UINT VOLUME_MAX = 59;
+
+	static const UINT kScrollLockToggle_Default = 0;
+	static const UINT kMachineSpeed_Default = SPEED_NORMAL;
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;

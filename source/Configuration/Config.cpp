@@ -50,6 +50,9 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_videoRefreshRate = VR_NONE;
 	m_monochromeRGB = Video::MONO_COLOR_DEFAULT;
 	m_fullScreen_ShowSubunitStatus = false;
+	m_enhanceDiskAccessSpeed = false;
+	m_scrollLockToggle = 0;
+	m_machineSpeed = 0;
 	m_RamWorksMemorySize = 0;
 	m_serialPortItem = 0;
 }
@@ -103,6 +106,9 @@ void CConfigNeedingRestart::Reload()
 	m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
 	m_monochromeRGB = GetVideo().GetMonochromeRGB();
 	m_fullScreen_ShowSubunitStatus = Win32Frame::GetWin32Frame().GetFullScreenShowSubunitStatus();
+	m_scrollLockToggle = GetPropertySheet().GetScrollLockToggle();
+	m_enhanceDiskAccessSpeed = GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk();
+	m_machineSpeed = g_dwSpeed;
 	m_RamWorksMemorySize = GetRamWorksMemorySize();
 
 	if (cardManager.IsParallelPrinterCardInstalled())
@@ -129,6 +135,9 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_videoRefreshRate = other.m_videoRefreshRate;
 	m_monochromeRGB = other.m_monochromeRGB;
 	m_fullScreen_ShowSubunitStatus = other.m_fullScreen_ShowSubunitStatus;
+	m_enhanceDiskAccessSpeed = other.m_enhanceDiskAccessSpeed;
+	m_scrollLockToggle = other.m_scrollLockToggle;
+	m_machineSpeed = other.m_machineSpeed;
 	m_RamWorksMemorySize = other.m_RamWorksMemorySize;
 	m_parallelPrinterCard = other.m_parallelPrinterCard;
 	m_serialPortItem = other.m_serialPortItem;
@@ -147,6 +156,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// Ignore: (as they don't require the VM to be restarted)
 	// . m_confirmReboot, m_masterVolume
 	// . m_videoType, m_videoStyle, m_monochromeRGB, m_fullScreen_ShowSubunitStatus
+	// . m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&
