@@ -37,12 +37,14 @@ public:
 
 	eApple2Type	m_Apple2Type;
 	eCpuType m_CpuType;
+
 	SS_CARDTYPE m_Slot[NUM_SLOTS];
 	SS_CARDTYPE m_SlotAux;
 	std::string m_tfeInterface;
 	bool m_tfeVirtualDNS;
 	UINT m_bEnableTheFreezesF8Rom;
 	UINT m_uSaveLoadStateMsg;
+	bool m_confirmReboot;
 	uint32_t m_masterVolume;
 	VideoType_e m_videoType;
 	VideoStyle_e m_videoStyle;
@@ -53,6 +55,6 @@ public:
 	ParallelPrinterCard m_parallelPrinterCard;	// Use entire card object, as there are many config vars
 	UINT m_serialPortItem;	// SSC: Just one config var for this card (at the moment)
 
-	SlotInfoForFDC m_slotInfoForFDC [NUM_SLOTS];
-	SlotInfoForHDC m_slotInfoForHDC [NUM_SLOTS];
+	SlotInfoForFDC m_slotInfoForFDC[NUM_SLOTS];
+	SlotInfoForHDC m_slotInfoForHDC[NUM_SLOTS];
 };

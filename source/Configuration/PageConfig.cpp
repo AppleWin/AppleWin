@@ -105,7 +105,19 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			break;
 
 		case IDC_MONOCOLOR:
-			Win32Frame::GetWin32Frame().ChooseMonochromeColor();
+			{
+				CHOOSECOLOR cc;
+				memset(&cc, 0, sizeof(CHOOSECOLOR));
+				cc.lStructSize = sizeof(CHOOSECOLOR);
+				cc.hwndOwner = GetFrame().g_hFrameWindow;
+				cc.rgbResult = m_PropertySheetHelper.GetConfigNew().m_monochromeRGB;
+				cc.lpCustColors = m_customColors + 1;
+				cc.Flags = CC_RGBINIT | CC_SOLIDCOLOR;
+				if (ChooseColor(&cc))
+				{
+					m_PropertySheetHelper.GetConfigNew().m_monochromeRGB = cc.rgbResult;
+				}
+			}
 			break;
 
 		case IDC_CHECK_CONFIRM_REBOOT:
@@ -210,6 +222,8 @@ void CPageConfig::InitOptions(HWND hWnd)
 
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMPUTER, m_ComputerChoices, nCurrentChoice);
 
+	CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, m_PropertySheetHelper.GetConfigNew().m_confirmReboot ? BST_CHECKED : BST_UNCHECKED);
+
 	//
 
 	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETRANGE, TRUE, MAKELONG(VOLUME_MIN, VOLUME_MAX));
@@ -218,8 +232,6 @@ void CPageConfig::InitOptions(HWND hWnd)
 	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPOS, TRUE, VOLUME_MAX - m_PropertySheetHelper.GetConfigNew().m_masterVolume);	// Invert: L=MIN, R=MAX
 
 	//
-
-	CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, GetFrame().g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED);
 
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_VIDEOTYPE, GetVideo().GetVideoChoices(), m_PropertySheetHelper.GetConfigNew().m_videoType);
 	const VideoStyle_e style = m_PropertySheetHelper.GetConfigNew().m_videoStyle;
@@ -288,6 +300,14 @@ void CPageConfig::DlgOK(HWND hWnd)
 			GetVideo().SetVideoStyle( (VideoStyle_e) (GetVideo().GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND) );
 		bVideoReinit = true;
 	}
+
+	if (m_PropertySheetHelper.GetConfigOld().m_monochromeRGB != m_PropertySheetHelper.GetConfigNew().m_monochromeRGB)
+	{
+		GetVideo().SetMonochromeRGB(m_PropertySheetHelper.GetConfigNew().m_monochromeRGB);
+		bVideoReinit = true;
+	}
+
+	//
 
 	const bool isNewVideoRate50Hz = IsDlgButtonChecked(hWnd, IDC_CHECK_50HZ_VIDEO) != 0;
 	const bool isCurrentVideoRate50Hz = GetVideo().GetVideoRefreshRate() == VR_50HZ;
@@ -402,6 +422,7 @@ void CPageConfig::ResetAllToDefault(HWND hWnd)
 	m_PropertySheetHelper.GetConfigNew().m_Apple2Type = apple2Type;
 	m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(apple2Type);
 
+	m_PropertySheetHelper.GetConfigNew().m_confirmReboot = kConfirmReboot_Default;
 	m_PropertySheetHelper.GetConfigNew().m_masterVolume = kUserVolume_Default;
 
 	m_PropertySheetHelper.GetConfigNew().m_videoType = VT_DEFAULT;

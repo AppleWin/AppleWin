@@ -427,26 +427,6 @@ void Win32Frame::Benchmark(void)
 
 //===========================================================================
 
-// This is called from PageConfig
-void Win32Frame::ChooseMonochromeColor(void)
-{
-	Video& video = GetVideo();
-	CHOOSECOLOR cc;
-	memset(&cc, 0, sizeof(CHOOSECOLOR));
-	cc.lStructSize = sizeof(CHOOSECOLOR);
-	cc.hwndOwner = g_hFrameWindow;
-	cc.rgbResult = video.GetMonochromeRGB();
-	cc.lpCustColors = customcolors + 1;
-	cc.Flags = CC_RGBINIT | CC_SOLIDCOLOR;
-	if (ChooseColor(&cc))
-	{
-		video.SetMonochromeRGB(cc.rgbResult);
-		ApplyVideoModeChange();
-	}
-}
-
-//===========================================================================
-
 void Win32Frame::VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, int srch, int scale)
 {
 	HDC hSrcDC = CreateCompatibleDC(hDstDC);

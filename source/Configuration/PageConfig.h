@@ -47,4 +47,5 @@ private:
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
 	UINT m_uScrollLockToggle;
- };
+	COLORREF m_customColors[256];
+};
