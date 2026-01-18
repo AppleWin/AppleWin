@@ -151,92 +151,17 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			}
 			break;
 
-#if 0
-		case IDC_RECALIBRATE:
-			RegSaveValue("","RunningOnOS",0,0);
-			if (MessageBox(hWnd,
-				"The emulator has been set to recalibrate "
-				"itself the next time it is started.\n\n"
-				"Would you like to restart the emulator now?",
-				REG_CONFIG,
-				MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDOK)
-			{
-					PropSheet_PressButton(GetParent(hWnd), PSBTN_OK);
-			}
+		case IDC_CONFIG_ALL_DEFAULT:
+			ResetAllToDefault(hWnd);
+			InitOptions(hWnd);
 			break;
-#endif
+
 		} // switch( (LOWORD(wparam))
 		break; // WM_COMMAND
 
 	case WM_INITDIALOG:
-		{
-			// Convert Apple2 type to menu item
-			{
-				int nCurrentChoice = 0;
-				switch (m_PropertySheetHelper.GetConfigNew().m_Apple2Type)
-				{
-				case A2TYPE_APPLE2:			nCurrentChoice = MENUITEM_IIORIGINAL; break;
-				case A2TYPE_APPLE2PLUS:		nCurrentChoice = MENUITEM_IIPLUS; break;
-				case A2TYPE_APPLE2JPLUS:	nCurrentChoice = MENUITEM_IIJPLUS; break;
-				case A2TYPE_APPLE2E:		nCurrentChoice = MENUITEM_IIE; break;
-				case A2TYPE_APPLE2EENHANCED:nCurrentChoice = MENUITEM_ENHANCEDIIE; break;
-				case A2TYPE_PRAVETS82:		nCurrentChoice = MENUITEM_CLONE; break;
-				case A2TYPE_PRAVETS8M:		nCurrentChoice = MENUITEM_CLONE; break;
-				case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;
-				case A2TYPE_TK30002E:		nCurrentChoice = MENUITEM_CLONE; break;
-				case A2TYPE_BASE64A:		nCurrentChoice = MENUITEM_CLONE; break;
-				default: _ASSERT(0); break;
-				}
-
-				m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMPUTER, m_ComputerChoices, nCurrentChoice);
-			}
-
-			CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, GetFrame().g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED );
-
-			m_PropertySheetHelper.FillComboBox(hWnd,IDC_VIDEOTYPE, GetVideo().GetVideoChoices(), GetVideo().GetVideoType());
-			CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, GetVideo().IsVideoStyle(VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
-			Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
-			CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, win32Frame.GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
-
-			CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
-			EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (GetVideo().GetVideoType() == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
-
-			CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? BST_CHECKED : BST_UNCHECKED);
-
-			CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (GetVideo().GetVideoRefreshRate() == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
-
-			//
-
-			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETRANGE, TRUE, MAKELONG(VOLUME_MIN, VOLUME_MAX));
-			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPAGESIZE, 0, 10);
-			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETTICFREQ, 10, 0);
-			SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPOS, TRUE, VOLUME_MAX - SpkrGetVolume());	// Invert: L=MIN, R=MAX
-
-			//
-
-			CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
-
-			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETRANGE,TRUE,MAKELONG(0,40));
-			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPAGESIZE,0,5);
-			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETTICFREQ,10,0);
-			SendDlgItemMessage(hWnd,IDC_SLIDER_CPU_SPEED,TBM_SETPOS,TRUE,g_dwSpeed);
-
-			{
-				BOOL bCustom = TRUE;
-				if (g_dwSpeed == SPEED_NORMAL)
-				{
-					uint32_t dwCustomSpeed;
-					REGLOAD_DEFAULT(REGVALUE_CUSTOM_SPEED, &dwCustomSpeed, 0);
-					bCustom = dwCustomSpeed ? TRUE : FALSE;
-				}
-				CheckRadioButton(hWnd, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, bCustom ? IDC_CUSTOM_SPEED : IDC_AUTHENTIC_SPEED);
-				SetFocus(GetDlgItem(hWnd, bCustom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
-				EnableTrackbar(hWnd, bCustom);
-			}
-
-			InitOptions(hWnd);
-			break;
-		}
+		InitOptions(hWnd);
+		break;
 
 	case WM_LBUTTONDOWN:
 		{
@@ -262,6 +187,73 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 	}
 
 	return FALSE;
+}
+
+void CPageConfig::InitOptions(HWND hWnd)
+{
+	// Convert Apple2 type to menu item
+	int nCurrentChoice = 0;
+	switch (m_PropertySheetHelper.GetConfigNew().m_Apple2Type)
+	{
+	case A2TYPE_APPLE2:			nCurrentChoice = MENUITEM_IIORIGINAL; break;
+	case A2TYPE_APPLE2PLUS:		nCurrentChoice = MENUITEM_IIPLUS; break;
+	case A2TYPE_APPLE2JPLUS:	nCurrentChoice = MENUITEM_IIJPLUS; break;
+	case A2TYPE_APPLE2E:		nCurrentChoice = MENUITEM_IIE; break;
+	case A2TYPE_APPLE2EENHANCED:nCurrentChoice = MENUITEM_ENHANCEDIIE; break;
+	case A2TYPE_PRAVETS82:		nCurrentChoice = MENUITEM_CLONE; break;
+	case A2TYPE_PRAVETS8M:		nCurrentChoice = MENUITEM_CLONE; break;
+	case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;
+	case A2TYPE_TK30002E:		nCurrentChoice = MENUITEM_CLONE; break;
+	case A2TYPE_BASE64A:		nCurrentChoice = MENUITEM_CLONE; break;
+	default: _ASSERT(0); break;
+	}
+
+	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMPUTER, m_ComputerChoices, nCurrentChoice);
+
+	//
+
+	CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, GetFrame().g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED);
+
+	m_PropertySheetHelper.FillComboBox(hWnd, IDC_VIDEOTYPE, GetVideo().GetVideoChoices(), m_PropertySheetHelper.GetConfigNew().m_videoType);
+	const VideoStyle_e style = m_PropertySheetHelper.GetConfigNew().m_videoStyle;
+	CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, GetVideo().IsVideoStyle(style, VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, GetVideo().IsVideoStyle(style, VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
+	EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (m_PropertySheetHelper.GetConfigNew().m_videoType == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
+	CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
+
+	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
+	CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, win32Frame.GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
+
+	//
+
+	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETRANGE, TRUE, MAKELONG(VOLUME_MIN, VOLUME_MAX));
+	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPAGESIZE, 0, 10);
+	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETTICFREQ, 10, 0);
+	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPOS, TRUE, VOLUME_MAX - SpkrGetVolume());	// Invert: L=MIN, R=MAX
+
+	//
+
+	CheckDlgButton(hWnd, IDC_ENHANCE_DISK_ENABLE, GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() ? BST_CHECKED : BST_UNCHECKED);
+
+	CheckDlgButton(hWnd, IDC_SCROLLLOCK_TOGGLE, m_uScrollLockToggle ? BST_CHECKED : BST_UNCHECKED);
+
+	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETRANGE, TRUE, MAKELONG(0, 40));
+	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPAGESIZE, 0, 5);
+	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETTICFREQ, 10, 0);
+	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPOS, TRUE, g_dwSpeed);
+
+	//
+
+	BOOL bCustom = TRUE;
+	if (g_dwSpeed == SPEED_NORMAL)
+	{
+		uint32_t dwCustomSpeed;
+		REGLOAD_DEFAULT(REGVALUE_CUSTOM_SPEED, &dwCustomSpeed, 0);
+		bCustom = dwCustomSpeed ? TRUE : FALSE;
+	}
+	CheckRadioButton(hWnd, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, bCustom ? IDC_CUSTOM_SPEED : IDC_AUTHENTIC_SPEED);
+	SetFocus(GetDlgItem(hWnd, bCustom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
+	EnableTrackbar(hWnd, bCustom);
 }
 
 void CPageConfig::DlgOK(HWND hWnd)
@@ -375,10 +367,6 @@ void CPageConfig::DlgOK(HWND hWnd)
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
-void CPageConfig::InitOptions(HWND hWnd)
-{
-}
-
 // Config->Computer: Menu item to eApple2Type
 eApple2Type CPageConfig::GetApple2Type(uint32_t NewMenuItem)
 {
@@ -404,7 +392,21 @@ void CPageConfig::EnableTrackbar(HWND hWnd, BOOL enable)
 }
 
 
-void CPageConfig::ui_tfe_settings_dialog(HWND hwnd)
+void CPageConfig::ui_tfe_settings_dialog(HWND hWnd)
 {
-	DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hwnd, CPageConfigTfe::DlgProc);
+	DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hWnd, CPageConfigTfe::DlgProc);
+}
+
+void CPageConfig::ResetAllToDefault(HWND hWnd)
+{
+	const eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
+	m_PropertySheetHelper.GetConfigNew().m_Apple2Type = apple2Type;
+	m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(apple2Type);
+
+	m_PropertySheetHelper.ResetSlotsToDefault();
+
+	m_PropertySheetHelper.GetConfigNew().m_videoType = VT_DEFAULT;
+	m_PropertySheetHelper.GetConfigNew().m_videoStyle = VS_DEFAULT;
+	m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = VR_DEFAULT;
+	m_PropertySheetHelper.GetConfigNew().m_monochromeRGB = Video::MONO_COLOR_DEFAULT;
 }

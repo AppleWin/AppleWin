@@ -35,7 +35,8 @@ private:
 	void InitOptions(HWND hWnd);
 	eApple2Type GetApple2Type(uint32_t NewMenuItem);
 	void EnableTrackbar(HWND hWnd, BOOL enable);
-	void ui_tfe_settings_dialog(HWND hwnd);
+	void ui_tfe_settings_dialog(HWND hWnd);
+	void ResetAllToDefault(HWND hWnd);
 
 	static CPageConfig* ms_this;
 	static const char m_ComputerChoices[];

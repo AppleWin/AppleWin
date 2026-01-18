@@ -45,6 +45,7 @@
 #define IDR_PRAVETS_8M_ROM              141
 #define IDR_PRAVETS_8C_ROM              142
 #define IDR_MENU_DISK_POPUP             143
+#define IDC_CONFIG_ALL_DEFAULT          144
 #define IDD_ABOUT                       145
 #define IDC_CHECK_CONFIRM_REBOOT        146
 #define IDR_TK3000_2E_ROM               147

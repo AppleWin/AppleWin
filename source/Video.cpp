@@ -679,13 +679,13 @@ void Video::Config_Load_Video()
 	REGLOAD_DEFAULT(REGVALUE_VIDEO_MODE, &dwTmp, (uint32_t)VT_DEFAULT);
 	g_eVideoType = dwTmp;
 
-	REGLOAD_DEFAULT(REGVALUE_VIDEO_STYLE, &dwTmp, (uint32_t)VS_HALF_SCANLINES);
+	REGLOAD_DEFAULT(REGVALUE_VIDEO_STYLE, &dwTmp, (uint32_t)VS_DEFAULT);
 	g_eVideoStyle = (VideoStyle_e)dwTmp;
 
 	REGLOAD_DEFAULT(REGVALUE_VIDEO_MONO_COLOR, &dwTmp, (uint32_t)RGB(0xC0, 0xC0, 0xC0));
 	g_nMonochromeRGB = (COLORREF)dwTmp;
 
-	REGLOAD_DEFAULT(REGVALUE_VIDEO_REFRESH_RATE, &dwTmp, (uint32_t)VR_60HZ);
+	REGLOAD_DEFAULT(REGVALUE_VIDEO_REFRESH_RATE, &dwTmp, (uint32_t)VR_DEFAULT);
 	SetVideoRefreshRate((VideoRefreshRate_e)dwTmp);
 
 	//
@@ -782,9 +782,14 @@ void Video::SetVideoStyle(VideoStyle_e newVideoStyle)
 	g_eVideoStyle = newVideoStyle;
 }
 
+bool Video::IsVideoStyle(VideoStyle_e style, VideoStyle_e mask)
+{
+	return (style & mask) != 0;
+}
+
 bool Video::IsVideoStyle(VideoStyle_e mask)
 {
-	return (g_eVideoStyle & mask) != 0;
+	return IsVideoStyle(g_eVideoStyle, mask);
 }
 
 //===========================================================================

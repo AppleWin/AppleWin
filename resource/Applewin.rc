@@ -113,6 +113,7 @@ BEGIN
     CTEXT           "1.0",IDC_1_0_MHz,59,199,20,10
     CTEXT           "2.0",IDC_2_0_MHz,96,199,20,10
     RTEXT           "Fastest",IDC_MAX_MHz,150,199,29,10
+    PUSHBUTTON      "Reset all to Default",IDC_CONFIG_ALL_DEFAULT,5,220,70,13
 END
 
 IDD_PROPPAGE_INPUT DIALOGEX 0, 0, 210, 240
