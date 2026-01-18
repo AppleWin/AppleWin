@@ -127,7 +127,7 @@ namespace sa2
                                                    SDL_arraysize(buttons),     buttons,   nullptr};
 
         int buttonid;
-        if (SDL_ShowMessageBox(&messageboxdata, &buttonid) < 0)
+        if (!SA2_OK(SDL_ShowMessageBox(&messageboxdata, &buttonid)))
         {
             return false;
         }
