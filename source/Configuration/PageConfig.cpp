@@ -212,6 +212,13 @@ void CPageConfig::InitOptions(HWND hWnd)
 
 	//
 
+	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETRANGE, TRUE, MAKELONG(VOLUME_MIN, VOLUME_MAX));
+	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPAGESIZE, 0, 10);
+	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETTICFREQ, 10, 0);
+	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPOS, TRUE, VOLUME_MAX - m_PropertySheetHelper.GetConfigNew().m_masterVolume);	// Invert: L=MIN, R=MAX
+
+	//
+
 	CheckDlgButton(hWnd, IDC_CHECK_CONFIRM_REBOOT, GetFrame().g_bConfirmReboot ? BST_CHECKED : BST_UNCHECKED);
 
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_VIDEOTYPE, GetVideo().GetVideoChoices(), m_PropertySheetHelper.GetConfigNew().m_videoType);
@@ -221,15 +228,7 @@ void CPageConfig::InitOptions(HWND hWnd)
 	EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (m_PropertySheetHelper.GetConfigNew().m_videoType == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
 	CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
 
-	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
-	CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, win32Frame.GetFullScreenShowSubunitStatus() ? BST_CHECKED : BST_UNCHECKED);
-
-	//
-
-	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETRANGE, TRUE, MAKELONG(VOLUME_MIN, VOLUME_MAX));
-	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPAGESIZE, 0, 10);
-	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETTICFREQ, 10, 0);
-	SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_SETPOS, TRUE, VOLUME_MAX - SpkrGetVolume());	// Invert: L=MIN, R=MAX
+	CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus ? BST_CHECKED : BST_UNCHECKED);
 
 	//
 
@@ -403,10 +402,16 @@ void CPageConfig::ResetAllToDefault(HWND hWnd)
 	m_PropertySheetHelper.GetConfigNew().m_Apple2Type = apple2Type;
 	m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(apple2Type);
 
-	m_PropertySheetHelper.ResetSlotsToDefault();
+	m_PropertySheetHelper.GetConfigNew().m_masterVolume = kUserVolume_Default;
 
 	m_PropertySheetHelper.GetConfigNew().m_videoType = VT_DEFAULT;
 	m_PropertySheetHelper.GetConfigNew().m_videoStyle = VS_DEFAULT;
 	m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = VR_DEFAULT;
 	m_PropertySheetHelper.GetConfigNew().m_monochromeRGB = Video::MONO_COLOR_DEFAULT;
+
+	m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus = Win32Frame::kFullScreen_ShowSubunitStatus_Default;
+
+	// Slots
+
+	m_PropertySheetHelper.ResetSlotsToDefault();
 }

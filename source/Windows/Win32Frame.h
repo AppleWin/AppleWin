@@ -81,7 +81,9 @@ public:
 	HDC FrameGetDC();
 	void FrameReleaseDC();
 
-	bool	g_bScrollLock_FullSpeed;
+	bool g_bScrollLock_FullSpeed;
+
+	const static bool kFullScreen_ShowSubunitStatus_Default = true;
 
 private:
 	static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext);

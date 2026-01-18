@@ -26,8 +26,10 @@
 #include "../CardManager.h"
 #include "../Interface.h"	// VideoRefreshRate_e, GetVideoRefreshRate()
 #include "../Memory.h"
+#include "../Speaker.h"
 #include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
+#include "../Windows/Win32Frame.h"
 
 
 // zero initialise
@@ -41,10 +43,12 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_tfeVirtualDNS = false;
 	m_bEnableTheFreezesF8Rom = 0;
 	m_uSaveLoadStateMsg = 0;
+	m_masterVolume = 0;
 	m_videoType = VT_DEFAULT;
 	m_videoStyle = VS_NONE;
 	m_videoRefreshRate = VR_NONE;
 	m_monochromeRGB = Video::MONO_COLOR_DEFAULT;
+	m_fullScreen_ShowSubunitStatus = false;
 	m_RamWorksMemorySize = 0;
 	m_serialPortItem = 0;
 }
@@ -91,10 +95,12 @@ void CConfigNeedingRestart::Reload()
 
 	m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_uSaveLoadStateMsg = 0;
+	m_masterVolume = SpkrGetVolume();
 	m_videoType = GetVideo().GetVideoType();
 	m_videoStyle = GetVideo().GetVideoStyle();
 	m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
 	m_monochromeRGB = GetVideo().GetMonochromeRGB();
+	m_fullScreen_ShowSubunitStatus = Win32Frame::GetWin32Frame().GetFullScreenShowSubunitStatus();
 	m_RamWorksMemorySize = GetRamWorksMemorySize();
 
 	if (cardManager.IsParallelPrinterCardInstalled())
@@ -114,10 +120,12 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_tfeVirtualDNS = other.m_tfeVirtualDNS;
 	m_bEnableTheFreezesF8Rom = other.m_bEnableTheFreezesF8Rom;
 	m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
+	m_masterVolume = other.m_masterVolume;
 	m_videoType = other.m_videoType;
 	m_videoStyle = other.m_videoStyle;
 	m_videoRefreshRate = other.m_videoRefreshRate;
 	m_monochromeRGB = other.m_monochromeRGB;
+	m_fullScreen_ShowSubunitStatus = other.m_fullScreen_ShowSubunitStatus;
 	m_RamWorksMemorySize = other.m_RamWorksMemorySize;
 	m_parallelPrinterCard = other.m_parallelPrinterCard;
 	m_serialPortItem = other.m_serialPortItem;
@@ -134,7 +142,8 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) const
 {
 	// Ignore: (as they don't require the VM to be restarted)
-	// . m_videoType, m_videoStyle, m_monochromeRGB
+	// . m_masterVolume
+	// . m_videoType, m_videoStyle, m_monochromeRGB, m_fullScreen_ShowSubunitStatus
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&

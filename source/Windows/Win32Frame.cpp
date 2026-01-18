@@ -116,7 +116,7 @@ Win32Frame::Win32Frame()
 	g_bAppActive = false;
 	g_bFrameActive = false;
 	g_windowMinimized = false;
-	g_bFullScreen_ShowSubunitStatus = true;
+	g_bFullScreen_ShowSubunitStatus = kFullScreen_ShowSubunitStatus_Default;
 	g_win_fullscreen_offsetx = 0;
 	g_win_fullscreen_offsety = 0;
 	m_bestWidthForFullScreen = 0;

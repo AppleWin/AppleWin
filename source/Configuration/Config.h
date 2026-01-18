@@ -43,10 +43,12 @@ public:
 	bool m_tfeVirtualDNS;
 	UINT m_bEnableTheFreezesF8Rom;
 	UINT m_uSaveLoadStateMsg;
+	uint32_t m_masterVolume;
 	VideoType_e m_videoType;
 	VideoStyle_e m_videoStyle;
 	VideoRefreshRate_e m_videoRefreshRate;
 	COLORREF m_monochromeRGB;
+	bool m_fullScreen_ShowSubunitStatus;
 	uint32_t m_RamWorksMemorySize;	// Size in 64K banks
 	ParallelPrinterCard m_parallelPrinterCard;	// Use entire card object, as there are many config vars
 	UINT m_serialPortItem;	// SSC: Just one config var for this card (at the moment)
