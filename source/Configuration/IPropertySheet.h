@@ -21,6 +21,7 @@ public:
 	virtual UINT GetJoystickCenteringControl(void) = 0;
 	virtual void SetJoystickCenteringControl(UINT uValue) = 0;
 	virtual UINT GetAutofire(UINT uButton) = 0;
+	virtual UINT GetAutofire(void) = 0;
 	virtual void SetAutofire(UINT uValue) = 0;
 	virtual bool GetButtonsSwapState(void) = 0;
 	virtual void SetButtonsSwapState(bool value) = 0;

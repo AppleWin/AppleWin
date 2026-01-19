@@ -53,6 +53,10 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_enhanceDiskAccessSpeed = false;
 	m_scrollLockToggle = 0;
 	m_machineSpeed = 0;
+	m_cursorControl = 0;
+	m_centeringControl = 0;
+	m_autofire = 0;
+	m_swapButtons0and1 = false;
 	m_RamWorksMemorySize = 0;
 	m_serialPortItem = 0;
 }
@@ -109,6 +113,10 @@ void CConfigNeedingRestart::Reload()
 	m_scrollLockToggle = GetPropertySheet().GetScrollLockToggle();
 	m_enhanceDiskAccessSpeed = GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk();
 	m_machineSpeed = g_dwSpeed;
+	m_cursorControl = GetPropertySheet().GetJoystickCursorControl();
+	m_centeringControl = GetPropertySheet().GetJoystickCenteringControl();
+	m_autofire = GetPropertySheet().GetAutofire();
+	m_swapButtons0and1 = GetPropertySheet().GetButtonsSwapState();
 	m_RamWorksMemorySize = GetRamWorksMemorySize();
 
 	if (cardManager.IsParallelPrinterCardInstalled())
@@ -138,6 +146,10 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_enhanceDiskAccessSpeed = other.m_enhanceDiskAccessSpeed;
 	m_scrollLockToggle = other.m_scrollLockToggle;
 	m_machineSpeed = other.m_machineSpeed;
+	m_cursorControl = other.m_cursorControl;
+	m_centeringControl = other.m_centeringControl;
+	m_autofire = other.m_autofire;
+	m_swapButtons0and1 = other.m_swapButtons0and1;
 	m_RamWorksMemorySize = other.m_RamWorksMemorySize;
 	m_parallelPrinterCard = other.m_parallelPrinterCard;
 	m_serialPortItem = other.m_serialPortItem;
@@ -154,9 +166,10 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) const
 {
 	// Ignore: (as they don't require the VM to be restarted)
-	// . m_confirmReboot, m_masterVolume
-	// . m_videoType, m_videoStyle, m_monochromeRGB, m_fullScreen_ShowSubunitStatus
-	// . m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
+	// . [Config] m_confirmReboot, m_masterVolume
+	// . [Config] m_videoType, m_videoStyle, m_monochromeRGB, m_fullScreen_ShowSubunitStatus
+	// . [Config] m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
+	// . [Input] m_cursorControl, m_centeringControl, m_autofire, m_swapButtons0and1
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&

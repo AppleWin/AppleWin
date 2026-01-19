@@ -415,6 +415,8 @@ void CPageConfig::ui_tfe_settings_dialog(HWND hWnd)
 
 void CPageConfig::ResetAllToDefault(HWND hWnd)
 {
+	// Configuration
+
 	const eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
 	m_PropertySheetHelper.GetConfigNew().m_Apple2Type = apple2Type;
 	m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(apple2Type);
@@ -432,6 +434,13 @@ void CPageConfig::ResetAllToDefault(HWND hWnd)
 	m_PropertySheetHelper.GetConfigNew().m_enhanceDiskAccessSpeed = kEnhanceDiskAccessSpeed_Default;
 	m_PropertySheetHelper.GetConfigNew().m_scrollLockToggle = kScrollLockToggle_Default;
 	m_PropertySheetHelper.GetConfigNew().m_machineSpeed = kMachineSpeed_Default;
+
+	// Input
+
+	m_PropertySheetHelper.GetConfigNew().m_cursorControl = CPageInput::kCursorControl_Default;
+	m_PropertySheetHelper.GetConfigNew().m_centeringControl = CPageInput::kCenteringControl_Default;
+	m_PropertySheetHelper.GetConfigNew().m_autofire = CPageInput::kAutofire_Default;
+	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = CPageInput::kSwapButtons0and1_Default;
 
 	// Slots
 

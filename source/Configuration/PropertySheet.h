@@ -42,6 +42,7 @@ public:
 	virtual UINT GetJoystickCenteringControl(void){ return m_PageInput.GetJoystickCenteringControl(); }
 	virtual void SetJoystickCenteringControl(UINT uValue){ m_PageInput.SetJoystickCenteringControl(uValue); }
 	virtual UINT GetAutofire(UINT uButton) { return m_PageInput.GetAutofire(uButton); }
+	virtual UINT GetAutofire(void) { return m_PageInput.GetAutofire(); }
 	virtual void SetAutofire(UINT uValue) { m_PageInput.SetAutofire(uValue); }
 	virtual bool GetButtonsSwapState(void) { return m_PageInput.GetButtonsSwapState(); }
 	virtual void SetButtonsSwapState(bool value) { m_PageInput.SetButtonsSwapState(value); }

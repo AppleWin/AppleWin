@@ -12,10 +12,10 @@ public:
 	CPageInput(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_INPUT),
 		m_PropertySheetHelper(PropertySheetHelper),
-		m_uCursorControl(1),
-		m_uCenteringControl(JOYSTICK_MODE_CENTERING),
-		m_bmAutofire(0),
-		m_bSwapButtons0and1(false)
+		m_uCursorControl(kCursorControl_Default),
+		m_uCenteringControl(kCenteringControl_Default),
+		m_bmAutofire(kAutofire_Default),
+		m_bSwapButtons0and1(kSwapButtons0and1_Default)
 	{
 		CPageInput::ms_this = this;
 	}
@@ -28,9 +28,15 @@ public:
 	UINT GetJoystickCenteringControl(void){ return m_uCenteringControl; }
 	void SetJoystickCenteringControl(UINT uValue){ m_uCenteringControl = uValue; }
 	UINT GetAutofire(UINT uButton) { return (m_bmAutofire >> uButton) & 1; }	// Get a specific button
+	UINT GetAutofire(void) { return m_bmAutofire; }								// Get all buttons
 	void SetAutofire(UINT uValue) { m_bmAutofire = uValue; }					// Set all buttons
 	bool GetButtonsSwapState(void){ return m_bSwapButtons0and1; }
 	void SetButtonsSwapState(bool value){ m_bSwapButtons0and1 = value; }
+
+	static const UINT kCursorControl_Default = 1;
+	static const UINT kCenteringControl_Default = JOYSTICK_MODE_CENTERING;
+	static const UINT kAutofire_Default = 0;
+	static const bool kSwapButtons0and1_Default = false;
 
 protected:
 	// IPropertySheetPage
