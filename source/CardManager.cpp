@@ -365,7 +365,7 @@ bool CardManager::IsSingleInstanceCard(SS_CARDTYPE card)
 	CT_VidHD
 	};
 
-	for (int i = 0; i < sizeof(uniqueCards) / sizeof(uniqueCards[0]); i++)
+	for (int i = 0; i < std::size(uniqueCards); i++)
 	{
 		if (card == uniqueCards[i])
 			return true;
@@ -377,7 +377,7 @@ bool CardManager::IsSingleInstanceCard(SS_CARDTYPE card)
 void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::string& choices, std::vector<SS_CARDTYPE>& choicesList)
 {
 	// Availability & order of cards in drop-down menu:
-	const SS_CARDTYPE cardsSlot0[] =
+	const SS_CARDTYPE cardsOnlyInSlot0[] =
 	{
 	CT_Empty,
 	CT_LanguageCard,
@@ -385,7 +385,7 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 	};
 
 	// Availability & order of cards in drop-down menu:
-	const SS_CARDTYPE cards[] =
+	const SS_CARDTYPE cardsInSlots1to7[] =
 	{
 	CT_Empty,
 	CT_Disk2,
@@ -421,13 +421,13 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 
 	if (slot == SLOT0)
 	{
-		for (UINT i = 0; i < sizeof(cardsSlot0)/sizeof(cardsSlot0[0]); i++)
+		for (UINT i = 0; i < std::size(cardsOnlyInSlot0); i++)
 		{
-			std::string name = Card::GetCardName(cardsSlot0[i]);
+			std::string name = Card::GetCardName(cardsOnlyInSlot0[i]);
 			choices += name;
 			choices += '\0';
 
-			choicesList.push_back(cardsSlot0[i]);
+			choicesList.push_back(cardsOnlyInSlot0[i]);
 		}
 	}
 	else
@@ -442,9 +442,9 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 				haveCard[currConfig[i]] = i;
 		}
 
-		for (UINT i = 0; i < sizeof(cards) / sizeof(cards[0]); i++)
+		for (UINT i = 0; i < std::size(cardsInSlots1to7); i++)
 		{
-			const SS_CARDTYPE thisCard = cards[i];
+			const SS_CARDTYPE thisCard = cardsInSlots1to7[i];
 
 			// Prevent both Uthernet & Uthernet2 cards being plugged in at the same time
 			if (thisCard == CT_Uthernet && haveCard[CT_Uthernet2] != kInvalidSlot && haveCard[CT_Uthernet2] != slot)
@@ -479,7 +479,7 @@ void CardManager::GetCardChoicesForAuxSlot(std::string& choices, std::vector<SS_
 
 	choicesList.clear();
 
-	for (UINT i = 0; i < sizeof(cards) / sizeof(cards[0]); i++)
+	for (UINT i = 0; i < std::size(cards); i++)
 	{
 		const SS_CARDTYPE thisCard = cards[i];
 
