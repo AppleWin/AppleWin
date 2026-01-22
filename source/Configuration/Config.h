@@ -56,9 +56,9 @@ public:
 	UINT m_scrollLockToggle;
 	UINT m_machineSpeed;
 	// Input
-	UINT m_cursorControl;
-	UINT m_centeringControl;
 	UINT m_autofire;
+	UINT m_centeringControl;
+	UINT m_cursorControl;
 	bool m_swapButtons0and1;
 	// Slots
 	uint32_t m_RamWorksMemorySize;	// Size in 64K banks

@@ -113,9 +113,9 @@ void CConfigNeedingRestart::Reload()
 	m_scrollLockToggle = GetPropertySheet().GetScrollLockToggle();
 	m_enhanceDiskAccessSpeed = GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk();
 	m_machineSpeed = g_dwSpeed;
-	m_cursorControl = GetPropertySheet().GetJoystickCursorControl();
-	m_centeringControl = GetPropertySheet().GetJoystickCenteringControl();
 	m_autofire = GetPropertySheet().GetAutofire();
+	m_centeringControl = GetPropertySheet().GetJoystickCenteringControl();
+	m_cursorControl = GetPropertySheet().GetJoystickCursorControl();
 	m_swapButtons0and1 = GetPropertySheet().GetButtonsSwapState();
 	m_RamWorksMemorySize = GetRamWorksMemorySize();
 
@@ -146,9 +146,9 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_enhanceDiskAccessSpeed = other.m_enhanceDiskAccessSpeed;
 	m_scrollLockToggle = other.m_scrollLockToggle;
 	m_machineSpeed = other.m_machineSpeed;
-	m_cursorControl = other.m_cursorControl;
-	m_centeringControl = other.m_centeringControl;
 	m_autofire = other.m_autofire;
+	m_centeringControl = other.m_centeringControl;
+	m_cursorControl = other.m_cursorControl;
 	m_swapButtons0and1 = other.m_swapButtons0and1;
 	m_RamWorksMemorySize = other.m_RamWorksMemorySize;
 	m_parallelPrinterCard = other.m_parallelPrinterCard;
@@ -169,7 +169,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Config] m_confirmReboot, m_masterVolume
 	// . [Config] m_videoType, m_videoStyle, m_monochromeRGB, m_fullScreen_ShowSubunitStatus
 	// . [Config] m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
-	// . [Input] m_cursorControl, m_centeringControl, m_autofire, m_swapButtons0and1
+	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&

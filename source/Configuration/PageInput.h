@@ -33,9 +33,9 @@ public:
 	bool GetButtonsSwapState(void){ return m_bSwapButtons0and1; }
 	void SetButtonsSwapState(bool value){ m_bSwapButtons0and1 = value; }
 
-	static const UINT kCursorControl_Default = 1;
-	static const UINT kCenteringControl_Default = JOYSTICK_MODE_CENTERING;
 	static const UINT kAutofire_Default = 0;
+	static const UINT kCenteringControl_Default = JOYSTICK_MODE_CENTERING;
+	static const UINT kCursorControl_Default = 1;
 	static const bool kSwapButtons0and1_Default = false;
 
 protected:
@@ -47,7 +47,6 @@ protected:
 private:
 	void InitOptions(HWND hWnd);
 	void InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue);
-	void InitSlotOptions(HWND hWnd);
 
 	static CPageInput* ms_this;
 	static const UINT MaxMenuChoiceLen = 40;

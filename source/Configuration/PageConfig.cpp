@@ -437,9 +437,9 @@ void CPageConfig::ResetAllToDefault(HWND hWnd)
 
 	// Input
 
-	m_PropertySheetHelper.GetConfigNew().m_cursorControl = CPageInput::kCursorControl_Default;
-	m_PropertySheetHelper.GetConfigNew().m_centeringControl = CPageInput::kCenteringControl_Default;
 	m_PropertySheetHelper.GetConfigNew().m_autofire = CPageInput::kAutofire_Default;
+	m_PropertySheetHelper.GetConfigNew().m_centeringControl = CPageInput::kCenteringControl_Default;
+	m_PropertySheetHelper.GetConfigNew().m_cursorControl = CPageInput::kCursorControl_Default;
 	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = CPageInput::kSwapButtons0and1_Default;
 
 	// Slots

@@ -143,24 +143,33 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		break;
 
 	case WM_INITDIALOG:
-		{
-			SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
-			SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_SETRANGE, 0, MAKELONG(128,-127));
-
-			SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(true),0));
-			SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(false),0));
-
-			CheckDlgButton(hWnd, IDC_CURSORCONTROL, m_uCursorControl ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_AUTOFIRE, m_bmAutofire ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_SWAPBUTTONS0AND1, m_bSwapButtons0and1 ? BST_CHECKED : BST_UNCHECKED);
-			CheckDlgButton(hWnd, IDC_CENTERINGCONTROL, m_uCenteringControl == JOYSTICK_MODE_CENTERING ? BST_CHECKED : BST_UNCHECKED);
-
-			InitOptions(hWnd);
-			break;
-		}
+		InitOptions(hWnd);
+		break;
 	}
 
 	return FALSE;
+}
+
+void CPageInput::InitOptions(HWND hWnd)
+{
+	SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_SETRANGE, 0, MAKELONG(128, -127));
+	SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_SETRANGE, 0, MAKELONG(128, -127));
+
+	SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(true), 0));
+	SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_SETPOS, 0, MAKELONG(JoyGetTrim(false), 0));
+
+	CheckDlgButton(hWnd, IDC_AUTOFIRE, m_PropertySheetHelper.GetConfigNew().m_autofire ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hWnd, IDC_CENTERINGCONTROL, m_PropertySheetHelper.GetConfigNew().m_centeringControl == JOYSTICK_MODE_CENTERING ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hWnd, IDC_CURSORCONTROL, m_PropertySheetHelper.GetConfigNew().m_cursorControl ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(hWnd, IDC_SWAPBUTTONS0AND1, m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 ? BST_CHECKED : BST_UNCHECKED);
+
+	//
+
+	InitJoystickChoices(hWnd, JN_JOYSTICK0, IDC_JOYSTICK0);
+	InitJoystickChoices(hWnd, JN_JOYSTICK1, IDC_JOYSTICK1);
+
+	EnableWindow(GetDlgItem(hWnd, IDC_CURSORCONTROL), JoyUsingKeyboardCursors() ? TRUE : FALSE);
+	EnableWindow(GetDlgItem(hWnd, IDC_CENTERINGCONTROL), JoyUsingKeyboard() ? TRUE : FALSE);
 }
 
 void CPageInput::DlgOK(HWND hWnd)
@@ -199,11 +208,6 @@ void CPageInput::DlgOK(HWND hWnd)
 	REGSAVE(REGVALUE_CENTERING_CONTROL, m_uCenteringControl);
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
-}
-
-void CPageInput::InitOptions(HWND hWnd)
-{
-	InitSlotOptions(hWnd);
 }
 
 void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
@@ -290,13 +294,4 @@ void CPageInput::InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue)
 	*pszMem = 0x00;	// Doubly null terminated
 
 	m_PropertySheetHelper.FillComboBox(hWnd, nIdcValue, pnzJoystickChoices, JoyGetJoyType(nJoyNum) - removedItemCompensation);
-}
-
-void CPageInput::InitSlotOptions(HWND hWnd)
-{
-	InitJoystickChoices(hWnd, JN_JOYSTICK0, IDC_JOYSTICK0);
-	InitJoystickChoices(hWnd, JN_JOYSTICK1, IDC_JOYSTICK1);
-
-	EnableWindow(GetDlgItem(hWnd, IDC_CURSORCONTROL), JoyUsingKeyboardCursors() ? TRUE : FALSE);
-	EnableWindow(GetDlgItem(hWnd, IDC_CENTERINGCONTROL), JoyUsingKeyboard() ? TRUE : FALSE);
 }
