@@ -189,7 +189,7 @@ void LoadConfiguration(bool loadImages)
 		GetPropertySheet().SetTheFreezesF8Rom(dwTmp);
 
 	if(REGLOAD(REGVALUE_SAVE_STATE_ON_EXIT, &dwTmp))
-		g_bSaveStateOnExit = dwTmp ? true : false;
+		SetSaveStateOnExit(dwTmp ? true : false);
 
 	if(REGLOAD(REGVALUE_PDL_XTRIM, &dwTmp))
 		JoySetTrim((short)dwTmp, true);

@@ -12,7 +12,7 @@ public:
 	CPageAdvanced(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_ADVANCED),
 		m_PropertySheetHelper(PropertySheetHelper),
-		m_uTheFreezesF8Rom(0)
+		m_uTheFreezesF8Rom(kTheFreezesF8Rom_Default)
 	{
 		CPageAdvanced::ms_this = this;
 	}
@@ -43,6 +43,8 @@ private:
 	static CPageAdvanced* ms_this;
 	static const char m_CloneChoices[];
 	static const char m_gameIOConnectorChoices[];
+
+	static const UINT kTheFreezesF8Rom_Default = 0;
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../CopyProtectionDongles.h"
 #include "../Core.h"
 #include "../CPU.h"
 #include "../Disk.h"
@@ -43,8 +44,7 @@ public:
 	SS_CARDTYPE m_SlotAux;
 	std::string m_tfeInterface;
 	bool m_tfeVirtualDNS;
-	UINT m_bEnableTheFreezesF8Rom;
-	UINT m_uSaveLoadStateMsg;
+	UINT m_uSaveLoadStateMsg;	// ?
 	// Configuration
 	bool m_confirmReboot;
 	uint32_t m_masterVolume;
@@ -71,4 +71,9 @@ public:
 
 	SlotInfoForFDC m_slotInfoForFDC[NUM_SLOTS];
 	SlotInfoForHDC m_slotInfoForHDC[NUM_SLOTS];
+
+	// Advanced
+	bool m_saveStateOnExit;
+	UINT m_enableTheFreezesF8Rom;
+	DONGLETYPE m_gameIOConnectorType;
 };

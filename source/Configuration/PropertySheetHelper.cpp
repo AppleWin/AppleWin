@@ -397,8 +397,8 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	if (CONFIG_CHANGED_LOCAL(m_SlotAux))
 		SetSlot(SLOT_AUX, ConfigNew.m_SlotAux);
 
-	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
-		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);
+	if (CONFIG_CHANGED_LOCAL(m_enableTheFreezesF8Rom))
+		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_enableTheFreezesF8Rom);
 
 	if (CONFIG_CHANGED_LOCAL(m_videoRefreshRate))
 		REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
@@ -558,7 +558,7 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 		if (CONFIG_CHANGED(m_tfeVirtualDNS))
 			strMsgMain += ". Uthernet Virtual DNS has changed\n";
 
-		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
+		if (CONFIG_CHANGED(m_enableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
 
 		if (CONFIG_CHANGED(m_parallelPrinterCard))

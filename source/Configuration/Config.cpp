@@ -41,7 +41,6 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	memset(m_Slot, 0, sizeof(m_Slot));
 	m_SlotAux = CT_Empty;
 	m_tfeVirtualDNS = false;
-	m_bEnableTheFreezesF8Rom = 0;
 	m_uSaveLoadStateMsg = 0;
 	m_confirmReboot = false;
 	m_masterVolume = 0;
@@ -63,6 +62,9 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_swapButtons0and1 = false;
 	m_RamWorksMemorySize = 0;
 	m_serialPortItem = 0;
+	m_saveStateOnExit = false;
+	m_enableTheFreezesF8Rom = 0;
+	m_gameIOConnectorType = DT_EMPTY;
 }
 
 // create from current global configuration
@@ -105,7 +107,6 @@ void CConfigNeedingRestart::Reload()
 		}
 	}
 
-	m_bEnableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_uSaveLoadStateMsg = 0;
 	m_confirmReboot = GetFrame().g_bConfirmReboot;
 	m_masterVolume = SpkrGetVolume();
@@ -132,6 +133,10 @@ void CConfigNeedingRestart::Reload()
 
 	if (cardManager.IsSSCInstalled())
 		m_serialPortItem = cardManager.GetSSC()->GetSerialPortItem();
+
+	m_saveStateOnExit = 0;//todo
+	m_enableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
+	m_gameIOConnectorType = GetCopyProtectionDongleType();
 }
 
 const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeedingRestart& other)
@@ -142,7 +147,6 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_SlotAux = other.m_SlotAux;
 	m_tfeInterface = other.m_tfeInterface;
 	m_tfeVirtualDNS = other.m_tfeVirtualDNS;
-	m_bEnableTheFreezesF8Rom = other.m_bEnableTheFreezesF8Rom;
 	m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
 	m_confirmReboot = other.m_confirmReboot;
 	m_masterVolume = other.m_masterVolume;
@@ -172,6 +176,9 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 		for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 			m_slotInfoForHDC[slot].pathname[i] = other.m_slotInfoForHDC[slot].pathname[i];
 	}
+	m_saveStateOnExit = other.m_saveStateOnExit;
+	m_enableTheFreezesF8Rom = other.m_enableTheFreezesF8Rom;
+	m_gameIOConnectorType = other.m_gameIOConnectorType;
 	return *this;
 }
 
@@ -183,6 +190,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Config] m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
 	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
 	// . [Input] m_joystickType[], m_pdlXTrim, m_pdlYTrim
+	// . [Advanced] m_saveStateOnExit, m_gameIOConnectorType
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&
@@ -190,12 +198,12 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 		m_SlotAux == other.m_SlotAux &&
 		m_tfeInterface == other.m_tfeInterface &&
 		m_tfeVirtualDNS == other.m_tfeVirtualDNS &&
-		m_bEnableTheFreezesF8Rom == other.m_bEnableTheFreezesF8Rom &&
 		m_uSaveLoadStateMsg == other.m_uSaveLoadStateMsg &&
 		m_videoRefreshRate == other.m_videoRefreshRate &&
 		m_RamWorksMemorySize == other.m_RamWorksMemorySize &&
 		m_parallelPrinterCard == other.m_parallelPrinterCard &&	// NB. no restart required if any of this changes
-		m_serialPortItem == other.m_serialPortItem;
+		m_serialPortItem == other.m_serialPortItem &&
+		m_enableTheFreezesF8Rom == other.m_enableTheFreezesF8Rom;
 }
 
 bool CConfigNeedingRestart::operator!= (const CConfigNeedingRestart& other) const

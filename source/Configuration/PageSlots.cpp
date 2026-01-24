@@ -344,6 +344,8 @@ void CPageSlots::InitOptions(HWND hWnd)
 
 void CPageSlots::ResetToDefault()
 {
+	// TODO: each card needs setting to its default config too
+
 	CConfigNeedingRestart& configNew = m_PropertySheetHelper.GetConfigNew();
 
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)

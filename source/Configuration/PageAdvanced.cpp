@@ -120,8 +120,8 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 
 		case IDC_THE_FREEZES_F8_ROM_FW:
 			{
-				const UINT uNewState = IsDlgButtonChecked(hWnd, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
-				m_PropertySheetHelper.GetConfigNew().m_bEnableTheFreezesF8Rom = uNewState;
+				const UINT newState = IsDlgButtonChecked(hWnd, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
+				m_PropertySheetHelper.GetConfigNew().m_enableTheFreezesF8Rom = newState;
 			}
 			break;
 
@@ -138,8 +138,8 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 		case IDC_COMBO_GAME_IO_CONNECTOR:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const DONGLETYPE newCopyProtectionDongleMenuItem = (DONGLETYPE)SendDlgItemMessage(hWnd, IDC_COMBO_GAME_IO_CONNECTOR, CB_GETCURSEL, 0, 0);
-				SetCopyProtectionDongleType(newCopyProtectionDongleMenuItem);
+				const DONGLETYPE newCopyProtectionDongleType = (DONGLETYPE)SendDlgItemMessage(hWnd, IDC_COMBO_GAME_IO_CONNECTOR, CB_GETCURSEL, 0, 0);
+				m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType = newCopyProtectionDongleType;
 			}
 			break;
 
@@ -153,19 +153,8 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 		break;
 
 	case WM_INITDIALOG:
-		{
-			SendDlgItemMessage(hWnd,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename().c_str());
-
-			CheckDlgButton(hWnd, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
-
-			char pathToCiderPress[MAX_PATH];
-			RegLoadString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, pathToCiderPress, MAX_PATH, "");
-			SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM)pathToCiderPress);
-
-			InitOptions(hWnd);
-
-			break;
-		}
+		InitOptions(hWnd);
+		break;
 	}
 
 	return FALSE;
@@ -196,17 +185,29 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 		RegSaveString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, szFilename);
 	}
 
-	g_bSaveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;
-	REGSAVE(REGVALUE_SAVE_STATE_ON_EXIT, g_bSaveStateOnExit ? 1 : 0);
+	const bool saveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;
+	SetSaveStateOnExit(saveStateOnExit);
+	REGSAVE(REGVALUE_SAVE_STATE_ON_EXIT, saveStateOnExit ? 1 : 0);
 
 	// Save the copy protection dongle type
-	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, GetCopyProtectionDongleType());
+	SetCopyProtectionDongleType(m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
+	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
 void CPageAdvanced::InitOptions(HWND hWnd)
 {
+	SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)Snapshot_GetFilename().c_str());
+
+	CheckDlgButton(hWnd, IDC_SAVESTATE_ON_EXIT, GetSaveStateOnExit() ? BST_CHECKED : BST_UNCHECKED);
+
+	char pathToCiderPress[MAX_PATH];
+	RegLoadString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, pathToCiderPress, MAX_PATH, "");
+	SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM)pathToCiderPress);
+
+	//
+
 	InitFreezeDlgButton(hWnd);
 	InitCloneDropdownMenu(hWnd);
 	InitGameIOConnectorDropdownMenu(hWnd);
@@ -262,7 +263,7 @@ void CPageAdvanced::InitFreezeDlgButton(HWND hWnd)
 	const bool bIsApple2Plus = IsApple2Plus( m_PropertySheetHelper.GetConfigNew().m_Apple2Type );
 	EnableWindow(GetDlgItem(hWnd, IDC_THE_FREEZES_F8_ROM_FW), bIsApple2Plus ? TRUE : FALSE);
 
-	const UINT CheckTheFreezesRom = m_PropertySheetHelper.GetConfigNew().m_bEnableTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED;
+	const UINT CheckTheFreezesRom = m_PropertySheetHelper.GetConfigNew().m_enableTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED;
 	CheckDlgButton(hWnd, IDC_THE_FREEZES_F8_ROM_FW, CheckTheFreezesRom);
 }
 
@@ -279,7 +280,7 @@ void CPageAdvanced::InitCloneDropdownMenu(HWND hWnd)
 void CPageAdvanced::InitGameIOConnectorDropdownMenu(HWND hWnd)
 {
 	// Set copy protection dongle menu choice
-	const int nCurrentChoice = GetCopyProtectionDongleType();
+	const int nCurrentChoice = m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType;
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_GAME_IO_CONNECTOR, m_gameIOConnectorChoices, nCurrentChoice);
 }
 
@@ -312,5 +313,7 @@ bool CPageAdvanced::IsOkToBenchmark(HWND hWnd, const bool bConfigChanged)
 
 void CPageAdvanced::ResetToDefault()
 {
-	// todo
+	m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit = kSaveStateOnExit_Default;
+	m_PropertySheetHelper.GetConfigNew().m_enableTheFreezesF8Rom = kTheFreezesF8Rom_Default;
+	m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType = DT_DEFAULT;
 }
