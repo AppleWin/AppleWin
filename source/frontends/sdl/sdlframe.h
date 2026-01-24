@@ -1,10 +1,10 @@
 #pragma once
 
+#include "frontends/sdl/sdlcompat.h"
 #include "frontends/common2/gnuframe.h"
 #include "frontends/common2/controllerdoublepress.h"
 #include "frontends/common2/programoptions.h"
 #include "linux/network/portfwds.h"
-#include <SDL.h>
 
 namespace sa2
 {
@@ -43,7 +43,8 @@ namespace sa2
 
         void SaveSnapshot();
 
-        static void setGLSwapInterval(const int interval);
+        static bool setGLSwapInterval(const int interval);
+        static void changeGLSwapInterval(const int interval);
 
     protected:
         void SetApplicationIcon();

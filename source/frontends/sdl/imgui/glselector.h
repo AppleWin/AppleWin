@@ -1,5 +1,7 @@
 #pragma once
 
+#include "frontends/sdl/sdlcompat.h"
+
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 
 // Pi3 with Fake KMS
@@ -44,8 +46,6 @@
 
 #elif defined(__APPLE__)
 
-#include <SDL_opengl.h>
-
 #define SA2_CONTEXT_FLAGS SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG
 #define SA2_CONTEXT_PROFILE_MASK SDL_GL_CONTEXT_PROFILE_CORE
 #define SA2_CONTEXT_MAJOR_VERSION 3
@@ -55,8 +55,6 @@
 #define SA2_IMAGE_FORMAT GL_BGRA
 
 #else
-
-#include <SDL_opengl.h>
 
 #define SA2_CONTEXT_FLAGS 0
 #define SA2_CONTEXT_PROFILE_MASK SDL_GL_CONTEXT_PROFILE_CORE
@@ -69,7 +67,13 @@
 #endif
 
 #include "imgui.h"
+
+#if SDL_VERSION_ATLEAST(3, 0, 0)
+#include "imgui_impl_sdl3.h"
+#else
 #include "imgui_impl_sdl2.h"
+#endif
+
 #include "imgui_impl_opengl3.h"
 
 #include "imgui_memory_editor.h"

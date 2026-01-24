@@ -151,6 +151,7 @@ namespace common2
         options.configurationFile = getConfigFile("applewin.yaml");
         const std::string configurationFileDefault = options.configurationFile.string();
         const std::string audioBufferDefault = std::to_string(options.audioBuffer);
+        const std::string glSwapIntervalDefault = std::to_string(options.glSwapInterval);
 
         // clang-format off
 
@@ -205,7 +206,7 @@ namespace common2
             {"sa2",
              {
                  {"sdl-driver",              required_argument,    SDL_DRIVER,       "SDL driver"},
-                 {"gl-swap",                 required_argument,    GL_SWAP,          "SDL_GL_SwapInterval"},
+                 {"gl-swap",                 required_argument,    GL_SWAP,          "SDL_GL_SwapInterval", glSwapIntervalDefault.c_str()},
                  {"timer",                   no_argument,          TIMER,            "Synchronise with timer"},
                  {"no-imgui",                no_argument,          NO_IMGUI,         "Plain SDL2 renderer"},
                  {"geometry",                required_argument,    GEOMETRY,         "WxH[+X+Y]"},
