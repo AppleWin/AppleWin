@@ -485,7 +485,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 
 	SetSlot(SLOT_AUX, m_ConfigOld.m_SlotAux);
 
-	//GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);// -- not applied yet, so do nothing
+	//GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_enableTheFreezesF8Rom);// -- not applied yet, so do nothing
 	//m_ConfigOld.m_videoRefreshRate -- not applied yet, so do nothing
 	//m_ConfigOld.m_RamWorksMemorySize -- not applied yet, so do nothing
 }

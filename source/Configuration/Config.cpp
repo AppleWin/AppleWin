@@ -26,6 +26,7 @@
 #include "../CardManager.h"
 #include "../Interface.h"
 #include "../Memory.h"
+#include "../SaveState.h"
 #include "../Speaker.h"
 #include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
@@ -41,7 +42,6 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	memset(m_Slot, 0, sizeof(m_Slot));
 	m_SlotAux = CT_Empty;
 	m_tfeVirtualDNS = false;
-	m_uSaveLoadStateMsg = 0;
 	m_confirmReboot = false;
 	m_masterVolume = 0;
 	m_videoType = VT_DEFAULT;
@@ -62,6 +62,7 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_swapButtons0and1 = false;
 	m_RamWorksMemorySize = 0;
 	m_serialPortItem = 0;
+	m_uSaveLoadStateMsg = 0;
 	m_saveStateOnExit = false;
 	m_enableTheFreezesF8Rom = 0;
 	m_gameIOConnectorType = DT_EMPTY;
@@ -107,7 +108,6 @@ void CConfigNeedingRestart::Reload()
 		}
 	}
 
-	m_uSaveLoadStateMsg = 0;
 	m_confirmReboot = GetFrame().g_bConfirmReboot;
 	m_masterVolume = SpkrGetVolume();
 	m_videoType = GetVideo().GetVideoType();
@@ -134,7 +134,8 @@ void CConfigNeedingRestart::Reload()
 	if (cardManager.IsSSCInstalled())
 		m_serialPortItem = cardManager.GetSSC()->GetSerialPortItem();
 
-	m_saveStateOnExit = 0;//todo
+	m_uSaveLoadStateMsg = 0;
+	m_saveStateOnExit = GetSaveStateOnExit();
 	m_enableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_gameIOConnectorType = GetCopyProtectionDongleType();
 }
@@ -147,7 +148,6 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_SlotAux = other.m_SlotAux;
 	m_tfeInterface = other.m_tfeInterface;
 	m_tfeVirtualDNS = other.m_tfeVirtualDNS;
-	m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
 	m_confirmReboot = other.m_confirmReboot;
 	m_masterVolume = other.m_masterVolume;
 	m_videoType = other.m_videoType;
@@ -176,6 +176,7 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 		for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 			m_slotInfoForHDC[slot].pathname[i] = other.m_slotInfoForHDC[slot].pathname[i];
 	}
+	m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
 	m_saveStateOnExit = other.m_saveStateOnExit;
 	m_enableTheFreezesF8Rom = other.m_enableTheFreezesF8Rom;
 	m_gameIOConnectorType = other.m_gameIOConnectorType;
@@ -190,7 +191,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Config] m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
 	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
 	// . [Input] m_joystickType[], m_pdlXTrim, m_pdlYTrim
-	// . [Advanced] m_saveStateOnExit, m_gameIOConnectorType
+	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_gameIOConnectorType
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&
@@ -198,7 +199,6 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 		m_SlotAux == other.m_SlotAux &&
 		m_tfeInterface == other.m_tfeInterface &&
 		m_tfeVirtualDNS == other.m_tfeVirtualDNS &&
-		m_uSaveLoadStateMsg == other.m_uSaveLoadStateMsg &&
 		m_videoRefreshRate == other.m_videoRefreshRate &&
 		m_RamWorksMemorySize == other.m_RamWorksMemorySize &&
 		m_parallelPrinterCard == other.m_parallelPrinterCard &&	// NB. no restart required if any of this changes

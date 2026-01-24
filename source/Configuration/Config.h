@@ -44,7 +44,6 @@ public:
 	SS_CARDTYPE m_SlotAux;
 	std::string m_tfeInterface;
 	bool m_tfeVirtualDNS;
-	UINT m_uSaveLoadStateMsg;	// ?
 	// Configuration
 	bool m_confirmReboot;
 	uint32_t m_masterVolume;
@@ -73,6 +72,7 @@ public:
 	SlotInfoForHDC m_slotInfoForHDC[NUM_SLOTS];
 
 	// Advanced
+	UINT m_uSaveLoadStateMsg;	// WM_USER_LOADSTATE or WM_USER_SAVESTATE
 	bool m_saveStateOnExit;
 	UINT m_enableTheFreezesF8Rom;
 	DONGLETYPE m_gameIOConnectorType;
