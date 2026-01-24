@@ -37,11 +37,9 @@
 CConfigNeedingRestart::CConfigNeedingRestart()
 	: m_parallelPrinterCard(SLOT1)	// slot not important
 {
+	// Configuration
 	m_Apple2Type = A2TYPE_APPLE2;
 	m_CpuType = CPU_UNKNOWN;
-	memset(m_Slot, 0, sizeof(m_Slot));
-	m_SlotAux = CT_Empty;
-	m_tfeVirtualDNS = false;
 	m_confirmReboot = false;
 	m_masterVolume = 0;
 	m_videoType = VT_DEFAULT;
@@ -52,6 +50,8 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_enhanceDiskAccessSpeed = false;
 	m_scrollLockToggle = 0;
 	m_machineSpeed = 0;
+
+	// Input
 	m_joystickType[JN_JOYSTICK0] = 0;
 	m_joystickType[JN_JOYSTICK1] = 0;
 	m_pdlXTrim = 0;
@@ -60,8 +60,15 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_centeringControl = 0;
 	m_cursorControl = 0;
 	m_swapButtons0and1 = false;
+
+	// Slots
+	memset(m_Slot, 0, sizeof(m_Slot));
+	m_SlotAux = CT_Empty;
+	m_tfeVirtualDNS = false;
 	m_RamWorksMemorySize = 0;
 	m_serialPortItem = 0;
+
+	// Advanced
 	m_uSaveLoadStateMsg = 0;
 	m_saveStateOnExit = false;
 	m_enableTheFreezesF8Rom = 0;
@@ -80,9 +87,31 @@ CConfigNeedingRestart CConfigNeedingRestart::Create()
 // update from current global configuration
 void CConfigNeedingRestart::Reload()
 {
+	// Configuration
 	m_Apple2Type = GetApple2Type();
 	m_CpuType = GetMainCpu();
+	m_confirmReboot = GetFrame().g_bConfirmReboot;
+	m_masterVolume = SpkrGetVolume();
+	m_videoType = GetVideo().GetVideoType();
+	m_videoStyle = GetVideo().GetVideoStyle();
+	m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
+	m_monochromeRGB = GetVideo().GetMonochromeRGB();
+	m_fullScreen_ShowSubunitStatus = Win32Frame::GetWin32Frame().GetFullScreenShowSubunitStatus();
+	m_scrollLockToggle = GetPropertySheet().GetScrollLockToggle();
+	m_enhanceDiskAccessSpeed = GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk();
+	m_machineSpeed = g_dwSpeed;
 
+	// Input
+	m_joystickType[JN_JOYSTICK0] = JoyGetJoyType(JN_JOYSTICK0);
+	m_joystickType[JN_JOYSTICK1] = JoyGetJoyType(JN_JOYSTICK1);
+	m_pdlXTrim = JoyGetTrim(true);
+	m_pdlYTrim = JoyGetTrim(false);
+	m_autofire = GetPropertySheet().GetAutofire();
+	m_centeringControl = GetPropertySheet().GetJoystickCenteringControl();
+	m_cursorControl = GetPropertySheet().GetJoystickCursorControl();
+	m_swapButtons0and1 = GetPropertySheet().GetButtonsSwapState();
+
+	// Slots
 	CardManager& cardManager = GetCardMgr();
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 		m_Slot[slot] = cardManager.QuerySlot(slot);
@@ -108,24 +137,6 @@ void CConfigNeedingRestart::Reload()
 		}
 	}
 
-	m_confirmReboot = GetFrame().g_bConfirmReboot;
-	m_masterVolume = SpkrGetVolume();
-	m_videoType = GetVideo().GetVideoType();
-	m_videoStyle = GetVideo().GetVideoStyle();
-	m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
-	m_monochromeRGB = GetVideo().GetMonochromeRGB();
-	m_fullScreen_ShowSubunitStatus = Win32Frame::GetWin32Frame().GetFullScreenShowSubunitStatus();
-	m_scrollLockToggle = GetPropertySheet().GetScrollLockToggle();
-	m_enhanceDiskAccessSpeed = GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk();
-	m_machineSpeed = g_dwSpeed;
-	m_joystickType[JN_JOYSTICK0] = JoyGetJoyType(JN_JOYSTICK0);
-	m_joystickType[JN_JOYSTICK1] = JoyGetJoyType(JN_JOYSTICK1);
-	m_pdlXTrim = JoyGetTrim(true);
-	m_pdlYTrim = JoyGetTrim(false);
-	m_autofire = GetPropertySheet().GetAutofire();
-	m_centeringControl = GetPropertySheet().GetJoystickCenteringControl();
-	m_cursorControl = GetPropertySheet().GetJoystickCursorControl();
-	m_swapButtons0and1 = GetPropertySheet().GetButtonsSwapState();
 	m_RamWorksMemorySize = GetRamWorksMemorySize();
 
 	if (cardManager.IsParallelPrinterCardInstalled())
@@ -134,6 +145,7 @@ void CConfigNeedingRestart::Reload()
 	if (cardManager.IsSSCInstalled())
 		m_serialPortItem = cardManager.GetSSC()->GetSerialPortItem();
 
+	// Advanced
 	m_uSaveLoadStateMsg = 0;
 	m_saveStateOnExit = GetSaveStateOnExit();
 	m_enableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
@@ -142,12 +154,9 @@ void CConfigNeedingRestart::Reload()
 
 const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeedingRestart& other)
 {
+	// Configuration
 	m_Apple2Type = other.m_Apple2Type;
 	m_CpuType = other.m_CpuType;
-	memcpy(m_Slot, other.m_Slot, sizeof(m_Slot));
-	m_SlotAux = other.m_SlotAux;
-	m_tfeInterface = other.m_tfeInterface;
-	m_tfeVirtualDNS = other.m_tfeVirtualDNS;
 	m_confirmReboot = other.m_confirmReboot;
 	m_masterVolume = other.m_masterVolume;
 	m_videoType = other.m_videoType;
@@ -158,6 +167,8 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_enhanceDiskAccessSpeed = other.m_enhanceDiskAccessSpeed;
 	m_scrollLockToggle = other.m_scrollLockToggle;
 	m_machineSpeed = other.m_machineSpeed;
+
+	// Input
 	m_joystickType[JN_JOYSTICK0] = other.m_joystickType[JN_JOYSTICK0];
 	m_joystickType[JN_JOYSTICK1] = other.m_joystickType[JN_JOYSTICK1];
 	m_pdlXTrim = other.m_pdlXTrim;
@@ -166,6 +177,12 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_centeringControl = other.m_centeringControl;
 	m_cursorControl = other.m_cursorControl;
 	m_swapButtons0and1 = other.m_swapButtons0and1;
+
+	// Slots
+	memcpy(m_Slot, other.m_Slot, sizeof(m_Slot));
+	m_SlotAux = other.m_SlotAux;
+	m_tfeInterface = other.m_tfeInterface;
+	m_tfeVirtualDNS = other.m_tfeVirtualDNS;
 	m_RamWorksMemorySize = other.m_RamWorksMemorySize;
 	m_parallelPrinterCard = other.m_parallelPrinterCard;
 	m_serialPortItem = other.m_serialPortItem;
@@ -176,6 +193,8 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 		for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 			m_slotInfoForHDC[slot].pathname[i] = other.m_slotInfoForHDC[slot].pathname[i];
 	}
+
+	// Advanced
 	m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
 	m_saveStateOnExit = other.m_saveStateOnExit;
 	m_enableTheFreezesF8Rom = other.m_enableTheFreezesF8Rom;
@@ -195,11 +214,11 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&
+		m_videoRefreshRate == other.m_videoRefreshRate &&
 		memcmp(m_Slot, other.m_Slot, sizeof(m_Slot)) == 0 &&
 		m_SlotAux == other.m_SlotAux &&
 		m_tfeInterface == other.m_tfeInterface &&
 		m_tfeVirtualDNS == other.m_tfeVirtualDNS &&
-		m_videoRefreshRate == other.m_videoRefreshRate &&
 		m_RamWorksMemorySize == other.m_RamWorksMemorySize &&
 		m_parallelPrinterCard == other.m_parallelPrinterCard &&	// NB. no restart required if any of this changes
 		m_serialPortItem == other.m_serialPortItem &&
