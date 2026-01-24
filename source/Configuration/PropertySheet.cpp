@@ -98,3 +98,11 @@ bool CPropertySheet::SaveStateSelectImage(HWND hWindow, bool bSave)
 		return false;	// Cancelled
 	}
 }
+
+void CPropertySheet::ResetAllToDefault()
+{
+	m_PageConfig.ResetToDefault();
+	m_PageInput.ResetToDefault();
+	m_PageSlots.ResetToDefault();
+	m_PageAdvanced.ResetToDefault();
+}

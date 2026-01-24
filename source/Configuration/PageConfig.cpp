@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Registry.h"
 #include "../CardManager.h"
 #include "../Interface.h"
-#include "../Joystick.h"
 #include "../Speaker.h"
 #include "../resource/resource.h"
 
@@ -165,7 +164,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			break;
 
 		case IDC_CONFIG_ALL_DEFAULT:
-			ResetAllToDefault(hWnd);
+			GetPropertySheet().ResetAllToDefault();
 			InitOptions(hWnd);
 			break;
 
@@ -414,10 +413,8 @@ void CPageConfig::ui_tfe_settings_dialog(HWND hWnd)
 	DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_TFE_SETTINGS_DIALOG, hWnd, CPageConfigTfe::DlgProc);
 }
 
-void CPageConfig::ResetAllToDefault(HWND hWnd)
+void CPageConfig::ResetToDefault()
 {
-	// Configuration
-
 	const eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
 	m_PropertySheetHelper.GetConfigNew().m_Apple2Type = apple2Type;
 	m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(apple2Type);
@@ -435,20 +432,4 @@ void CPageConfig::ResetAllToDefault(HWND hWnd)
 	m_PropertySheetHelper.GetConfigNew().m_enhanceDiskAccessSpeed = kEnhanceDiskAccessSpeed_Default;
 	m_PropertySheetHelper.GetConfigNew().m_scrollLockToggle = kScrollLockToggle_Default;
 	m_PropertySheetHelper.GetConfigNew().m_machineSpeed = kMachineSpeed_Default;
-
-	// Input
-
-	m_PropertySheetHelper.GetConfigNew().m_joystickType[JN_JOYSTICK0] = kJoystick_Default[JN_JOYSTICK0];
-	m_PropertySheetHelper.GetConfigNew().m_joystickType[JN_JOYSTICK1] = kJoystick_Default[JN_JOYSTICK1];
-	m_PropertySheetHelper.GetConfigNew().m_pdlXTrim = kPdlXTrim_Default;
-	m_PropertySheetHelper.GetConfigNew().m_pdlYTrim = kPdlYTrim_Default;
-
-	m_PropertySheetHelper.GetConfigNew().m_autofire = CPageInput::kAutofire_Default;
-	m_PropertySheetHelper.GetConfigNew().m_centeringControl = CPageInput::kCenteringControl_Default;
-	m_PropertySheetHelper.GetConfigNew().m_cursorControl = CPageInput::kCursorControl_Default;
-	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = CPageInput::kSwapButtons0and1_Default;
-
-	// Slots
-
-	m_PropertySheetHelper.ResetSlotsToDefault();
 }

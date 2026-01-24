@@ -213,7 +213,7 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			break;
 
 		case IDC_SLOT_DEFAULT_CARDS:
-			m_PropertySheetHelper.ResetSlotsToDefault();
+			ResetToDefault();
 			InitOptions(hWnd);
 			break;
 		}
@@ -340,6 +340,17 @@ void CPageSlots::InitOptions(HWND hWnd)
 			break;
 		}
 	}
+}
+
+void CPageSlots::ResetToDefault()
+{
+	CConfigNeedingRestart& configNew = m_PropertySheetHelper.GetConfigNew();
+
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+		configNew.m_Slot[slot] = GetCardMgr().QueryDefaultCardForSlot(slot, configNew.m_Apple2Type);
+
+	if (IsAppleIIe(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
+		configNew.m_SlotAux = GetCardMgr().QueryDefaultCardForSlot(SLOT_AUX, configNew.m_Apple2Type);
 }
 
 //===========================================================================

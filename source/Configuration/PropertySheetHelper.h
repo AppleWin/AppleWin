@@ -37,7 +37,6 @@ public:
 	void ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew);
 	void ConfigSaveApple2Type(eApple2Type apple2Type);
 	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
-	void ResetSlotsToDefault();
 
 private:
 	bool IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged);

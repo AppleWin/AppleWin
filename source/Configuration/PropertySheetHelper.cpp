@@ -663,12 +663,3 @@ std::string CPropertySheetHelper::GetSlot(const UINT slot)
 
 	return strMsg;
 }
-
-void CPropertySheetHelper::ResetSlotsToDefault()
-{
-	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
-		GetConfigNew().m_Slot[slot] = GetCardMgr().QueryDefaultCardForSlot(slot, GetConfigNew().m_Apple2Type);
-
-	if (IsAppleIIe(GetConfigNew().m_Apple2Type))
-		GetConfigNew().m_SlotAux = GetCardMgr().QueryDefaultCardForSlot(SLOT_AUX, GetConfigNew().m_Apple2Type);
-}

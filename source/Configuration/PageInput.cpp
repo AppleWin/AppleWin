@@ -300,3 +300,16 @@ bool CPageInput::IsMouseCardInAnySlot()
 
 	return false;
 }
+
+void CPageInput::ResetToDefault()
+{
+	m_PropertySheetHelper.GetConfigNew().m_joystickType[JN_JOYSTICK0] = kJoystick_Default[JN_JOYSTICK0];
+	m_PropertySheetHelper.GetConfigNew().m_joystickType[JN_JOYSTICK1] = kJoystick_Default[JN_JOYSTICK1];
+	m_PropertySheetHelper.GetConfigNew().m_pdlXTrim = kPdlXTrim_Default;
+	m_PropertySheetHelper.GetConfigNew().m_pdlYTrim = kPdlYTrim_Default;
+
+	m_PropertySheetHelper.GetConfigNew().m_autofire = CPageInput::kAutofire_Default;
+	m_PropertySheetHelper.GetConfigNew().m_centeringControl = CPageInput::kCenteringControl_Default;
+	m_PropertySheetHelper.GetConfigNew().m_cursorControl = CPageInput::kCursorControl_Default;
+	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = CPageInput::kSwapButtons0and1_Default;
+}

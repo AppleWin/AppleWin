@@ -28,6 +28,8 @@ public:
 	UINT GetMouseRestrictToWindow(void) { return m_mouseRestrictToWindow; }
 	void SetMouseRestrictToWindow(UINT uValue) { m_mouseRestrictToWindow = uValue; }
 
+	virtual void ResetToDefault();	// IPropertySheetPage
+
 protected:
 	// IPropertySheetPage
 	virtual INT_PTR DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);

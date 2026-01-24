@@ -22,6 +22,8 @@ public:
 	virtual void Init(void);
 	virtual uint32_t GetVolumeMax(void);								// TODO:TC: Move out of here
 	virtual bool SaveStateSelectImage(HWND hWindow, bool bSave);	// TODO:TC: Move out of here
+	virtual void ResetAllToDefault();
+
 	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
 	{
 		m_PropertySheetHelper.ApplyNewConfig(ConfigNew, ConfigOld);

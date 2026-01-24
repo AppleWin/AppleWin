@@ -309,3 +309,8 @@ bool CPageAdvanced::IsOkToBenchmark(HWND hWnd, const bool bConfigChanged)
 
 	return true;
 }
+
+void CPageAdvanced::ResetToDefault()
+{
+	// todo
+}
