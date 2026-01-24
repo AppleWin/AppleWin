@@ -4,6 +4,7 @@
 #include "../CPU.h"
 #include "../Disk.h"
 #include "../Harddisk.h"
+#include "../Joystick.h"
 #include "../ParallelPrinter.h"
 #include "../SerialComms.h"
 #include "../Video.h"
@@ -56,6 +57,9 @@ public:
 	UINT m_scrollLockToggle;
 	UINT m_machineSpeed;
 	// Input
+	uint32_t m_joystickType[JN_NUM];
+	short m_pdlXTrim;
+	short m_pdlYTrim;
 	UINT m_autofire;
 	UINT m_centeringControl;
 	UINT m_cursorControl;

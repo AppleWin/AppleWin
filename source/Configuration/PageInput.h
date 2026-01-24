@@ -46,7 +46,8 @@ protected:
 
 private:
 	void InitOptions(HWND hWnd);
-	void InitJoystickChoices(HWND hWnd, int nJoyNum, int nIdcValue);
+	void InitJoystickChoices(HWND hWnd, const int joyNum);
+	bool IsMouseCardInAnySlot();
 
 	static CPageInput* ms_this;
 	static const UINT MaxMenuChoiceLen = 40;

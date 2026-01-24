@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Registry.h"
 #include "../CardManager.h"
 #include "../Interface.h"
+#include "../Joystick.h"
 #include "../Speaker.h"
 #include "../resource/resource.h"
 
@@ -436,6 +437,11 @@ void CPageConfig::ResetAllToDefault(HWND hWnd)
 	m_PropertySheetHelper.GetConfigNew().m_machineSpeed = kMachineSpeed_Default;
 
 	// Input
+
+	m_PropertySheetHelper.GetConfigNew().m_joystickType[JN_JOYSTICK0] = kJoystick_Default[JN_JOYSTICK0];
+	m_PropertySheetHelper.GetConfigNew().m_joystickType[JN_JOYSTICK1] = kJoystick_Default[JN_JOYSTICK1];
+	m_PropertySheetHelper.GetConfigNew().m_pdlXTrim = kPdlXTrim_Default;
+	m_PropertySheetHelper.GetConfigNew().m_pdlYTrim = kPdlYTrim_Default;
 
 	m_PropertySheetHelper.GetConfigNew().m_autofire = CPageInput::kAutofire_Default;
 	m_PropertySheetHelper.GetConfigNew().m_centeringControl = CPageInput::kCenteringControl_Default;

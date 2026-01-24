@@ -53,9 +53,13 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_enhanceDiskAccessSpeed = false;
 	m_scrollLockToggle = 0;
 	m_machineSpeed = 0;
-	m_cursorControl = 0;
-	m_centeringControl = 0;
+	m_joystickType[JN_JOYSTICK0] = 0;
+	m_joystickType[JN_JOYSTICK1] = 0;
+	m_pdlXTrim = 0;
+	m_pdlYTrim = 0;
 	m_autofire = 0;
+	m_centeringControl = 0;
+	m_cursorControl = 0;
 	m_swapButtons0and1 = false;
 	m_RamWorksMemorySize = 0;
 	m_serialPortItem = 0;
@@ -113,6 +117,10 @@ void CConfigNeedingRestart::Reload()
 	m_scrollLockToggle = GetPropertySheet().GetScrollLockToggle();
 	m_enhanceDiskAccessSpeed = GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk();
 	m_machineSpeed = g_dwSpeed;
+	m_joystickType[JN_JOYSTICK0] = JoyGetJoyType(JN_JOYSTICK0);
+	m_joystickType[JN_JOYSTICK1] = JoyGetJoyType(JN_JOYSTICK1);
+	m_pdlXTrim = JoyGetTrim(true);
+	m_pdlYTrim = JoyGetTrim(false);
 	m_autofire = GetPropertySheet().GetAutofire();
 	m_centeringControl = GetPropertySheet().GetJoystickCenteringControl();
 	m_cursorControl = GetPropertySheet().GetJoystickCursorControl();
@@ -146,6 +154,10 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_enhanceDiskAccessSpeed = other.m_enhanceDiskAccessSpeed;
 	m_scrollLockToggle = other.m_scrollLockToggle;
 	m_machineSpeed = other.m_machineSpeed;
+	m_joystickType[JN_JOYSTICK0] = other.m_joystickType[JN_JOYSTICK0];
+	m_joystickType[JN_JOYSTICK1] = other.m_joystickType[JN_JOYSTICK1];
+	m_pdlXTrim = other.m_pdlXTrim;
+	m_pdlYTrim = other.m_pdlYTrim;
 	m_autofire = other.m_autofire;
 	m_centeringControl = other.m_centeringControl;
 	m_cursorControl = other.m_cursorControl;
@@ -170,6 +182,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Config] m_videoType, m_videoStyle, m_monochromeRGB, m_fullScreen_ShowSubunitStatus
 	// . [Config] m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
 	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
+	// . [Input] m_joystickType[], m_pdlXTrim, m_pdlYTrim
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&
