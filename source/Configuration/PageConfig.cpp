@@ -254,14 +254,7 @@ void CPageConfig::InitOptions(HWND hWnd)
 	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETTICFREQ, 10, 0);
 	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPOS, TRUE, m_PropertySheetHelper.GetConfigNew().m_machineSpeed);
 
-	// TODO: can get rid of REGVALUE_CUSTOM_SPEED, and derive it from REGVALUE_EMULATION_SPEED - See: InitOptions()/DlgOK()
-	BOOL bCustom = TRUE;
-	if (m_PropertySheetHelper.GetConfigNew().m_machineSpeed == SPEED_NORMAL)
-	{
-		uint32_t dwCustomSpeed;
-		REGLOAD_DEFAULT(REGVALUE_CUSTOM_SPEED, &dwCustomSpeed, 0);
-		bCustom = dwCustomSpeed ? TRUE : FALSE;
-	}
+	BOOL bCustom = m_PropertySheetHelper.GetConfigNew().m_machineSpeed != SPEED_NORMAL ? TRUE : FALSE;
 	CheckRadioButton(hWnd, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, bCustom ? IDC_CUSTOM_SPEED : IDC_AUTHENTIC_SPEED);
 	SetFocus(GetDlgItem(hWnd, bCustom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
 	EnableTrackbar(hWnd, bCustom);
@@ -269,52 +262,101 @@ void CPageConfig::InitOptions(HWND hWnd)
 
 void CPageConfig::DlgOK(HWND hWnd)
 {
-	bool bVideoReinit = false;
+	// This GetConfigNew() has already been set:
+	// . m_Apple2Type, m_CpuType, m_monochromeRGB
+
+	m_PropertySheetHelper.GetConfigNew().m_confirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? true : false;
+
+	const uint32_t newMasterVolume = VOLUME_MAX - (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_GETPOS, 0, 0);	// Invert: L=MIN, R=MAX
+	m_PropertySheetHelper.GetConfigNew().m_masterVolume = newMasterVolume;
+
+	// Video
+
+	const VideoType_e newVideoType = (VideoType_e)SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
+	m_PropertySheetHelper.GetConfigNew().m_videoType = newVideoType;
+
+	UINT newVideoStyle = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) ? VS_HALF_SCANLINES : VS_NONE;
+	newVideoStyle |= IsDlgButtonChecked(hWnd, IDC_CHECK_VERTICAL_BLEND) ? VS_COLOR_VERTICAL_BLEND : VS_NONE;
+	m_PropertySheetHelper.GetConfigNew().m_videoStyle = (VideoStyle_e)newVideoStyle;
+
+	m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = IsDlgButtonChecked(hWnd, IDC_CHECK_50HZ_VIDEO) ? VR_50HZ : VR_60HZ;
+
+	m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS) ? true : false;
+
+	// Emulation speed control
+
+	m_PropertySheetHelper.GetConfigNew().m_enhanceDiskAccessSpeed = IsDlgButtonChecked(hWnd, IDC_ENHANCE_DISK_ENABLE) ? true : false;
+	m_PropertySheetHelper.GetConfigNew().m_scrollLockToggle = IsDlgButtonChecked(hWnd, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
+
+	m_PropertySheetHelper.GetConfigNew().m_machineSpeed = IsDlgButtonChecked(hWnd, IDC_AUTHENTIC_SPEED)	? SPEED_NORMAL
+		: (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_GETPOS, 0, 0);
+
+	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
+}
+
+void CPageConfig::ApplyConfigAfterClose()
+{
 	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
 
-	const VideoType_e newVideoType = (VideoType_e) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
+	const BOOL bNewConfirmReboot = m_PropertySheetHelper.GetConfigNew().m_confirmReboot ? 1 : 0;
+	if (win32Frame.g_bConfirmReboot != bNewConfirmReboot)
+	{
+		REGSAVE(REGVALUE_CONFIRM_REBOOT, bNewConfirmReboot);
+		win32Frame.g_bConfirmReboot = bNewConfirmReboot;
+	}
+
+	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
+	const uint32_t newMasterVolume = m_PropertySheetHelper.GetConfigNew().m_masterVolume;
+	if (SpkrGetVolume() != newMasterVolume)
+	{
+		SpkrSetVolume(newMasterVolume, VOLUME_MAX);
+		GetCardMgr().GetMockingboardCardMgr().SetVolume(newMasterVolume, VOLUME_MAX);
+		REGSAVE(REGVALUE_MASTER_VOLUME, newMasterVolume);
+	}
+
+	// Video
+
+	bool bVideoReinit = false;
+
+	const VideoType_e newVideoType = m_PropertySheetHelper.GetConfigNew().m_videoType;
 	if (GetVideo().GetVideoType() != newVideoType)
 	{
 		GetVideo().SetVideoType(newVideoType);
 		bVideoReinit = true;
 	}
 
-	const bool newHalfScanLines = IsDlgButtonChecked(hWnd, IDC_CHECK_HALF_SCAN_LINES) != 0;
+	const bool newHalfScanLines = ((UINT)m_PropertySheetHelper.GetConfigNew().m_videoStyle & (UINT)VS_HALF_SCANLINES) ? true : false;
 	const bool currentHalfScanLines = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
 	if (currentHalfScanLines != newHalfScanLines)
 	{
 		if (newHalfScanLines)
-			GetVideo().SetVideoStyle( (VideoStyle_e) (GetVideo().GetVideoStyle() | VS_HALF_SCANLINES) );
+			GetVideo().SetVideoStyle((VideoStyle_e)(GetVideo().GetVideoStyle() | VS_HALF_SCANLINES));
 		else
-			GetVideo().SetVideoStyle( (VideoStyle_e) (GetVideo().GetVideoStyle() & ~VS_HALF_SCANLINES) );
+			GetVideo().SetVideoStyle((VideoStyle_e)(GetVideo().GetVideoStyle() & ~VS_HALF_SCANLINES));
 		bVideoReinit = true;
 	}
 
-	const bool newVerticalBlend = IsDlgButtonChecked(hWnd, IDC_CHECK_VERTICAL_BLEND) != 0;
+	const bool newVerticalBlend = ((UINT)m_PropertySheetHelper.GetConfigNew().m_videoStyle & (UINT)VS_COLOR_VERTICAL_BLEND) ? true : false;
 	const bool currentVerticalBlend = GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
 	if (currentVerticalBlend != newVerticalBlend)
 	{
 		if (newVerticalBlend)
-			GetVideo().SetVideoStyle( (VideoStyle_e) (GetVideo().GetVideoStyle() | VS_COLOR_VERTICAL_BLEND) );
+			GetVideo().SetVideoStyle((VideoStyle_e)(GetVideo().GetVideoStyle() | VS_COLOR_VERTICAL_BLEND));
 		else
-			GetVideo().SetVideoStyle( (VideoStyle_e) (GetVideo().GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND) );
+			GetVideo().SetVideoStyle((VideoStyle_e)(GetVideo().GetVideoStyle() & ~VS_COLOR_VERTICAL_BLEND));
 		bVideoReinit = true;
 	}
 
-	if (m_PropertySheetHelper.GetConfigOld().m_monochromeRGB != m_PropertySheetHelper.GetConfigNew().m_monochromeRGB)
+	if (GetVideo().GetMonochromeRGB() != m_PropertySheetHelper.GetConfigNew().m_monochromeRGB)
 	{
 		GetVideo().SetMonochromeRGB(m_PropertySheetHelper.GetConfigNew().m_monochromeRGB);
 		bVideoReinit = true;
 	}
 
-	//
-
-	const bool isNewVideoRate50Hz = IsDlgButtonChecked(hWnd, IDC_CHECK_50HZ_VIDEO) != 0;
-	const bool isCurrentVideoRate50Hz = GetVideo().GetVideoRefreshRate() == VR_50HZ;
-	if (isCurrentVideoRate50Hz != isNewVideoRate50Hz)
+	if (GetVideo().GetVideoRefreshRate() != m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate)
 	{
-		// TODO: Not called GetVideo().SetVideoRefreshRate(newRate) - so ApplyVideoModeChange() below not using new rate
-		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
+		GetVideo().SetVideoRefreshRate(m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate);
+		bVideoReinit = true;
 	}
 
 	if (bVideoReinit)
@@ -323,10 +365,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 		win32Frame.ApplyVideoModeChange();
 	}
 
-	//
-
-	const bool bNewFSSubunitStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS) ? true : false;
-
+	const bool bNewFSSubunitStatus = m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus;
 	if (win32Frame.GetFullScreenShowSubunitStatus() != bNewFSSubunitStatus)
 	{
 		REGSAVE(REGVALUE_FS_SHOW_SUBUNIT_STATUS, bNewFSSubunitStatus ? 1 : 0);
@@ -336,58 +375,28 @@ void CPageConfig::DlgOK(HWND hWnd)
 			win32Frame.FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 	}
 
-	//
+	// Emulation speed control
 
-	const BOOL bNewConfirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? 1 : 0;
-	if (win32Frame.g_bConfirmReboot != bNewConfirmReboot)
-	{
-		REGSAVE(REGVALUE_CONFIRM_REBOOT, bNewConfirmReboot);
-		win32Frame.g_bConfirmReboot = bNewConfirmReboot;
-	}
-
-	//
-
-	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
-	const uint32_t newMasterVolume = VOLUME_MAX - (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_GETPOS, 0, 0);	// Invert: L=MIN, R=MAX
-	if (SpkrGetVolume() != newMasterVolume)
-	{
-		SpkrSetVolume(newMasterVolume, VOLUME_MAX);
-		GetCardMgr().GetMockingboardCardMgr().SetVolume(newMasterVolume, VOLUME_MAX);
-		REGSAVE(REGVALUE_MASTER_VOLUME, newMasterVolume);
-	}
-
-	//
-
-	const bool bNewEnhanceDisk = IsDlgButtonChecked(hWnd, IDC_ENHANCE_DISK_ENABLE) ? true : false;
-	if (bNewEnhanceDisk != GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk())
+	const bool bNewEnhanceDisk = m_PropertySheetHelper.GetConfigNew().m_enhanceDiskAccessSpeed;
+	if (GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() != bNewEnhanceDisk)
 	{
 		GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
-		REGSAVE(REGVALUE_ENHANCE_DISK_SPEED, (uint32_t)bNewEnhanceDisk);
+		REGSAVE(REGVALUE_ENHANCE_DISK_SPEED, bNewEnhanceDisk ? 1 : 0);
 	}
 
-	//
-
-	const UINT newScrollLockToggle = IsDlgButtonChecked(hWnd, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
-	if (newScrollLockToggle != m_uScrollLockToggle)
+	const UINT newScrollLockToggle = m_PropertySheetHelper.GetConfigNew().m_scrollLockToggle;
+	if (m_uScrollLockToggle != newScrollLockToggle)
 	{
 		m_uScrollLockToggle = newScrollLockToggle;
 		REGSAVE(REGVALUE_SCROLLLOCK_TOGGLE, m_uScrollLockToggle);
 	}
 
-	//
-
-	if (IsDlgButtonChecked(hWnd, IDC_AUTHENTIC_SPEED))
-		g_dwSpeed = SPEED_NORMAL;
-	else
-		g_dwSpeed = (uint32_t) SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_GETPOS, 0, 0);
-
-	SetCurrentCLK6502();
-
-	// TODO: can get rid of REGVALUE_CUSTOM_SPEED, and derive it from REGVALUE_EMULATION_SPEED - See: InitOptions()/DlgOK()
-	REGSAVE(REGVALUE_CUSTOM_SPEED, IsDlgButtonChecked(hWnd, IDC_CUSTOM_SPEED));
-	REGSAVE(REGVALUE_EMULATION_SPEED, g_dwSpeed);
-
-	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
+	if (g_dwSpeed != m_PropertySheetHelper.GetConfigNew().m_machineSpeed)
+	{
+		g_dwSpeed = m_PropertySheetHelper.GetConfigNew().m_machineSpeed;
+		REGSAVE(REGVALUE_EMULATION_SPEED, g_dwSpeed);
+		SetCurrentCLK6502();
+	}
 }
 
 // Config->Computer: Menu item to eApple2Type

@@ -106,3 +106,18 @@ void CPropertySheet::ResetAllToDefault()
 	m_PageSlots.ResetToDefault();
 	m_PageAdvanced.ResetToDefault();
 }
+
+void CPropertySheet::ApplyConfigAfterClose(UINT bmPages)
+{
+	if (bmPages & (1 << PG_CONFIG))
+		m_PageConfig.ApplyConfigAfterClose();
+
+	if (bmPages & (1 << PG_INPUT))
+		m_PageInput.ApplyConfigAfterClose();
+
+	if (bmPages & (1 << PG_SLOTS))
+		m_PageSlots.ApplyConfigAfterClose();
+
+	if (bmPages & (1 << PG_ADVANCED))
+		m_PageAdvanced.ApplyConfigAfterClose();
+}

@@ -28,7 +28,8 @@ public:
 	UINT GetMouseRestrictToWindow(void) { return m_mouseRestrictToWindow; }
 	void SetMouseRestrictToWindow(UINT uValue) { m_mouseRestrictToWindow = uValue; }
 
-	virtual void ResetToDefault();	// IPropertySheetPage
+	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
+	virtual void ResetToDefault();			// IPropertySheetPage
 
 protected:
 	// IPropertySheetPage

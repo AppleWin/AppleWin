@@ -23,6 +23,7 @@ public:
 	virtual uint32_t GetVolumeMax(void);								// TODO:TC: Move out of here
 	virtual bool SaveStateSelectImage(HWND hWindow, bool bSave);	// TODO:TC: Move out of here
 	virtual void ResetAllToDefault();
+	virtual void ApplyConfigAfterClose(UINT bmPages);
 
 	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
 	{

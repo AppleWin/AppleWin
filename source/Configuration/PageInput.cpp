@@ -168,6 +168,8 @@ void CPageInput::InitOptions(HWND hWnd)
 	EnableWindow(GetDlgItem(hWnd, IDC_CENTERINGCONTROL), JoyUsingKeyboard() ? TRUE : FALSE);
 }
 
+void CPageInput::ApplyConfigAfterClose() {}
+
 void CPageInput::DlgOK(HWND hWnd)
 {
 	uint32_t newJoyType0 = (uint32_t)SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);

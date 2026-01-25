@@ -8,6 +8,7 @@ public:
 	CPropertySheetHelper() :
 		m_LastPage(PG_CONFIG),
 		m_bmPages(0),
+		m_bmAfterClosePages(0),
 		m_bSSNewFilename(false),
 		m_bDoBenchmark(false)
 	{}
@@ -25,6 +26,7 @@ public:
 	{
 		m_LastPage = page;
 		m_bmPages |= 1<<(UINT32)page;
+		m_bmAfterClosePages = m_bmPages;
 	}
 
 	void SaveCurrentConfig(void);
@@ -52,6 +54,7 @@ private:
 
 	PAGETYPE m_LastPage;
 	UINT32 m_bmPages;
+	UINT32 m_bmAfterClosePages;
 	bool m_bSSNewFilename;
 	std::string m_szSSNewDirectory;
 	std::string m_szSSNewFilename;

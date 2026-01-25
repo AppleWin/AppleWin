@@ -208,9 +208,9 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Config] m_confirmReboot, m_masterVolume
 	// . [Config] m_videoType, m_videoStyle, m_monochromeRGB, m_fullScreen_ShowSubunitStatus
 	// . [Config] m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
-	// . [Slots] m_parallelPrinterCard
 	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
 	// . [Input] m_joystickType[], m_pdlXTrim, m_pdlYTrim
+	// . [Slots] m_parallelPrinterCard
 	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_gameIOConnectorType
 
 	return	m_Apple2Type == other.m_Apple2Type &&

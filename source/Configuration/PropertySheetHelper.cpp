@@ -311,6 +311,8 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 		restart = true;
 	}
 
+	GetPropertySheet().ApplyConfigAfterClose(m_bmAfterClosePages);
+
 	if (restart)
 		GetFrame().Restart();
 }

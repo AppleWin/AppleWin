@@ -160,6 +160,8 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 	return FALSE;
 }
 
+void CPageAdvanced::ApplyConfigAfterClose() {}
+
 void CPageAdvanced::DlgOK(HWND hWnd)
 {
 	// Update save-state filename

@@ -25,6 +25,7 @@ protected:
 	virtual INT_PTR DlgProcInternal(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 	virtual void DlgOK(HWND window);
 	virtual void DlgCANCEL(HWND window);
+	virtual void ApplyConfigAfterClose() {}
 	virtual void ResetToDefault() {}
 
 private:

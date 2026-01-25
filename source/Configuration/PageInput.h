@@ -38,7 +38,8 @@ public:
 	static const UINT kCursorControl_Default = 1;
 	static const bool kSwapButtons0and1_Default = false;
 
-	virtual void ResetToDefault();	// IPropertySheetPage
+	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
+	virtual void ResetToDefault();			// IPropertySheetPage
 
 protected:
 	// IPropertySheetPage

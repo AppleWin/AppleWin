@@ -105,7 +105,7 @@ enum AppMode_e
 #define  REGVALUE_VIDEO_REFRESH_RATE    "Video Refresh Rate"
 #define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
 #define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"
-#define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
+//#define  REGVALUE_CUSTOM_SPEED       "Custom Speed"		// GH#853: Deprecated from 1.31.1
 #define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
 #define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"	// GH#977: Deprecated from 1.30.5

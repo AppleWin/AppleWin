@@ -23,7 +23,8 @@ public:
 	UINT GetTheFreezesF8Rom(void){ return m_uTheFreezesF8Rom; }
 	void SetTheFreezesF8Rom(UINT uValue){ m_uTheFreezesF8Rom = uValue; }
 
-	virtual void ResetToDefault();	// IPropertySheetPage
+	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
+	virtual void ResetToDefault();			// IPropertySheetPage
 
 protected:
 	// IPropertySheetPage

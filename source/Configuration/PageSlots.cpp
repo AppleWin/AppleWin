@@ -232,6 +232,8 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 	return TRUE;
 }
 
+void CPageSlots::ApplyConfigAfterClose() {}
+
 void CPageSlots::DlgOK(HWND hWnd)
 {
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);

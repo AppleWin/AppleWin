@@ -26,7 +26,8 @@ public:
 
 	uint32_t GetVolumeMax(void) { return VOLUME_MAX; }
 
-	virtual void ResetToDefault();	// IPropertySheetPage
+	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
+	virtual void ResetToDefault();			// IPropertySheetPage
 
 protected:
 	// IPropertySheetPage
