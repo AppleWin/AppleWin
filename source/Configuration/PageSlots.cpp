@@ -213,6 +213,8 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			break;
 
 		case IDC_SLOT_DEFAULT_CARDS:
+			if (!m_PropertySheetHelper.IsOkToResetConfig(hWnd))
+				break;
 			ResetToDefault();
 			InitOptions(hWnd);
 			break;

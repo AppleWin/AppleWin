@@ -164,6 +164,8 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			break;
 
 		case IDC_CONFIG_ALL_DEFAULT:
+			if (!m_PropertySheetHelper.IsOkToResetConfig(hWnd))
+				break;
 			GetPropertySheet().ResetAllToDefault();
 			InitOptions(hWnd);
 			break;

@@ -33,7 +33,7 @@
 #include "../Windows/Win32Frame.h"
 
 
-// zero initialise
+// Zero (or default) initialise - values not important, as they get set correctly in Reload()
 CConfigNeedingRestart::CConfigNeedingRestart()
 	: m_parallelPrinterCard(SLOT1)	// slot not important
 {
@@ -75,7 +75,7 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_gameIOConnectorType = DT_EMPTY;
 }
 
-// create from current global configuration
+// Create from current global configuration
 // . called from Snapshot_LoadState_v2()
 CConfigNeedingRestart CConfigNeedingRestart::Create()
 {
@@ -84,7 +84,7 @@ CConfigNeedingRestart CConfigNeedingRestart::Create()
 	return config;
 }
 
-// update from current global configuration
+// Update from current global configuration
 void CConfigNeedingRestart::Reload()
 {
 	// Configuration
@@ -208,6 +208,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Config] m_confirmReboot, m_masterVolume
 	// . [Config] m_videoType, m_videoStyle, m_monochromeRGB, m_fullScreen_ShowSubunitStatus
 	// . [Config] m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
+	// . [Slots] m_parallelPrinterCard
 	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
 	// . [Input] m_joystickType[], m_pdlXTrim, m_pdlYTrim
 	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_gameIOConnectorType
@@ -220,7 +221,6 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 		m_tfeInterface == other.m_tfeInterface &&
 		m_tfeVirtualDNS == other.m_tfeVirtualDNS &&
 		m_RamWorksMemorySize == other.m_RamWorksMemorySize &&
-		m_parallelPrinterCard == other.m_parallelPrinterCard &&	// NB. no restart required if any of this changes
 		m_serialPortItem == other.m_serialPortItem &&
 		m_enableTheFreezesF8Rom == other.m_enableTheFreezesF8Rom;
 }
