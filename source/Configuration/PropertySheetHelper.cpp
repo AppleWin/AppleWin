@@ -522,6 +522,22 @@ bool CPropertySheetHelper::IsOkToRestart(HWND hWnd)
 	return true;
 }
 
+bool CPropertySheetHelper::IsOkToResetConfig(HWND hWnd)
+{
+	if (g_nAppMode == MODE_LOGO)
+		return true;
+
+	if (MessageBox(hWnd,
+		"Resetting configuration to the default values whilst the machine is being emulated "
+		"could result in lose of unsaved work, or corruption of floppy or hard disk images.\n\n"
+		"Are you sure you want to do this?",
+		"Reset Configuration",
+		MB_ICONEXCLAMATION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+		return false;
+
+	return true;
+}
+
 #define CONFIG_CHANGED(var) \
 	(m_ConfigOld.var != m_ConfigNew.var)
 
@@ -662,20 +678,4 @@ std::string CPropertySheetHelper::GetSlot(const UINT slot)
 	}
 
 	return strMsg;
-}
-
-bool CPropertySheetHelper::IsOkToResetConfig(HWND hWnd)
-{
-	if (g_nAppMode == MODE_LOGO)
-		return true;
-
-	if (MessageBox(hWnd,
-		"Resetting configuration to the default values whilst the machine is being emulated "
-		"could result in lose of unsaved work, or corruption of floppy or hard disk images.\n\n"
-		"Are you sure you want to do this?",
-		"Reset Configuration",
-		MB_ICONEXCLAMATION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
-		return false;
-
-	return true;
 }
