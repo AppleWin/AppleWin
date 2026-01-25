@@ -173,12 +173,12 @@ void CPageInput::DlgOK(HWND hWnd)
 	uint32_t newJoyType0 = (uint32_t)SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
 	if (newJoyType0 >= J0C_MAX) newJoyType0 = J0C_DISABLED;	// GH#434
 	if (JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[newJoyType0], JN_JOYSTICK0, IsMouseCardInAnySlot()))
-		REGSAVE(REGVALUE_JOYSTICK0_EMU_TYPE, JoyGetJoyType(0));
+		REGSAVE(REGVALUE_JOYSTICK0_EMU_TYPE, JoyGetJoyType(JN_JOYSTICK0));
 
 	uint32_t newJoyType1 = (uint32_t)SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
 	if (newJoyType1 >= J1C_MAX) newJoyType1 = J1C_DISABLED;	// GH#434
 	if (JoySetEmulationType(hWnd, m_nJoy1ChoiceTranlationTbl[newJoyType1], JN_JOYSTICK1, IsMouseCardInAnySlot()))
-		REGSAVE(REGVALUE_JOYSTICK1_EMU_TYPE, JoyGetJoyType(1));
+		REGSAVE(REGVALUE_JOYSTICK1_EMU_TYPE, JoyGetJoyType(JN_JOYSTICK1));
 
 	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0), true);
 	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0), false);

@@ -254,6 +254,7 @@ void CPageConfig::InitOptions(HWND hWnd)
 	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETTICFREQ, 10, 0);
 	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPOS, TRUE, m_PropertySheetHelper.GetConfigNew().m_machineSpeed);
 
+	// TODO: can get rid of REGVALUE_CUSTOM_SPEED, and derive it from REGVALUE_EMULATION_SPEED - See: InitOptions()/DlgOK()
 	BOOL bCustom = TRUE;
 	if (m_PropertySheetHelper.GetConfigNew().m_machineSpeed == SPEED_NORMAL)
 	{
@@ -312,6 +313,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 	const bool isCurrentVideoRate50Hz = GetVideo().GetVideoRefreshRate() == VR_50HZ;
 	if (isCurrentVideoRate50Hz != isNewVideoRate50Hz)
 	{
+		// TODO: Not called GetVideo().SetVideoRefreshRate(newRate) - so ApplyVideoModeChange() below not using new rate
 		m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = isNewVideoRate50Hz ? VR_50HZ : VR_60HZ;
 	}
 
@@ -346,11 +348,13 @@ void CPageConfig::DlgOK(HWND hWnd)
 	//
 
 	// NB. Volume: 0=Loudest, VOLUME_MAX=Silence
-	const uint32_t masterVolume = VOLUME_MAX - (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_GETPOS, 0, 0);	// Invert: L=MIN, R=MAX
-	SpkrSetVolume(masterVolume, VOLUME_MAX);
-	GetCardMgr().GetMockingboardCardMgr().SetVolume(masterVolume, VOLUME_MAX);
-
-	REGSAVE(REGVALUE_MASTER_VOLUME, masterVolume);
+	const uint32_t newMasterVolume = VOLUME_MAX - (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_GETPOS, 0, 0);	// Invert: L=MIN, R=MAX
+	if (SpkrGetVolume() != newMasterVolume)
+	{
+		SpkrSetVolume(newMasterVolume, VOLUME_MAX);
+		GetCardMgr().GetMockingboardCardMgr().SetVolume(newMasterVolume, VOLUME_MAX);
+		REGSAVE(REGVALUE_MASTER_VOLUME, newMasterVolume);
+	}
 
 	//
 
@@ -379,6 +383,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	SetCurrentCLK6502();
 
+	// TODO: can get rid of REGVALUE_CUSTOM_SPEED, and derive it from REGVALUE_EMULATION_SPEED - See: InitOptions()/DlgOK()
 	REGSAVE(REGVALUE_CUSTOM_SPEED, IsDlgButtonChecked(hWnd, IDC_CUSTOM_SPEED));
 	REGSAVE(REGVALUE_EMULATION_SPEED, g_dwSpeed);
 

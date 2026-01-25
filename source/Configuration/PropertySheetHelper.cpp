@@ -146,8 +146,8 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 }
 
 // Used by:
-// . CPageDisk:		IDC_CIDERPRESS_BROWSE
-// . CPageAdvanced:	IDC_PRINTER_DUMP_FILENAME_BROWSE
+// . CPageAdvanced:	IDC_CIDERPRESS_BROWSE
+// . CPageSlots:	IDC_PRINTER_DUMP_FILENAME_BROWSE
 std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, const char* pszTitle, const char* REGVALUE, const char* FILEMASKS)
 {
 	char szFilename[MAX_PATH];
