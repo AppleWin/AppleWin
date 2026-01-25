@@ -97,13 +97,10 @@
     <ClCompile Include="source\Configuration\PageConfigTfe.cpp">
       <Filter>Source Files\Configuration</Filter>
     </ClCompile>
-    <ClCompile Include="source\Configuration\PageDisk.cpp">
-      <Filter>Source Files\Configuration</Filter>
-    </ClCompile>
     <ClCompile Include="source\Configuration\PageInput.cpp">
       <Filter>Source Files\Configuration</Filter>
     </ClCompile>
-    <ClCompile Include="source\Configuration\PageSound.cpp">
+    <ClCompile Include="source\Configuration\PageSlots.cpp">
       <Filter>Source Files\Configuration</Filter>
     </ClCompile>
     <ClCompile Include="source\ProDOS_Utils.cpp">
@@ -149,9 +146,6 @@
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
     <ClCompile Include="source\Tfe\tfesupp.cpp">
-      <Filter>Source Files\Uthernet</Filter>
-    </ClCompile>
-    <ClCompile Include="source\Tfe\Uilib.cpp">
       <Filter>Source Files\Uthernet</Filter>
     </ClCompile>
     <ClCompile Include="source\Video.cpp">
@@ -420,13 +414,10 @@
     <ClInclude Include="source\Configuration\PageConfigTfe.h">
       <Filter>Source Files\Configuration</Filter>
     </ClInclude>
-    <ClInclude Include="source\Configuration\PageDisk.h">
-      <Filter>Source Files\Configuration</Filter>
-    </ClInclude>
     <ClInclude Include="source\Configuration\PageInput.h">
       <Filter>Source Files\Configuration</Filter>
     </ClInclude>
-    <ClInclude Include="source\Configuration\PageSound.h">
+    <ClInclude Include="source\Configuration\PageSlots.h">
       <Filter>Source Files\Configuration</Filter>
     </ClInclude>
     <ClInclude Include="source\ParallelPrinter.h">
@@ -487,9 +478,6 @@
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Tfe\tfesupp.h">
-      <Filter>Source Files\Uthernet</Filter>
-    </ClInclude>
-    <ClInclude Include="source\Tfe\Uilib.h">
       <Filter>Source Files\Uthernet</Filter>
     </ClInclude>
     <ClInclude Include="source\Video.h">
@@ -827,6 +815,39 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="resource\Disk2-13sector.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Apple2_Video.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Apple2e_Enhanced_Video.rom">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\basic17.system.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\bitsy.boot.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\BootSector\bootsector.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\bootsector_prodos243.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\dos33c.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\HDC-SmartPort.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="resource\Hddrvr-v2.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\prodos243.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="firmware\OS\quit.system.bin">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

@@ -10,6 +10,7 @@ public:
 	virtual void Init(void) = 0;
 	virtual uint32_t GetVolumeMax(void) = 0;								// TODO:TC: Move out of here
 	virtual bool SaveStateSelectImage(HWND hWindow, bool bSave) = 0;	// TODO:TC: Move out of here
+	virtual void ResetAllToDefault() = 0;
 	virtual void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld) = 0;
 	virtual void ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew) = 0;
 	virtual void ConfigSaveApple2Type(eApple2Type apple2Type) = 0;
@@ -21,6 +22,7 @@ public:
 	virtual UINT GetJoystickCenteringControl(void) = 0;
 	virtual void SetJoystickCenteringControl(UINT uValue) = 0;
 	virtual UINT GetAutofire(UINT uButton) = 0;
+	virtual UINT GetAutofire(void) = 0;
 	virtual void SetAutofire(UINT uValue) = 0;
 	virtual bool GetButtonsSwapState(void) = 0;
 	virtual void SetButtonsSwapState(bool value) = 0;

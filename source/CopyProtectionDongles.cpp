@@ -38,7 +38,7 @@
 #include "Memory.h"
 #include "YamlHelper.h"
 
-static DONGLETYPE copyProtectionDongleType = DT_EMPTY;
+static DONGLETYPE copyProtectionDongleType = DT_DEFAULT;
 
 static const BYTE codewriterInitialLFSR = 0x6B;	// %1101011 (7-bit LFSR)
 static BYTE codewriterLFSR = codewriterInitialLFSR;

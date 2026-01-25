@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "ParallelPrinter.h"
 #include "FourPlay.h"
 #include "LanguageCard.h"
+#include "Memory.h"
 #include "MouseInterface.h"
 #include "SAM.h"
 #include "SerialComms.h"
@@ -112,6 +113,12 @@ bool DummyCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	return false;
 }
 
+const std::string& Card::GetCardNameEmpty()
+{
+	static const std::string name("Empty");
+	return name;
+}
+
 std::string Card::GetCardName(void)
 {
 	return GetCardName(m_type);
@@ -122,7 +129,7 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 	switch (cardType)
 	{
 	case CT_Empty:
-		return "Empty";
+		return Card::GetCardNameEmpty();
 	case CT_LanguageCard:
 		return LanguageCardSlot0::GetSnapshotCardName();
 	case CT_Saturn128K:
@@ -149,6 +156,12 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 		return "Echo";
 	case CT_SAM:
 		return SAMCard::GetSnapshotCardName();
+	case CT_80Col:
+		return MemGetSnapshotCardName80Col();
+	case CT_Extended80Col:
+		return MemGetSnapshotCardNameExtended80Col();
+	case CT_RamWorksIII:
+		return MemGetSnapshotCardNameRamWorksIII();
 	case CT_Uthernet:
 		return Uthernet1::GetSnapshotCardName();
 	case CT_FourPlay:

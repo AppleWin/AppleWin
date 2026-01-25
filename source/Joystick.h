@@ -1,12 +1,16 @@
 #pragma once
 
 #include "Common.h"
-enum JOYNUM {JN_JOYSTICK0=0, JN_JOYSTICK1};
+enum JOYNUM {JN_JOYSTICK0=0, JN_JOYSTICK1, JN_NUM};
 
 enum JOY0CHOICE {J0C_DISABLED=0, J0C_JOYSTICK1, J0C_KEYBD_CURSORS, J0C_KEYBD_NUMPAD, J0C_MOUSE, J0C_MAX};
 enum JOY1CHOICE {J1C_DISABLED=0, J1C_JOYSTICK2, J1C_KEYBD_CURSORS, J1C_KEYBD_NUMPAD, J1C_MOUSE, J1C_JOYSTICK1_THUMBSTICK2, J1C_MAX};
 
 enum {JOYSTICK_MODE_FLOATING=0, JOYSTICK_MODE_CENTERING};	// Joystick centering control
+
+const uint32_t kJoystick_Default[JN_NUM] = { J0C_JOYSTICK1, J1C_DISABLED };
+const SHORT kPdlXTrim_Default = 0;
+const SHORT kPdlYTrim_Default = 0;
 
 void    JoyInitialize();
 BOOL    JoyProcessKey(int,bool,bool,bool);
