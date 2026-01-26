@@ -8,6 +8,7 @@
 #include "Common.h"
 #include "Card.h"
 #include "Video.h"
+#include "Interface.h"
 
 #include "libretro.h"
 
@@ -24,7 +25,6 @@ namespace
     const char *REGVALUE_KEYBOARD_TYPE = "Keyboard type";
     const char *REGVALUE_PLAYLIST_START = "Playlist start";
     const char *REGVALUE_MOUSE_SPEED_00 = "Mouse speed";
-    const char *REGVALUE_HALF_LINES = "Half lines";
 
     const char *CATEGORY_SYSTEM = "system";
     const char *CATEGORY_INPUT = "input";
@@ -36,6 +36,9 @@ namespace
         {CATEGORY_RETROPAD_MAPPING, "RetroPad Mapping", "Configure RetroPad mapping options."},
         {nullptr, nullptr, nullptr},
     };
+
+    // we use the same bit settings for simplicity
+    const VideoStyle_e VS_280_LINES = static_cast<VideoStyle_e>(0x08);
 
     struct Variable
     {
@@ -255,25 +258,12 @@ namespace
                 CATEGORY_SYSTEM,
                 {
                     {"Half Scanlines", VS_HALF_SCANLINES},
-                    {"None", VS_NONE},
+                    {"560 x 192", VS_NONE},
+                    {"280 x 192", VS_280_LINES},
                 },
             },
             REG_CONFIG,
             REGVALUE_VIDEO_STYLE,
-        },
-        {
-            {
-                "half_lines",
-                "Half Lines",
-                CATEGORY_SYSTEM,
-                {
-                    {"disabled", false},
-                    {"enabled", true},
-                },
-                "disabled",
-            },
-            REG_RA2,
-            REGVALUE_HALF_LINES,
         },
         {
             {
@@ -577,11 +567,10 @@ namespace ra2
         return value / 100.0;
     }
 
-    bool getHalfLines()
+    bool is280Lines()
     {
-        uint32_t value = 0;
-        RegLoadValue(REG_RA2, REGVALUE_HALF_LINES, TRUE, &value);
-        return value;
+        const bool halfLines = GetVideo().IsVideoStyle(VS_280_LINES);
+        return halfLines;
     }
 
 } // namespace ra2

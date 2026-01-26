@@ -54,9 +54,9 @@ namespace ra2
         myRegistryContext = std::make_unique<RegistryContext>(myRegistry);
 
         applyVariables();
-        
+
         // this is only ever applied once!
-        const size_t linePeriod = getHalfLines() ? 2 : 1;
+        const size_t linePeriod = is280Lines() ? 2 : 1;
 
         common2::EmulatorOptions defaultOptions;
         defaultOptions.fixedSpeed = true;
