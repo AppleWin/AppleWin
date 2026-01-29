@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PropertySheet.h"
 
 #include "../Common.h"
+#include "../Interface.h"
 #include "../Keyboard.h"
 #include "../Registry.h"
 #include "../resource/resource.h"
@@ -168,37 +169,51 @@ void CPageInput::InitOptions(HWND hWnd)
 	EnableWindow(GetDlgItem(hWnd, IDC_CENTERINGCONTROL), JoyUsingKeyboard() ? TRUE : FALSE);
 }
 
-void CPageInput::ApplyConfigAfterClose() {}
-
 void CPageInput::DlgOK(HWND hWnd)
 {
-	uint32_t newJoyType0 = (uint32_t)SendDlgItemMessage(hWnd, IDC_JOYSTICK0, CB_GETCURSEL, 0, 0);
+	// This GetConfigNew() has already been set:
+	// . m_joystickType[]
+
+	m_PropertySheetHelper.GetConfigNew().m_pdlXTrim = (short)SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0);
+	m_PropertySheetHelper.GetConfigNew().m_pdlYTrim = (short)SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0);
+
+	m_PropertySheetHelper.GetConfigNew().m_cursorControl = IsDlgButtonChecked(hWnd, IDC_CURSORCONTROL) ? 1 : 0;
+	m_PropertySheetHelper.GetConfigNew().m_autofire = IsDlgButtonChecked(hWnd, IDC_AUTOFIRE) ? 7 : 0;	// bitmap of 3 bits
+	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = IsDlgButtonChecked(hWnd, IDC_SWAPBUTTONS0AND1) ? true : false;
+	m_PropertySheetHelper.GetConfigNew().m_centeringControl = IsDlgButtonChecked(hWnd, IDC_CENTERINGCONTROL) ? 1 : 0;
+
+	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
+}
+
+void CPageInput::ApplyConfigAfterClose()
+{
+	HWND hWnd = GetFrame().g_hFrameWindow;
+
+	uint32_t newJoyType0 = m_PropertySheetHelper.GetConfigNew().m_joystickType[JN_JOYSTICK0];
 	if (newJoyType0 >= J0C_MAX) newJoyType0 = J0C_DISABLED;	// GH#434
+	if (m_nJoy0ChoiceTranlationTbl[newJoyType0] < 0) newJoyType0 = J0C_DISABLED;	// eg. was Mouse, then Mouse card inserted
 	if (JoySetEmulationType(hWnd, m_nJoy0ChoiceTranlationTbl[newJoyType0], JN_JOYSTICK0, IsMouseCardInAnySlot()))
 		REGSAVE(REGVALUE_JOYSTICK0_EMU_TYPE, JoyGetJoyType(JN_JOYSTICK0));
 
-	uint32_t newJoyType1 = (uint32_t)SendDlgItemMessage(hWnd, IDC_JOYSTICK1, CB_GETCURSEL, 0, 0);
+	uint32_t newJoyType1 = m_PropertySheetHelper.GetConfigNew().m_joystickType[JN_JOYSTICK1];
 	if (newJoyType1 >= J1C_MAX) newJoyType1 = J1C_DISABLED;	// GH#434
+	if (m_nJoy1ChoiceTranlationTbl[newJoyType1] < 0) newJoyType1 = J1C_DISABLED;	// eg. was Mouse, then Mouse card inserted
 	if (JoySetEmulationType(hWnd, m_nJoy1ChoiceTranlationTbl[newJoyType1], JN_JOYSTICK1, IsMouseCardInAnySlot()))
 		REGSAVE(REGVALUE_JOYSTICK1_EMU_TYPE, JoyGetJoyType(JN_JOYSTICK1));
 
-	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0), true);
-	JoySetTrim((short)SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0), false);
-
-	m_uCursorControl = IsDlgButtonChecked(hWnd, IDC_CURSORCONTROL) ? 1 : 0;
-	m_bmAutofire = IsDlgButtonChecked(hWnd, IDC_AUTOFIRE) ? 7 : 0;	// bitmap of 3 bits
-	m_bSwapButtons0and1 = IsDlgButtonChecked(hWnd, IDC_SWAPBUTTONS0AND1) ? true : false;
-	m_uCenteringControl = IsDlgButtonChecked(hWnd, IDC_CENTERINGCONTROL) ? 1 : 0;
-
+	JoySetTrim(m_PropertySheetHelper.GetConfigNew().m_pdlXTrim, true);
+	JoySetTrim(m_PropertySheetHelper.GetConfigNew().m_pdlYTrim, false);
 	REGSAVE(REGVALUE_PDL_XTRIM, JoyGetTrim(true));
 	REGSAVE(REGVALUE_PDL_YTRIM, JoyGetTrim(false));
 
+	m_uCursorControl = m_PropertySheetHelper.GetConfigNew().m_cursorControl;
+	m_bmAutofire = m_PropertySheetHelper.GetConfigNew().m_autofire;
+	m_bSwapButtons0and1 = m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1;
+	m_uCenteringControl = m_PropertySheetHelper.GetConfigNew().m_centeringControl;
 	REGSAVE(REGVALUE_AUTOFIRE, m_bmAutofire);
 	REGSAVE(REGVALUE_CENTERING_CONTROL, m_uCenteringControl);
 	REGSAVE(REGVALUE_CURSOR_CONTROL, m_uCursorControl);
 	REGSAVE(REGVALUE_SWAP_BUTTONS_0_AND_1, m_bSwapButtons0and1);
-
-	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
 void CPageInput::InitJoystickChoices(HWND hWnd, const int joyNum)
