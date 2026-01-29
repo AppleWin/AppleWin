@@ -67,7 +67,7 @@ namespace sa2
 
         void toggleCursor()
         {
-            if (SDL_CursorVisible() == SDL_TRUE)
+            if (SDL_CursorVisible())
             {
                 SDL_HideCursor();
             }
@@ -89,7 +89,7 @@ namespace sa2
 
             SDL_PropertiesID props = SDL_CreateProperties();
             SDL_SetPointerProperty(props, SDL_PROP_RENDERER_CREATE_WINDOW_POINTER, window);
-            SDL_SetBooleanProperty(props, SDL_PROP_RENDERER_CREATE_PRESENT_VSYNC_NUMBER, SDL_TRUE);
+            SDL_SetBooleanProperty(props, SDL_PROP_RENDERER_CREATE_PRESENT_VSYNC_NUMBER, true);
             if (index >= 0)
             {
                 SDL_SetStringProperty(props, SDL_PROP_RENDERER_CREATE_NAME_STRING, SDL_GetRenderDriver(index));

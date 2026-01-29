@@ -478,7 +478,7 @@ namespace sa2
                 else if (modifiers == KMOD_NONE)
                 {
                     myFullscreen = !myFullscreen;
-                    SDL_SetWindowFullscreen(myWindow.get(), myFullscreen ? SDL_TRUE : SDL_FALSE);
+                    SDL_SetWindowFullscreen(myWindow.get(), myFullscreen ? SA2_FULLSCREEN_ON : SA2_FULLSCREEN_OFF);
                 }
                 break;
             }
