@@ -25,6 +25,8 @@
 #define SA2_IMAGE_BITS(s) (SDL_GetPixelFormatDetails((s)->format)->bits_per_pixel)
 #define SA2_KEY_CODE(e) ((e).key)
 #define SA2_KEY_MOD(e) ((e).mod)
+#define SA2_FULLSCREEN_ON true
+#define SA2_FULLSCREEN_OFF false
 #define SA2_INIT_GAMEPAD SDL_INIT_GAMEPAD
 #define SA2_MIX_VOLUME(v) (v)
 #define SA2_OK(r) (r)
@@ -51,6 +53,8 @@ typedef SDL_JoystickID Joystick_t;
 #define SA2_IMAGE_BITS(s) ((s)->format->BitsPerPixel)
 #define SA2_KEY_CODE(e) ((e).keysym.sym)
 #define SA2_KEY_MOD(e) ((e).keysym.mod)
+#define SA2_FULLSCREEN_ON SDL_WINDOW_FULLSCREEN_DESKTOP
+#define SA2_FULLSCREEN_OFF 0
 #define SA2_INIT_GAMEPAD SDL_INIT_GAMECONTROLLER
 #define SA2_MIX_VOLUME(v) uint8_t((v) * SDL_MIX_MAXVOLUME)
 #define SA2_OK(r) (r == 0)
