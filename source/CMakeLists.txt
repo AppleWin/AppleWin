@@ -1,6 +1,6 @@
 include(FindPkgConfig)
 
-if (NOT WIN32)
+if (NOT WIN32 AND NOT IOS)
   pkg_search_module(SLIRP slirp)
 
   # if slirp is not found, we will try pcap
