@@ -12,8 +12,9 @@
 namespace ra2
 {
 
-    RetroFrame::RetroFrame(const common2::EmulatorOptions &options)
+    RetroFrame::RetroFrame(const common2::EmulatorOptions &options, const size_t linePeriod)
         : common2::GNUFrame(options)
+        , myLinePeriod(linePeriod)
     {
     }
 
@@ -32,9 +33,12 @@ namespace ra2
         // either libretro handles it
         // or we should change AW
         // but for now, there is no alternative
+        const size_t offset = myLinePeriod - 1;
         for (size_t row = 0; row < myHeight; ++row)
         {
-            const uint8_t *src = myFrameBuffer + row * myPitch;
+            // row is in "retro" space, so we need to adjust it
+            // to the original frame buffer space
+            const uint8_t *src = myFrameBuffer + (row * myLinePeriod + offset) * myPitch;
             uint8_t *dst = myVideoBuffer.data() + (myHeight - row - 1) * myPitch;
             memcpy(dst, src, myPitch);
         }
@@ -49,12 +53,13 @@ namespace ra2
 
         Video &video = GetVideo();
 
+        // This initialises the libretro video buffer, so we apply LinePeriod everywhere.
         myBorderlessWidth = video.GetFrameBufferBorderlessWidth();
-        myBorderlessHeight = video.GetFrameBufferBorderlessHeight();
+        myBorderlessHeight = video.GetFrameBufferBorderlessHeight() / myLinePeriod;
         const size_t borderWidth = video.GetFrameBufferBorderWidth();
-        const size_t borderHeight = video.GetFrameBufferBorderHeight();
+        const size_t borderHeight = video.GetFrameBufferBorderHeight() / myLinePeriod;
         const size_t width = video.GetFrameBufferWidth();
-        myHeight = video.GetFrameBufferHeight();
+        myHeight = video.GetFrameBufferHeight() / myLinePeriod;
 
         myFrameBuffer = video.GetFrameBuffer();
 
@@ -100,6 +105,11 @@ namespace ra2
     {
         const auto buffer = ra2::iCreateDirectSoundBuffer(dwBufferSize, nSampleRate, nChannels, pszVoiceName);
         return buffer;
+    }
+
+    size_t RetroFrame::GetFrameBufferLinePeriod() const
+    {
+        return myLinePeriod;
     }
 
 } // namespace ra2

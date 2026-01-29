@@ -191,11 +191,13 @@ void retro_get_system_av_info(retro_system_av_info *info)
 
     Video &video = GetVideo();
 
+    const size_t linePeriod = ourGame->getFrameBufferLinePeriod();
+
     info->geometry.base_width = video.GetFrameBufferBorderlessWidth();
-    info->geometry.base_height = video.GetFrameBufferBorderlessHeight();
+    info->geometry.base_height = video.GetFrameBufferBorderlessHeight() / linePeriod;
     info->geometry.max_width = video.GetFrameBufferBorderlessWidth();
-    info->geometry.max_height = video.GetFrameBufferBorderlessHeight();
-    info->geometry.aspect_ratio = 0;
+    info->geometry.max_height = video.GetFrameBufferBorderlessHeight() / linePeriod;
+    info->geometry.aspect_ratio = float(info->geometry.base_width) / float(info->geometry.base_height * linePeriod);
 
     info->timing.fps = ra2::Game::FPS;
     info->timing.sample_rate = ra2::Game::SAMPLE_RATE;

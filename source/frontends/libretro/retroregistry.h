@@ -24,5 +24,6 @@ namespace ra2
     KeyboardType getKeyboardEmulationType();
     PlaylistStartDisk getPlaylistStartDisk();
     double getMouseSpeed();
+    bool is280Lines();
 
 } // namespace ra2

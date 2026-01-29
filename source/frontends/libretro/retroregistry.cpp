@@ -8,6 +8,7 @@
 #include "Common.h"
 #include "Card.h"
 #include "Video.h"
+#include "Interface.h"
 
 #include "libretro.h"
 
@@ -35,6 +36,9 @@ namespace
         {CATEGORY_RETROPAD_MAPPING, "RetroPad Mapping", "Configure RetroPad mapping options."},
         {nullptr, nullptr, nullptr},
     };
+
+    // we use the same bit settings for simplicity
+    const VideoStyle_e VS_280_LINES = static_cast<VideoStyle_e>(0x08);
 
     struct Variable
     {
@@ -254,7 +258,8 @@ namespace
                 CATEGORY_SYSTEM,
                 {
                     {"Half Scanlines", VS_HALF_SCANLINES},
-                    {"None", VS_NONE},
+                    {"560 x 192", VS_NONE},
+                    {"280 x 192", VS_280_LINES},
                 },
             },
             REG_CONFIG,
@@ -560,6 +565,12 @@ namespace ra2
         uint32_t value = 100;
         RegLoadValue(REG_RA2, REGVALUE_MOUSE_SPEED_00, TRUE, &value);
         return value / 100.0;
+    }
+
+    bool is280Lines()
+    {
+        const bool halfLines = GetVideo().IsVideoStyle(VS_280_LINES);
+        return halfLines;
     }
 
 } // namespace ra2
