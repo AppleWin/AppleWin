@@ -26,6 +26,7 @@
 #include "../CardManager.h"
 #include "../Interface.h"
 #include "../Memory.h"
+#include "../Registry.h"
 #include "../SaveState.h"
 #include "../Speaker.h"
 #include "../Uthernet2.h"
@@ -148,6 +149,9 @@ void CConfigNeedingRestart::Reload()
 	// Advanced
 	m_uSaveLoadStateMsg = 0;
 	m_saveStateOnExit = GetSaveStateOnExit();
+	char ciderPressPathname[MAX_PATH];
+	RegLoadString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, ciderPressPathname, MAX_PATH, "");
+	m_ciderPressPathname = ciderPressPathname;
 	m_enableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_gameIOConnectorType = GetCopyProtectionDongleType();
 }
@@ -197,6 +201,7 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	// Advanced
 	m_uSaveLoadStateMsg = other.m_uSaveLoadStateMsg;
 	m_saveStateOnExit = other.m_saveStateOnExit;
+	m_ciderPressPathname = other.m_ciderPressPathname;
 	m_enableTheFreezesF8Rom = other.m_enableTheFreezesF8Rom;
 	m_gameIOConnectorType = other.m_gameIOConnectorType;
 	return *this;
@@ -211,7 +216,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
 	// . [Input] m_joystickType[], m_pdlXTrim, m_pdlYTrim
 	// . [Slots] m_parallelPrinterCard
-	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_gameIOConnectorType
+	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_ciderPressPathname, m_gameIOConnectorType
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&

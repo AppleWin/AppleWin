@@ -74,6 +74,7 @@ public:
 	// Advanced
 	UINT m_uSaveLoadStateMsg;	// WM_USER_LOADSTATE or WM_USER_SAVESTATE
 	bool m_saveStateOnExit;
+	std::string m_ciderPressPathname;
 	UINT m_enableTheFreezesF8Rom;
 	DONGLETYPE m_gameIOConnectorType;
 };

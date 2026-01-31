@@ -149,6 +149,7 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 	return FALSE;
 }
 
+// For InitOptions(), DlgOK() and ApplyConfigAfterClose(), see comment in PageConfig.cpp about "Property Sheet Page flow"
 void CPageInput::InitOptions(HWND hWnd)
 {
 	InitJoystickChoices(hWnd, JN_JOYSTICK0);

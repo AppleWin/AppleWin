@@ -21,6 +21,16 @@ along with AppleWin; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+// "Property Sheet Page flow" (same for all tabs):
+// . CConfigNeedingRestart::Reload()
+//		Before PSPs are created, emulator state is captured to m_PropertySheetHelper.GetConfigNew()
+// . InitOptions()
+//		Init based on m_PropertySheetHelper.GetConfigNew()
+// . DlgOK()
+//		Capture new state to m_PropertySheetHelper.GetConfigNew()
+// . ApplyConfigAfterClose()
+//		If user confirms state changes are OK, then save new state to Registry & update emulator
+
 #include "StdAfx.h"
 
 #include "PageConfig.h"
@@ -203,6 +213,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 	return FALSE;
 }
 
+// For InitOptions(), DlgOK() and ApplyConfigAfterClose(), see comment in PageConfig.cpp about "Property Sheet Page flow"
 void CPageConfig::InitOptions(HWND hWnd)
 {
 	// Convert Apple2 type to menu item

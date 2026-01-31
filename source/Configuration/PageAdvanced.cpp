@@ -97,7 +97,7 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 		case IDC_SAVESTATE_FILENAME:
 			break;
 		case IDC_SAVESTATE_BROWSE:
-			if(m_PropertySheetHelper.SaveStateSelectImage(hWnd, "Select Save State file", true))
+			if (m_PropertySheetHelper.SaveStateSelectImage(hWnd, "Select Save State file", true))
 				SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)m_PropertySheetHelper.GetSSNewFilename().c_str());
 			break;
 		case IDC_SAVESTATE_ON_EXIT:
@@ -160,17 +160,22 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 	return FALSE;
 }
 
-void CPageAdvanced::ApplyConfigAfterClose() {}
+// For InitOptions(), DlgOK() and ApplyConfigAfterClose(), see comment in PageConfig.cpp about "Property Sheet Page flow"
+void CPageAdvanced::InitOptions(HWND hWnd)
+{
+	SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)Snapshot_GetFilename().c_str());
+
+	CheckDlgButton(hWnd, IDC_SAVESTATE_ON_EXIT, m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
+
+	SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM)m_PropertySheetHelper.GetConfigNew().m_ciderPressPathname.c_str());
+
+	InitFreezeDlgButton(hWnd);
+	InitCloneDropdownMenu(hWnd);
+	InitGameIOConnectorDropdownMenu(hWnd);
+}
 
 void CPageAdvanced::DlgOK(HWND hWnd)
 {
-	// Update save-state filename
-	{
-		// NB. if SaveStateSelectImage() was called (by pressing the "Save State -> Browse..." button)
-		// and a new save-state file was selected ("OK" from the openfilename dialog) then m_bSSNewFilename etc. will have been set
-		m_PropertySheetHelper.SaveStateUpdate();
-	}
-
 	// Update CiderPress pathname
 	{
 		char szFilename[MAX_PATH];
@@ -184,35 +189,31 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 		nLineLength = nLineLength > sizeof(szFilename) - 1 ? sizeof(szFilename) - 1 : nLineLength;
 		szFilename[nLineLength] = 0x00;
 
-		RegSaveString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, szFilename);
+		m_PropertySheetHelper.GetConfigNew().m_ciderPressPathname = szFilename;
 	}
 
-	const bool saveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;
-	SetSaveStateOnExit(saveStateOnExit);
-	REGSAVE(REGVALUE_SAVE_STATE_ON_EXIT, saveStateOnExit ? 1 : 0);
-
-	// Save the copy protection dongle type
-	SetCopyProtectionDongleType(m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
-	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
+	m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
-void CPageAdvanced::InitOptions(HWND hWnd)
+void CPageAdvanced::ApplyConfigAfterClose()
 {
-	SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)Snapshot_GetFilename().c_str());
+	// Update save-state filename
+	{
+		// NB. if SaveStateSelectImage() was called (by pressing the "Save State -> Browse..." button)
+		// and a new save-state file was selected ("OK" from the openfilename dialog) then m_bSSNewFilename etc. will have been set
+		m_PropertySheetHelper.SaveStateUpdate();
+	}
 
-	CheckDlgButton(hWnd, IDC_SAVESTATE_ON_EXIT, GetSaveStateOnExit() ? BST_CHECKED : BST_UNCHECKED);
+	RegSaveString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, m_PropertySheetHelper.GetConfigNew().m_ciderPressPathname.c_str());
 
-	char pathToCiderPress[MAX_PATH];
-	RegLoadString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, pathToCiderPress, MAX_PATH, "");
-	SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM)pathToCiderPress);
+	SetSaveStateOnExit(m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit);
+	REGSAVE(REGVALUE_SAVE_STATE_ON_EXIT, m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit ? 1 : 0);
 
-	//
-
-	InitFreezeDlgButton(hWnd);
-	InitCloneDropdownMenu(hWnd);
-	InitGameIOConnectorDropdownMenu(hWnd);
+	// Save the copy protection dongle type
+	SetCopyProtectionDongleType(m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
+	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
 }
 
 // Advanced->Clone: Menu item to eApple2Type

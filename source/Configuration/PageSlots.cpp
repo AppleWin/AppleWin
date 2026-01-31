@@ -232,13 +232,6 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 	return TRUE;
 }
 
-void CPageSlots::ApplyConfigAfterClose() {}
-
-void CPageSlots::DlgOK(HWND hWnd)
-{
-	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
-}
-
 int CPageSlots::CardTypeToComboItem(UINT slot)
 {
 	int currentChoice = 0;
@@ -272,6 +265,7 @@ BOOL CPageSlots::CardTypeHasOptions(SS_CARDTYPE card)
 		card == CT_RamWorksIII) ? TRUE : FALSE;
 }
 
+// For InitOptions(), DlgOK() and ApplyConfigAfterClose(), see comment in PageConfig.cpp about "Property Sheet Page flow"
 void CPageSlots::InitOptions(HWND hWnd)
 {
 	BOOL enable = FALSE, enableOpt = FALSE;
@@ -344,6 +338,15 @@ void CPageSlots::InitOptions(HWND hWnd)
 			break;
 		}
 	}
+}
+
+void CPageSlots::DlgOK(HWND hWnd)
+{
+	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
+}
+
+void CPageSlots::ApplyConfigAfterClose()
+{
 }
 
 void CPageSlots::ResetToDefault()
