@@ -698,8 +698,9 @@ namespace sa2
                     {
                         const float remaining = float(info.size - (info.pos + 1)) / float(info.frequency);
                         const float fraction = float(info.pos + 1) / float(info.size);
+
                         char buf[32];
-                        sprintf(buf, "-%.1f s", remaining);
+                        snprintf(buf, sizeof(buf), "-%.1f s", remaining);
                         const ImU32 color = info.bit ? IM_COL32(200, 0, 0, 100) : IM_COL32(0, 200, 0, 100);
 
                         ImGui::PushStyleColor(ImGuiCol_PlotHistogram, color);
