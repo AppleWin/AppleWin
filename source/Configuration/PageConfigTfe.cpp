@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PageConfigTfe.h"
 
 #include "../Common.h"
-#include "../Registry.h"
 #include "../resource/resource.h"
 #include "../Tfe/PCapBackend.h"
 

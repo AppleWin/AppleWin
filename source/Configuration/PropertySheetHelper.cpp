@@ -297,21 +297,21 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 		m_ConfigNew.m_CpuType = ProbeMainCpuDefault(m_ConfigNew.m_Apple2Type);
 	}
 
-	if (IsConfigChanged())
+	if (IsConfigChanged())	// Only for config that requires a restart
 	{
 		if (!CheckChangesForRestart(hWnd))
 		{
 			// Cancelled
-			RestoreCurrentConfig();
+			RestoreCurrentConfig();	// Only needed for slots with newly added Disk/HDD controller cards
 			return;
 		}
 
-		ApplyNewConfig();	// for config that needs a restart
+		ApplyNewConfig(m_ConfigNew, m_ConfigOld);
 
 		restart = true;
 	}
 
-	GetPropertySheet().ApplyConfigAfterClose(m_bmAfterClosePages);	// for config that does NOT need a restart
+	GetPropertySheet().ApplyConfigAfterClose(m_bmAfterClosePages);	// For config that does NOT need a restart
 
 	if (restart)
 		GetFrame().Restart();
@@ -412,11 +412,6 @@ void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestar
 	//REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);	// Not currently in save-state
 	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
 	SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
-}
-
-void CPropertySheetHelper::ApplyNewConfig(void)
-{
-	ApplyNewConfig(m_ConfigNew, m_ConfigOld);
 }
 
 void CPropertySheetHelper::SaveCurrentConfig(void)
