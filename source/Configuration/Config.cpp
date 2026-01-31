@@ -68,6 +68,8 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_tfeVirtualDNS = false;
 	m_RamWorksMemorySize = 0;
 	m_serialPortItem = 0;
+	m_mouseShowCrosshair = 0;
+	m_mouseRestrictToWindow = 0;
 
 	// Advanced
 	m_uSaveLoadStateMsg = 0;
@@ -146,6 +148,9 @@ void CConfigNeedingRestart::Reload()
 	if (cardManager.IsSSCInstalled())
 		m_serialPortItem = cardManager.GetSSC()->GetSerialPortItem();
 
+	m_mouseShowCrosshair = GetPropertySheet().GetMouseShowCrosshair();
+	m_mouseRestrictToWindow = GetPropertySheet().GetMouseRestrictToWindow();
+
 	// Advanced
 	m_uSaveLoadStateMsg = 0;
 	m_saveStateOnExit = GetSaveStateOnExit();
@@ -190,6 +195,8 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_RamWorksMemorySize = other.m_RamWorksMemorySize;
 	m_parallelPrinterCard = other.m_parallelPrinterCard;
 	m_serialPortItem = other.m_serialPortItem;
+	m_mouseShowCrosshair = other.m_mouseShowCrosshair;
+	m_mouseRestrictToWindow = other.m_mouseRestrictToWindow;
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
 		for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
@@ -215,7 +222,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Config] m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
 	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
 	// . [Input] m_joystickType[], m_pdlXTrim, m_pdlYTrim
-	// . [Slots] m_parallelPrinterCard
+	// . [Slots] m_parallelPrinterCard, m_mouseShowCrosshair, m_mouseRestrictToWindow
 	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_ciderPressPathname, m_gameIOConnectorType
 
 	return	m_Apple2Type == other.m_Apple2Type &&

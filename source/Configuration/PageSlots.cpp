@@ -347,6 +347,17 @@ void CPageSlots::DlgOK(HWND hWnd)
 
 void CPageSlots::ApplyConfigAfterClose()
 {
+	// Parallel Printer card
+	CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(m_PropertySheetHelper.GetConfigNew());
+	config.m_parallelPrinterCard.SetRegistryConfig();
+
+	*(GetCardMgr().GetParallelPrinterCard()) = config.m_parallelPrinterCard;	// copy object
+
+	// Mouse card
+	m_mouseShowCrosshair = m_PropertySheetHelper.GetConfigNew().m_mouseShowCrosshair;
+	m_mouseRestrictToWindow = m_PropertySheetHelper.GetConfigNew().m_mouseRestrictToWindow;
+	REGSAVE(REGVALUE_MOUSE_CROSSHAIR, m_mouseShowCrosshair);
+	REGSAVE(REGVALUE_MOUSE_RESTRICT_TO_WINDOW, m_mouseRestrictToWindow);
 }
 
 void CPageSlots::ResetToDefault()
@@ -961,11 +972,8 @@ INT_PTR CPageSlots::DlgProcMouseCardInternal(HWND hWnd, UINT message, WPARAM wpa
 
 void CPageSlots::DlgMouseCardOK(HWND hWnd)
 {
-	m_mouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
-	m_mouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
-
-	REGSAVE(REGVALUE_MOUSE_CROSSHAIR, m_mouseShowCrosshair);
-	REGSAVE(REGVALUE_MOUSE_RESTRICT_TO_WINDOW, m_mouseRestrictToWindow);
+	m_PropertySheetHelper.GetConfigNew().m_mouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
+	m_PropertySheetHelper.GetConfigNew().m_mouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
 }
 
 //===========================================================================

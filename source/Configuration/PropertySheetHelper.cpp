@@ -306,12 +306,12 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 			return;
 		}
 
-		ApplyNewConfig();
+		ApplyNewConfig();	// for config that needs a restart
 
 		restart = true;
 	}
 
-	GetPropertySheet().ApplyConfigAfterClose(m_bmAfterClosePages);
+	GetPropertySheet().ApplyConfigAfterClose(m_bmAfterClosePages);	// for config that does NOT need a restart
 
 	if (restart)
 		GetFrame().Restart();
@@ -371,12 +371,6 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		if (ConfigNew.m_Slot[slot] == CT_SSC)
 		{
 			GetCardMgr().GetSSC()->SetSerialPortItem(ConfigNew.m_serialPortItem);
-		}
-
-		if (ConfigNew.m_Slot[slot] == CT_GenericPrinter)
-		{
-			CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(ConfigNew);
-			config.m_parallelPrinterCard.SetRegistryConfig();
 		}
 
 		if (ConfigNew.m_Slot[slot] == CT_Disk2)
@@ -464,12 +458,6 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 			GetCardMgr().GetSSC()->SetSerialPortItem(m_ConfigOld.m_serialPortItem);
 		}
 
-		if (m_ConfigOld.m_Slot[slot] == CT_GenericPrinter)
-		{
-			CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(m_ConfigOld);
-			config.m_parallelPrinterCard.SetRegistryConfig();
-		}
-
 		if (m_ConfigOld.m_Slot[slot] == CT_Disk2)
 		{
 			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
@@ -486,10 +474,6 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	GetCardMgr().InitializeIO(GetCxRomPeripheral());
 
 	SetSlot(SLOT_AUX, m_ConfigOld.m_SlotAux);
-
-	//GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_enableTheFreezesF8Rom);// -- not applied yet, so do nothing
-	//m_ConfigOld.m_videoRefreshRate -- not applied yet, so do nothing
-	//m_ConfigOld.m_RamWorksMemorySize -- not applied yet, so do nothing
 }
 
 bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
@@ -578,9 +562,6 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_enableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
-
-		if (CONFIG_CHANGED(m_parallelPrinterCard))
-			strMsgMain += ". Parallel Printer config has changed\n";
 
 		if (CONFIG_CHANGED(m_serialPortItem))
 			strMsgMain += ". SSC config has changed\n";

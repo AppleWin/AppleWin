@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //		Before PSPs are created, emulator state is captured to m_PropertySheetHelper.GetConfigNew()
 // . InitOptions()
 //		Init based on m_PropertySheetHelper.GetConfigNew()
-// . DlgOK()
+// . DlgOK() and DlgXXXCardOK()
 //		Capture new state to m_PropertySheetHelper.GetConfigNew()
 // . ApplyConfigAfterClose()
 //		If user confirms state changes are OK, then save new state to Registry & update emulator

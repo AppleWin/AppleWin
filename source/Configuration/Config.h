@@ -68,6 +68,8 @@ public:
 	uint32_t m_RamWorksMemorySize;	// Size in 64K banks
 	ParallelPrinterCard m_parallelPrinterCard;	// Use entire card object, as there are many config vars
 	UINT m_serialPortItem;	// SSC: Just one config var for this card (at the moment)
+	UINT m_mouseShowCrosshair;
+	UINT m_mouseRestrictToWindow;
 	SlotInfoForFDC m_slotInfoForFDC[NUM_SLOTS];
 	SlotInfoForHDC m_slotInfoForHDC[NUM_SLOTS];
 
