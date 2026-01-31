@@ -630,7 +630,7 @@ namespace sa2
         for (UINT i = 0; i < 4; ++i)
         {
             char buffer[20];
-            sprintf(buffer, "Ann %d", i);
+            snprintf(buffer, sizeof(buffer), "Ann %d", i);
             printOnOff(buffer, MemGetAnnunciator(i));
         }
         ImGui::EndDisabled();
