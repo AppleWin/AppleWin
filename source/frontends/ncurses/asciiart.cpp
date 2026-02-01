@@ -49,7 +49,7 @@ namespace na2
             myRows = rows;
 
             myValues.assign(myRows, std::vector<Blocks>(myColumns));
-            myChars.assign(rows, std::vector<Character>(columns));
+            myChars.assign(myRows, std::vector<Character>(myColumns));
         }
     }
 

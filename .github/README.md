@@ -58,13 +58,12 @@ Keyboard shortcuts
 * ``Shift-F3``: exit (``F4`` as well to avoid key code issues)
 * ``F5``: swap disks
 * ``F11``, ``F12``: Load, Save Snapshot
-* ``ALT-RIGHT``: wider hi res graphis
-* ``ALT-LEFT``: narrower hi res graphics
-* ``ALT-UP``: vertical hi res (smaller)
-* ``ALT-DOWN``: vertical hi res (bigger)
+* ``Shift-RIGHT``: wider hi res graphis
+* ``Shift-LEFT``: narrower hi res graphics
+* ``Shift-UP``: vertical hi res (smaller)
+* ``Shift-DOWN``: vertical hi res (bigger)
 
 In order to properly appreciate the wider hi res graphics, open a big terminal window and choose a small font size.
-Try ``CTRL-`` as well if ``ALT-`` does not work: terminals do not report a consistent keycode for these combinations.
 
 The joystick uses evdev (``--device-name /dev/input/by-id/id_of_device``).
 
