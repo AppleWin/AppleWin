@@ -66,6 +66,7 @@ namespace na2
         typedef std::vector<std::vector<Blocks>> array_val_t;
 
         void init(const int rows, const int columns);
+        void getSize(int &rows, int &columns) const;
 
         void changeColumns(const int x);
         void changeRows(const int x);

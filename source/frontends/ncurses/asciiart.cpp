@@ -33,6 +33,12 @@ namespace na2
         init(1, 1); // normal size
     }
 
+    void ASCIIArt::getSize(int &rows, int &columns) const
+    {
+        rows = myRows;
+        columns = myColumns;
+    }
+
     void ASCIIArt::init(const int rows, const int columns)
     {
         if (myRows != rows || myColumns != columns)

@@ -161,13 +161,62 @@ namespace na2
 
         typedef bool (NFrame::*VideoUpdateFuncPtr_t)(Video &, int, int, int, int, int);
 
-        VideoUpdateFuncPtr_t update =
-            video.VideoGetSWTEXT()    ? video.VideoGetSW80COL() ? &NFrame::Update80ColCell : &NFrame::Update40ColCell
-            : video.VideoGetSWHIRES() ? (video.VideoGetSWDHIRES() && video.VideoGetSW80COL())
-                                            ? &NFrame::UpdateDHiResCell
-                                            : &NFrame::UpdateHiResCell
-            : (video.VideoGetSWDHIRES() && video.VideoGetSW80COL()) ? &NFrame::UpdateDLoResCell
-                                                                    : &NFrame::UpdateLoResCell;
+        VideoUpdateFuncPtr_t update;
+
+        int mRows, mCols;
+        myAsciiArt->getSize(mRows, mCols);
+
+        if (video.VideoGetSWTEXT())
+        {
+            mRows = 1;
+            if (video.VideoGetSW80COL())
+            {
+                mCols = 2;
+                update = &NFrame::Update80ColCell;
+            }
+            else
+            {
+                mCols = 1;
+                update = &NFrame::Update40ColCell;
+            }
+        }
+        else if (video.VideoGetSWDHIRES() && video.VideoGetSW80COL())
+        {
+            // not supported
+            mRows = 1;
+            mCols = 2;
+            if (video.VideoGetSWHIRES())
+            {
+                update = &NFrame::UpdateDHiResCell;
+            }
+            else
+            {
+                update = &NFrame::UpdateDLoResCell;
+            }
+        }
+        else
+        {
+            mRows = std::max(1, LINES / 24);
+            mCols = std::max(1, COLS / 40);
+            if (video.VideoGetSWHIRES())
+            {
+                update = &NFrame::UpdateHiResCell;
+            }
+            else
+            {
+                update = &NFrame::UpdateLoResCell;
+            }
+        }
+
+        if (video.VideoGetSWMIXED())
+        {
+            // mixed mode
+            mRows = 1;
+            mCols = video.VideoGetSW80COL() ? 2 : 1;
+        }
+
+        Init(24 * mRows, 40 * mCols);
+        myAsciiArt->init(mRows, mCols);
 
         int y = 0;
         int ypixel = 0;
@@ -187,7 +236,9 @@ namespace na2
         }
 
         if (video.VideoGetSWMIXED())
+        {
             update = video.VideoGetSW80COL() ? &NFrame::Update80ColCell : &NFrame::Update40ColCell;
+        }
 
         while (y < 24)
         {
@@ -303,9 +354,6 @@ namespace na2
 
     bool NFrame::Update40ColCell(Video &video, int x, int y, int xpixel, int ypixel, int offset)
     {
-        Init(24, 40);
-        myAsciiArt->init(1, 1);
-
         BYTE ch = *(myTextBank0 + offset);
 
         const chtype ch2 = MapCharacter(video, ch);
@@ -316,9 +364,6 @@ namespace na2
 
     bool NFrame::Update80ColCell(Video &video, int x, int y, int xpixel, int ypixel, int offset)
     {
-        Init(24, 80);
-        myAsciiArt->init(1, 2);
-
         BYTE ch1 = *(myTextBank1 + offset);
         BYTE ch2 = *(myTextBank0 + offset);
 
@@ -369,7 +414,6 @@ namespace na2
         const int rows = chs.size();
         const int cols = chs.empty() ? 0 : chs[0].size();
 
-        Init(24 * rows, 40 * cols);
         WINDOW *win = myFrame.get();
 
         const GraphicsColors &colors = *myNCurses->colors;
