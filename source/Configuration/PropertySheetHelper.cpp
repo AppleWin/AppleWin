@@ -302,7 +302,7 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 		if (!CheckChangesForRestart(hWnd))
 		{
 			// Cancelled
-			RestoreCurrentConfig();	// Only needed for slots with newly added Disk/HDD controller cards
+			RestoreCurrentConfig();
 			return;
 		}
 
@@ -428,9 +428,7 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 
 void CPropertySheetHelper::RestoreCurrentConfig(void)
 {
-	// NB. clone-type is encoded in g_Apple2Type
-	SetApple2Type(m_ConfigOld.m_Apple2Type);
-	SetMainCpu(m_ConfigOld.m_CpuType);
+	// NB. Only need to restore slots (and their config) due to any newly added DiskII/HDD controller cards
 
 	// Just like for ApplyNewConfig(), don't want to have an intermediate state of "s1=SSC, s2=SSC"
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
@@ -453,6 +451,12 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 			GetCardMgr().GetSSC()->SetSerialPortItem(m_ConfigOld.m_serialPortItem);
 		}
 
+		if (m_ConfigOld.m_Slot[slot] == CT_GenericPrinter)
+		{
+			CConfigNeedingRestart & config = const_cast<CConfigNeedingRestart&>(m_ConfigOld);
+			config.m_parallelPrinterCard.SetRegistryConfig();
+		}
+
 		if (m_ConfigOld.m_Slot[slot] == CT_Disk2)
 		{
 			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
@@ -467,8 +471,6 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 	}
 
 	GetCardMgr().InitializeIO(GetCxRomPeripheral());
-
-	SetSlot(SLOT_AUX, m_ConfigOld.m_SlotAux);
 }
 
 bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
