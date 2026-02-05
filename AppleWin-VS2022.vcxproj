@@ -55,9 +55,8 @@
     <ClInclude Include="source\Configuration\PageAdvanced.h" />
     <ClInclude Include="source\Configuration\PageConfig.h" />
     <ClInclude Include="source\Configuration\PageConfigTfe.h" />
-    <ClInclude Include="source\Configuration\PageDisk.h" />
     <ClInclude Include="source\Configuration\PageInput.h" />
-    <ClInclude Include="source\Configuration\PageSound.h" />
+    <ClInclude Include="source\Configuration\PageSlots.h" />
     <ClInclude Include="source\Configuration\PropertySheet.h" />
     <ClInclude Include="source\Configuration\PropertySheetDefs.h" />
     <ClInclude Include="source\Configuration\PropertySheetHelper.h" />
@@ -136,7 +135,6 @@
     <ClInclude Include="source\Tfe\PCapBackend.h" />
     <ClInclude Include="source\Tfe\tfearch.h" />
     <ClInclude Include="source\Tfe\tfesupp.h" />
-    <ClInclude Include="source\Tfe\Uilib.h" />
     <ClInclude Include="source\Uthernet1.h" />
     <ClInclude Include="source\Uthernet2.h" />
     <ClInclude Include="source\Utilities.h" />
@@ -176,9 +174,8 @@
     <ClCompile Include="source\Configuration\PageAdvanced.cpp" />
     <ClCompile Include="source\Configuration\PageConfig.cpp" />
     <ClCompile Include="source\Configuration\PageConfigTfe.cpp" />
-    <ClCompile Include="source\Configuration\PageDisk.cpp" />
     <ClCompile Include="source\Configuration\PageInput.cpp" />
-    <ClCompile Include="source\Configuration\PageSound.cpp" />
+    <ClCompile Include="source\Configuration\PageSlots.cpp" />
     <ClCompile Include="source\Configuration\PropertySheet.cpp" />
     <ClCompile Include="source\Configuration\PropertySheetHelper.cpp" />
     <ClCompile Include="source\CopyProtectionDongles.cpp" />
@@ -269,16 +266,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="source\Tfe\Uilib.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug NoDX|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release NoDX|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="source\Uthernet1.cpp" />
     <ClCompile Include="source\Uthernet2.cpp" />
     <ClCompile Include="source\Utilities.cpp" />
@@ -324,17 +311,28 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="firmware\BootSector\bootsector.bin" />
+    <None Include="firmware\OS\basic17.system.bin" />
+    <None Include="firmware\OS\bitsy.boot.bin" />
+    <None Include="firmware\OS\bootsector_prodos243.bin" />
+    <None Include="firmware\OS\dos33c.bin" />
+    <None Include="firmware\OS\prodos243.bin" />
+    <None Include="firmware\OS\quit.system.bin" />
     <None Include="resource\Apple2.rom" />
     <None Include="resource\Apple2e.rom" />
     <None Include="resource\Apple2e_Enhanced.rom" />
+    <None Include="resource\Apple2e_Enhanced_Video.rom" />
     <None Include="resource\Apple2_JPlus.rom" />
     <None Include="resource\Apple2_JPlus_Video.rom" />
     <None Include="resource\Apple2_Plus.rom" />
+    <None Include="resource\Apple2_Video.rom" />
     <None Include="resource\Base64A.rom" />
     <None Include="resource\Base64A_German_Video.rom" />
     <None Include="resource\Disk2-13sector.rom" />
     <None Include="resource\DISK2.rom" />
     <None Include="resource\Freezes_Non-autostart_F8_Rom.rom" />
+    <None Include="resource\HDC-SmartPort.bin" />
+    <None Include="resource\Hddrvr-v2.bin" />
     <None Include="resource\Hddrvr.bin" />
     <None Include="resource\Mockingboard-D.rom" />
     <None Include="resource\MouseInterface.rom" />

@@ -68,7 +68,7 @@ struct CmdLine
 		sBootSectorFileName = "";
 		nBootSectorFileSize = 0;
 
-		for (UINT i = 0; i < NUM_SLOTS; i++)
+		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 		{
 			bSlotEmpty[i] = false;
 			slotInsert[i] = CT_Empty;

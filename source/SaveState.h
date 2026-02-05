@@ -1,6 +1,6 @@
 #pragma once
 
-extern bool g_bSaveStateOnExit;
+const bool kSaveStateOnExit_Default = false;
 
 void Snapshot_SetFilename(const std::string& filename, const std::string& path="");
 const std::string& Snapshot_GetFilename(void);
@@ -12,6 +12,9 @@ void Snapshot_LoadState();
 void Snapshot_SaveState();
 void Snapshot_Startup();
 void Snapshot_Shutdown();
+
+bool GetSaveStateOnExit();
+void SetSaveStateOnExit(bool saveStateOnExit);
 
 bool Snapshot_GetIgnoreHdcFirmware();
 void Snapshot_SetIgnoreHdcFirmware(const bool ignoreHdcFirmware);

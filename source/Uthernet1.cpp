@@ -183,8 +183,9 @@ void Uthernet1::tfe_debug_output_pp( void )
 
 Uthernet1::Uthernet1(UINT slot) : Card(CT_Uthernet, slot)
 {
-    if (m_slot != SLOT3)	// fixme
+    if (m_slot == SLOT0)
         ThrowErrorInvalidSlot();
+
     Init();
 }
 

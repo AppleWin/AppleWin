@@ -370,6 +370,9 @@ const std::string& Uthernet2::GetSnapshotCardName()
 
 Uthernet2::Uthernet2(UINT slot) : Card(CT_Uthernet2, slot)
 {
+    if (m_slot == SLOT0)
+        ThrowErrorInvalidSlot();
+
 #ifdef _WIN32
     WSADATA wsaData;
     myWSAStartup = WSAStartup(MAKEWORD(2, 2), &wsaData);

@@ -60,7 +60,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2, slot),
 	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for Disk2InterfaceCards
 {
-	if (m_slot != 5 && m_slot != 6)	// fixme
+	if (m_slot == SLOT0)
 		ThrowErrorInvalidSlot();
 
 	ResetSwitches();
@@ -69,7 +69,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
-	m_enhanceDisk = true;
+	m_enhanceDisk = kEnhanceDiskAccessSpeed_Default;
 	m_is13SectorFirmware = false;
 	m_force13SectorFirmware = false;
 	m_deferredStepperEvent = false;

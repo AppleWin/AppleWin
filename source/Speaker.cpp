@@ -73,7 +73,6 @@ static UINT		g_nRemainderBufferSize;		// Setup in SpkrInitialize()
 static UINT		g_nRemainderBufferIdx;		// Setup in SpkrInitialize()
 
 // Application-wide globals:
-SoundType_e		soundtype		= SOUND_WAVE;
 double		    g_fClksPerSpkrSample;		// Setup in SetClksPerSpkrSample()
 
 // Allow temporary quietening of speaker (8 bit DAC)
@@ -110,7 +109,7 @@ UINT Spkr_GetNumChannels(void)
 
 //=============================================================================
 
-static void DisplayBenchmarkResults ()
+static void DisplayBenchmarkResults()
 {
   uint32_t totaltime = GetTickCount()-extbench;
   GetFrame().VideoRedrawScreen();
@@ -216,38 +215,24 @@ static void InitRemainderBuffer()
 
 //=============================================================================
 
-void SpkrDestroy ()
+void SpkrDestroy()
 {
 	Spkr_DSUninit();
 
 	//
 
-	if(soundtype == SOUND_WAVE)
-	{
-		delete [] g_pSpeakerBuffer;
-		delete [] g_pRemainderBuffer;
+	delete [] g_pSpeakerBuffer;
+	delete [] g_pRemainderBuffer;
 		
-		g_pSpeakerBuffer = NULL;
-		g_pRemainderBuffer = NULL;
-	}
+	g_pSpeakerBuffer = NULL;
+	g_pRemainderBuffer = NULL;
 }
 
 //=============================================================================
 
-void SpkrInitialize ()
+void SpkrInitialize()
 {
-	if(g_fh)
-	{
-		fprintf(g_fh, "Spkr Config: soundtype = %d ", (int) soundtype);
-		switch(soundtype)
-		{
-			case SOUND_NONE:   fprintf(g_fh, "(NONE)\n"); break;
-			case SOUND_WAVE:   fprintf(g_fh, "(WAVE)\n"); break;
-			default:           fprintf(g_fh, "(UNDEFINED!)\n"); break;
-		}
-	}
-
-	if(g_bDisableDirectSound)
+	if (g_bDisableDirectSound)
 	{
 		SpeakerVoice.bMute = true;
 		LogFileOutput("SpkrInitialize: g_bDisableDirectSound=1... SpeakerVoice.bMute=true\n");
@@ -272,23 +257,17 @@ void SpkrInitialize ()
 
 	//
 
-	if (soundtype == SOUND_WAVE)
-	{
-		InitRemainderBuffer();
+	InitRemainderBuffer();
 
-		g_pSpeakerBuffer = new short [SPKR_SAMPLE_RATE * g_nSPKR_NumChannels];	// Buffer can hold a max of 1 seconds worth of samples
-	}
+	g_pSpeakerBuffer = new short[SPKR_SAMPLE_RATE * g_nSPKR_NumChannels];	// Buffer can hold a max of 1 seconds worth of samples
 }
 
 //=============================================================================
 
 // NB. Called when /g_fCurrentCLK6502/ changes
-void SpkrReinitialize ()
+void SpkrReinitialize()
 {
-	if (soundtype == SOUND_WAVE)
-	{
-		InitRemainderBuffer();
-	}
+	InitRemainderBuffer();
 }
 
 //=============================================================================
@@ -303,17 +282,6 @@ void SpkrReset()
 	Spkr_SubmitWaveBuffer(NULL, 0);
 	Spkr_SetActive(false);
 	Spkr_Unmute();
-}
-
-//=============================================================================
-
-void SpkrSetEmulationType (SoundType_e newtype)
-{
-  SpkrDestroy();	// GH#295: Destroy for all types (even SOUND_NONE)
-
-  soundtype = newtype;
-  if (soundtype != SOUND_NONE)
-    SpkrInitialize();
 }
 
 //=============================================================================
@@ -368,35 +336,35 @@ static void UpdateRemainderBuffer(ULONG* pnCycleDiff)
 
 static void UpdateSpkr()
 {
-  if(!g_bFullSpeed || SoundCore_GetTimerState())
-  {
-	  ULONG nCycleDiff = (ULONG) (g_nCumulativeCycles - g_nSpkrLastCycle);
+	if (!g_bFullSpeed || SoundCore_GetTimerState())
+	{
+		ULONG nCycleDiff = (ULONG)(g_nCumulativeCycles - g_nSpkrLastCycle);
 
-	  UpdateRemainderBuffer(&nCycleDiff);
+		UpdateRemainderBuffer(&nCycleDiff);
 
-	  ULONG nNumSamples = (ULONG) ((double)nCycleDiff / g_fClksPerSpkrSample);
+		ULONG nNumSamples = (ULONG)((double)nCycleDiff / g_fClksPerSpkrSample);
 
-	  ULONG nCyclesRemaining = (ULONG) ((double)nCycleDiff - (double)nNumSamples * g_fClksPerSpkrSample);
+		ULONG nCyclesRemaining = (ULONG)((double)nCycleDiff - (double)nNumSamples * g_fClksPerSpkrSample);
 
-	  while ((nNumSamples--) && (g_nBufferIdx < SPKR_SAMPLE_RATE - 1))
-	  {
-		  if (g_nSPKR_NumChannels == 1)
-		  {
-			  g_pSpeakerBuffer[g_nBufferIdx] = DCFilter(g_nSpeakerData);
-		  }
-		  else
-		  {
-			  const short sample = DCFilter(g_nSpeakerData);
-			  g_pSpeakerBuffer[g_nBufferIdx * 2 + 0] = sample;
-			  g_pSpeakerBuffer[g_nBufferIdx * 2 + 1] = sample;
-		  }
-		  g_nBufferIdx++;
-	  }
+		while ((nNumSamples--) && (g_nBufferIdx < SPKR_SAMPLE_RATE - 1))
+		{
+			if (g_nSPKR_NumChannels == 1)
+			{
+				g_pSpeakerBuffer[g_nBufferIdx] = DCFilter(g_nSpeakerData);
+			}
+			else
+			{
+				const short sample = DCFilter(g_nSpeakerData);
+				g_pSpeakerBuffer[g_nBufferIdx * 2 + 0] = sample;
+				g_pSpeakerBuffer[g_nBufferIdx * 2 + 1] = sample;
+			}
+			g_nBufferIdx++;
+		}
 
-	  ReinitRemainderBuffer(nCyclesRemaining);	// Partially fill 1Mhz sample buffer
-  }
+		ReinitRemainderBuffer(nCyclesRemaining);	// Partially fill 1Mhz sample buffer
+	}
 
-  g_nSpkrLastCycle = g_nCumulativeCycles;
+	g_nSpkrLastCycle = g_nCumulativeCycles;
 }
 
 //=============================================================================
@@ -404,106 +372,94 @@ static void UpdateSpkr()
 // Called by emulation code when Speaker I/O reg is accessed
 //
 
-BYTE __stdcall SpkrToggle (WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
+BYTE __stdcall SpkrToggle(WORD, WORD, BYTE, BYTE, ULONG nExecutedCycles)
 {
-  g_bSpkrToggleFlag = true;
+	g_bSpkrToggleFlag = true;
 
-  if(!g_bFullSpeed)
-	Spkr_SetActive(true);
+	if (!g_bFullSpeed)
+		Spkr_SetActive(true);
 
-  //
+	if (extbench)
+	{
+		DisplayBenchmarkResults();
+		extbench = 0;
+	}
 
+	CpuCalcCycles(nExecutedCycles);
 
-  if (extbench)
-  {
-    DisplayBenchmarkResults();
-    extbench = 0;
-  }
+	UpdateSpkr();
 
-  if (soundtype == SOUND_WAVE)
-  {
-	  CpuCalcCycles(nExecutedCycles);
+	short speakerDriveLevel = SPKR_DATA_INIT;
+	if (g_bQuieterSpeaker)	// quieten the speaker if 8 bit DAC in use
+		speakerDriveLevel /= 4;	// NB. Don't shift -ve number right: undefined behaviour (MSDN says: implementation-dependent)
 
-	  UpdateSpkr();
+	// When full-speed: Don't ResetDCFilter(), otherwise get occasional clicks when speaker toggled
+	if (!g_bFullSpeed)
+		ResetDCFilter();
 
-      short speakerDriveLevel = SPKR_DATA_INIT;
-      if (g_bQuieterSpeaker)	// quieten the speaker if 8 bit DAC in use
-        speakerDriveLevel /= 4;	// NB. Don't shift -ve number right: undefined behaviour (MSDN says: implementation-dependent)
+	if (g_nSpeakerData == speakerDriveLevel)
+		g_nSpeakerData = ~speakerDriveLevel;
+	else
+		g_nSpeakerData = speakerDriveLevel;
 
-      // When full-speed: Don't ResetDCFilter(), otherwise get occasional clicks when speaker toggled
-      if (!g_bFullSpeed)
-        ResetDCFilter();
-
-      if (g_nSpeakerData == speakerDriveLevel)
-        g_nSpeakerData = ~speakerDriveLevel;
-      else
-        g_nSpeakerData = speakerDriveLevel;
-  }
-
-  return MemReadFloatingBus(nExecutedCycles);
+	return MemReadFloatingBus(nExecutedCycles);
 }
 
 //=============================================================================
 
 // Called by ContinueExecution()
-void SpkrUpdate (uint32_t totalcycles)
+void SpkrUpdate(uint32_t totalcycles)
 {
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeSpeaker;
 	PerfMarker perfMarker(g_timeSpeaker);
 #endif
 
-  if(!g_bSpkrToggleFlag)
-  {
-	  if(!g_nSpkrQuietCycleCount)
-	  {
-		  g_nSpkrQuietCycleCount = g_nCumulativeCycles;
-	  }
-	  else if(g_nCumulativeCycles - g_nSpkrQuietCycleCount > (unsigned __int64)g_fCurrentCLK6502/5)
-	  {
-		  // After 0.2 sec of Apple time, deactivate spkr voice
-		  // . This allows emulator to auto-switch to full-speed g_nAppMode for fast disk access
-		  Spkr_SetActive(false);
-	  }
-  }
-  else
-  {
-      g_nSpkrQuietCycleCount = 0;
-      g_bSpkrToggleFlag = false;
-  }
+	if (!g_bSpkrToggleFlag)
+	{
+		if (!g_nSpkrQuietCycleCount)
+		{
+			g_nSpkrQuietCycleCount = g_nCumulativeCycles;
+		}
+		else if (g_nCumulativeCycles - g_nSpkrQuietCycleCount > (unsigned __int64)g_fCurrentCLK6502 / 5)
+		{
+			// After 0.2 sec of Apple time, deactivate spkr voice
+			// . This allows emulator to auto-switch to full-speed g_nAppMode for fast disk access
+			Spkr_SetActive(false);
+		}
+	}
+	else
+	{
+		g_nSpkrQuietCycleCount = 0;
+		g_bSpkrToggleFlag = false;
+	}
 
-  //
+	//
 
-  if (soundtype == SOUND_WAVE)
-  {
-	  UpdateSpkr();
-	  ULONG nSamplesUsed;
+	UpdateSpkr();
+	ULONG nSamplesUsed;
 
-	  if(g_bFullSpeed)
-		  nSamplesUsed = Spkr_SubmitWaveBuffer_FullSpeed(g_pSpeakerBuffer, g_nBufferIdx);
-	  else
-		  nSamplesUsed = Spkr_SubmitWaveBuffer(g_pSpeakerBuffer, g_nBufferIdx);
+	if (g_bFullSpeed)
+		nSamplesUsed = Spkr_SubmitWaveBuffer_FullSpeed(g_pSpeakerBuffer, g_nBufferIdx);
+	else
+		nSamplesUsed = Spkr_SubmitWaveBuffer(g_pSpeakerBuffer, g_nBufferIdx);
 
-	  _ASSERT(nSamplesUsed <= g_nBufferIdx);
-	  memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], (g_nBufferIdx - nSamplesUsed) * sizeof(short) * g_nSPKR_NumChannels);
-	  g_nBufferIdx -= nSamplesUsed;
-  }
+	_ASSERT(nSamplesUsed <= g_nBufferIdx);
+	memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], (g_nBufferIdx - nSamplesUsed) * sizeof(short) * g_nSPKR_NumChannels);
+	g_nBufferIdx -= nSamplesUsed;
 }
 
 // Called from SoundCore_TimerFunc() for FADE_OUT
 void SpkrUpdate_Timer()
 {
-	if (soundtype == SOUND_WAVE)
-	{
-		UpdateSpkr();
-		ULONG nSamplesUsed;
+	UpdateSpkr();
+	ULONG nSamplesUsed;
 
-		nSamplesUsed = Spkr_SubmitWaveBuffer_FullSpeed(g_pSpeakerBuffer, g_nBufferIdx);
+	nSamplesUsed = Spkr_SubmitWaveBuffer_FullSpeed(g_pSpeakerBuffer, g_nBufferIdx);
 
-		_ASSERT(nSamplesUsed <=	g_nBufferIdx);
-		memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], (g_nBufferIdx - nSamplesUsed) * sizeof(short) * g_nSPKR_NumChannels);
-		g_nBufferIdx -=	nSamplesUsed;
-	}
+	_ASSERT(nSamplesUsed <=	g_nBufferIdx);
+	memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], (g_nBufferIdx - nSamplesUsed) * sizeof(short) * g_nSPKR_NumChannels);
+	g_nBufferIdx -=	nSamplesUsed;
 }
 
 //=============================================================================

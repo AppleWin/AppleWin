@@ -28,6 +28,7 @@ enum SS_CARDTYPE
 	CT_MegaAudio,		// Soundcard
 	CT_SDMusic,			// Soundcard
 	CT_BreakpointCard,
+	CT_NUM_CARDS
 };
 
 enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS, SLOT_AUX, GAME_IO_CONNECTOR };
@@ -50,6 +51,7 @@ public:
 
 	SS_CARDTYPE QueryType(void) { return m_type; }
 
+	static const std::string& GetCardNameEmpty();
 	std::string GetCardName(void);
 	static std::string GetCardName(const SS_CARDTYPE cardType);
 	static SS_CARDTYPE GetCardType(const std::string & card);

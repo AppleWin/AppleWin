@@ -139,7 +139,7 @@ CMouseInterface::CMouseInterface(UINT slot) :
 	m_pSlotRom(NULL),
 	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for MouseInterfaces
 {
-	if (m_slot != 4)	// fixme
+	if (m_slot == SLOT0)
 		ThrowErrorInvalidSlot();
 
 	m_6821.SetListenerB( this, M6821_Listener_B );

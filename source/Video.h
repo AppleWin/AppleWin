@@ -38,13 +38,15 @@ enum VideoStyle_e
 	VS_HALF_SCANLINES=1,		// drop 50% scan lines for a more authentic look
 	VS_COLOR_VERTICAL_BLEND=2,	// Color "TV Emu" rendering from AppleWin 1.25 (GH#616)
 //	VS_TEXT_OPTIMIZED=4,
+	VS_DEFAULT = VS_HALF_SCANLINES
 };
 
 enum VideoRefreshRate_e
 {
 	VR_NONE,
 	VR_50HZ,
-	VR_60HZ
+	VR_60HZ,
+	VR_DEFAULT = VR_60HZ
 };
 
 enum VideoFlag_e
@@ -191,9 +193,9 @@ public:
 		g_nAltCharSetOffset = 0;
 		g_uVideoMode = VF_TEXT;
 		g_eVideoType = VT_DEFAULT;
-		g_eVideoStyle = VS_HALF_SCANLINES;
+		g_eVideoStyle = VS_DEFAULT;
 		g_bVideoScannerNTSC = true;
-		g_nMonochromeRGB = RGB(0xC0,0xC0,0xC0);
+		g_nMonochromeRGB = MONO_COLOR_DEFAULT;
 		g_videoRomSize = 0;
 		g_videoRomRockerSwitch = false;
 		m_hasVidHD = false;
@@ -272,6 +274,7 @@ public:
 	void DecVideoType(void);
 	VideoStyle_e GetVideoStyle(void);
 	void SetVideoStyle(VideoStyle_e newVideoStyle);
+	bool IsVideoStyle(VideoStyle_e style, VideoStyle_e mask);
 	bool IsVideoStyle(VideoStyle_e mask);
 
 	VideoRefreshRate_e GetVideoRefreshRate(void);
@@ -285,6 +288,8 @@ public:
 
 	static const UINT kVideoRomSize2K = 1024*2;
 	static const UINT kVideoRomSize4K = kVideoRomSize2K*2;
+
+	static const COLORREF MONO_COLOR_DEFAULT = RGB(0xC0, 0xC0, 0xC0);
 
 protected:
 	uint8_t *g_pFramebufferbits;

@@ -42,6 +42,8 @@ const bool IMAGE_FORCE_WRITE_PROTECTED = true;
 const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
+const bool kEnhanceDiskAccessSpeed_Default = true;
+
 class FloppyDisk
 {
 public:

@@ -90,7 +90,7 @@ static int   joysubx[2]     = {0,0};
 static int   joysuby[2]     = {0,0};
 
 // Value persisted to Registry for REGVALUE_JOYSTICK0_EMU_TYPE
-static uint32_t joytype[2]            = {J0C_JOYSTICK1, J1C_DISABLED};	// Emulation Type for joysticks #0 & #1
+static uint32_t joytype[JN_NUM] = { kJoystick_Default[JN_JOYSTICK0], kJoystick_Default[JN_JOYSTICK1] };	// Emulation Type for joysticks #0 & #1
 
 static BOOL  setbutton[3]   = {0,0,0};	// Used when a mouse button is pressed/released
 
@@ -99,8 +99,8 @@ static int   ypos[2]        = { PDL_MAX,PDL_MAX };
 
 static UINT64 g_paddleInactiveCycle[4] = { 0 };	// Abs cycle that each paddle becomes inactive after PTRIG strobe
 
-static short g_nPdlTrimX = 0;
-static short g_nPdlTrimY = 0;
+static short g_nPdlTrimX = kPdlXTrim_Default;
+static short g_nPdlTrimY = kPdlYTrim_Default;
 
 enum {JOYPORT_LEFTRIGHT=0, JOYPORT_UPDOWN=1};
 

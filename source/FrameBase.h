@@ -2,6 +2,8 @@
 
 #include "Video.h"
 
+const BOOL kConfirmReboot_Default = TRUE;
+
 class NetworkBackend;
 class SoundBuffer;
 

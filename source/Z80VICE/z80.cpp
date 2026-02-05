@@ -6517,7 +6517,7 @@ void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 
 bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version)
 {
-	if (uSlot != 4 && uSlot != 5)	// fixme
+	if (uSlot == SLOT0)
 		Card::ThrowErrorInvalidSlot(CT_Z80, uSlot);
 
 	if (version != 1)

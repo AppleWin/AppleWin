@@ -2,7 +2,6 @@
 
 #include "IPropertySheetPage.h"
 #include "PropertySheetDefs.h"
-#include "PageConfigTfe.h"
 #include "Common.h"
 
 class CPropertySheetHelper;
@@ -12,13 +11,23 @@ class CPageConfig : private IPropertySheetPage
 public:
 	CPageConfig(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_CONFIG),
-		m_PropertySheetHelper(PropertySheetHelper)
+		m_PropertySheetHelper(PropertySheetHelper),
+		m_uScrollLockToggle(kScrollLockToggle_Default)
 	{
 		CPageConfig::ms_this = this;
+		memset(m_customColors, 0, sizeof(m_customColors));
 	}
 	virtual ~CPageConfig(){}
 
 	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+
+	UINT GetScrollLockToggle(void) { return m_uScrollLockToggle; }
+	void SetScrollLockToggle(UINT uValue) { m_uScrollLockToggle = uValue; }
+
+	uint32_t GetVolumeMax(void) { return VOLUME_MAX; }
+
+	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
+	virtual void ResetToDefault();			// IPropertySheetPage
 
 protected:
 	// IPropertySheetPage
@@ -30,13 +39,19 @@ private:
 	void InitOptions(HWND hWnd);
 	eApple2Type GetApple2Type(uint32_t NewMenuItem);
 	void EnableTrackbar(HWND hWnd, BOOL enable);
-	void ui_tfe_settings_dialog(HWND hwnd);
-	bool IsOkToBenchmark(HWND hWnd, const bool bConfigChanged);
+	void ui_tfe_settings_dialog(HWND hWnd);
 
 	static CPageConfig* ms_this;
 	static const char m_ComputerChoices[];
 
+	static const UINT VOLUME_MIN = 0;
+	static const UINT VOLUME_MAX = 59;
+
+	static const UINT kScrollLockToggle_Default = 0;
+	static const UINT kMachineSpeed_Default = SPEED_NORMAL;
+
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;
-	CPageConfigTfe m_PageConfigTfe;
+	UINT m_uScrollLockToggle;
+	COLORREF m_customColors[256];
 };

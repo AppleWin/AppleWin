@@ -51,17 +51,11 @@ void CPropertySheet::Init(void)
 	PropSheetPages[PG_INPUT].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_INPUT);
 	PropSheetPages[PG_INPUT].pfnDlgProc = CPageInput::DlgProc;
 
-	PropSheetPages[PG_SOUND].dwSize = sizeof(PROPSHEETPAGE);
-	PropSheetPages[PG_SOUND].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_SOUND].hInstance = GetFrame().g_hInstance;
-	PropSheetPages[PG_SOUND].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SOUND);
-	PropSheetPages[PG_SOUND].pfnDlgProc = CPageSound::DlgProc;
-
-	PropSheetPages[PG_DISK].dwSize = sizeof(PROPSHEETPAGE);
-	PropSheetPages[PG_DISK].dwFlags = PSP_DEFAULT;
-	PropSheetPages[PG_DISK].hInstance = GetFrame().g_hInstance;
-	PropSheetPages[PG_DISK].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_DISK);
-	PropSheetPages[PG_DISK].pfnDlgProc = CPageDisk::DlgProc;
+	PropSheetPages[PG_SLOTS].dwSize = sizeof(PROPSHEETPAGE);
+	PropSheetPages[PG_SLOTS].dwFlags = PSP_DEFAULT;
+	PropSheetPages[PG_SLOTS].hInstance = GetFrame().g_hInstance;
+	PropSheetPages[PG_SLOTS].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SOUND);
+	PropSheetPages[PG_SLOTS].pfnDlgProc = CPageSlots::DlgProc;
 
 	PropSheetPages[PG_ADVANCED].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_ADVANCED].dwFlags = PSP_DEFAULT;
@@ -87,7 +81,7 @@ void CPropertySheet::Init(void)
 
 uint32_t CPropertySheet::GetVolumeMax()
 {
-	return m_PageSound.GetVolumeMax();
+	return m_PageConfig.GetVolumeMax();
 }
 
 // Called when F11/F12 is pressed
@@ -103,4 +97,27 @@ bool CPropertySheet::SaveStateSelectImage(HWND hWindow, bool bSave)
 	{
 		return false;	// Cancelled
 	}
+}
+
+void CPropertySheet::ResetAllToDefault()
+{
+	m_PageConfig.ResetToDefault();
+	m_PageInput.ResetToDefault();
+	m_PageSlots.ResetToDefault();
+	m_PageAdvanced.ResetToDefault();
+}
+
+void CPropertySheet::ApplyConfigAfterClose(UINT bmPages)
+{
+	if (bmPages & (1 << PG_CONFIG))
+		m_PageConfig.ApplyConfigAfterClose();
+
+	if (bmPages & (1 << PG_INPUT))
+		m_PageInput.ApplyConfigAfterClose();
+
+	if (bmPages & (1 << PG_SLOTS))
+		m_PageSlots.ApplyConfigAfterClose();
+
+	if (bmPages & (1 << PG_ADVANCED))
+		m_PageAdvanced.ApplyConfigAfterClose();
 }

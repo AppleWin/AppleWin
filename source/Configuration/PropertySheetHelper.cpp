@@ -125,20 +125,29 @@ void CPropertySheetHelper::SaveCpuType(eCpuType NewCpuType)
 
 void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 {
-	_ASSERT(slot < NUM_SLOTS);
-	if (slot >= NUM_SLOTS)
-		return;
+	if (slot <= SLOT7)
+	{
+		if (GetCardMgr().QuerySlot(slot) == newCardType)
+			return;
 
-	if (GetCardMgr().QuerySlot(slot) == newCardType)
-		return;
+		GetCardMgr().Insert(slot, newCardType);
+	}
+	else if (slot == SLOT_AUX)
+	{
+		if (GetCardMgr().QueryAux() == newCardType)
+			return;
 
-	GetCardMgr().Insert(slot, newCardType);
-	GetCardMgr().GetRef(slot).InitializeIO(GetCxRomPeripheral());
+		GetCardMgr().InsertAux(newCardType);
+	}
+	else
+	{
+		_ASSERT(0);
+	}
 }
 
 // Used by:
-// . CPageDisk:		IDC_CIDERPRESS_BROWSE
-// . CPageAdvanced:	IDC_PRINTER_DUMP_FILENAME_BROWSE
+// . CPageAdvanced:	IDC_CIDERPRESS_BROWSE
+// . CPageSlots:	IDC_PRINTER_DUMP_FILENAME_BROWSE
 std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, const char* pszTitle, const char* REGVALUE, const char* FILEMASKS)
 {
 	char szFilename[MAX_PATH];
@@ -288,7 +297,7 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 		m_ConfigNew.m_CpuType = ProbeMainCpuDefault(m_ConfigNew.m_Apple2Type);
 	}
 
-	if (IsConfigChanged())
+	if (IsConfigChanged())	// Only for config that requires a restart
 	{
 		if (!CheckChangesForRestart(hWnd))
 		{
@@ -297,10 +306,12 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 			return;
 		}
 
-		ApplyNewConfig();
+		ApplyNewConfig(m_ConfigNew, m_ConfigOld);
 
 		restart = true;
 	}
+
+	GetPropertySheet().ApplyConfigAfterClose(m_bmAfterClosePages);	// For config that does NOT need a restart
 
 	if (restart)
 		GetFrame().Restart();
@@ -326,55 +337,81 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 	if (CONFIG_CHANGED_LOCAL(m_Apple2Type))
 	{
 		SaveComputerType(ConfigNew.m_Apple2Type);
+		SetApple2Type(ConfigNew.m_Apple2Type);	// Needed by InitializeIO() so that SLOT0 LC matches Apple2Type
 	}
 
 	if (CONFIG_CHANGED_LOCAL(m_CpuType))
-	{
 		SaveCpuType(ConfigNew.m_CpuType);
-	}
 
-	UINT slot = SLOT3;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	// unconditionally save it, as the previous SetSlot might have removed the setting
-	PCapBackend::SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
-	Uthernet2::SetRegistryVirtualDNS(slot, ConfigNew.m_tfeVirtualDNS);
-
-	slot = SLOT4;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	slot = SLOT5;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	slot = SLOT7;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
+	// For all slots (except aux) that have changed:
+	// . first empty them
+	// . then insert the new card
+	// Reason: s1=empty, s2=SSC -> s1=SSC, s2=empty
+	// . if we just insert, then we'll go via the intermediate state of "s1=SSC, s2=SSC" - but only 1 instance of SSC is permitted
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
-		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);
+		if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+			SetSlot(slot, CT_Empty);
 	}
+
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+			SetSlot(slot, ConfigNew.m_Slot[slot]);
+
+		// Keep going, as card may not have changed, but card's config could have
+
+		if (ConfigNew.m_Slot[slot] == CT_Uthernet || ConfigNew.m_Slot[slot] == CT_Uthernet2)
+		{
+			// NB. Assume we don't have both cards inserted
+			PCapBackend::SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
+			Uthernet2::SetRegistryVirtualDNS(slot, ConfigNew.m_tfeVirtualDNS);
+		}
+
+		if (ConfigNew.m_Slot[slot] == CT_SSC)
+		{
+			GetCardMgr().GetSSC()->SetSerialPortItem(ConfigNew.m_serialPortItem);
+		}
+
+		if (ConfigNew.m_Slot[slot] == CT_Disk2)
+		{
+			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).InsertDisk(i, ConfigNew.m_slotInfoForFDC[slot].pathname[i], false, false);
+		}
+
+		if (ConfigNew.m_Slot[slot] == CT_GenericHDD)
+		{
+			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Insert(i, ConfigNew.m_slotInfoForHDC[slot].pathname[i]);
+		}
+	}
+
+	// Initialize I/O after setting config
+	// NB. Uthernet cards check network interface in InitializeIO(), so need SetRegistryInterface() called first
+	GetCardMgr().InitializeIO(GetCxRomPeripheral());
+
+	if (CONFIG_CHANGED_LOCAL(m_SlotAux))
+		SetSlot(SLOT_AUX, ConfigNew.m_SlotAux);
+
+	if (CONFIG_CHANGED_LOCAL(m_enableTheFreezesF8Rom))
+		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_enableTheFreezesF8Rom);
 
 	if (CONFIG_CHANGED_LOCAL(m_videoRefreshRate))
-	{
 		REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
-	}
+
+	if (CONFIG_CHANGED_LOCAL(m_RamWorksMemorySize))
+		SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
 }
 
+// Called from Snapshot_LoadState_v2()
+// . A convenient way to save newly loaded state to Registry
 void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
 {
 	SaveComputerType(ConfigNew.m_Apple2Type);
 	SaveCpuType(ConfigNew.m_CpuType);
-	REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);
+	//REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);	// Not currently in save-state
 	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
-}
-
-void CPropertySheetHelper::ApplyNewConfig(void)
-{
-	ApplyNewConfig(m_ConfigNew, m_ConfigOld);
+	SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
 }
 
 void CPropertySheetHelper::SaveCurrentConfig(void)
@@ -391,14 +428,48 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 
 void CPropertySheetHelper::RestoreCurrentConfig(void)
 {
-	// NB. clone-type is encoded in g_Apple2Type
-	SetApple2Type(m_ConfigOld.m_Apple2Type);
-	SetMainCpu(m_ConfigOld.m_CpuType);
-	SetSlot(SLOT3, m_ConfigOld.m_Slot[SLOT3]);
-	SetSlot(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
-	SetSlot(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
-	SetSlot(SLOT7, m_ConfigOld.m_Slot[SLOT7]);
-	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
+	// NB. Only need to restore slots (and their config) due to any newly added DiskII/HDD controller cards
+
+	// Just like for ApplyNewConfig(), don't want to have an intermediate state of "s1=SSC, s2=SSC"
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+		SetSlot(slot, CT_Empty);
+
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+		SetSlot(slot, m_ConfigOld.m_Slot[slot]);
+
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (m_ConfigOld.m_Slot[slot] == CT_Uthernet || m_ConfigOld.m_Slot[slot] == CT_Uthernet2)
+		{
+			// Assume only one CT_Uthernet or CT_Uthernet2 inserted
+			PCapBackend::SetRegistryInterface(slot, m_ConfigOld.m_tfeInterface);
+			Uthernet2::SetRegistryVirtualDNS(slot, m_ConfigOld.m_tfeVirtualDNS);
+		}
+
+		if (m_ConfigOld.m_Slot[slot] == CT_SSC)
+		{
+			GetCardMgr().GetSSC()->SetSerialPortItem(m_ConfigOld.m_serialPortItem);
+		}
+
+		if (m_ConfigOld.m_Slot[slot] == CT_GenericPrinter)
+		{
+			*GetCardMgr().GetParallelPrinterCard() = m_ConfigOld.m_parallelPrinterCard;	// copy object
+		}
+
+		if (m_ConfigOld.m_Slot[slot] == CT_Disk2)
+		{
+			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).InsertDisk(i, m_ConfigOld.m_slotInfoForFDC[slot].pathname[i], false, false);
+		}
+
+		if (m_ConfigOld.m_Slot[slot] == CT_GenericHDD)
+		{
+			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Insert(i, m_ConfigOld.m_slotInfoForHDC[slot].pathname[i]);
+		}
+	}
+
+	GetCardMgr().InitializeIO(GetCxRomPeripheral());
 }
 
 bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
@@ -433,6 +504,22 @@ bool CPropertySheetHelper::IsOkToRestart(HWND hWnd)
 	return true;
 }
 
+bool CPropertySheetHelper::IsOkToResetConfig(HWND hWnd)
+{
+	if (g_nAppMode == MODE_LOGO)
+		return true;
+
+	if (MessageBox(hWnd,
+		"Resetting configuration to the default values whilst the machine is being emulated "
+		"could result in lose of unsaved work, or corruption of floppy or hard disk images.\n\n"
+		"Are you sure you want to do this?",
+		"Reset Configuration",
+		MB_ICONEXCLAMATION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+		return false;
+
+	return true;
+}
+
 #define CONFIG_CHANGED(var) \
 	(m_ConfigOld.var != m_ConfigNew.var)
 
@@ -452,8 +539,16 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 		if (CONFIG_CHANGED(m_videoRefreshRate))
 			strMsgMain += ". Video refresh rate has changed\n";
 
-		if (CONFIG_CHANGED(m_Slot[SLOT3]))
-			strMsgMain += GetSlot(SLOT3);
+		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+		{
+			if (CONFIG_CHANGED(m_Slot[slot]))
+				strMsgMain += GetSlot(slot);
+		}
+
+		if (CONFIG_CHANGED(m_SlotAux))
+			strMsgMain += GetSlot(SLOT_AUX);
+		else if (m_ConfigNew.m_SlotAux == CT_RamWorksIII && CONFIG_CHANGED(m_RamWorksMemorySize))
+			strMsgMain += ". RamWorks III memory size changed\n";
 
 		if (CONFIG_CHANGED(m_tfeInterface))
 			strMsgMain += ". Uthernet interface has changed\n";
@@ -461,17 +556,11 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 		if (CONFIG_CHANGED(m_tfeVirtualDNS))
 			strMsgMain += ". Uthernet Virtual DNS has changed\n";
 
-		if (CONFIG_CHANGED(m_Slot[SLOT4]))
-			strMsgMain += GetSlot(SLOT4);
-
-		if (CONFIG_CHANGED(m_Slot[SLOT5]))
-			strMsgMain += GetSlot(SLOT5);
-
-		if (CONFIG_CHANGED(m_Slot[SLOT7]))
-			strMsgMain += ". Harddisk(s) have been plugged/unplugged\n";
-
-		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
+		if (CONFIG_CHANGED(m_enableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
+
+		if (CONFIG_CHANGED(m_serialPortItem))
+			strMsgMain += ". SSC config has changed\n";
 	}
 
 	std::string strMsgPost("\n");
@@ -490,35 +579,81 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 	return true;
 }
 
-std::string CPropertySheetHelper::GetSlot(const UINT uSlot)
+std::string CPropertySheetHelper::GetSlot(const UINT slot)
 {
-	// strMsg = ". Slot n: ";
-	std::string strMsg(". Slot ");
-	strMsg += '0' + uSlot;
-	strMsg += ": ";
+	std::string strMsg;
+	SS_CARDTYPE oldCardType, newCardType;
 
-	const SS_CARDTYPE OldCardType = m_ConfigOld.m_Slot[uSlot];
-	const SS_CARDTYPE NewCardType = m_ConfigNew.m_Slot[uSlot];
-
-	if ((OldCardType == CT_Empty) || (NewCardType == CT_Empty))
+	if (slot <= SLOT7)
 	{
-		if (NewCardType == CT_Empty)
+		// strMsg = ". Slot n: ";
+		strMsg = ". Slot ";
+		strMsg += '0' + slot;
+		strMsg += ": ";
+
+		oldCardType = m_ConfigOld.m_Slot[slot];
+		newCardType = m_ConfigNew.m_Slot[slot];
+	}
+	else if (slot == SLOT_AUX)
+	{
+		strMsg = ". Slot Aux:";
+
+		oldCardType = m_ConfigOld.m_SlotAux;
+		newCardType = m_ConfigNew.m_SlotAux;
+	}
+	else
+	{
+		_ASSERT(0);
+		return "Error: Illegal Slot!";
+	}
+
+	if (oldCardType == CT_LanguageCardIIe || newCardType == CT_LanguageCardIIe)
+	{
+		// Switch model: II/II+ (slot 0) <-> //e (no slot 0)
+		if (newCardType == CT_LanguageCardIIe)
 		{
-			strMsg += Card::GetCardName(OldCardType);
+			if (oldCardType != CT_Empty)
+			{
+				strMsg += Card::GetCardName(oldCardType);
+				strMsg += " card removed\n";
+			}
+			else
+			{
+				strMsg = "";
+			}
+		}
+		else
+		{
+			if (newCardType != CT_Empty)
+			{
+				strMsg += Card::GetCardName(newCardType);
+				strMsg += " card added\n";
+			}
+			else
+			{
+				strMsg = "";
+			}
+		}
+	}
+	else if (oldCardType == CT_Empty || newCardType == CT_Empty)
+	{
+		if (newCardType == CT_Empty)
+		{
+			strMsg += Card::GetCardName(oldCardType);
 			strMsg += " card removed\n";
 		}
 		else
 		{
-			strMsg += Card::GetCardName(NewCardType);
+			strMsg += Card::GetCardName(newCardType);
 			strMsg += " card added\n";
 		}
 	}
 	else
 	{
-			strMsg += Card::GetCardName(OldCardType);
-			strMsg += " card removed & ";
-			strMsg += Card::GetCardName(NewCardType);
-			strMsg += " card added\n";
+		strMsg += Card::GetCardName(oldCardType);
+		strMsg += " card removed & ";
+		strMsg += Card::GetCardName(newCardType);
+		strMsg += " card added\n";
 	}
 
 	return strMsg;

@@ -59,17 +59,6 @@ void Disk2CardManager::Update(const ULONG nExecutedCycles)
 	}
 }
 
-void Disk2CardManager::Reset(const bool powerCycle /*=false*/)
-{
-	for (UINT i = 0; i < NUM_SLOTS; i++)
-	{
-		if (GetCardMgr().QuerySlot(i) == CT_Disk2)
-		{
-			GetCardMgr().GetRef(i).Reset(powerCycle);
-		}
-	}
-}
-
 bool Disk2CardManager::GetEnhanceDisk(void)
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)

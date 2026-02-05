@@ -69,9 +69,9 @@ enum AppMode_e
 #define  REGVALUE_CONFIRM_REBOOT     "Confirm Reboot" // Added at 1.24.1 PageConfig
 #define  REGVALUE_FS_SHOW_SUBUNIT_STATUS "Full-screen show subunit status"
 #define  REGVALUE_SHOW_DISKII_STATUS "Show Disk II Status"
-#define  REGVALUE_SOUND_EMULATION    "Sound Emulation"
-#define  REGVALUE_SPKR_VOLUME        "Speaker Volume"
-#define  REGVALUE_MB_VOLUME          "Mockingboard Volume"
+//#define  REGVALUE_SOUND_EMULATION    "Sound Emulation"	// Deprecated from 1.31.1
+#define  REGVALUE_MASTER_VOLUME      "Master volume"
+#define  REGVALUE_SPKR_VOLUME        "Speaker Volume"		// Deprecated from 1.31.1
 #define  REGVALUE_SAVESTATE_FILENAME "Save State Filename"
 #define  REGVALUE_SAVE_STATE_ON_EXIT "Save State On Exit"
 #define  REGVALUE_HDD_ENABLED        "Harddisk Enable"		// Deprecated from 1.30.5
@@ -105,7 +105,7 @@ enum AppMode_e
 #define  REGVALUE_VIDEO_REFRESH_RATE    "Video Refresh Rate"
 #define  REGVALUE_SERIAL_PORT_NAME   "Serial Port Name"
 #define  REGVALUE_ENHANCE_DISK_SPEED "Enhance Disk Speed"
-#define  REGVALUE_CUSTOM_SPEED       "Custom Speed"
+//#define  REGVALUE_CUSTOM_SPEED       "Custom Speed"		// GH#853: Deprecated from 1.31.1
 #define  REGVALUE_EMULATION_SPEED    "Emulation Speed"
 #define  REGVALUE_WINDOW_SCALE       "Window Scale"
 #define  REGVALUE_UTHERNET_ACTIVE       "Uthernet Active"	// GH#977: Deprecated from 1.30.5

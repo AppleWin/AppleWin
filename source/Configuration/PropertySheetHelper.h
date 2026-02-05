@@ -8,6 +8,7 @@ public:
 	CPropertySheetHelper() :
 		m_LastPage(PG_CONFIG),
 		m_bmPages(0),
+		m_bmAfterClosePages(0),
 		m_bSSNewFilename(false),
 		m_bDoBenchmark(false)
 	{}
@@ -25,6 +26,7 @@ public:
 	{
 		m_LastPage = page;
 		m_bmPages |= 1<<(UINT32)page;
+		m_bmAfterClosePages = m_bmPages;
 	}
 
 	void SaveCurrentConfig(void);
@@ -37,6 +39,7 @@ public:
 	void ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew);
 	void ConfigSaveApple2Type(eApple2Type apple2Type);
 	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
+	bool IsOkToResetConfig(HWND hWnd);
 
 private:
 	bool IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged);
@@ -45,12 +48,12 @@ private:
 	void SaveCpuType(eCpuType NewCpuType);
 	bool HardwareConfigChanged(HWND hWnd);
 	bool CheckChangesForRestart(HWND hWnd);
-	void ApplyNewConfig(void);
 	void RestoreCurrentConfig(void);
 	std::string GetSlot(const UINT uSlot);
 
 	PAGETYPE m_LastPage;
 	UINT32 m_bmPages;
+	UINT32 m_bmAfterClosePages;
 	bool m_bSSNewFilename;
 	std::string m_szSSNewDirectory;
 	std::string m_szSSNewFilename;
