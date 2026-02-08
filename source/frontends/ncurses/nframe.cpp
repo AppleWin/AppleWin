@@ -228,6 +228,11 @@ namespace na2
         Init(24 * mRows, 40 * mCols);
         myAsciiArt->init(mRows, mCols);
 
+        if (g_nAppMode != MODE_RUNNING)
+        {
+            wattron(myFrame.get(), A_DIM);
+        }
+
         int y = 0;
         int ypixel = 0;
         while (y < 20)
@@ -263,6 +268,11 @@ namespace na2
             }
             ++y;
             ypixel += 16;
+        }
+
+        if (g_nAppMode != MODE_RUNNING)
+        {
+            wattroff(myFrame.get(), A_DIM);
         }
 
         wrefresh(myFrame.get());
