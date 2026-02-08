@@ -460,7 +460,7 @@ bool HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname
 
 //-----------------------------------------------------------------------------
 
-bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
+bool HarddiskInterfaceCard::UserSelectNewDiskImageOnly(const int drive, LPCSTR pszFilename, std::string& openFilename, DWORD flags)
 {
 	char directory[MAX_PATH];
 	char filename[MAX_PATH];
@@ -472,41 +472,45 @@ bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(OPENFILENAME));
-	ofn.lStructSize     = sizeof(OPENFILENAME);
-	ofn.hwndOwner       = GetFrame().g_hFrameWindow;
-	ofn.hInstance       = GetFrame().g_hInstance;
-	ofn.lpstrFilter     = "Hard Disk Images (*.hdv,*.po,*.2mg,*.2img,*.gz,*.zip)\0*.hdv;*.po;*.2mg;*.2img;*.gz;*.zip\0"
-						  "All Files\0*.*\0";
-	ofn.lpstrFile       = filename;
-	ofn.nMaxFile        = MAX_PATH;
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = GetFrame().g_hFrameWindow;
+	ofn.hInstance = GetFrame().g_hInstance;
+	ofn.lpstrFilter = "Hard Disk Images (*.hdv,*.po,*.2mg,*.2img,*.gz,*.zip)\0*.hdv;*.po;*.2mg;*.2img;*.gz;*.zip\0"
+		"All Files\0*.*\0";
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
-	ofn.Flags           = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;	// Don't allow creation & hide the read-only checkbox
-	ofn.lpstrTitle      = title.c_str();
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;	// Don't allow creation & hide the read-only checkbox
+	ofn.lpstrTitle = title.c_str();
 
 	bool bRes = false;
 
-	if (GetOpenFileName(&ofn))
-	{
-		std::string openFilename = filename;
-		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-			openFilename += ".hdv";
-		
-		if (Insert(drive, openFilename))
-		{
-			bRes = true;
-		}
-		else
-		{
-			NotifyInvalidImage(openFilename);
-		}
-	}
+	if (!GetOpenFileName(&ofn))
+		return false;
 
-	return bRes;
+	flags = ofn.Flags;
+	openFilename = filename;
+	if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
+		openFilename += ".hdv";
+
+	return true;
 }
 
-bool HarddiskInterfaceCard::Select(const int iDrive)
+bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 {
-	return SelectImage(iDrive, "");
+	std::string openFilename;
+	DWORD flags = 0;
+
+	if (!UserSelectNewDiskImageOnly(drive, pszFilename, openFilename, flags))
+		return false;
+
+	if (!Insert(drive, openFilename))
+	{
+		NotifyInvalidImage(openFilename);
+		return false;
+	}
+
+	return true;
 }
 
 //===========================================================================

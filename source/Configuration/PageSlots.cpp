@@ -383,7 +383,32 @@ void CPageSlots::ApplyConfigAfterClose()
 	GetFrame().FrameRefreshStatus(DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
 
 	// Hard disk card
-	// TODO
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (GetCardMgr().QuerySlot(slot) == CT_GenericHDD)
+		{
+			HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
+			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+			{
+				std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[slot].pathname[i];
+
+				if (card.HarddiskGetFullPathName(i) != pathname)
+				{
+					if (pathname.empty())
+					{
+						card.Unplug(i);
+					}
+					else
+					{
+						bool error = card.Insert(i, pathname);
+						_ASSERT(error == true);	// Should've already been rejected in HandleFloppyDriveCombo()
+						if (error != true)
+							card.NotifyInvalidImage(pathname);
+					}
+				}
+			}
+		}
+	}
 
 	// Parallel Printer card
 	CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(m_PropertySheetHelper.GetConfigNew());
@@ -428,13 +453,12 @@ INT_PTR CPageSlots::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 		switch (LOWORD(wparam))
 		{
 		case IDC_SLOT_OPT_COMBO_DISK1:
-			if (HIWORD(wparam) == CBN_SELCHANGE)
-				HandleFloppyDriveCombo(hWnd, DRIVE_1, LOWORD(wparam), ms_slot);
-			break;
-
 		case IDC_SLOT_OPT_COMBO_DISK2:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
-				HandleFloppyDriveCombo(hWnd, DRIVE_2, LOWORD(wparam), ms_slot);
+			{
+				UINT driveSelected = LOWORD(wparam) - IDC_SLOT_OPT_COMBO_DISK1;
+				HandleFloppyDriveCombo(hWnd, driveSelected, LOWORD(wparam), ms_slot);
+			}
 			break;
 
 		case IDC_SLOT_OPT_DISK_SWAP:
@@ -476,24 +500,18 @@ INT_PTR CPageSlots::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 
 void CPageSlots::InitComboFloppyDrive(HWND hWnd, UINT slot)
 {
-	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_DISK1, m_defaultDiskOptions, -1);
-	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_DISK2, m_defaultDiskOptions, -1);
-
-	std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[slot].pathname[DRIVE_1];
-	std::string imagename, fullname;
-	GetImageTitle(pathname.c_str(), imagename, fullname);
-	if (!pathname.empty())
+	for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
 	{
-		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK1, CB_INSERTSTRING, 0, (LPARAM)fullname.c_str());
-		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK1, CB_SETCURSEL, 0, 0);
-	}
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_DISK1 + i, m_defaultDiskOptions, -1);
 
-	pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[slot].pathname[DRIVE_2];
-	GetImageTitle(pathname.c_str(), imagename, fullname);
-	if (!pathname.empty())
-	{
-		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK2, CB_INSERTSTRING, 0, (LPARAM)fullname.c_str());
-		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK2, CB_SETCURSEL, 0, 0);
+		std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[slot].pathname[i];
+		std::string imagename, fullname;
+		GetImageTitle(pathname.c_str(), imagename, fullname);
+		if (!pathname.empty())
+		{
+			SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK1 + i, CB_INSERTSTRING, 0, (LPARAM)fullname.c_str());
+			SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK1 + i, CB_SETCURSEL, 0, 0);
+		}
 	}
 }
 
@@ -662,16 +680,17 @@ INT_PTR CPageSlots::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wpar
 		switch (LOWORD(wparam))
 		{
 		case IDC_SLOT_OPT_COMBO_HDD1:
-			if (HIWORD(wparam) == CBN_SELCHANGE)
-			{
-				HandleHDDCombo(hWnd, HARDDISK_1, LOWORD(wparam), ms_slot);
-			}
-			break;
-
 		case IDC_SLOT_OPT_COMBO_HDD2:
+		case IDC_SLOT_OPT_COMBO_HDD3:
+		case IDC_SLOT_OPT_COMBO_HDD4:
+		case IDC_SLOT_OPT_COMBO_HDD5:
+		case IDC_SLOT_OPT_COMBO_HDD6:
+		case IDC_SLOT_OPT_COMBO_HDD7:
+		case IDC_SLOT_OPT_COMBO_HDD8:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				HandleHDDCombo(hWnd, HARDDISK_2, LOWORD(wparam), ms_slot);
+				UINT driveSelected = LOWORD(wparam) - IDC_SLOT_OPT_COMBO_HDD1;
+				HandleHDDCombo(hWnd, driveSelected, LOWORD(wparam), ms_slot);
 			}
 			break;
 
@@ -710,27 +729,45 @@ INT_PTR CPageSlots::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wpar
 
 void CPageSlots::InitComboHDD(HWND hWnd, UINT slot)
 {
-	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_HDD1, m_defaultHDDOptions, -1);
-	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_HDD2, m_defaultHDDOptions, -1);
-
-	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
-
-	if (!card.GetFullName(HARDDISK_1).empty())
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 	{
-		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_HDD1, CB_INSERTSTRING, 0, (LPARAM)card.GetFullName(HARDDISK_1).c_str());
-		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_HDD1, CB_SETCURSEL, 0, 0);
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_HDD1 + i, m_defaultHDDOptions, -1);
+
+		std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[slot].pathname[i];
+		std::string imagename, fullname;
+		GetImageTitle(pathname.c_str(), imagename, fullname);
+		if (!pathname.empty())
+		{
+			SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_HDD1 + i, CB_INSERTSTRING, 0, (LPARAM)fullname.c_str());
+			SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_HDD1 + i, CB_SETCURSEL, 0, 0);
+		}
+	}
+}
+
+bool CPageSlots::CheckHDDPathnameInUse(const std::string& pathname, BYTE& inUseSlot, BYTE& inUseDrive)
+{
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (GetCardMgr().QuerySlot(slot) == CT_GenericHDD)
+		{
+			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+			{
+				if (dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).HarddiskGetFullPathName(i) == pathname)
+				{
+					inUseSlot = slot;
+					inUseDrive = i + 1;
+					return true;
+				}
+			}
+		}
 	}
 
-	if (!card.GetFullName(HARDDISK_2).empty())
-	{
-		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_HDD2, CB_INSERTSTRING, 0, (LPARAM)card.GetFullName(HARDDISK_2).c_str());
-		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_HDD2, CB_SETCURSEL, 0, 0);
-	}
+	return false;
 }
 
 void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot)
 {
-	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
+	HarddiskInterfaceCard& card = m_PropertySheetHelper.GetConfigNew().m_harddiskCard;
 
 	// Search from "select hard drive"
 	uint32_t dwOpenDialogIndex = (uint32_t)SendDlgItemMessage(hWnd, comboSelected, CB_FINDSTRINGEXACT, -1, (LPARAM)&m_defaultHDDOptions[0]);
@@ -741,7 +778,9 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 	if (dwComboSelection == dwOpenDialogIndex)
 	{
 		EnableHDD(hWnd, FALSE);	// Prevent multiple Selection dialogs to be triggered
-		bool bRes = card.Select(driveSelected);
+		std::string pathname;
+		DWORD flags = 0;
+		bool bRes = card.UserSelectNewDiskImageOnly(driveSelected, "", pathname, flags);
 		EnableHDD(hWnd, TRUE);
 
 		if (!bRes)
@@ -749,6 +788,30 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 			if (SendDlgItemMessage(hWnd, comboSelected, CB_GETCOUNT, 0, 0) == 3)	// If there's already a HDD...
 				SendDlgItemMessage(hWnd, comboSelected, CB_SETCURSEL, 0, 0);		// then reselect it in the ComboBox
 			return;
+		}
+
+		// Check if pathname is in use by any of emulator's disk cards
+		BYTE inUseSlot = 0, inUseDrive = 0;
+		if (CheckHDDPathnameInUse(pathname, inUseSlot, inUseDrive))
+		{
+			m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = "";
+
+			std::string strText = StrFormat("%s already mounted in slot %d, drive %d.", pathname.c_str(), inUseSlot, inUseDrive);
+			GetFrame().FrameMessageBox(strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+			return;
+		}
+		else
+		{
+			// Not in use: insert image to validate it
+			bool error = card.Insert(driveSelected, pathname);
+			if (error != true)
+			{
+				card.NotifyInvalidImage(pathname);
+				m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = "";
+				return;
+			}
+
+			m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = pathname;
 		}
 
 		// Add hard drive name as item 0 and select it
@@ -779,6 +842,7 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 			{
 				// Unplug selected disk
 				card.Unplug(driveSelected);
+				m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = "";
 				// Remove drive from list
 				SendDlgItemMessage(hWnd, comboSelected, CB_DELETESTRING, 0, 0);
 			}
@@ -803,18 +867,15 @@ void CPageSlots::HandleHDDSwap(HWND hWnd, UINT slot)
 	if (!RemovalConfirmation(IDC_SLOT_OPT_HDD_SWAP))
 		return;
 
-	if (!dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).ImageSwap())
-		return;
+	std::string temp = m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[HARDDISK_1];
+	m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[HARDDISK_1] = m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[HARDDISK_2];
+	m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[HARDDISK_2] = temp;
 
 	InitComboHDD(hWnd, slot);
 }
 
 void CPageSlots::DlgHarddiskOK(HWND hWnd)
 {
-	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(ms_slot));
-
-	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
-		m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[i] = card.HarddiskGetFullPathName(i);
 }
 
 //===========================================================================

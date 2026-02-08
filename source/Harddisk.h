@@ -105,9 +105,10 @@ public:
 	const std::string& GetFullName(const int iDrive);
 	const std::string& HarddiskGetFullPathName(const int iDrive);
 	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
-	bool Select(const int iDrive);
+	bool UserSelectNewDiskImageOnly(const int drive, LPCSTR pszFilename, std::string& openFilename, DWORD flags);
 	bool Insert(const int iDrive, const std::string& pathname);
 	void Unplug(const int iDrive);
+	void NotifyInvalidImage(const std::string& szImageFilename);
 	void LoadLastDiskImage(const int drive);
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
 	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }
@@ -129,7 +130,6 @@ public:
 private:
 	void CleanupDriveInternal(const int iDrive);
 	void CleanupDrive(const int iDrive);
-	void NotifyInvalidImage(const std::string & szImageFilename);
 	void SaveLastDiskImage(const int drive);
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);

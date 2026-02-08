@@ -63,6 +63,7 @@ private:
 	void HandleFloppyDriveSwap(HWND hWnd, UINT slot);
 
 	void InitComboHDD(HWND hWnd, UINT slot);
+	bool CheckHDDPathnameInUse(const std::string& pathname, BYTE& inUseSlot, BYTE& inUseDrive);
 	void HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);
 	void EnableHDD(HWND hWnd, BOOL enable);
 	void HandleHDDSwap(HWND hWnd, UINT slot);
