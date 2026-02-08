@@ -72,6 +72,8 @@ public:
 	UINT m_mouseRestrictToWindow;
 	SlotInfoForFDC m_slotInfoForFDC[NUM_SLOTS];
 	SlotInfoForHDC m_slotInfoForHDC[NUM_SLOTS];
+	Disk2InterfaceCard m_disk2Card;				// For image selection and validation
+	HarddiskInterfaceCard m_harddiskCard;		// For image selection and validation
 
 	// Advanced
 	UINT m_uSaveLoadStateMsg;	// WM_USER_LOADSTATE or WM_USER_SAVESTATE

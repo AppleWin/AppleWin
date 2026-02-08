@@ -153,16 +153,6 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				const UINT slot = LOWORD(wparam) - IDC_SLOT0_OPTION;
 				const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_Slot[slot];
 
-				if (cardInSlot == CT_Disk2 || cardInSlot == CT_GenericHDD)
-				{
-					if (GetCardMgr().GetRef(slot).QueryType() != cardInSlot)
-					{
-						// NB. Unusual as we create slot object when slot-option is clicked (instead of after OK)
-						// Needed as we need a Disk2InterfaceCard or HarddiskInterfaceCard object so that images can be inserted/ejected
-						m_PropertySheetHelper.SetSlot(slot, cardInSlot);
-					}
-				}
-
 				if (!CardTypeHasOptions(cardInSlot))
 					break;
 
@@ -340,18 +330,67 @@ void CPageSlots::InitOptions(HWND hWnd)
 	}
 }
 
+void CPageSlots::DiskCardCleanup()
+{
+	for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+		m_PropertySheetHelper.GetConfigNew().m_disk2Card.EjectDisk(i);	// close any open file handles
+
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+		m_PropertySheetHelper.GetConfigNew().m_harddiskCard.Unplug(i);	// close any open file handles
+}
+
+void CPageSlots::DlgCANCEL(HWND hWnd)
+{
+	DiskCardCleanup();
+}
+
 void CPageSlots::DlgOK(HWND hWnd)
 {
+	DiskCardCleanup();
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
 
 void CPageSlots::ApplyConfigAfterClose()
 {
+	// Disk II card
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (GetCardMgr().QuerySlot(slot) == CT_Disk2)
+		{
+			Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
+			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+			{
+				std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[slot].pathname[i];
+
+				if (card.DiskGetFullPathName(i) != pathname)
+				{
+					if (pathname.empty())
+					{
+						card.EjectDisk(i);
+					}
+					else
+					{
+						ImageError_e error = card.InsertDisk(i, pathname, false, false);
+						_ASSERT(error == eIMAGE_ERROR_NONE);	// Should've already been rejected in HandleFloppyDriveCombo()
+						if (error != eIMAGE_ERROR_NONE)
+							card.NotifyInvalidImage(i, pathname, error);
+					}
+				}
+			}
+		}
+	}
+
+	GetFrame().FrameRefreshStatus(DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
+
+	// Hard disk card
+	// TODO
+
 	// Parallel Printer card
 	CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(m_PropertySheetHelper.GetConfigNew());
 	config.m_parallelPrinterCard.SetRegistryConfig();
 
-	*(GetCardMgr().GetParallelPrinterCard()) = config.m_parallelPrinterCard;	// copy object
+	if (GetCardMgr().GetParallelPrinterCard())
+		*(GetCardMgr().GetParallelPrinterCard()) = config.m_parallelPrinterCard;	// copy object
 
 	// Mouse card
 	m_mouseShowCrosshair = m_PropertySheetHelper.GetConfigNew().m_mouseShowCrosshair;
@@ -390,18 +429,12 @@ INT_PTR CPageSlots::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 		{
 		case IDC_SLOT_OPT_COMBO_DISK1:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
-			{
 				HandleFloppyDriveCombo(hWnd, DRIVE_1, LOWORD(wparam), ms_slot);
-				GetFrame().FrameRefreshStatus(DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
-			}
 			break;
 
 		case IDC_SLOT_OPT_COMBO_DISK2:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
-			{
 				HandleFloppyDriveCombo(hWnd, DRIVE_2, LOWORD(wparam), ms_slot);
-				GetFrame().FrameRefreshStatus(DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
-			}
 			break;
 
 		case IDC_SLOT_OPT_DISK_SWAP:
@@ -446,24 +479,48 @@ void CPageSlots::InitComboFloppyDrive(HWND hWnd, UINT slot)
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_DISK1, m_defaultDiskOptions, -1);
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_DISK2, m_defaultDiskOptions, -1);
 
-	Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
-
-	if (!card.GetFullName(DRIVE_1).empty())
+	std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[slot].pathname[DRIVE_1];
+	std::string imagename, fullname;
+	GetImageTitle(pathname.c_str(), imagename, fullname);
+	if (!pathname.empty())
 	{
-		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK1, CB_INSERTSTRING, 0, (LPARAM)card.GetFullName(DRIVE_1).c_str());
+		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK1, CB_INSERTSTRING, 0, (LPARAM)fullname.c_str());
 		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK1, CB_SETCURSEL, 0, 0);
 	}
 
-	if (!card.GetFullName(DRIVE_2).empty())
+	pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[slot].pathname[DRIVE_2];
+	GetImageTitle(pathname.c_str(), imagename, fullname);
+	if (!pathname.empty())
 	{
-		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK2, CB_INSERTSTRING, 0, (LPARAM)card.GetFullName(DRIVE_2).c_str());
+		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK2, CB_INSERTSTRING, 0, (LPARAM)fullname.c_str());
 		SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_DISK2, CB_SETCURSEL, 0, 0);
 	}
 }
 
+bool CPageSlots::CheckFloppyPathnameInUse(const std::string& pathname, BYTE& inUseSlot, BYTE& inUseDrive)
+{
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (GetCardMgr().QuerySlot(slot) == CT_Disk2)
+		{
+			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+			{
+				if (dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).DiskGetFullPathName(i) == pathname)
+				{
+					inUseSlot = slot;
+					inUseDrive = i + 1;
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot)
 {
-	Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
+	Disk2InterfaceCard& card = m_PropertySheetHelper.GetConfigNew().m_disk2Card;
 
 	// Search from "select floppy drive"
 	uint32_t dwOpenDialogIndex = (uint32_t)SendDlgItemMessage(hWnd, comboSelected, CB_FINDSTRINGEXACT, -1, (LPARAM)&m_defaultDiskOptions[0]);
@@ -474,7 +531,9 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 	if (dwComboSelection == dwOpenDialogIndex)
 	{
 		EnableFloppyDrive(hWnd, FALSE);	// Prevent multiple Selection dialogs to be triggered
-		bool bRes = card.UserSelectNewDiskImage(driveSelected);
+		std::string pathname;
+		DWORD flags = 0;
+		bool bRes = card.UserSelectNewDiskImageOnly(driveSelected, "", pathname, flags);
 		EnableFloppyDrive(hWnd, TRUE);
 
 		if (!bRes)
@@ -482,6 +541,30 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 			if (SendDlgItemMessage(hWnd, comboSelected, CB_GETCOUNT, 0, 0) == 3)	// If there's already a disk...
 				SendDlgItemMessage(hWnd, comboSelected, CB_SETCURSEL, 0, 0);		// then reselect it in the ComboBox
 			return;
+		}
+
+		// Check if pathname is in use by any of emulator's disk cards
+		BYTE inUseSlot = 0, inUseDrive = 0;
+		if (CheckFloppyPathnameInUse(pathname, inUseSlot, inUseDrive))
+		{
+			m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = "";
+
+			std::string strText = StrFormat("%s already mounted in slot %d, drive %d.", pathname.c_str(), inUseSlot, inUseDrive);
+			GetFrame().FrameMessageBox(strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+			return;
+		}
+		else
+		{
+			// Not in use: insert image to validate it
+			ImageError_e error = card.InsertDisk(driveSelected, pathname, false, false);
+			if (error != eIMAGE_ERROR_NONE)
+			{
+				card.NotifyInvalidImage(driveSelected, pathname, error);
+				m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = "";
+				return;
+			}
+
+			m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = pathname;
 		}
 
 		// Add floppy drive name as item 0 and select it
@@ -513,11 +596,13 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 			{
 				// Eject selected disk
 				card.EjectDisk(driveSelected);
+				m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = "";
 				// Remove drive from list
 				SendDlgItemMessage(hWnd, comboSelected, CB_DELETESTRING, 0, 0);
 			}
 			else
 			{
+				// Eject was cancelled: reselect the disk in the ComboBox
 				SendDlgItemMessage(hWnd, comboSelected, CB_SETCURSEL, 0, 0);
 			}
 		}
@@ -536,21 +621,15 @@ void CPageSlots::HandleFloppyDriveSwap(HWND hWnd, UINT slot)
 	if (!RemovalConfirmation(IDC_SLOT_OPT_DISK_SWAP))
 		return;
 
-	if (!dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).DriveSwap())
-		return;
+	std::string temp = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[DRIVE_1];
+	m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[DRIVE_1] = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[DRIVE_2];
+	m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[DRIVE_2] = temp;
 
 	InitComboFloppyDrive(hWnd, slot);
 }
 
 void CPageSlots::DlgDisk2OK(HWND hWnd)
 {
-	Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(ms_slot));
-
-	for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
-		m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[i] = card.DiskGetFullPathName(i);
-
-	//
-
 	if (ms_slot == SLOT5 || ms_slot == SLOT6)
 	{
 		Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
@@ -705,6 +784,7 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 			}
 			else
 			{
+				// Cancel the Unplug, and set the menu back to the image name
 				SendDlgItemMessage(hWnd, comboSelected, CB_SETCURSEL, 0, 0);
 			}
 		}

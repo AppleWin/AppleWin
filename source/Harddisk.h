@@ -117,6 +117,8 @@ public:
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
 	bool ImageSwap(void);
 
+	void ForbidSaveDiskImageToRegistry() { m_saveDiskImageToRegistry = false; }
+
 	static const std::string& GetSnapshotCardName(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
@@ -158,6 +160,7 @@ private:
 	HdcMode m_useHdcFirmwareMode;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
+	bool m_saveDiskImageToRegistry;
 
 	HardDiskDrive m_hardDiskDrive[NUM_HARDDISKS];
 	HardDiskDrive m_smartPortController;		// unit-0 is the SmartPort controller

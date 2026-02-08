@@ -177,6 +177,7 @@ public:
 	std::string GetCurrentTrackString(void);
 	std::string GetCurrentPhaseString(void);
 	LPCTSTR GetCurrentState(Disk_Status_e& eDiskState_);
+	bool UserSelectNewDiskImageOnly(const int drive, LPCSTR pszFilename, std::string& openFilename, DWORD flags);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	bool DriveSwap(void);
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
@@ -196,6 +197,8 @@ public:
 
 	bool GetEnhanceDisk(void);
 	void SetEnhanceDisk(bool bEnhanceDisk);
+
+	void ForbidSaveDiskImageToRegistry() { m_saveDiskImageToRegistry = false; }
 
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
@@ -270,6 +273,7 @@ private:
 	WORD m_magnetStates;	// state bits for stepper motor magnet states (phases 0 - 3)
 
 	bool m_saveDiskImage;
+	bool m_saveDiskImageToRegistry;
 	unsigned __int64 m_diskLastCycle;
 	unsigned __int64 m_diskLastReadLatchCycle;
 	FormatTrack m_formatTrack;

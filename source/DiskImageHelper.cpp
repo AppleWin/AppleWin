@@ -1851,7 +1851,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL,
 			NULL );
-		
+
 		if (hFile != INVALID_HANDLE_VALUE)
 			pImageInfo->bWriteProtected = true;
 	}

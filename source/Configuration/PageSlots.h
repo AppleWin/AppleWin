@@ -35,10 +35,11 @@ protected:
 	// IPropertySheetPage
 	virtual INT_PTR DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	virtual void DlgOK(HWND hWnd);
-	virtual void DlgCANCEL(HWND hWnd){}
+	virtual void DlgCANCEL(HWND hWnd);
 
 private:
 	void InitOptions(HWND hWnd);
+	void DiskCardCleanup();
 	int CardTypeToComboItem(UINT slot);
 	BOOL CardTypeHasOptions(SS_CARDTYPE card);
 
@@ -56,6 +57,7 @@ private:
 	INT_PTR DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
 	void InitComboFloppyDrive(HWND hWnd, UINT slot);
+	bool CheckFloppyPathnameInUse(const std::string& pathname, BYTE& inUseSlot, BYTE& inUseDrive);
 	void HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);
 	void EnableFloppyDrive(HWND hWnd, BOOL enable);
 	void HandleFloppyDriveSwap(HWND hWnd, UINT slot);

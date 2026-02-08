@@ -67,6 +67,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 
 	m_floppyLatch = 0;
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
+	m_saveDiskImageToRegistry = true;
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = kEnhanceDiskAccessSpeed_Default;
@@ -222,7 +223,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 {
 	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
 
-	if (!m_saveDiskImage)
+	if (!m_saveDiskImage || !m_saveDiskImageToRegistry)
 		return;
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
@@ -1819,11 +1820,11 @@ void Disk2InterfaceCard::ResetSwitches(void)
 
 //===========================================================================
 
-bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilename/*=""*/)
+bool Disk2InterfaceCard::UserSelectNewDiskImageOnly(const int drive, LPCSTR pszFilename, std::string& openFilename, DWORD flags)
 {
 	if (!IsDriveConnected(drive))
 	{
-		GetFrame().FrameMessageBox("Drive not connected!", "Insert disk", MB_ICONEXCLAMATION|MB_SETFOREGROUND|MB_OK);
+		GetFrame().FrameMessageBox("Drive not connected!", "Insert disk", MB_ICONEXCLAMATION | MB_SETFOREGROUND | MB_OK);
 		return false;
 	}
 
@@ -1837,38 +1838,45 @@ bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilen
 
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(OPENFILENAME));
-	ofn.lStructSize     = sizeof(OPENFILENAME);
-	ofn.hwndOwner       = GetFrame().g_hFrameWindow;
-	ofn.hInstance       = GetFrame().g_hInstance;
-	ofn.lpstrFilter     = "All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie;*.apl\0"
-						  "Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.woz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie\0"
-						  "All Files\0*.*\0";
-	ofn.lpstrFile       = filename;
-	ofn.nMaxFile        = MAX_PATH;
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = GetFrame().g_hFrameWindow;
+	ofn.hInstance = GetFrame().g_hInstance;
+	ofn.lpstrFilter = "All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie;*.apl\0"
+		"Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.woz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie\0"
+		"All Files\0*.*\0";
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
-	ofn.Flags           = OFN_PATHMUSTEXIST;
-	ofn.lpstrTitle      = title.c_str();
+	ofn.Flags = OFN_PATHMUSTEXIST;
+	ofn.lpstrTitle = title.c_str();
 
-	bool bRes = false;
+	if (!GetOpenFileName(&ofn))
+		return false;
 
-	if (GetOpenFileName(&ofn))
+	flags = ofn.Flags;
+	openFilename = filename;
+	if (!ofn.nFileExtension || !filename[ofn.nFileExtension])
+		openFilename += ".dsk";
+
+	return true;
+}
+
+bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilename/*=""*/)
+{
+	std::string openFilename;
+	DWORD flags = 0;
+
+	if (!UserSelectNewDiskImageOnly(drive, pszFilename, openFilename, flags))
+		return false;
+
+	ImageError_e Error = InsertDisk(drive, openFilename, flags & OFN_READONLY, IMAGE_CREATE);
+	if (Error != eIMAGE_ERROR_NONE)
 	{
-		std::string openFilename = filename;
-		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-			openFilename += ".dsk";
-
-		ImageError_e Error = InsertDisk(drive, openFilename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
-		if (Error == eIMAGE_ERROR_NONE)
-		{
-			bRes = true;
-		}
-		else
-		{
-			NotifyInvalidImage(drive, openFilename, Error);
-		}
+		NotifyInvalidImage(drive, openFilename, Error);
+		return false;
 	}
 
-	return bRes;
+	return true;
 }
 
 //===========================================================================

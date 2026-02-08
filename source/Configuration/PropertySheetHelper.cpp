@@ -429,6 +429,7 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 void CPropertySheetHelper::RestoreCurrentConfig(void)
 {
 	// NB. Only need to restore slots (and their config) due to any newly added DiskII/HDD controller cards
+	// But don't want to delete any existing cards (of any type), as their state will be lost!
 
 	// Just like for ApplyNewConfig(), don't want to have an intermediate state of "s1=SSC, s2=SSC"
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
@@ -453,7 +454,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 
 		if (m_ConfigOld.m_Slot[slot] == CT_GenericPrinter)
 		{
-			CConfigNeedingRestart & config = const_cast<CConfigNeedingRestart&>(m_ConfigOld);
+			CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(m_ConfigOld);
 			config.m_parallelPrinterCard.SetRegistryConfig();
 		}
 

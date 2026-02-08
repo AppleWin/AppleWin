@@ -36,7 +36,7 @@
 
 // Zero (or default) initialise - values not important, as they get set correctly in Reload()
 CConfigNeedingRestart::CConfigNeedingRestart()
-	: m_parallelPrinterCard(SLOT1)	// slot not important
+	: m_parallelPrinterCard(SLOT1), m_disk2Card(SLOT1), m_harddiskCard(SLOT1)	// slot not important
 {
 	// Configuration
 	m_Apple2Type = A2TYPE_APPLE2;
@@ -70,6 +70,8 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_serialPortItem = 0;
 	m_mouseShowCrosshair = 0;
 	m_mouseRestrictToWindow = 0;
+	m_disk2Card.ForbidSaveDiskImageToRegistry();
+	m_harddiskCard.ForbidSaveDiskImageToRegistry();
 
 	// Advanced
 	m_uSaveLoadStateMsg = 0;

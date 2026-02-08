@@ -176,6 +176,7 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	m_notBusyCycle = 0;
 
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
+	m_saveDiskImageToRegistry = true;
 
 	m_saveStateFirmwareV1 = false;
 	m_saveStateFirmwareV2 = false;
@@ -317,7 +318,7 @@ void HarddiskInterfaceCard::SaveLastDiskImage(const int drive)
 {
 	_ASSERT(drive >= HARDDISK_1 && drive < NUM_HARDDISKS);
 
-	if (!m_saveDiskImage)
+	if (!m_saveDiskImage || !m_saveDiskImageToRegistry)
 		return;
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
