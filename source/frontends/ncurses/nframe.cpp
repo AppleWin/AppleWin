@@ -50,8 +50,6 @@ namespace na2
     NFrame::NFrame(const common2::EmulatorOptions &options, const std::shared_ptr<EvDevPaddle> &paddle)
         : common2::GNUFrame(options)
         , myPaddle(paddle)
-        , myRows(-1)
-        , myColumns(-1)
     {
         // only initialise if actually used
         // so we can run headless
@@ -61,7 +59,7 @@ namespace na2
     {
         CommonFrame::Initialize(resetVideoState);
         myTextFlashCounter = 0;
-        myTextFlashState = 0;
+        myTextFlashState = false;
         myAsciiArt = std::make_shared<ASCIIArt>();
     }
 
@@ -69,7 +67,7 @@ namespace na2
     {
         CommonFrame::Destroy();
         myTextFlashCounter = 0;
-        myTextFlashState = 0;
+        myTextFlashState = false;
         myFrame.reset();
         myStatus.reset();
         myAsciiArt.reset();
@@ -90,6 +88,11 @@ namespace na2
     void NFrame::ChangeRows(const int x)
     {
         myAsciiArt->changeRows(x);
+    }
+
+    void NFrame::ToggleFullscreen()
+    {
+        myFullscreen = !myFullscreen;
     }
 
     void NFrame::ReInit()
@@ -116,6 +119,9 @@ namespace na2
 
         myStatus.reset(newwin(8, width, 1 + myRows + 1, left), delwin);
         FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
+
+        myExtraRows = 1 + 1 + 8; // frame top + frame bottom + status
+        myExtraCols = 1 + 1;     // frame left + frame right
     }
 
     void NFrame::Init(int rows, int columns)
@@ -196,8 +202,12 @@ namespace na2
         }
         else
         {
-            mRows = std::max(1, LINES / 24);
-            mCols = std::max(1, COLS / 40);
+            if (myFullscreen)
+            {
+                mRows = std::max(1, (LINES - myExtraRows) / 24);
+                mCols = std::max(1, (COLS - myExtraCols) / 40);
+            }
+
             if (video.VideoGetSWHIRES())
             {
                 update = &NFrame::UpdateHiResCell;
@@ -283,9 +293,9 @@ namespace na2
 
         ++row;
 
-        mvwprintw(myStatus.get(), ++row, 1, "F2: ResetMachine / Shift-F2: CtrlReset");
-        mvwprintw(myStatus.get(), ++row, 1, "F3: Pause        / Shift-F3: Exit");
-        mvwprintw(myStatus.get(), ++row, 1, "F11: Save State  / F12: Load State");
+        mvwprintw(myStatus.get(), ++row, 1, "F2 Reset   F3 Pause   F4 Exit");
+        mvwprintw(myStatus.get(), ++row, 1, "F5 Swap    F6 Screen  F7 CtrlReset");
+        mvwprintw(myStatus.get(), ++row, 1, "F11 Save   F12 Load");
         wrefresh(myStatus.get());
     }
 

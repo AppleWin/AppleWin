@@ -34,6 +34,7 @@ namespace na2
 
         void ChangeColumns(const int x);
         void ChangeRows(const int x);
+        void ToggleFullscreen();
 
         void Init(int rows, int columns);
         void ReInit();
@@ -41,10 +42,15 @@ namespace na2
     private:
         const std::shared_ptr<EvDevPaddle> myPaddle;
 
-        int myRows;
-        int myColumns;
-        int myTextFlashCounter;
-        bool myTextFlashState;
+        bool myFullscreen = false;
+
+        int myExtraRows = 0;
+        int myExtraCols = 0;
+
+        int myRows = -1;
+        int myColumns = -1;
+        int myTextFlashCounter = 0;
+        bool myTextFlashState = false;
 
         std::shared_ptr<WINDOW> myFrame;
         std::shared_ptr<WINDOW> myStatus;
