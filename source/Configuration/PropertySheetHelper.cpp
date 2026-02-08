@@ -454,8 +454,7 @@ void CPropertySheetHelper::RestoreCurrentConfig(void)
 
 		if (m_ConfigOld.m_Slot[slot] == CT_GenericPrinter)
 		{
-			CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(m_ConfigOld);
-			config.m_parallelPrinterCard.SetRegistryConfig();
+			*GetCardMgr().GetParallelPrinterCard() = m_ConfigOld.m_parallelPrinterCard;	// copy object
 		}
 
 		if (m_ConfigOld.m_Slot[slot] == CT_Disk2)
