@@ -355,27 +355,27 @@ void CPageSlots::ApplyConfigAfterClose()
 	// Disk II card
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
-		if (GetCardMgr().QuerySlot(slot) == CT_Disk2)
-		{
-			Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
-			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
-			{
-				std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[slot].pathname[i];
+		if (GetCardMgr().QuerySlot(slot) != CT_Disk2)
+			continue;
 
-				if (card.DiskGetFullPathName(i) != pathname)
-				{
-					if (pathname.empty())
-					{
-						card.EjectDisk(i);
-					}
-					else
-					{
-						ImageError_e error = card.InsertDisk(i, pathname, false, false);
-						_ASSERT(error == eIMAGE_ERROR_NONE);	// Should've already been rejected in HandleFloppyDriveCombo()
-						if (error != eIMAGE_ERROR_NONE)
-							card.NotifyInvalidImage(i, pathname, error);
-					}
-				}
+		Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
+		for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+		{
+			std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[slot].pathname[i];
+
+			if (card.DiskGetFullPathName(i) == pathname)
+				continue;
+
+			if (pathname.empty())
+			{
+				card.EjectDisk(i);
+			}
+			else
+			{
+				ImageError_e error = card.InsertDisk(i, pathname, false, false);
+				_ASSERT(error == eIMAGE_ERROR_NONE);	// Should've already been rejected in HandleFloppyDriveCombo()
+				if (error != eIMAGE_ERROR_NONE)
+					card.NotifyInvalidImage(i, pathname, error);
 			}
 		}
 	}
@@ -385,27 +385,27 @@ void CPageSlots::ApplyConfigAfterClose()
 	// Hard disk card
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
-		if (GetCardMgr().QuerySlot(slot) == CT_GenericHDD)
-		{
-			HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
-			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
-			{
-				std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[slot].pathname[i];
+		if (GetCardMgr().QuerySlot(slot) != CT_GenericHDD)
+			continue;
 
-				if (card.HarddiskGetFullPathName(i) != pathname)
-				{
-					if (pathname.empty())
-					{
-						card.Unplug(i);
-					}
-					else
-					{
-						bool error = card.Insert(i, pathname);
-						_ASSERT(error == true);	// Should've already been rejected in HandleFloppyDriveCombo()
-						if (error != true)
-							card.NotifyInvalidImage(pathname);
-					}
-				}
+		HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
+		for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+		{
+			std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[slot].pathname[i];
+
+			if (card.HarddiskGetFullPathName(i) == pathname)
+				continue;
+
+			if (pathname.empty())
+			{
+				card.Unplug(i);
+			}
+			else
+			{
+				bool error = card.Insert(i, pathname);
+				_ASSERT(error == true);	// Should've already been rejected in HandleFloppyDriveCombo()
+				if (error != true)
+					card.NotifyInvalidImage(pathname);
 			}
 		}
 	}
