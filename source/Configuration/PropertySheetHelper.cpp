@@ -300,14 +300,9 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 	if (IsConfigChanged())	// Only for config that requires a restart
 	{
 		if (!CheckChangesForRestart(hWnd))
-		{
-			// Cancelled
-			RestoreCurrentConfig();
-			return;
-		}
+			return;			// Cancelled
 
 		ApplyNewConfig(m_ConfigNew, m_ConfigOld);
-
 		restart = true;
 	}
 
@@ -424,53 +419,6 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 
 	// Setup ConfigNew
 	m_ConfigNew = m_ConfigOld;
-}
-
-void CPropertySheetHelper::RestoreCurrentConfig(void)
-{
-	// NB. Only need to restore slots (and their config) due to any newly added DiskII/HDD controller cards
-	// But don't want to delete any existing cards (of any type), as their state will be lost!
-
-	// Just like for ApplyNewConfig(), don't want to have an intermediate state of "s1=SSC, s2=SSC"
-	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
-		SetSlot(slot, CT_Empty);
-
-	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
-		SetSlot(slot, m_ConfigOld.m_Slot[slot]);
-
-	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
-	{
-		if (m_ConfigOld.m_Slot[slot] == CT_Uthernet || m_ConfigOld.m_Slot[slot] == CT_Uthernet2)
-		{
-			// Assume only one CT_Uthernet or CT_Uthernet2 inserted
-			PCapBackend::SetRegistryInterface(slot, m_ConfigOld.m_tfeInterface);
-			Uthernet2::SetRegistryVirtualDNS(slot, m_ConfigOld.m_tfeVirtualDNS);
-		}
-
-		if (m_ConfigOld.m_Slot[slot] == CT_SSC)
-		{
-			GetCardMgr().GetSSC()->SetSerialPortItem(m_ConfigOld.m_serialPortItem);
-		}
-
-		if (m_ConfigOld.m_Slot[slot] == CT_GenericPrinter)
-		{
-			*GetCardMgr().GetParallelPrinterCard() = m_ConfigOld.m_parallelPrinterCard;	// copy object
-		}
-
-		if (m_ConfigOld.m_Slot[slot] == CT_Disk2)
-		{
-			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
-				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).InsertDisk(i, m_ConfigOld.m_slotInfoForFDC[slot].pathname[i], false, false);
-		}
-
-		if (m_ConfigOld.m_Slot[slot] == CT_GenericHDD)
-		{
-			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
-				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Insert(i, m_ConfigOld.m_slotInfoForHDC[slot].pathname[i]);
-		}
-	}
-
-	GetCardMgr().InitializeIO(GetCxRomPeripheral());
 }
 
 bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
