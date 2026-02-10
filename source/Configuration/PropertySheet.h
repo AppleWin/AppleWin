@@ -25,10 +25,6 @@ public:
 	virtual void ResetAllToDefault();
 	virtual void ApplyConfigAfterClose(UINT bmPages);
 
-	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
-	{
-		m_PropertySheetHelper.ApplyNewConfig(ConfigNew, ConfigOld);
-	}
 	void ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
 	{
 		m_PropertySheetHelper.ApplyNewConfigFromSnapshot(ConfigNew);

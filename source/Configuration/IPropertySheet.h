@@ -12,7 +12,6 @@ public:
 	virtual bool SaveStateSelectImage(HWND hWindow, bool bSave) = 0;	// TODO:TC: Move out of here
 	virtual void ResetAllToDefault() = 0;
 	virtual void ApplyConfigAfterClose(UINT bmPages) = 0;
-	virtual void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld) = 0;
 	virtual void ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew) = 0;
 	virtual void ConfigSaveApple2Type(eApple2Type apple2Type) = 0;
 

@@ -269,21 +269,19 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 	//
 
-	if (m_ConfigNew.m_uSaveLoadStateMsg && IsOkToSaveLoadState(hWnd, IsConfigChanged()))
+	if (m_ConfigNew.m_uSaveLoadStateMsg && IsConfigChanged() && IsOkToSaveLoadState(hWnd))
 	{
-		// Drop any config change, and do load/save state
+		// Drop any config changes, and do load/save state
 		PostMessage(GetFrame().g_hFrameWindow, m_ConfigNew.m_uSaveLoadStateMsg, 0, 0);
 		return;
 	}
 	
 	if (m_bDoBenchmark)
 	{
-		// Drop any config change, and do benchmark
+		// Drop any config changes, and do benchmark
 		PostMessage(GetFrame().g_hFrameWindow, WM_USER_BENCHMARK, 0, 0);	// NB. doesn't do WM_USER_RESTART
 		return;
 	}
-
-	bool restart = false;
 
 	if (m_ConfigNew.m_Apple2Type == A2TYPE_CLONE)
 	{
@@ -297,12 +295,14 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 		m_ConfigNew.m_CpuType = ProbeMainCpuDefault(m_ConfigNew.m_Apple2Type);
 	}
 
+	bool restart = false;
+
 	if (IsConfigChanged())	// Only for config that requires a restart
 	{
 		if (!CheckChangesForRestart(hWnd))
 			return;			// Cancelled
 
-		ApplyNewConfig(m_ConfigNew, m_ConfigOld);
+		ApplyNewConfigForRestart(m_ConfigNew, m_ConfigOld);
 		restart = true;
 	}
 
@@ -327,7 +327,7 @@ bool CPropertySheetHelper::CheckChangesForRestart(HWND hWnd)
 	(ConfigOld.var != ConfigNew.var)
 
 // Apply changes to Registry
-void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
+void CPropertySheetHelper::ApplyNewConfigForRestart(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
 {
 	if (CONFIG_CHANGED_LOCAL(m_Apple2Type))
 	{
@@ -366,6 +366,11 @@ void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew
 		if (ConfigNew.m_Slot[slot] == CT_SSC)
 		{
 			GetCardMgr().GetSSC()->SetSerialPortItem(ConfigNew.m_serialPortItem);
+		}
+
+		if (ConfigNew.m_Slot[slot] == CT_GenericPrinter)
+		{
+			*GetCardMgr().GetParallelPrinterCard() = ConfigNew.m_parallelPrinterCard;	// copy object
 		}
 
 		if (ConfigNew.m_Slot[slot] == CT_Disk2)
@@ -421,17 +426,14 @@ void CPropertySheetHelper::SaveCurrentConfig(void)
 	m_ConfigNew = m_ConfigOld;
 }
 
-bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
+bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd)
 {
-	if (bConfigChanged)
-	{
-		if (MessageBox(hWnd,
-				"The hardware configuration has changed. Save/Load state will lose these changes.\n\n"
-				"Are you sure you want to do this?",
-				REG_CONFIG,
-				MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
-			return false;
-	}
+	if (MessageBox(hWnd,
+			"The hardware configuration has changed. Save/Load state will lose these changes.\n\n"
+			"Are you sure you want to do this?",
+			REG_CONFIG,
+			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+		return false;
 
 	return true;
 }

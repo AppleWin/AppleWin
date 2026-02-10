@@ -35,14 +35,14 @@ public:
 	CConfigNeedingRestart& GetConfigNew(void) { return m_ConfigNew; }
 	bool IsConfigChanged(void) { return m_ConfigNew != m_ConfigOld; }
 	void SetDoBenchmark(void) { m_bDoBenchmark = true; }
-	void ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld);
 	void ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew);
 	void ConfigSaveApple2Type(eApple2Type apple2Type);
 	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
 	bool IsOkToResetConfig(HWND hWnd);
 
 private:
-	bool IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged);
+	void ApplyNewConfigForRestart(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld);
+	bool IsOkToSaveLoadState(HWND hWnd);
 	bool IsOkToRestart(HWND hWnd);
 	void SaveComputerType(eApple2Type NewApple2Type);
 	void SaveCpuType(eCpuType NewCpuType);
