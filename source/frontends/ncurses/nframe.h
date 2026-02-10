@@ -19,7 +19,6 @@ namespace na2
         NFrame(const common2::EmulatorOptions &options, const std::shared_ptr<EvDevPaddle> &paddle);
 
         WINDOW *GetWindow();
-        WINDOW *GetStatus();
 
         void Initialize(bool resetVideoState) override;
         void Destroy() override;
@@ -74,7 +73,7 @@ namespace na2
         bool UpdateDHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
 
         void InitialiseNCurses();
-        void ForceInit(int rows, int columns);
+        void ForceInit(int rows, int columns, bool fullScreen);
     };
 
 } // namespace na2

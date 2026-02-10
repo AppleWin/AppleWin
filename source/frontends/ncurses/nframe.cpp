@@ -92,21 +92,22 @@ namespace na2
 
     void NFrame::ToggleFullscreen()
     {
-        myFullscreen = !myFullscreen;
+        ForceInit(myRows, myColumns, !myFullscreen);
     }
 
     void NFrame::ReInit()
     {
-        ForceInit(myRows, myColumns);
+        ForceInit(myRows, myColumns, myFullscreen);
     }
 
-    void NFrame::ForceInit(int rows, int columns)
+    void NFrame::ForceInit(int rows, int columns, bool fullScreen)
     {
         InitialiseNCurses();
         myNCurses->allclear();
 
         myRows = rows;
         myColumns = columns;
+        myFullscreen = fullScreen;
 
         const int width = 1 + myColumns + 1;
         const int left = std::max(0, (COLS - width) / 2);
@@ -117,29 +118,32 @@ namespace na2
         keypad(myFrame.get(), true);
         wrefresh(myFrame.get());
 
-        myStatus.reset(newwin(8, width, 1 + myRows + 1, left), delwin);
-        FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
-
-        myExtraRows = 1 + 1 + 8; // frame top + frame bottom + status
-        myExtraCols = 1 + 1;     // frame left + frame right
+        myExtraRows = 1 + 1; // frame top + frame bottom
+        myExtraCols = 1 + 1; // frame left + frame right
+        if (myFullscreen)
+        {
+            myStatus.reset();
+        }
+        else
+        {
+            const int statusHeight = 8;
+            myStatus.reset(newwin(statusHeight, width, 1 + myRows + 1, left), delwin);
+            FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
+            myExtraRows += statusHeight;
+        }
     }
 
     void NFrame::Init(int rows, int columns)
     {
         if (myRows != rows || myColumns != columns)
         {
-            ForceInit(rows, columns);
+            ForceInit(rows, columns, myFullscreen);
         }
     }
 
     WINDOW *NFrame::GetWindow()
     {
         return myFrame.get();
-    }
-
-    WINDOW *NFrame::GetStatus()
-    {
-        return myStatus.get();
     }
 
     void NFrame::InitialiseNCurses()
@@ -169,28 +173,28 @@ namespace na2
 
         VideoUpdateFuncPtr_t update;
 
-        int mRows, mCols;
-        myAsciiArt->getSize(mRows, mCols);
+        int rowFactor, colFactor;
+        myAsciiArt->getSize(rowFactor, colFactor);
 
         if (video.VideoGetSWTEXT())
         {
-            mRows = 1;
+            rowFactor = 1;
             if (video.VideoGetSW80COL())
             {
-                mCols = 2;
+                colFactor = 2;
                 update = &NFrame::Update80ColCell;
             }
             else
             {
-                mCols = 1;
+                colFactor = 1;
                 update = &NFrame::Update40ColCell;
             }
         }
         else if (video.VideoGetSWDHIRES() && video.VideoGetSW80COL())
         {
             // not supported
-            mRows = 1;
-            mCols = 2;
+            rowFactor = 1;
+            colFactor = 2;
             if (video.VideoGetSWHIRES())
             {
                 update = &NFrame::UpdateDHiResCell;
@@ -202,10 +206,18 @@ namespace na2
         }
         else
         {
+            const int maxRowFactor = std::max(1, (LINES - myExtraRows) / 24);
+            const int maxColFactor = std::max(1, (COLS - myExtraCols) / 40);
+
             if (myFullscreen)
             {
-                mRows = std::max(1, (LINES - myExtraRows) / 24);
-                mCols = std::max(1, (COLS - myExtraCols) / 40);
+                rowFactor = maxRowFactor;
+                colFactor = maxColFactor;
+            }
+            else
+            {
+                rowFactor = std::min(maxRowFactor, rowFactor);
+                colFactor = std::min(maxColFactor, colFactor);
             }
 
             if (video.VideoGetSWHIRES())
@@ -221,12 +233,12 @@ namespace na2
         if (video.VideoGetSWMIXED())
         {
             // mixed mode
-            mRows = 1;
-            mCols = video.VideoGetSW80COL() ? 2 : 1;
+            rowFactor = 1;
+            colFactor = video.VideoGetSW80COL() ? 2 : 1;
         }
 
-        Init(24 * mRows, 40 * mCols);
-        myAsciiArt->init(mRows, mCols);
+        Init(24 * rowFactor, 40 * colFactor);
+        myAsciiArt->init(rowFactor, colFactor);
 
         if (g_nAppMode != MODE_RUNNING)
         {
@@ -280,33 +292,36 @@ namespace na2
 
     void NFrame::FrameRefreshStatus(int /* drawflags */)
     {
-        werase(myStatus.get());
-        box(myStatus.get(), 0, 0);
-
-        int row = 0;
-
-        CardManager &cardManager = GetCardMgr();
-        if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+        if (myStatus)
         {
-            Disk2InterfaceCard &disk2 = dynamic_cast<Disk2InterfaceCard &>(cardManager.GetRef(SLOT6));
-            const size_t maximumWidth = myColumns - 6; // 6 is the width of "S6D1: "
-            for (UINT i = DRIVE_1; i <= DRIVE_2; ++i)
+            werase(myStatus.get());
+            box(myStatus.get(), 0, 0);
+
+            int row = 0;
+
+            CardManager &cardManager = GetCardMgr();
+            if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
             {
-                const std::string name = disk2.GetBaseName(i).substr(0, maximumWidth);
-                mvwprintw(myStatus.get(), ++row, 1, "S6D%d: %s", 1 + i, name.c_str());
+                Disk2InterfaceCard &disk2 = dynamic_cast<Disk2InterfaceCard &>(cardManager.GetRef(SLOT6));
+                const size_t maximumWidth = myColumns - 6; // 6 is the width of "S6D1: "
+                for (UINT i = DRIVE_1; i <= DRIVE_2; ++i)
+                {
+                    const std::string name = disk2.GetBaseName(i).substr(0, maximumWidth);
+                    mvwprintw(myStatus.get(), ++row, 1, "S6D%d: %s", 1 + i, name.c_str());
+                }
             }
-        }
-        else
-        {
-            row += DRIVE_2 - DRIVE_1 + 1;
-        }
+            else
+            {
+                row += DRIVE_2 - DRIVE_1 + 1;
+            }
 
-        ++row;
+            ++row;
 
-        mvwprintw(myStatus.get(), ++row, 1, "F2 Reset   F3 Pause   F4 Exit");
-        mvwprintw(myStatus.get(), ++row, 1, "F5 Swap    F6 Screen  F7 CtrlReset");
-        mvwprintw(myStatus.get(), ++row, 1, "F11 Save   F12 Load");
-        wrefresh(myStatus.get());
+            mvwprintw(myStatus.get(), ++row, 1, "F2 Reset   F3 Pause   F4 Exit");
+            mvwprintw(myStatus.get(), ++row, 1, "F5 Swap    F6 Screen  F7 CtrlReset");
+            mvwprintw(myStatus.get(), ++row, 1, "F11 Save   F12 Load");
+            wrefresh(myStatus.get());
+        }
     }
 
     void NFrame::VideoUpdateFlash()
