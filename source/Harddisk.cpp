@@ -404,11 +404,11 @@ void HarddiskInterfaceCard::Destroy(void)
 // Pre: pathname likely to include path (but can also just be filename)
 bool HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname)
 {
-	if (pathname.empty())
-		return false;
-
 	if (m_hardDiskDrive[iDrive].m_imageloaded)
 		Unplug(iDrive);
+
+	if (pathname.empty())
+		return true;
 
 	const DWORD dwAttributes = GetFileAttributes(pathname.c_str());
 	if (dwAttributes == INVALID_FILE_ATTRIBUTES)

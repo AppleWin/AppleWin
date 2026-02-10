@@ -366,17 +366,10 @@ void CPageSlots::ApplyConfigAfterClose()
 			if (card.DiskGetFullPathName(i) == pathname)
 				continue;
 
-			if (pathname.empty())
-			{
-				card.EjectDisk(i);
-			}
-			else
-			{
-				ImageError_e error = card.InsertDisk(i, pathname, false, false);
-				_ASSERT(error == eIMAGE_ERROR_NONE);	// Should've already been rejected in HandleFloppyDriveCombo()
-				if (error != eIMAGE_ERROR_NONE)
-					card.NotifyInvalidImage(i, pathname, error);
-			}
+			ImageError_e error = card.InsertDisk(i, pathname, false, false);
+			_ASSERT(error == eIMAGE_ERROR_NONE);	// Should've already been rejected in HandleFloppyDriveCombo()
+			if (error != eIMAGE_ERROR_NONE)
+				card.NotifyInvalidImage(i, pathname, error);
 		}
 	}
 
@@ -396,17 +389,10 @@ void CPageSlots::ApplyConfigAfterClose()
 			if (card.HarddiskGetFullPathName(i) == pathname)
 				continue;
 
-			if (pathname.empty())
-			{
-				card.Unplug(i);
-			}
-			else
-			{
-				bool error = card.Insert(i, pathname);
-				_ASSERT(error == true);	// Should've already been rejected in HandleFloppyDriveCombo()
-				if (error != true)
-					card.NotifyInvalidImage(pathname);
-			}
+			bool error = card.Insert(i, pathname);
+			_ASSERT(error == true);	// Should've already been rejected in HandleFloppyDriveCombo()
+			if (error != true)
+				card.NotifyInvalidImage(pathname);
 		}
 	}
 

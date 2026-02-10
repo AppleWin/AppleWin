@@ -828,6 +828,9 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, const std::string& 
 	// . Changing the disk (in the drive) doesn't affect the drive's attributes.
 	pFloppy->clear();
 
+	if (pathname.empty())
+		return eIMAGE_ERROR_NONE;
+
 	const DWORD dwAttributes = GetFileAttributes(pathname.c_str());
 	if (dwAttributes == INVALID_FILE_ATTRIBUTES)
 		pFloppy->m_bWriteProtected = false;	// Assume this is a new file to create (so it must be write-enabled to allow it to be formatted)
