@@ -272,6 +272,8 @@ endif()
 target_link_libraries(appleii PUBLIC
   yaml
   minizip
+  ${PCAP_LIBRARIES}
+  ${SLIRP_LIBRARIES}
   )
 
 target_link_directories(appleii PUBLIC
