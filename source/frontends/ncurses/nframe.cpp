@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "frontends/common2/commonframe.h"
+#include "frontends/common2/programoptions.h"
 #include "frontends/ncurses/nframe.h"
 #include "frontends/ncurses/colors.h"
 #include "frontends/ncurses/asciiart.h"
@@ -50,6 +51,7 @@ namespace na2
     NFrame::NFrame(const common2::EmulatorOptions &options, const std::shared_ptr<EvDevPaddle> &paddle)
         : common2::GNUFrame(options)
         , myPaddle(paddle)
+        , myFullscreen(options.fullscreen)
     {
         // only initialise if actually used
         // so we can run headless

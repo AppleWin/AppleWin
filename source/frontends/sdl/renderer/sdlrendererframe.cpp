@@ -16,7 +16,9 @@ namespace sa2
     {
         const common2::Geometry geometry = getGeometryOrDefault(options.geometry);
 
-        myWindow.reset(compat::createWindow(g_pAppTitle.c_str(), geometry, SDL_WINDOW_RESIZABLE), SDL_DestroyWindow);
+        const SDL_WindowFlags flags =
+            (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE | (myFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0));
+        myWindow.reset(compat::createWindow(g_pAppTitle.c_str(), geometry, flags), SDL_DestroyWindow);
         if (!myWindow)
         {
             throw std::runtime_error(decorateSDLError("SDL_CreateWindow"));

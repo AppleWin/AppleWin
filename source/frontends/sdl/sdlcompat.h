@@ -27,6 +27,7 @@
 #define SA2_KEY_MOD(e) ((e).mod)
 #define SA2_FULLSCREEN_ON true
 #define SA2_FULLSCREEN_OFF false
+#define SDL_WINDOW_FULLSCREEN_DESKTOP SDL_WINDOW_FULLSCREEN
 #define SA2_INIT_GAMEPAD SDL_INIT_GAMEPAD
 #define SA2_MIX_VOLUME(v) (v)
 #define SA2_OK(r) (r)

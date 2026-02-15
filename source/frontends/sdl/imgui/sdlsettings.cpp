@@ -137,6 +137,12 @@ namespace sa2
                     ImGui::SameLine();
                     HelpMarker("Show Apple video in a separate window.");
 
+                    bool fullscreen = frame->getFullscreen();
+                    if (ImGui::Checkbox("Fullscreen", &fullscreen))
+                    {
+                        frame->setFullscreen(fullscreen);
+                    }
+
                     ImGui::Checkbox("Preserve aspect ratio", &frame->getPreserveAspectRatio());
 
                     ImGui::Checkbox("Memory viewer", &myMemoryViewer.show);

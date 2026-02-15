@@ -173,6 +173,7 @@ namespace common2
                  {"log",                     no_argument,          'l',              "Log to AppleWin.log"},
                  {"paused",                  no_argument,          PAUSED,           "Start paused"},
                  {"fixed-speed",             no_argument,          FIXED_SPEED,      "Fixed (non-adaptive) speed"},
+                 {"fullscreen",              no_argument,          'f',              "Start in fullscreen mode"},
                  {"headless",                no_argument,          HEADLESS,         "Headless: disable video (freewheel)"},
                  {"benchmark",               no_argument,          'b',              "Benchmark emulator"},
                  {"no-squaring",             no_argument,          NO_SQUARING,      "Gamepad range is (already) a square"},
@@ -299,6 +300,11 @@ namespace common2
             case 'b':
             {
                 options.benchmark = true;
+                break;
+            }
+            case 'f':
+            {
+                options.fullscreen = true;
                 break;
             }
             case PAUSED:

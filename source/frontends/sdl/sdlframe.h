@@ -39,6 +39,9 @@ namespace sa2
         bool &getPreserveAspectRatio();
         bool &getAutoBoot();
 
+        bool getFullscreen() const;
+        void setFullscreen(const bool value);
+
         const common2::Speed &getSpeed() const;
 
         void SaveSnapshot();
@@ -70,9 +73,9 @@ namespace sa2
 
         int myTargetGLSwap;
         bool myPreserveAspectRatio;
+        bool myFullscreen;
         bool myForceCapsLock;
         int myMultiplier;
-        bool myFullscreen;
 
         size_t myDragAndDropSlot;
         size_t myDragAndDropDrive;

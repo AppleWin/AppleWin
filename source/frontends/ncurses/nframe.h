@@ -41,7 +41,7 @@ namespace na2
     private:
         const std::shared_ptr<EvDevPaddle> myPaddle;
 
-        bool myFullscreen = false;
+        bool myFullscreen;
 
         int myExtraRows = 0;
         int myExtraCols = 0;
