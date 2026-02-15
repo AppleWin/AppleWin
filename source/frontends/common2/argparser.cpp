@@ -45,6 +45,9 @@ namespace
     constexpr int NO_VIDEO_UPDATE = 1024;
     constexpr int EV_DEVICE_NAME = 1025;
 
+    constexpr int STATE_FILENAME = 1026;
+    constexpr int LOAD_STATE = 1027;
+
     struct OptionData_t
     {
         const char *name;
@@ -184,8 +187,8 @@ namespace common2
              }},
             {"Snapshot",
              {
-                 {"state-filename",          required_argument,    'f',              "Set snapshot filename"},
-                 {"load-state",              required_argument,    's',              "Load snapshot from file"},
+                 {"state-filename",          required_argument,    STATE_FILENAME,   "Set snapshot filename"},
+                 {"load-state",              required_argument,    LOAD_STATE,       "Load snapshot from file"},
              }},
             {"Memory",
              {
@@ -286,18 +289,6 @@ namespace common2
             case '2':
             {
                 options.disk2 = optarg;
-                break;
-            }
-            case 'f':
-            {
-                options.snapshotFilename = optarg;
-                options.loadSnapshot = false;
-                break;
-            }
-            case 's':
-            {
-                options.snapshotFilename = optarg;
-                options.loadSnapshot = true;
                 break;
             }
             case 'r':
@@ -437,6 +428,18 @@ namespace common2
             case EV_DEVICE_NAME:
             {
                 options.paddleDeviceName = optarg;
+                break;
+            }
+            case STATE_FILENAME:
+            {
+                options.snapshotFilename = optarg;
+                options.loadSnapshot = false;
+                break;
+            }
+            case LOAD_STATE:
+            {
+                options.snapshotFilename = optarg;
+                options.loadSnapshot = true;
                 break;
             }
             default:
