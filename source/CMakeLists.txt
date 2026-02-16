@@ -25,6 +25,8 @@ if (NOT WIN32 AND NOT IOS)
           OUTPUT_VARIABLE PCAP_LIBRARIES
           OUTPUT_STRIP_TRAILING_WHITESPACE)
         set(PCAP_FOUND "1")
+        set(PCAP_INCLUDE_DIRS ${PCAP_INCLUDE_DIRS} PARENT_SCOPE)
+        set(PCAP_LIBRARIES ${PCAP_LIBRARIES} PARENT_SCOPE)
       endif()
     endif()
   endif()
@@ -272,8 +274,6 @@ endif()
 target_link_libraries(appleii PUBLIC
   yaml
   minizip
-  ${PCAP_LIBRARIES}
-  ${SLIRP_LIBRARIES}
   )
 
 target_link_directories(appleii PUBLIC
