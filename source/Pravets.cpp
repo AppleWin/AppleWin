@@ -33,6 +33,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "Keyboard.h"
 
+const char Pravets::m_Lat8A[] = "abwgdevzijklmnoprstufhc~{}yx`q|";
+const char Pravets::m_Lat82[] = "abwgdevzijklmnoprstufhc^[]yx@q{}~`";
+
 Pravets::Pravets(void)
 {
 	// Pravets 8A
@@ -41,6 +44,56 @@ Pravets::Pravets(void)
 	// Pravets 8A/8C
 	P8CAPS_ON = false;
 	P8Shift = false;
+
+								//"abwgdevzijklmnoprstufhc~{}yx`q|" = Lat8A[]
+	const char Kir8ACapital[]	= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞßÝ";
+	const char Kir8ALowerCase[]	= "àáâãäåæçèéêëìíîïðñòóôõö÷øùúüþÿý";
+	m_Kir8ACapital = ConvertUtf8ToAnsi(Kir8ACapital);
+	m_Kir8ALowerCase = ConvertUtf8ToAnsi(Kir8ALowerCase);
+	//
+								//"abwgdevzijklmnoprstufhc^[]yx@q{}~`" = Lat82[]
+	const char Kir82[]			= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞß[]^@";
+	m_Kir82 = ConvertUtf8ToAnsi(Kir82);
+}
+
+char* Pravets::ConvertUtf8ToAnsi(const char* pUTF8)
+{
+	char* pAnsi = NULL;
+	WCHAR* pWC = NULL;
+
+	try
+	{
+		// 1) UTF-8 -> unicode
+		{
+			int size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, pUTF8, -1, NULL, 0);
+			if (size == 0)
+				throw false;
+			pWC = new WCHAR[size];
+			int res = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, pUTF8, -1, pWC, size);
+			if (!res)
+				throw false;
+		}
+
+		// 2) unicode -> ANSI
+		{
+			// NB. WC_ERR_INVALID_CHARS only defined when WIN_VER >= 0x600 - but stdafx.h defines it as 0x500
+			int size = WideCharToMultiByte(CP_ACP, 0/*WC_ERR_INVALID_CHARS*/, pWC, -1, NULL, 0, NULL, NULL);
+			if (size == 0)
+				throw false;
+			pAnsi = new char[size];
+			int res = WideCharToMultiByte(CP_ACP, 0/*WC_ERR_INVALID_CHARS*/, pWC, -1, pAnsi, size, NULL, NULL);
+			if (!res)
+				throw false;
+		}
+	}
+	catch(bool)
+	{
+		delete [] pAnsi;
+		pAnsi = NULL;
+	}
+
+	delete [] pWC;
+	return pAnsi;
 }
 
 void Pravets::Reset(void)
@@ -207,15 +260,12 @@ BYTE Pravets::ConvertToKeycode(WPARAM key, BYTE keycode)
 
 BYTE Pravets::ConvertToPrinterChar(BYTE value)
 {
-	char Lat8A[]= "abwgdevzijklmnoprstufhc~{}yx`q|]";
-	char Lat82[]= "abwgdevzijklmnoprstufhc^[]yx@q{}~`";
-	char Kir82[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞß[]^@";
-	char Kir8ACapital[]= "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÜÞßÝ";
-	char Kir8ALowerCase[]= "àáâãäåæçèéêëìíîïðñòóôõö÷øùúüþÿý";
+	if (m_Kir8ACapital == 0 || m_Kir8ALowerCase == 0 || m_Kir82 == 0)
+		return value;
 
 	BYTE c = 0;
 
-	if (GetApple2Type() == A2TYPE_PRAVETS8A)  //This is print conversion for Pravets 8A/C. Print conversion for Pravets82/M is still to be done.
+	if (GetApple2Type() == A2TYPE_PRAVETS8A)  // Print conversion for Pravets 8A/C
 	{
 		if ((value > 90) && (value < 128)) //This range shall be set more precisely
 		{
@@ -223,8 +273,8 @@ BYTE Pravets::ConvertToPrinterChar(BYTE value)
 			int loop = 0;
 			while (loop < 31)
 			{
-				if (c == Lat8A[loop])
-					c = Kir8ALowerCase[loop];
+				if (c == m_Lat8A[loop])
+					c = m_Kir8ALowerCase[loop];
 				loop++;
 			}
 		}
@@ -238,20 +288,20 @@ BYTE Pravets::ConvertToPrinterChar(BYTE value)
 			int loop = 0;
 			while (loop < 31)
 			{
-				if (c == Lat8A[loop])
-					c = Kir8ACapital[loop];
+				if (c == m_Lat8A[loop])
+					c = m_Kir8ACapital[loop];
 				loop++;
 			}
 		}
 	}
-	else if (GetApple2Type() == A2TYPE_PRAVETS82 || GetApple2Type() == A2TYPE_PRAVETS8M)
+	else if (GetApple2Type() == A2TYPE_PRAVETS82 || GetApple2Type() == A2TYPE_PRAVETS8M)	// Print conversion for Pravets82/M
 	{
 		c = value & 0x7F;
 		int loop = 0;
 		while (loop < 34)
 		{
-			if (c == Lat82[loop])
-				c = Kir82[loop];
+			if (c == m_Lat82[loop])
+				c = m_Kir82[loop];
 			loop++;
 		}
 	}
