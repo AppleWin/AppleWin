@@ -160,9 +160,9 @@ namespace sa2
         : common2::GNUFrame(options)
         , myTargetGLSwap(options.glSwapInterval)
         , myPreserveAspectRatio(options.aspectRatio)
+        , myFullscreen(options.fullscreen)
         , myForceCapsLock(true)
         , myMultiplier(1)
-        , myFullscreen(false)
         , myDragAndDropSlot(SLOT6)
         , myDragAndDropDrive(DRIVE_1)
         , myScrollLockFullSpeed(false)
@@ -477,8 +477,7 @@ namespace sa2
                 }
                 else if (modifiers == KMOD_NONE)
                 {
-                    myFullscreen = !myFullscreen;
-                    SDL_SetWindowFullscreen(myWindow.get(), myFullscreen ? SA2_FULLSCREEN_ON : SA2_FULLSCREEN_OFF);
+                    setFullscreen(!myFullscreen);
                 }
                 break;
             }
@@ -716,6 +715,17 @@ namespace sa2
     bool SDLFrame::CanDoFullSpeed()
     {
         return myScrollLockFullSpeed || CommonFrame::CanDoFullSpeed();
+    }
+
+    bool SDLFrame::getFullscreen() const
+    {
+        return myFullscreen;
+    }
+
+    void SDLFrame::setFullscreen(const bool value)
+    {
+        myFullscreen = value;
+        SDL_SetWindowFullscreen(myWindow.get(), myFullscreen ? SA2_FULLSCREEN_ON : SA2_FULLSCREEN_OFF);
     }
 
     void SDLFrame::FrameResetMachineState()

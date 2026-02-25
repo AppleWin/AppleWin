@@ -31,18 +31,12 @@ namespace
             ResetMachineState();
             break;
         }
-        case 278: // Shift-F2
-        {
-            CtrlReset();
-            break;
-        }
         case KEY_F(3):
         {
             frame.TogglePaused();
             break;
         }
         case KEY_F(4):
-        case 279: // Shift-F3 (this is non standard, use F4 instead)
         {
             quit = true;
             break;
@@ -54,6 +48,16 @@ namespace
             {
                 dynamic_cast<Disk2InterfaceCard *>(cardManager.GetObj(SLOT6))->DriveSwap();
             }
+            break;
+        }
+        case KEY_F(6):
+        {
+            frame.ToggleFullscreen();
+            break;
+        }
+        case KEY_F(7):
+        {
+            CtrlReset();
             break;
         }
         case KEY_F(11):

@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "frontends/common2/commonframe.h"
+#include "frontends/common2/programoptions.h"
 #include "frontends/ncurses/nframe.h"
 #include "frontends/ncurses/colors.h"
 #include "frontends/ncurses/asciiart.h"
@@ -25,6 +26,7 @@ namespace na2
             setlocale(LC_ALL, "");
             initscr();
 
+            keypad(stdscr, TRUE); // required for KEY_SLEFT
             curs_set(0);
 
             noecho();
@@ -49,8 +51,7 @@ namespace na2
     NFrame::NFrame(const common2::EmulatorOptions &options, const std::shared_ptr<EvDevPaddle> &paddle)
         : common2::GNUFrame(options)
         , myPaddle(paddle)
-        , myRows(-1)
-        , myColumns(-1)
+        , myFullscreen(options.fullscreen)
     {
         // only initialise if actually used
         // so we can run headless
@@ -60,7 +61,7 @@ namespace na2
     {
         CommonFrame::Initialize(resetVideoState);
         myTextFlashCounter = 0;
-        myTextFlashState = 0;
+        myTextFlashState = false;
         myAsciiArt = std::make_shared<ASCIIArt>();
     }
 
@@ -68,7 +69,7 @@ namespace na2
     {
         CommonFrame::Destroy();
         myTextFlashCounter = 0;
-        myTextFlashState = 0;
+        myTextFlashState = false;
         myFrame.reset();
         myStatus.reset();
         myAsciiArt.reset();
@@ -91,18 +92,24 @@ namespace na2
         myAsciiArt->changeRows(x);
     }
 
-    void NFrame::ReInit()
+    void NFrame::ToggleFullscreen()
     {
-        ForceInit(myRows, myColumns);
+        ForceInit(myRows, myColumns, !myFullscreen);
     }
 
-    void NFrame::ForceInit(int rows, int columns)
+    void NFrame::ReInit()
+    {
+        ForceInit(myRows, myColumns, myFullscreen);
+    }
+
+    void NFrame::ForceInit(int rows, int columns, bool fullScreen)
     {
         InitialiseNCurses();
         myNCurses->allclear();
 
         myRows = rows;
         myColumns = columns;
+        myFullscreen = fullScreen;
 
         const int width = 1 + myColumns + 1;
         const int left = std::max(0, (COLS - width) / 2);
@@ -113,26 +120,32 @@ namespace na2
         keypad(myFrame.get(), true);
         wrefresh(myFrame.get());
 
-        myStatus.reset(newwin(8, width, 1 + myRows + 1, left), delwin);
-        FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
+        myExtraRows = 1 + 1; // frame top + frame bottom
+        myExtraCols = 1 + 1; // frame left + frame right
+        if (myFullscreen)
+        {
+            myStatus.reset();
+        }
+        else
+        {
+            const int statusHeight = 8;
+            myStatus.reset(newwin(statusHeight, width, 1 + myRows + 1, left), delwin);
+            FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
+            myExtraRows += statusHeight;
+        }
     }
 
     void NFrame::Init(int rows, int columns)
     {
         if (myRows != rows || myColumns != columns)
         {
-            ForceInit(rows, columns);
+            ForceInit(rows, columns, myFullscreen);
         }
     }
 
     WINDOW *NFrame::GetWindow()
     {
         return myFrame.get();
-    }
-
-    WINDOW *NFrame::GetStatus()
-    {
-        return myStatus.get();
     }
 
     void NFrame::InitialiseNCurses()
@@ -160,13 +173,79 @@ namespace na2
 
         typedef bool (NFrame::*VideoUpdateFuncPtr_t)(Video &, int, int, int, int, int);
 
-        VideoUpdateFuncPtr_t update =
-            video.VideoGetSWTEXT()    ? video.VideoGetSW80COL() ? &NFrame::Update80ColCell : &NFrame::Update40ColCell
-            : video.VideoGetSWHIRES() ? (video.VideoGetSWDHIRES() && video.VideoGetSW80COL())
-                                            ? &NFrame::UpdateDHiResCell
-                                            : &NFrame::UpdateHiResCell
-            : (video.VideoGetSWDHIRES() && video.VideoGetSW80COL()) ? &NFrame::UpdateDLoResCell
-                                                                    : &NFrame::UpdateLoResCell;
+        VideoUpdateFuncPtr_t update;
+
+        int rowFactor, colFactor;
+        myAsciiArt->getSize(rowFactor, colFactor);
+
+        if (video.VideoGetSWTEXT())
+        {
+            rowFactor = 1;
+            if (video.VideoGetSW80COL())
+            {
+                colFactor = 2;
+                update = &NFrame::Update80ColCell;
+            }
+            else
+            {
+                colFactor = 1;
+                update = &NFrame::Update40ColCell;
+            }
+        }
+        else if (video.VideoGetSWDHIRES() && video.VideoGetSW80COL())
+        {
+            // not supported
+            rowFactor = 1;
+            colFactor = 2;
+            if (video.VideoGetSWHIRES())
+            {
+                update = &NFrame::UpdateDHiResCell;
+            }
+            else
+            {
+                update = &NFrame::UpdateDLoResCell;
+            }
+        }
+        else
+        {
+            const int maxRowFactor = std::max(1, (LINES - myExtraRows) / 24);
+            const int maxColFactor = std::max(1, (COLS - myExtraCols) / 40);
+
+            if (myFullscreen)
+            {
+                rowFactor = maxRowFactor;
+                colFactor = maxColFactor;
+            }
+            else
+            {
+                rowFactor = std::min(maxRowFactor, rowFactor);
+                colFactor = std::min(maxColFactor, colFactor);
+            }
+
+            if (video.VideoGetSWHIRES())
+            {
+                update = &NFrame::UpdateHiResCell;
+            }
+            else
+            {
+                update = &NFrame::UpdateLoResCell;
+            }
+        }
+
+        if (video.VideoGetSWMIXED())
+        {
+            // mixed mode
+            rowFactor = 1;
+            colFactor = video.VideoGetSW80COL() ? 2 : 1;
+        }
+
+        Init(24 * rowFactor, 40 * colFactor);
+        myAsciiArt->init(rowFactor, colFactor);
+
+        if (g_nAppMode != MODE_RUNNING)
+        {
+            wattron(myFrame.get(), A_DIM);
+        }
 
         int y = 0;
         int ypixel = 0;
@@ -186,7 +265,9 @@ namespace na2
         }
 
         if (video.VideoGetSWMIXED())
+        {
             update = video.VideoGetSW80COL() ? &NFrame::Update80ColCell : &NFrame::Update40ColCell;
+        }
 
         while (y < 24)
         {
@@ -203,38 +284,46 @@ namespace na2
             ypixel += 16;
         }
 
+        if (g_nAppMode != MODE_RUNNING)
+        {
+            wattroff(myFrame.get(), A_DIM);
+        }
+
         wrefresh(myFrame.get());
     }
 
     void NFrame::FrameRefreshStatus(int /* drawflags */)
     {
-        werase(myStatus.get());
-        box(myStatus.get(), 0, 0);
-
-        int row = 0;
-
-        CardManager &cardManager = GetCardMgr();
-        if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
+        if (myStatus)
         {
-            Disk2InterfaceCard &disk2 = dynamic_cast<Disk2InterfaceCard &>(cardManager.GetRef(SLOT6));
-            const size_t maximumWidth = myColumns - 6; // 6 is the width of "S6D1: "
-            for (UINT i = DRIVE_1; i <= DRIVE_2; ++i)
+            werase(myStatus.get());
+            box(myStatus.get(), 0, 0);
+
+            int row = 0;
+
+            CardManager &cardManager = GetCardMgr();
+            if (cardManager.QuerySlot(SLOT6) == CT_Disk2)
             {
-                const std::string name = disk2.GetBaseName(i).substr(0, maximumWidth);
-                mvwprintw(myStatus.get(), ++row, 1, "S6D%d: %s", 1 + i, name.c_str());
+                Disk2InterfaceCard &disk2 = dynamic_cast<Disk2InterfaceCard &>(cardManager.GetRef(SLOT6));
+                const size_t maximumWidth = myColumns - 6; // 6 is the width of "S6D1: "
+                for (UINT i = DRIVE_1; i <= DRIVE_2; ++i)
+                {
+                    const std::string name = disk2.GetBaseName(i).substr(0, maximumWidth);
+                    mvwprintw(myStatus.get(), ++row, 1, "S6D%d: %s", 1 + i, name.c_str());
+                }
             }
-        }
-        else
-        {
-            row += DRIVE_2 - DRIVE_1 + 1;
-        }
+            else
+            {
+                row += DRIVE_2 - DRIVE_1 + 1;
+            }
 
-        ++row;
+            ++row;
 
-        mvwprintw(myStatus.get(), ++row, 1, "F2: ResetMachine / Shift-F2: CtrlReset");
-        mvwprintw(myStatus.get(), ++row, 1, "F3: Pause        / Shift-F3: Exit");
-        mvwprintw(myStatus.get(), ++row, 1, "F11: Save State  / F12: Load State");
-        wrefresh(myStatus.get());
+            mvwprintw(myStatus.get(), ++row, 1, "F2 Reset   F3 Pause   F4 Exit");
+            mvwprintw(myStatus.get(), ++row, 1, "F5 Swap    F6 Screen  F7 CtrlReset");
+            mvwprintw(myStatus.get(), ++row, 1, "F11 Save   F12 Load");
+            wrefresh(myStatus.get());
+        }
     }
 
     void NFrame::VideoUpdateFlash()
@@ -302,9 +391,6 @@ namespace na2
 
     bool NFrame::Update40ColCell(Video &video, int x, int y, int xpixel, int ypixel, int offset)
     {
-        Init(24, 40);
-        myAsciiArt->init(1, 1);
-
         BYTE ch = *(myTextBank0 + offset);
 
         const chtype ch2 = MapCharacter(video, ch);
@@ -315,9 +401,6 @@ namespace na2
 
     bool NFrame::Update80ColCell(Video &video, int x, int y, int xpixel, int ypixel, int offset)
     {
-        Init(24, 80);
-        myAsciiArt->init(1, 2);
-
         BYTE ch1 = *(myTextBank1 + offset);
         BYTE ch2 = *(myTextBank0 + offset);
 
@@ -368,7 +451,6 @@ namespace na2
         const int rows = chs.size();
         const int cols = chs.empty() ? 0 : chs[0].size();
 
-        Init(24 * rows, 40 * cols);
         WINDOW *win = myFrame.get();
 
         const GraphicsColors &colors = *myNCurses->colors;

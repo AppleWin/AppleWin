@@ -19,7 +19,6 @@ namespace na2
         NFrame(const common2::EmulatorOptions &options, const std::shared_ptr<EvDevPaddle> &paddle);
 
         WINDOW *GetWindow();
-        WINDOW *GetStatus();
 
         void Initialize(bool resetVideoState) override;
         void Destroy() override;
@@ -34,6 +33,7 @@ namespace na2
 
         void ChangeColumns(const int x);
         void ChangeRows(const int x);
+        void ToggleFullscreen();
 
         void Init(int rows, int columns);
         void ReInit();
@@ -41,10 +41,15 @@ namespace na2
     private:
         const std::shared_ptr<EvDevPaddle> myPaddle;
 
-        int myRows;
-        int myColumns;
-        int myTextFlashCounter;
-        bool myTextFlashState;
+        bool myFullscreen;
+
+        int myExtraRows = 0;
+        int myExtraCols = 0;
+
+        int myRows = -1;
+        int myColumns = -1;
+        int myTextFlashCounter = 0;
+        bool myTextFlashState = false;
 
         std::shared_ptr<WINDOW> myFrame;
         std::shared_ptr<WINDOW> myStatus;
@@ -68,7 +73,7 @@ namespace na2
         bool UpdateDHiResCell(Video &, int x, int y, int xpixel, int ypixel, int offset);
 
         void InitialiseNCurses();
-        void ForceInit(int rows, int columns);
+        void ForceInit(int rows, int columns, bool fullScreen);
     };
 
 } // namespace na2

@@ -96,27 +96,19 @@ namespace na2
         case 0x14a: // DEL
             ch = 0x7f;
             break;
-        case 410:
+        case KEY_RESIZE:
             frame.ReInit();
             break;
-        case 548: // Raspberry Pi
-        case 550: // Alt-Left
-        case 552: // Ctrl-Left
+        case KEY_SLEFT:
             frame.ChangeColumns(-1);
             break;
-        case 563: // Raspberry Pi
-        case 565: // Alt-Right
-        case 567: // Ctrl-Right
+        case KEY_SRIGHT:
             frame.ChangeColumns(+1);
             break;
-        case 569: // Raspberry Pi
-        case 571: // Alt-Up
-        case 573: // Ctrl-Up
+        case KEY_SR: // scroll-backward key = Shift UP
             frame.ChangeRows(-1);
             break;
-        case 528: // Raspberry Pi
-        case 530: // Alt-Down
-        case 532: // Ctrl-Down
+        case KEY_SF: // scroll-forward key = Shift DOWN
             frame.ChangeRows(+1);
             break;
         default:

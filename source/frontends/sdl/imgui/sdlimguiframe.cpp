@@ -64,7 +64,8 @@ namespace sa2
         SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
         SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
-        const SDL_WindowFlags windowFlags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+        const SDL_WindowFlags windowFlags =
+            (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | (myFullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0));
         const common2::Geometry geometry = getGeometryOrDefault(options.geometry);
 
         myWindow.reset(compat::createWindow(g_pAppTitle.c_str(), geometry, windowFlags), SDL_DestroyWindow);
