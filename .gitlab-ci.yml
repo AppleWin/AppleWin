@@ -9,6 +9,7 @@
   variables:
     CORENAME: applewin
     CORE_ARGS: '-DBUILD_LIBRETRO=ON -G Ninja'
+    GIT_SUBMODULE_STRATEGY: recursive
 
 # Inclusion templates, required for the build to work
 include:

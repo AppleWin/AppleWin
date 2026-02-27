@@ -32,7 +32,7 @@ function(add_resources out_var id)
     set(out_f_cpp "${CMAKE_CURRENT_BINARY_DIR}/${in_f_name}.cpp")
     add_custom_command(
       OUTPUT ${out_f_cpp}
-      COMMAND xxd -i -n ${in_f_name} ${in_f_bin} > ${out_f_cpp}
+      COMMAND xxd -i ${in_f_bin} > ${out_f_cpp}
       COMMENT "Adding resource: ${in_f_bin} -> ${out_f_cpp}"
       DEPENDS ${binary_file}
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
