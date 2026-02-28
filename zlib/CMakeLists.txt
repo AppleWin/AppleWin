@@ -1,18 +1,18 @@
 set(ZLIB_SOURCES
   adler32.c
-  crc32.c
   compress.c
-  uncompr.c
+  crc32.c
+  deflate.c
   gzclose.c
   gzlib.c
   gzread.c
   gzwrite.c
-  deflate.c
   infback.c
-  inftrees.c
   inffast.c
   inflate.c
+  inftrees.c
   trees.c
+  uncompr.c
   zutil.c
 )
 
