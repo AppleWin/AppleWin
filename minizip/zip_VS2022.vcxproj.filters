@@ -21,6 +21,9 @@
     <ClInclude Include="crypt.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="ints.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="ioapi.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -28,6 +31,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="mztools.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="skipset.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="unzip.h">
