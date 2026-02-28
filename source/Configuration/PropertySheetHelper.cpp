@@ -368,6 +368,7 @@ void CPropertySheetHelper::ApplyNewConfigForRestart(const CConfigNeedingRestart&
 			GetCardMgr().GetSSC()->SetSerialPortItem(ConfigNew.m_serialPortItem);
 		}
 
+#if 0	// A restart with load all this from the Registry
 		if (ConfigNew.m_Slot[slot] == CT_GenericPrinter)
 		{
 			*GetCardMgr().GetParallelPrinterCard() = ConfigNew.m_parallelPrinterCard;	// copy object
@@ -384,11 +385,14 @@ void CPropertySheetHelper::ApplyNewConfigForRestart(const CConfigNeedingRestart&
 			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Insert(i, ConfigNew.m_slotInfoForHDC[slot].pathname[i]);
 		}
+#endif
 	}
 
+#if 0	// A restart will do this
 	// Initialize I/O after setting config
 	// NB. Uthernet cards check network interface in InitializeIO(), so need SetRegistryInterface() called first
 	GetCardMgr().InitializeIO(GetCxRomPeripheral());
+#endif
 
 	if (CONFIG_CHANGED_LOCAL(m_SlotAux))
 		SetSlot(SLOT_AUX, ConfigNew.m_SlotAux);
