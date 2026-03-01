@@ -144,7 +144,7 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 			break;
 
 		case IDC_BENCHMARK:
-			if (!IsOkToBenchmark(hWnd, m_PropertySheetHelper.IsConfigChanged()))
+			if (!IsOkToBenchmark(hWnd, m_PropertySheetHelper.IsConfigChangedForRestart()))
 				break;
 			m_PropertySheetHelper.SetDoBenchmark();
 			PropSheet_PressButton(GetParent(hWnd), PSBTN_OK);
@@ -160,7 +160,10 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 	return FALSE;
 }
 
+//
 // For InitOptions(), DlgOK() and ApplyConfigAfterClose(), see comment in PageConfig.cpp about "Property Sheet Page flow"
+//
+
 void CPageAdvanced::InitOptions(HWND hWnd)
 {
 	SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)Snapshot_GetFilename().c_str());

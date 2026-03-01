@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // . DlgOK() and DlgXXXCardOK()
 //		Capture new state to m_PropertySheetHelper.GetConfigNew()
 // . ApplyConfigAfterClose()
-//		If user confirms state changes are OK, then save new state to Registry & update emulator
+//		If user confirms state changes are OK, then save new state to Registry & update emulator state
 
 #include "StdAfx.h"
 
@@ -213,7 +213,10 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 	return FALSE;
 }
 
+//
 // For InitOptions(), DlgOK() and ApplyConfigAfterClose(), see comment in PageConfig.cpp about "Property Sheet Page flow"
+//
+
 void CPageConfig::InitOptions(HWND hWnd)
 {
 	// Convert Apple2 type to menu item
@@ -326,6 +329,7 @@ void CPageConfig::ApplyConfigAfterClose()
 	}
 
 	// Video
+	// NB. If VideoRefreshRate has changed, then this forces an emulator restart (so no need to check if it's changed here)
 
 	bool bVideoReinit = false;
 
@@ -361,12 +365,6 @@ void CPageConfig::ApplyConfigAfterClose()
 	if (GetVideo().GetMonochromeRGB() != m_PropertySheetHelper.GetConfigNew().m_monochromeRGB)
 	{
 		GetVideo().SetMonochromeRGB(m_PropertySheetHelper.GetConfigNew().m_monochromeRGB);
-		bVideoReinit = true;
-	}
-
-	if (GetVideo().GetVideoRefreshRate() != m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate)
-	{
-		GetVideo().SetVideoRefreshRate(m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate);
 		bVideoReinit = true;
 	}
 

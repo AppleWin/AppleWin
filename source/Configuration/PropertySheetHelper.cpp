@@ -269,7 +269,7 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 	//
 
-	if (m_ConfigNew.m_uSaveLoadStateMsg && IsConfigChanged() && IsOkToSaveLoadState(hWnd))
+	if (m_ConfigNew.m_uSaveLoadStateMsg && IsConfigChangedForRestart() && IsOkToSaveLoadState(hWnd))
 	{
 		// Drop any config changes, and do load/save state
 		PostMessage(GetFrame().g_hFrameWindow, m_ConfigNew.m_uSaveLoadStateMsg, 0, 0);
@@ -297,46 +297,35 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 	bool restart = false;
 
-	if (IsConfigChanged())	// Only for config that requires a restart
+	if (IsConfigChangedForRestart())	// Only for config that requires a restart
 	{
-		if (!CheckChangesForRestart(hWnd))
+		if (!HardwareConfigChanged(hWnd))
 			return;			// Cancelled
 
-		ApplyNewConfigForRestart(m_ConfigNew, m_ConfigOld);
+		if (!IsOkToRestart(hWnd))
+			return;			// Cancelled
+
+		ApplyNewConfigForRestart();
 		restart = true;
 	}
 
-	GetPropertySheet().ApplyConfigAfterClose(m_bmAfterClosePages);	// For config that does NOT need a restart
+	GetPropertySheet().ApplyConfigAfterClose(m_bmAfterClosePages);	// For config that does NOT require a restart
 
 	if (restart)
 		GetFrame().Restart();
 }
 
-bool CPropertySheetHelper::CheckChangesForRestart(HWND hWnd)
-{
-	if (!HardwareConfigChanged(hWnd))
-		return false;	// Cancelled
-
-	if (!IsOkToRestart(hWnd))
-		return false;	// Cancelled
-
-	return true;		// OK
-}
-
-#define CONFIG_CHANGED_LOCAL(var) \
-	(ConfigOld.var != ConfigNew.var)
+#define CONFIG_CHANGED(var) \
+	(m_ConfigOld.var != m_ConfigNew.var)
 
 // Apply changes to Registry
-void CPropertySheetHelper::ApplyNewConfigForRestart(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
+void CPropertySheetHelper::ApplyNewConfigForRestart()
 {
-	if (CONFIG_CHANGED_LOCAL(m_Apple2Type))
-	{
-		SaveComputerType(ConfigNew.m_Apple2Type);
-		SetApple2Type(ConfigNew.m_Apple2Type);	// Needed by InitializeIO() so that SLOT0 LC matches Apple2Type
-	}
+	if (CONFIG_CHANGED(m_Apple2Type))
+		SaveComputerType(m_ConfigNew.m_Apple2Type);
 
-	if (CONFIG_CHANGED_LOCAL(m_CpuType))
-		SaveCpuType(ConfigNew.m_CpuType);
+	if (CONFIG_CHANGED(m_CpuType))
+		SaveCpuType(m_ConfigNew.m_CpuType);
 
 	// For all slots (except aux) that have changed:
 	// . first empty them
@@ -345,66 +334,41 @@ void CPropertySheetHelper::ApplyNewConfigForRestart(const CConfigNeedingRestart&
 	// . if we just insert, then we'll go via the intermediate state of "s1=SSC, s2=SSC" - but only 1 instance of SSC is permitted
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
-		if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
+		if (CONFIG_CHANGED(m_Slot[slot]))
 			SetSlot(slot, CT_Empty);
 	}
 
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
-		if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-			SetSlot(slot, ConfigNew.m_Slot[slot]);
+		if (CONFIG_CHANGED(m_Slot[slot]))
+			SetSlot(slot, m_ConfigNew.m_Slot[slot]);
 
 		// Keep going, as card may not have changed, but card's config could have
 
-		if (ConfigNew.m_Slot[slot] == CT_Uthernet || ConfigNew.m_Slot[slot] == CT_Uthernet2)
+		if (m_ConfigNew.m_Slot[slot] == CT_Uthernet || m_ConfigNew.m_Slot[slot] == CT_Uthernet2)
 		{
 			// NB. Assume we don't have both cards inserted
-			PCapBackend::SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
-			Uthernet2::SetRegistryVirtualDNS(slot, ConfigNew.m_tfeVirtualDNS);
+			PCapBackend::SetRegistryInterface(slot, m_ConfigNew.m_tfeInterface);
+			Uthernet2::SetRegistryVirtualDNS(slot, m_ConfigNew.m_tfeVirtualDNS);
 		}
 
-		if (ConfigNew.m_Slot[slot] == CT_SSC)
+		if (m_ConfigNew.m_Slot[slot] == CT_SSC)
 		{
-			GetCardMgr().GetSSC()->SetSerialPortItem(ConfigNew.m_serialPortItem);
+			GetCardMgr().GetSSC()->SetSerialPortItem(m_ConfigNew.m_serialPortItem);
 		}
-
-#if 0	// A restart with load all this from the Registry
-		if (ConfigNew.m_Slot[slot] == CT_GenericPrinter)
-		{
-			*GetCardMgr().GetParallelPrinterCard() = ConfigNew.m_parallelPrinterCard;	// copy object
-		}
-
-		if (ConfigNew.m_Slot[slot] == CT_Disk2)
-		{
-			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
-				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).InsertDisk(i, ConfigNew.m_slotInfoForFDC[slot].pathname[i], false, false);
-		}
-
-		if (ConfigNew.m_Slot[slot] == CT_GenericHDD)
-		{
-			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
-				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Insert(i, ConfigNew.m_slotInfoForHDC[slot].pathname[i]);
-		}
-#endif
 	}
 
-#if 0	// A restart will do this
-	// Initialize I/O after setting config
-	// NB. Uthernet cards check network interface in InitializeIO(), so need SetRegistryInterface() called first
-	GetCardMgr().InitializeIO(GetCxRomPeripheral());
-#endif
+	if (CONFIG_CHANGED(m_SlotAux))
+		SetSlot(SLOT_AUX, m_ConfigNew.m_SlotAux);
 
-	if (CONFIG_CHANGED_LOCAL(m_SlotAux))
-		SetSlot(SLOT_AUX, ConfigNew.m_SlotAux);
+	if (CONFIG_CHANGED(m_RamWorksMemorySize))
+		SetRamWorksMemorySize(m_ConfigNew.m_RamWorksMemorySize);
 
-	if (CONFIG_CHANGED_LOCAL(m_enableTheFreezesF8Rom))
-		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_enableTheFreezesF8Rom);
+	if (CONFIG_CHANGED(m_videoRefreshRate))
+		REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, m_ConfigNew.m_videoRefreshRate);
 
-	if (CONFIG_CHANGED_LOCAL(m_videoRefreshRate))
-		REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
-
-	if (CONFIG_CHANGED_LOCAL(m_RamWorksMemorySize))
-		SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
+	if (CONFIG_CHANGED(m_enableTheFreezesF8Rom))
+		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, m_ConfigNew.m_enableTheFreezesF8Rom);
 }
 
 // Called from Snapshot_LoadState_v2()
@@ -413,21 +377,19 @@ void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestar
 {
 	SaveComputerType(ConfigNew.m_Apple2Type);
 	SaveCpuType(ConfigNew.m_CpuType);
-	//REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);	// Not currently in save-state
-	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
 	SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
+	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
+	//REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);	// Not currently in save-state
 }
 
+// Called when PSPs are created
 void CPropertySheetHelper::SaveCurrentConfig(void)
 {
-	// NB. clone-type is encoded in g_Apple2Type
 	m_ConfigOld.Reload();
+	m_ConfigNew = m_ConfigOld;	// Setup ConfigNew
 
 	// Reset flags each time:
 	m_bDoBenchmark = false;
-
-	// Setup ConfigNew
-	m_ConfigNew = m_ConfigOld;
 }
 
 bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd)
@@ -474,9 +436,6 @@ bool CPropertySheetHelper::IsOkToResetConfig(HWND hWnd)
 
 	return true;
 }
-
-#define CONFIG_CHANGED(var) \
-	(m_ConfigOld.var != m_ConfigNew.var)
 
 bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 {

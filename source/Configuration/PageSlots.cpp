@@ -255,7 +255,10 @@ BOOL CPageSlots::CardTypeHasOptions(SS_CARDTYPE card)
 		card == CT_RamWorksIII) ? TRUE : FALSE;
 }
 
+//
 // For InitOptions(), DlgOK() and ApplyConfigAfterClose(), see comment in PageConfig.cpp about "Property Sheet Page flow"
+//
+
 void CPageSlots::InitOptions(HWND hWnd)
 {
 	BOOL enable = FALSE, enableOpt = FALSE;
@@ -390,11 +393,15 @@ void CPageSlots::ApplyConfigAfterClose()
 				continue;
 
 			bool error = card.Insert(i, pathname);
-			_ASSERT(error == true);	// Should've already been rejected in HandleFloppyDriveCombo()
+			_ASSERT(error == true);	// Should've already been rejected in HandleHDDCombo()
 			if (error != true)
 				card.NotifyInvalidImage(pathname);
 		}
 	}
+
+	// SSC
+	// . do any non-restart config changes here (none at the moment)
+	// . (A change to SerialPortName requires a restart)
 
 	// Parallel Printer card
 	CConfigNeedingRestart& config = const_cast<CConfigNeedingRestart&>(m_PropertySheetHelper.GetConfigNew());
@@ -408,6 +415,10 @@ void CPageSlots::ApplyConfigAfterClose()
 	m_mouseRestrictToWindow = m_PropertySheetHelper.GetConfigNew().m_mouseRestrictToWindow;
 	REGSAVE(REGVALUE_MOUSE_CROSSHAIR, m_mouseShowCrosshair);
 	REGSAVE(REGVALUE_MOUSE_RESTRICT_TO_WINDOW, m_mouseRestrictToWindow);
+
+	// RamWorks3 card
+	// . do any non-restart config changes here (none at the moment)
+	// . (A change to RamWorksMemorySize requires a restart)
 }
 
 void CPageSlots::ResetToDefault()
