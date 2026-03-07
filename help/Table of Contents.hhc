@@ -128,12 +128,8 @@
 				<param name="Local" value="cfg-input.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Sound Settings">
-				<param name="Local" value="cfg-sound.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Disk / Drive Settings">
-				<param name="Local" value="cfg-disk.html">
+				<param name="Name" value="Slot Settings">
+				<param name="Local" value="cfg-slots.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Advanced Settings">
