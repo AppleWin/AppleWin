@@ -45,19 +45,16 @@ Page:					Action:							Comment:
 ------------------------------------------------------------------------
 Config
 . Computer				WM_USER_RESTART
-. Benchmark				PSBTN_OK -> WM_USER_BENCHMARK	Forces PSBTN_OK
-Input
-. Mouse					WM_USER_RESTART
-. CP/M					WM_USER_RESTART
-Sound
-. MB/Phasor/SAM/None	WM_USER_RESTART
-Disk
-. HDD enable			WM_USER_RESTART
+. Video frequency		WM_USER_RESTART
+Slot
+. <Slot change>			WM_USER_RESTART
+. <Card config change>	WM_USER_RESTART					Depends on change
 Advanced
 . Save State			WM_USER_SAVESTATE
 . Load State			WM_USER_LOADSTATE
 . Clone					WM_USER_RESTART
 . MrFreeze Rom			WM_USER_RESTART
+. Benchmark				PSBTN_OK -> WM_USER_BENCHMARK	Forces PSBTN_OK
 
 Requirements:
 -------------
@@ -428,7 +425,7 @@ bool CPropertySheetHelper::IsOkToResetConfig(HWND hWnd)
 
 	if (MessageBox(hWnd,
 		"Resetting configuration to the default values whilst the machine is being emulated "
-		"could result in lose of unsaved work, or corruption of floppy or hard disk images.\n\n"
+		"could result in loss of unsaved work, or corruption of floppy or hard disk images.\n\n"
 		"Are you sure you want to do this?",
 		"Reset Configuration",
 		MB_ICONEXCLAMATION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
