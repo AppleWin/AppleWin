@@ -45,19 +45,16 @@ Page:					Action:							Comment:
 ------------------------------------------------------------------------
 Config
 . Computer				WM_USER_RESTART
-. Benchmark				PSBTN_OK -> WM_USER_BENCHMARK	Forces PSBTN_OK
-Input
-. Mouse					WM_USER_RESTART
-. CP/M					WM_USER_RESTART
-Sound
-. MB/Phasor/SAM/None	WM_USER_RESTART
-Disk
-. HDD enable			WM_USER_RESTART
+. Video frequency		WM_USER_RESTART
+Slot
+. <Slot change>			WM_USER_RESTART
+. <Card config change>	WM_USER_RESTART					Depends on change
 Advanced
 . Save State			WM_USER_SAVESTATE
 . Load State			WM_USER_LOADSTATE
 . Clone					WM_USER_RESTART
 . MrFreeze Rom			WM_USER_RESTART
+. Benchmark				PSBTN_OK -> WM_USER_BENCHMARK	Forces PSBTN_OK
 
 Requirements:
 -------------
@@ -125,20 +122,29 @@ void CPropertySheetHelper::SaveCpuType(eCpuType NewCpuType)
 
 void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 {
-	_ASSERT(slot < NUM_SLOTS);
-	if (slot >= NUM_SLOTS)
-		return;
+	if (slot <= SLOT7)
+	{
+		if (GetCardMgr().QuerySlot(slot) == newCardType)
+			return;
 
-	if (GetCardMgr().QuerySlot(slot) == newCardType)
-		return;
+		GetCardMgr().Insert(slot, newCardType);
+	}
+	else if (slot == SLOT_AUX)
+	{
+		if (GetCardMgr().QueryAux() == newCardType)
+			return;
 
-	GetCardMgr().Insert(slot, newCardType);
-	GetCardMgr().GetRef(slot).InitializeIO(GetCxRomPeripheral());
+		GetCardMgr().InsertAux(newCardType);
+	}
+	else
+	{
+		_ASSERT(0);
+	}
 }
 
 // Used by:
-// . CPageDisk:		IDC_CIDERPRESS_BROWSE
-// . CPageAdvanced:	IDC_PRINTER_DUMP_FILENAME_BROWSE
+// . CPageAdvanced:	IDC_CIDERPRESS_BROWSE
+// . CPageSlots:	IDC_PRINTER_DUMP_FILENAME_BROWSE
 std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, const char* pszTitle, const char* REGVALUE, const char* FILEMASKS)
 {
 	char szFilename[MAX_PATH];
@@ -260,21 +266,19 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 
 	//
 
-	if (m_ConfigNew.m_uSaveLoadStateMsg && IsOkToSaveLoadState(hWnd, IsConfigChanged()))
+	if (m_ConfigNew.m_uSaveLoadStateMsg && IsConfigChangedForRestart() && IsOkToSaveLoadState(hWnd))
 	{
-		// Drop any config change, and do load/save state
+		// Drop any config changes, and do load/save state
 		PostMessage(GetFrame().g_hFrameWindow, m_ConfigNew.m_uSaveLoadStateMsg, 0, 0);
 		return;
 	}
 	
 	if (m_bDoBenchmark)
 	{
-		// Drop any config change, and do benchmark
+		// Drop any config changes, and do benchmark
 		PostMessage(GetFrame().g_hFrameWindow, WM_USER_BENCHMARK, 0, 0);	// NB. doesn't do WM_USER_RESTART
 		return;
 	}
-
-	bool restart = false;
 
 	if (m_ConfigNew.m_Apple2Type == A2TYPE_CLONE)
 	{
@@ -288,130 +292,111 @@ void CPropertySheetHelper::PostMsgAfterClose(HWND hWnd, PAGETYPE page)
 		m_ConfigNew.m_CpuType = ProbeMainCpuDefault(m_ConfigNew.m_Apple2Type);
 	}
 
-	if (IsConfigChanged())
+	bool restart = false;
+
+	if (IsConfigChangedForRestart())	// Only for config that requires a restart
 	{
-		if (!CheckChangesForRestart(hWnd))
-		{
-			// Cancelled
-			RestoreCurrentConfig();
-			return;
-		}
+		if (!HardwareConfigChanged(hWnd))
+			return;			// Cancelled
 
-		ApplyNewConfig();
+		if (!IsOkToRestart(hWnd))
+			return;			// Cancelled
 
+		ApplyNewConfigForRestart();
 		restart = true;
 	}
+
+	GetPropertySheet().ApplyConfigAfterClose(m_bmAfterClosePages);	// For config that does NOT require a restart
 
 	if (restart)
 		GetFrame().Restart();
 }
 
-bool CPropertySheetHelper::CheckChangesForRestart(HWND hWnd)
-{
-	if (!HardwareConfigChanged(hWnd))
-		return false;	// Cancelled
-
-	if (!IsOkToRestart(hWnd))
-		return false;	// Cancelled
-
-	return true;		// OK
-}
-
-#define CONFIG_CHANGED_LOCAL(var) \
-	(ConfigOld.var != ConfigNew.var)
+#define CONFIG_CHANGED(var) \
+	(m_ConfigOld.var != m_ConfigNew.var)
 
 // Apply changes to Registry
-void CPropertySheetHelper::ApplyNewConfig(const CConfigNeedingRestart& ConfigNew, const CConfigNeedingRestart& ConfigOld)
+void CPropertySheetHelper::ApplyNewConfigForRestart()
 {
-	if (CONFIG_CHANGED_LOCAL(m_Apple2Type))
+	if (CONFIG_CHANGED(m_Apple2Type))
+		SaveComputerType(m_ConfigNew.m_Apple2Type);
+
+	if (CONFIG_CHANGED(m_CpuType))
+		SaveCpuType(m_ConfigNew.m_CpuType);
+
+	// For all slots (except aux) that have changed:
+	// . first empty them
+	// . then insert the new card
+	// Reason: s1=empty, s2=SSC -> s1=SSC, s2=empty
+	// . if we just insert, then we'll go via the intermediate state of "s1=SSC, s2=SSC" - but only 1 instance of SSC is permitted
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
-		SaveComputerType(ConfigNew.m_Apple2Type);
+		if (CONFIG_CHANGED(m_Slot[slot]))
+			SetSlot(slot, CT_Empty);
 	}
 
-	if (CONFIG_CHANGED_LOCAL(m_CpuType))
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
-		SaveCpuType(ConfigNew.m_CpuType);
+		if (CONFIG_CHANGED(m_Slot[slot]))
+			SetSlot(slot, m_ConfigNew.m_Slot[slot]);
+
+		// Keep going, as card may not have changed, but card's config could have
+
+		if (m_ConfigNew.m_Slot[slot] == CT_Uthernet || m_ConfigNew.m_Slot[slot] == CT_Uthernet2)
+		{
+			// NB. Assume we don't have both cards inserted
+			PCapBackend::SetRegistryInterface(slot, m_ConfigNew.m_tfeInterface);
+			Uthernet2::SetRegistryVirtualDNS(slot, m_ConfigNew.m_tfeVirtualDNS);
+		}
+
+		if (m_ConfigNew.m_Slot[slot] == CT_SSC)
+		{
+			GetCardMgr().GetSSC()->SetSerialPortItem(m_ConfigNew.m_serialPortItem);
+		}
 	}
 
-	UINT slot = SLOT3;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
+	if (CONFIG_CHANGED(m_SlotAux))
+		SetSlot(SLOT_AUX, m_ConfigNew.m_SlotAux);
 
-	// unconditionally save it, as the previous SetSlot might have removed the setting
-	PCapBackend::SetRegistryInterface(slot, ConfigNew.m_tfeInterface);
-	Uthernet2::SetRegistryVirtualDNS(slot, ConfigNew.m_tfeVirtualDNS);
+	if (CONFIG_CHANGED(m_RamWorksMemorySize))
+		SetRamWorksMemorySize(m_ConfigNew.m_RamWorksMemorySize);
 
-	slot = SLOT4;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
+	if (CONFIG_CHANGED(m_videoRefreshRate))
+		REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, m_ConfigNew.m_videoRefreshRate);
 
-	slot = SLOT5;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	slot = SLOT7;
-	if (CONFIG_CHANGED_LOCAL(m_Slot[slot]))
-		SetSlot(slot, ConfigNew.m_Slot[slot]);
-
-	if (CONFIG_CHANGED_LOCAL(m_bEnableTheFreezesF8Rom))
-	{
-		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);
-	}
-
-	if (CONFIG_CHANGED_LOCAL(m_videoRefreshRate))
-	{
-		REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
-	}
+	if (CONFIG_CHANGED(m_enableTheFreezesF8Rom))
+		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, m_ConfigNew.m_enableTheFreezesF8Rom);
 }
 
+// Called from Snapshot_LoadState_v2()
+// . A convenient way to save newly loaded state to Registry
 void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
 {
 	SaveComputerType(ConfigNew.m_Apple2Type);
 	SaveCpuType(ConfigNew.m_CpuType);
-	REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);
+	SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
 	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
+	//REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);	// Not currently in save-state
 }
 
-void CPropertySheetHelper::ApplyNewConfig(void)
-{
-	ApplyNewConfig(m_ConfigNew, m_ConfigOld);
-}
-
+// Called when PSPs are created
 void CPropertySheetHelper::SaveCurrentConfig(void)
 {
-	// NB. clone-type is encoded in g_Apple2Type
 	m_ConfigOld.Reload();
+	m_ConfigNew = m_ConfigOld;	// Setup ConfigNew
 
 	// Reset flags each time:
 	m_bDoBenchmark = false;
-
-	// Setup ConfigNew
-	m_ConfigNew = m_ConfigOld;
 }
 
-void CPropertySheetHelper::RestoreCurrentConfig(void)
+bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd)
 {
-	// NB. clone-type is encoded in g_Apple2Type
-	SetApple2Type(m_ConfigOld.m_Apple2Type);
-	SetMainCpu(m_ConfigOld.m_CpuType);
-	SetSlot(SLOT3, m_ConfigOld.m_Slot[SLOT3]);
-	SetSlot(SLOT4, m_ConfigOld.m_Slot[SLOT4]);
-	SetSlot(SLOT5, m_ConfigOld.m_Slot[SLOT5]);
-	SetSlot(SLOT7, m_ConfigOld.m_Slot[SLOT7]);
-	GetPropertySheet().SetTheFreezesF8Rom(m_ConfigOld.m_bEnableTheFreezesF8Rom);
-}
-
-bool CPropertySheetHelper::IsOkToSaveLoadState(HWND hWnd, const bool bConfigChanged)
-{
-	if (bConfigChanged)
-	{
-		if (MessageBox(hWnd,
-				"The hardware configuration has changed. Save/Load state will lose these changes.\n\n"
-				"Are you sure you want to do this?",
-				REG_CONFIG,
-				MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
-			return false;
-	}
+	if (MessageBox(hWnd,
+			"The hardware configuration has changed. Save/Load state will lose these changes.\n\n"
+			"Are you sure you want to do this?",
+			REG_CONFIG,
+			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+		return false;
 
 	return true;
 }
@@ -433,8 +418,21 @@ bool CPropertySheetHelper::IsOkToRestart(HWND hWnd)
 	return true;
 }
 
-#define CONFIG_CHANGED(var) \
-	(m_ConfigOld.var != m_ConfigNew.var)
+bool CPropertySheetHelper::IsOkToResetConfig(HWND hWnd)
+{
+	if (g_nAppMode == MODE_LOGO)
+		return true;
+
+	if (MessageBox(hWnd,
+		"Resetting configuration to the default values whilst the machine is being emulated "
+		"could result in loss of unsaved work, or corruption of floppy or hard disk images.\n\n"
+		"Are you sure you want to do this?",
+		"Reset Configuration",
+		MB_ICONEXCLAMATION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
+		return false;
+
+	return true;
+}
 
 bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 {
@@ -452,8 +450,16 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 		if (CONFIG_CHANGED(m_videoRefreshRate))
 			strMsgMain += ". Video refresh rate has changed\n";
 
-		if (CONFIG_CHANGED(m_Slot[SLOT3]))
-			strMsgMain += GetSlot(SLOT3);
+		for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+		{
+			if (CONFIG_CHANGED(m_Slot[slot]))
+				strMsgMain += GetSlot(slot);
+		}
+
+		if (CONFIG_CHANGED(m_SlotAux))
+			strMsgMain += GetSlot(SLOT_AUX);
+		else if (m_ConfigNew.m_SlotAux == CT_RamWorksIII && CONFIG_CHANGED(m_RamWorksMemorySize))
+			strMsgMain += ". RamWorks III memory size changed\n";
 
 		if (CONFIG_CHANGED(m_tfeInterface))
 			strMsgMain += ". Uthernet interface has changed\n";
@@ -461,17 +467,11 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 		if (CONFIG_CHANGED(m_tfeVirtualDNS))
 			strMsgMain += ". Uthernet Virtual DNS has changed\n";
 
-		if (CONFIG_CHANGED(m_Slot[SLOT4]))
-			strMsgMain += GetSlot(SLOT4);
-
-		if (CONFIG_CHANGED(m_Slot[SLOT5]))
-			strMsgMain += GetSlot(SLOT5);
-
-		if (CONFIG_CHANGED(m_Slot[SLOT7]))
-			strMsgMain += ". Harddisk(s) have been plugged/unplugged\n";
-
-		if (CONFIG_CHANGED(m_bEnableTheFreezesF8Rom))
+		if (CONFIG_CHANGED(m_enableTheFreezesF8Rom))
 			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
+
+		if (CONFIG_CHANGED(m_serialPortItem))
+			strMsgMain += ". SSC config has changed\n";
 	}
 
 	std::string strMsgPost("\n");
@@ -490,35 +490,81 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 	return true;
 }
 
-std::string CPropertySheetHelper::GetSlot(const UINT uSlot)
+std::string CPropertySheetHelper::GetSlot(const UINT slot)
 {
-	// strMsg = ". Slot n: ";
-	std::string strMsg(". Slot ");
-	strMsg += '0' + uSlot;
-	strMsg += ": ";
+	std::string strMsg;
+	SS_CARDTYPE oldCardType, newCardType;
 
-	const SS_CARDTYPE OldCardType = m_ConfigOld.m_Slot[uSlot];
-	const SS_CARDTYPE NewCardType = m_ConfigNew.m_Slot[uSlot];
-
-	if ((OldCardType == CT_Empty) || (NewCardType == CT_Empty))
+	if (slot <= SLOT7)
 	{
-		if (NewCardType == CT_Empty)
+		// strMsg = ". Slot n: ";
+		strMsg = ". Slot ";
+		strMsg += '0' + slot;
+		strMsg += ": ";
+
+		oldCardType = m_ConfigOld.m_Slot[slot];
+		newCardType = m_ConfigNew.m_Slot[slot];
+	}
+	else if (slot == SLOT_AUX)
+	{
+		strMsg = ". Slot Aux:";
+
+		oldCardType = m_ConfigOld.m_SlotAux;
+		newCardType = m_ConfigNew.m_SlotAux;
+	}
+	else
+	{
+		_ASSERT(0);
+		return "Error: Illegal Slot!";
+	}
+
+	if (oldCardType == CT_LanguageCardIIe || newCardType == CT_LanguageCardIIe)
+	{
+		// Switch model: II/II+ (slot 0) <-> //e (no slot 0)
+		if (newCardType == CT_LanguageCardIIe)
 		{
-			strMsg += Card::GetCardName(OldCardType);
+			if (oldCardType != CT_Empty)
+			{
+				strMsg += Card::GetCardName(oldCardType);
+				strMsg += " card removed\n";
+			}
+			else
+			{
+				strMsg = "";
+			}
+		}
+		else
+		{
+			if (newCardType != CT_Empty)
+			{
+				strMsg += Card::GetCardName(newCardType);
+				strMsg += " card added\n";
+			}
+			else
+			{
+				strMsg = "";
+			}
+		}
+	}
+	else if (oldCardType == CT_Empty || newCardType == CT_Empty)
+	{
+		if (newCardType == CT_Empty)
+		{
+			strMsg += Card::GetCardName(oldCardType);
 			strMsg += " card removed\n";
 		}
 		else
 		{
-			strMsg += Card::GetCardName(NewCardType);
+			strMsg += Card::GetCardName(newCardType);
 			strMsg += " card added\n";
 		}
 	}
 	else
 	{
-			strMsg += Card::GetCardName(OldCardType);
-			strMsg += " card removed & ";
-			strMsg += Card::GetCardName(NewCardType);
-			strMsg += " card added\n";
+		strMsg += Card::GetCardName(oldCardType);
+		strMsg += " card removed & ";
+		strMsg += Card::GetCardName(newCardType);
+		strMsg += " card added\n";
 	}
 
 	return strMsg;

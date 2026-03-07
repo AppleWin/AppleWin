@@ -6,6 +6,8 @@
 
 #include "SoundBuffer.h"
 
+const uint32_t kUserVolume_Default = 0;	// 0=Max
+
 struct VOICE
 {
 	std::shared_ptr<SoundBuffer> lpDSBvoice;
@@ -24,7 +26,7 @@ struct VOICE
 		bMute = false;
 		nVolume = DSBVOLUME_MAX;
 		nFadeVolume = 0;
-		dwUserVolume = 0;
+		dwUserVolume = kUserVolume_Default;
 		bIsSpeaker = false;
 		bRecentlyActive = false;
 		name = "";

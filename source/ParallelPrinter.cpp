@@ -261,9 +261,6 @@ void ParallelPrinterCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 
 bool ParallelPrinterCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (m_slot != SLOT1)	// fixme
-		Card::ThrowErrorInvalidSlot(CT_GenericPrinter, m_slot);
-
 	if (version != 1)
 		Card::ThrowErrorInvalidVersion(CT_GenericPrinter, version);
 

@@ -155,7 +155,7 @@ Overview
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_isFirmwareV1or2(false), m_useHdcFirmwareV1(false), m_useHdcFirmwareV2(false), m_useHdcFirmwareMode(HdcDefault)
 {
-	if (m_slot != SLOT5 && m_slot != SLOT7)	// fixme
+	if (m_slot == SLOT0)
 		ThrowErrorInvalidSlot();
 
 	m_unitNum = (HARDDISK_1 << 7) | (m_slot << 4);	// b7=unit, b6:4=slot
@@ -176,6 +176,7 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	m_notBusyCycle = 0;
 
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
+	m_saveDiskImageToRegistry = true;
 
 	m_saveStateFirmwareV1 = false;
 	m_saveStateFirmwareV2 = false;
@@ -317,7 +318,7 @@ void HarddiskInterfaceCard::SaveLastDiskImage(const int drive)
 {
 	_ASSERT(drive >= HARDDISK_1 && drive < NUM_HARDDISKS);
 
-	if (!m_saveDiskImage)
+	if (!m_saveDiskImage || !m_saveDiskImageToRegistry)
 		return;
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
@@ -403,11 +404,11 @@ void HarddiskInterfaceCard::Destroy(void)
 // Pre: pathname likely to include path (but can also just be filename)
 bool HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname)
 {
-	if (pathname.empty())
-		return false;
-
 	if (m_hardDiskDrive[iDrive].m_imageloaded)
 		Unplug(iDrive);
+
+	if (pathname.empty())
+		return true;
 
 	const DWORD dwAttributes = GetFileAttributes(pathname.c_str());
 	if (dwAttributes == INVALID_FILE_ATTRIBUTES)
@@ -459,7 +460,7 @@ bool HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname
 
 //-----------------------------------------------------------------------------
 
-bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
+bool HarddiskInterfaceCard::UserSelectNewDiskImageOnly(const int drive, LPCSTR pszFilename, std::string& openFilename, DWORD flags)
 {
 	char directory[MAX_PATH];
 	char filename[MAX_PATH];
@@ -471,41 +472,45 @@ bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(OPENFILENAME));
-	ofn.lStructSize     = sizeof(OPENFILENAME);
-	ofn.hwndOwner       = GetFrame().g_hFrameWindow;
-	ofn.hInstance       = GetFrame().g_hInstance;
-	ofn.lpstrFilter     = "Hard Disk Images (*.hdv,*.po,*.2mg,*.2img,*.gz,*.zip)\0*.hdv;*.po;*.2mg;*.2img;*.gz;*.zip\0"
-						  "All Files\0*.*\0";
-	ofn.lpstrFile       = filename;
-	ofn.nMaxFile        = MAX_PATH;
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = GetFrame().g_hFrameWindow;
+	ofn.hInstance = GetFrame().g_hInstance;
+	ofn.lpstrFilter = "Hard Disk Images (*.hdv,*.po,*.2mg,*.2img,*.gz,*.zip)\0*.hdv;*.po;*.2mg;*.2img;*.gz;*.zip\0"
+		"All Files\0*.*\0";
+	ofn.lpstrFile = filename;
+	ofn.nMaxFile = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
-	ofn.Flags           = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;	// Don't allow creation & hide the read-only checkbox
-	ofn.lpstrTitle      = title.c_str();
+	ofn.Flags = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;	// Don't allow creation & hide the read-only checkbox
+	ofn.lpstrTitle = title.c_str();
 
 	bool bRes = false;
 
-	if (GetOpenFileName(&ofn))
-	{
-		std::string openFilename = filename;
-		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
-			openFilename += ".hdv";
-		
-		if (Insert(drive, openFilename))
-		{
-			bRes = true;
-		}
-		else
-		{
-			NotifyInvalidImage(openFilename);
-		}
-	}
+	if (!GetOpenFileName(&ofn))
+		return false;
 
-	return bRes;
+	flags = ofn.Flags;
+	openFilename = filename;
+	if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
+		openFilename += ".hdv";
+
+	return true;
 }
 
-bool HarddiskInterfaceCard::Select(const int iDrive)
+bool HarddiskInterfaceCard::SelectImage(const int drive, LPCSTR pszFilename)
 {
-	return SelectImage(iDrive, "");
+	std::string openFilename;
+	DWORD flags = 0;
+
+	if (!UserSelectNewDiskImageOnly(drive, pszFilename, openFilename, flags))
+		return false;
+
+	if (!Insert(drive, openFilename))
+	{
+		NotifyInvalidImage(openFilename);
+		return false;
+	}
+
+	return true;
 }
 
 //===========================================================================

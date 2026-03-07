@@ -105,10 +105,11 @@ public:
 	const std::string& GetFullName(const int iDrive);
 	const std::string& HarddiskGetFullPathName(const int iDrive);
 	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
-	bool Select(const int iDrive);
+	bool UserSelectNewDiskImageOnly(const int drive, LPCSTR pszFilename, std::string& openFilename, DWORD flags);
 	bool Insert(const int iDrive, const std::string& pathname);
 	void Unplug(const int iDrive);
-	void LoadLastDiskImage(const int iDrive);
+	void NotifyInvalidImage(const std::string& szImageFilename);
+	void LoadLastDiskImage(const int drive);
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
 	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }
 	void UseHdcFirmwareV2(void) { m_useHdcFirmwareV2 = true; }
@@ -116,6 +117,8 @@ public:
 
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
 	bool ImageSwap(void);
+
+	void ForbidSaveDiskImageToRegistry() { m_saveDiskImageToRegistry = false; }
 
 	static const std::string& GetSnapshotCardName(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
@@ -127,7 +130,6 @@ public:
 private:
 	void CleanupDriveInternal(const int iDrive);
 	void CleanupDrive(const int iDrive);
-	void NotifyInvalidImage(const std::string & szImageFilename);
 	void SaveLastDiskImage(const int drive);
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);
@@ -158,6 +160,7 @@ private:
 	HdcMode m_useHdcFirmwareMode;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
+	bool m_saveDiskImageToRegistry;
 
 	HardDiskDrive m_hardDiskDrive[NUM_HARDDISKS];
 	HardDiskDrive m_smartPortController;		// unit-0 is the SmartPort controller

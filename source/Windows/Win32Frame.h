@@ -69,7 +69,6 @@ public:
 	bool IsFullScreen(void);
 	void FrameRegisterClass();
 	void FrameCreateWindow(void);
-	void ChooseMonochromeColor(void);
 	UINT Get3DBorderWidth(void);
 	UINT Get3DBorderHeight(void);
 	int GetViewportScale(void);
@@ -81,7 +80,9 @@ public:
 	HDC FrameGetDC();
 	void FrameReleaseDC();
 
-	bool	g_bScrollLock_FullSpeed;
+	bool g_bScrollLock_FullSpeed;
+
+	const static bool kFullScreen_ShowSubunitStatus_Default = true;
 
 private:
 	static BOOL CALLBACK DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext);
@@ -133,7 +134,6 @@ private:
 	bool g_bLastCursorInAppleViewport;
 	UINT_PTR	g_TimerIDEvent_100msec;
 	UINT		g_uCount100msec;
-	COLORREF      customcolors[256];	// MONOCHROME is last custom color
 	HBITMAP       g_hLogoBitmap;
 	HBITMAP       g_hDeviceBitmap;
 	HDC           g_hDeviceDC;

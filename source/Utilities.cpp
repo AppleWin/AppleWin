@@ -171,21 +171,6 @@ void LoadConfiguration(bool loadImages)
 	else
 		SetCopyProtectionDongleType(DT_EMPTY);
 
-	uint32_t dwSoundType;
-	REGLOAD_DEFAULT(REGVALUE_SOUND_EMULATION, &dwSoundType, REG_SOUNDTYPE_WAVE);
-	switch (dwSoundType)
-	{
-	case REG_SOUNDTYPE_NONE:
-	case REG_SOUNDTYPE_DIRECT:	// Not supported from 1.26
-	case REG_SOUNDTYPE_SMART:	// Not supported from 1.26
-	default:
-		soundtype = SOUND_NONE;
-		break;
-	case REG_SOUNDTYPE_WAVE:
-		soundtype = SOUND_WAVE;
-		break;
-	}
-
 	REGLOAD_DEFAULT(REGVALUE_EMULATION_SPEED, &g_dwSpeed, SPEED_NORMAL);
 	GetVideo().Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
@@ -204,7 +189,7 @@ void LoadConfiguration(bool loadImages)
 		GetPropertySheet().SetTheFreezesF8Rom(dwTmp);
 
 	if(REGLOAD(REGVALUE_SAVE_STATE_ON_EXIT, &dwTmp))
-		g_bSaveStateOnExit = dwTmp ? true : false;
+		SetSaveStateOnExit(dwTmp ? true : false);
 
 	if(REGLOAD(REGVALUE_PDL_XTRIM, &dwTmp))
 		JoySetTrim((short)dwTmp, true);
@@ -240,10 +225,17 @@ void LoadConfiguration(bool loadImages)
 
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
-			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
+			if (slot == SLOT0)
+				SetExpansionMemType((SS_CARDTYPE)dwTmp, false);
+			else
+				GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
 		}
-		else	// legacy (AppleWin 1.30.3 or earlier)
+		else	// new install or legacy (AppleWin 1.30.3 or earlier)
 		{
+			// New install:
+			GetCardMgr().Insert(slot, GetCardMgr().QueryDefaultCardForSlot(slot, GetApple2Type()));
+
+			// Legacy:
 			if (slot == SLOT3)
 			{
 				RegLoadString(REG_CONFIG, REGVALUE_UTHERNET_INTERFACE, 1, szFilename, MAX_PATH, "");
@@ -265,6 +257,7 @@ void LoadConfiguration(bool loadImages)
 
 	// Aux slot
 
+	if (IsAppleIIe(GetApple2Type()))
 	{
 		std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
 
@@ -278,13 +271,19 @@ void LoadConfiguration(bool loadImages)
 			RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, &dwTmp, kDefaultExMemoryBanksRealRW3);
 			SetRamWorksMemorySize(dwTmp, noUpdateRegistry);
 		}
+		else	// new install or legacy
+		{
+			const bool noUpdateRegistry = false;
+			GetCardMgr().InsertAux(CT_Extended80Col, noUpdateRegistry);
+		}
 	}
 
-	if(REGLOAD(REGVALUE_SPKR_VOLUME, &dwTmp))
+	if (REGLOAD(REGVALUE_MASTER_VOLUME, &dwTmp) ||	// Try MASTER_VOLUME
+		REGLOAD(REGVALUE_SPKR_VOLUME, &dwTmp))		// ...else try older SPKR_VOLUME
+	{
 		SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
-
-	if(REGLOAD(REGVALUE_MB_VOLUME, &dwTmp))
 		GetCardMgr().GetMockingboardCardMgr().SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
+	}
 
 	// Load save-state pathname *before* inserting any harddisk/disk images (for both init & reinit cases)
 	// NB. inserting harddisk/disk can change snapshot pathname
