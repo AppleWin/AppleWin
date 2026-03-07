@@ -47,6 +47,15 @@ To compile for Windows from source see:
 
 * [docs/compiling.txt](https://github.com/AppleWin/AppleWin/blob/master/docs/compiling.txt)
 
+Debugging
+=========
+If you are experencing a system-wide input unresponsiveness when debugging under MSVC 2022 then use the command-line argument `-no-hook-system-key` to prevent an input thread for system keys. See `g_bHookSystemKey`, `HookFilter::HookFilterForKeyboard()` and `HookFilter::HookThread()`.
+
+Alternative work arounds include:
+
+* Debug with MSVC 2026,
+* Debug with MSVC 2019, or
+* Manually use the older v5.01 Windows Common Controls.
 
 Unofficial Ports
 ================

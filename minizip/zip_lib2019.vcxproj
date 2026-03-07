@@ -20,9 +20,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="crypt.h" />
+    <ClInclude Include="ints.h" />
     <ClInclude Include="ioapi.h" />
     <ClInclude Include="iowin32.h" />
     <ClInclude Include="mztools.h" />
+    <ClInclude Include="skipset.h" />
     <ClInclude Include="unzip.h" />
     <ClInclude Include="zip.h" />
   </ItemGroup>

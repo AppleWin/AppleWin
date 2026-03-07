@@ -782,7 +782,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 				if (nTarget8 <= _6502_BRANCH_POS)
 					*pTargetPointer_ += nTarget8; // +
 				else
-					*pTargetPointer_ -= nTarget8; // -
+					*pTargetPointer_ -= (256 - nTarget8); // -  Two's complement
 
 				*pTargetPointer_ &= _6502_MEM_END;
 
@@ -822,12 +822,26 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 //===========================================================================
 bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 {
-	int iOpcode;
-	int iOpmode;
-	int nOpbytes;
-	iOpcode = _6502_GetOpmodeOpbyte( nAddress, iOpmode, nOpbytes );
-
-	// Composite string that has the target nAddress
+	      int              iOpcode;
+	      int              iOpmode;
+	      AddressingMode_e eOpmode;
+	      int              nOpbytes;
+	const DisasmData_t    *pDisasmData = NULL;
+	iOpcode = _6502_GetOpmodeOpbyte( nAddress, iOpmode, nOpbytes, &pDisasmData );
+	eOpmode = (AddressingMode_e) iOpmode;
+	if (eOpmode == AM_DATA)
+	{
+		// We have pure data, such as a string, that has no target address
+		// TODO: UI: We should flash the cursor line red to signal the user that we can't follow a nonexistent target address.
+		return false;
+	}
+	else
+	if (pDisasmData && nOpbytes)
+	{
+		// User marked bytes up as custom data
+		nTarget_ = pDisasmData->nTargetAddress;
+		return true;
+	}
 
 	if ((iOpmode != AM_IMPLIED) &&
 		(iOpmode != AM_1) &&
@@ -854,6 +868,38 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 			return true;
 		}
 	}
+	else
+	if (iOpcode == OPCODE_RTS)
+	{
+		int nStackAddr  = regs.sp + 1;
+		int nReturnAddr = ReadWordFromMemory( nStackAddr );
+
+		// Handle stack wrap around for edge cases of fetching 16-bit return address when SP == 0x1FE or 0x1FF
+		//    $100: 61
+		//    $101: FA
+		//         :
+		//    $1FD: FD
+		//    $1FE: FE
+		//    $1FF: FF
+		//    $200: 00
+		// Repro
+		//   100:61 FA
+		//   1FD:FD FE FF 00
+		//   R PC FBFC
+		//   R S FD   ; FFFF sans overflow
+		//   R S FE   ; 6200 with overflow
+		//   R S FF   ; FA62 with overflow
+		if (nStackAddr >= (_6502_STACK_END - 1))
+		{
+			int RetLo = ReadByteFromMemory( ((nStackAddr + 0) & _6502_STACK_END) | _6502_STACK_BEGIN );
+			int RetHi = ReadByteFromMemory( ((nStackAddr + 1) & _6502_STACK_END) | _6502_STACK_BEGIN );
+			nReturnAddr = (RetHi << 8) | RetLo;
+		}
+
+		nTarget_ = ++nReturnAddr & _6502_MEM_END; // /!\ NOTE: 6502 increments return address when popping from stack
+		return true;
+	}
+
 	return false;
 }
 

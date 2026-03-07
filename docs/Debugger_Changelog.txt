@@ -1,4 +1,32 @@
 /*
+2.9.4.4 Fixed: Ctrl Right-Arrow now updates targets (GH #1460)
+2.9.4.3 Fixed: Stack info shows correct return address if stack wraps around (GH #1457)
+2.9.4.2 Added: QoL right arrow on RTS to use the stack return address (GH #1456)
+    Example:
+       100:61 FA
+       1FD:FD FE FF 00
+       R PC FBFC
+       R S FD   ; FFFF sans overflow
+       R S FE   ; 6200 with overflow
+       R S FF   ; FA62 with overflow
+2.9.4.1 Fixed: Right arrow follow bytes marked up as data (GH #1455)
+    Example:
+        222A:2C 22 34
+        DA 222A
+        R PC 222A
+        Right-Arrow
+    And
+        2220:41 42 42 00
+        ASC 2220:2220+3
+        R PC 2220
+        Right-Arrow
+2.9.4.0 Fixed: Right arrow follow branch address when target branch address was negative ($81 .. $FF) (GH #1451)
+    Example:
+        2FE:90 81
+        2FE:90 FF
+
+2.9.3.4 Released with AppleWin 1.31.0.0
+
 2.9.3.4 Added: LOG to display debugger's current output level.
 2.9.3.3 Fixed: VERSION is always displayed regardless of console output level.
 2.9.3.2 Fixed: Duplicate symbols' address is displayed as an error.
