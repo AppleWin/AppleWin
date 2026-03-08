@@ -12,14 +12,14 @@
 
 		<h3>Sound:</h3>
 		<p>AppleWin emulates the Apple II's internal speaker, the Mockingboard (or Phasor) sound card and also the SAM card.</p>
-		<p>Use the AppleWin Configuration tab labelled <em>Sound</em>.</p>
+		<p>Use the AppleWin Configuration tab labelled <em>Slots</em>.</p>
 		<p>If you want to use a sound card then use at least DirectX&nbsp;9.</p>
 
 		<h4>Speaker:</h4>
-		<p>You can now only emulate this with a sound card.</p>
+		<p>You can now only emulate this with a PC sound card.</p>
 
 		<h4>Mockingboard:</h4>
-		<p>Mockingboards can be plugged into slots 4 and/or 5 of the Apple II.</p>
+		<p>Mockingboards can be plugged into any Apple II slot.</p>
 		<p>Each Mockingboard is a type 'C': 2x AY-3-8913 (3-channel sound generator) &amp; 2x SSI263 (speech chip)<br>
 			Each AY-3-8913 is fully emulated (tone, noise &amp; envelope).<br>
 			Each SY6522 (that controls an AY-3-8913) can generate precise timer interrupts or phoneme-complete interrupts.<br>
@@ -27,11 +27,12 @@
 			Additionally the Votrax/SC-01 (predecessor to the SSI263) is emulated by remapping Votrax phonemes to the SSI263's.<br>
 			<br>
 			NB. Some Mockingboard compatible software requires the card to be in a specific slot (usually slot 4).<br>
+			Some software support dual Mockingboards in slots 4 and 5 (eg. Ultima V and a few French Touch demos).<br>
 			Some software will allow the user to pick the slot, and better software will auto-detect the slot.
 		</p>
 
 		<h4>Phasor:</h4>
-		<p>Phasors can be plugged into slots 4 and/or 5 of the Apple II.</p>
+		<p>Phasors can be plugged into any Apple II slot.</p>
 		<p>A Phasor is roughly equivalent to 2 Mockingboards and has 4x AY-3-8913.<br>
 			It powers up in a hardware-identical mode to the Mockingboard type 'C', and so is compatible with all Mockingboard titles.<br>
 			Using software (to access memory mapped I/O) it can be switched to native Phasor mode (4x AY8913s) or Echo+ mode (but without the TMS5220 speech chip).
@@ -50,7 +51,7 @@
 			<li>Crimewave (Votrax speech)</li>
 			<li>Crypt of Medea (Votrax speech)</li>
 			<li><a target="_blank" href="https://github.com/tomcw/Cybernoid">Cybernoid Music Disk</a></li>
-			<li>French Touch demos, eg. (NOT SO) Cheap Tunes, Plasmagoria, Raster Bars + many others</li>
+			<li>French Touch demos, eg. (NOT SO) Cheap Tunes, Plasmagoria, Raster Bars, Tribute + many others</li>
 			<li>Lady Tut (Mockingboard version)</li>
 			<li><a target="_blank" href="https://github.com/tomcw/mb-audit">mb-audit: diagnostics & tests</a></li>
 			<li>Mockingboard software (Sweet Micro Systems)</li>
@@ -75,6 +76,6 @@
 		<br>
 
 		<h3>SAM:</h3>
-		<p>SAM (Software Automatic Mouth) is an 8-bit DAC card than can be plugged into slots 4 and/or 5.</p>
+		<p>SAM (Software Automatic Mouth) is an 8-bit DAC card than can be plugged into any Apple II slot.</p>
 	</body>
 </html>
