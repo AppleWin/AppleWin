@@ -36,7 +36,7 @@
 
 // Zero (or default) initialise - values not important, as they get set correctly in Reload()
 CConfigNeedingRestart::CConfigNeedingRestart()
-	: m_parallelPrinterCard(SLOT1), m_disk2Card(SLOT1), m_harddiskCard(SLOT1)	// slot not important
+	: m_parallelPrinterCard(SLOT1), m_SSC(SLOT1), m_disk2Card(SLOT1), m_harddiskCard(SLOT1)	// slot not important
 {
 	// Configuration
 	m_Apple2Type = A2TYPE_APPLE2;

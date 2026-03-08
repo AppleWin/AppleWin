@@ -67,6 +67,7 @@ public:
 	bool m_tfeVirtualDNS;
 	uint32_t m_RamWorksMemorySize;	// Size in 64K banks
 	ParallelPrinterCard m_parallelPrinterCard;	// Use entire card object, as there are many config vars
+	CSuperSerialCard m_SSC;	// Use entire card object, as there are some methods req'd by config
 	UINT m_serialPortItem;	// SSC: Just one config var for this card (at the moment)
 	UINT m_mouseShowCrosshair;
 	UINT m_mouseRestrictToWindow;

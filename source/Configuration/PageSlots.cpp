@@ -953,12 +953,15 @@ INT_PTR CPageSlots::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, L
 
 	case WM_INITDIALOG:
 		{
-			CSuperSerialCard* card = GetCardMgr().GetSSC();
-			_ASSERT(card);
-			if (!card) return TRUE;
+			CSuperSerialCard& cardForConfig = m_PropertySheetHelper.GetConfigNew().m_SSC;
 			const UINT serialPortItem = m_PropertySheetHelper.GetConfigNew().m_serialPortItem;
-			m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, card->GetSerialPortChoices().c_str(), serialPortItem);
-			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), !card->IsActive() ? TRUE : FALSE);
+			m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, cardForConfig.GetSerialPortChoices().c_str(), serialPortItem);
+
+			BOOL enable = TRUE;
+			CSuperSerialCard* card = GetCardMgr().GetSSC();
+			if (card && card->IsActive())
+				enable = FALSE;
+			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), enable);
 			break;
 		}
 

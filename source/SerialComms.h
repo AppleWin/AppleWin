@@ -39,6 +39,7 @@ public:
 	DWORD	GetSerialPortItem() { return m_dwSerialPortItem; }	// Config's drop-down list item
 	void    SetSerialPortItem(DWORD dwNewSerialPortItem);
 	const std::string& GetSerialPortName() { return m_currentSerialPortName; }
+	void RescanCOMPortsAndSetSerialPortItem(DWORD newSerialPortItem);
 	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
 	void	SupportDCD(bool bEnable) { m_bCfgSupportDCD = bEnable; }	// Status
 

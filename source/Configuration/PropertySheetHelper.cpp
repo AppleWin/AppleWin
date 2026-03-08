@@ -351,7 +351,8 @@ void CPropertySheetHelper::ApplyNewConfigForRestart()
 
 		if (m_ConfigNew.m_Slot[slot] == CT_SSC)
 		{
-			GetCardMgr().GetSSC()->SetSerialPortItem(m_ConfigNew.m_serialPortItem);
+			if (CONFIG_CHANGED(m_serialPortItem))
+				GetCardMgr().GetSSC()->RescanCOMPortsAndSetSerialPortItem(m_ConfigNew.m_serialPortItem);
 		}
 	}
 
