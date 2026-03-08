@@ -54,7 +54,7 @@ void CPropertySheet::Init(void)
 	PropSheetPages[PG_SLOTS].dwSize = sizeof(PROPSHEETPAGE);
 	PropSheetPages[PG_SLOTS].dwFlags = PSP_DEFAULT;
 	PropSheetPages[PG_SLOTS].hInstance = GetFrame().g_hInstance;
-	PropSheetPages[PG_SLOTS].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SOUND);
+	PropSheetPages[PG_SLOTS].pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_SLOTS);
 	PropSheetPages[PG_SLOTS].pfnDlgProc = CPageSlots::DlgProc;
 
 	PropSheetPages[PG_ADVANCED].dwSize = sizeof(PROPSHEETPAGE);
