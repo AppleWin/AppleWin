@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+  <title>Slot Settings</title>
+</head>
+<body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
+<h2 style="color: rgb(0, 128, 0);">Slot Settings</h2>
+<hr size="4"><img style="width: 340px; height: 491px; float: right;" src="img/cfg-slots.png" alt="Slot settings" hspace="5" vspace="5">
+
+<strong>Slots:</strong><br>
+
+These options allow you to choose which Apple II cards are inserted in each of the slots.
+<br>
+<br>
+
+Available cards for slot 0 are: (for Apple II/II Plus):
+<ul>
+  <li>Language Card (LC)
+  <li>Saturn 128K
+</ul>
+
+Available cards for slots 1-7 are:
+<ul>
+  <li>Disk II
+  <li>Hard disk controller (HDC)
+  <li>Printer interface (*)
+  <li>Mouse card (*)
+  <li>Saturn 128K
+  <li>Super Serial Card (SSC) (*)
+  <li>4Play (*)
+  <li>SNES MAX (*)
+  <li>Mockingboard C
+  <li>Phasor
+  <li>SAM (Software Automatic Mouth) - an 8-bit DAC card
+  <li>Uthernet (*)
+  <li>Uthernet II (*)
+  <li>VidHD (*)
+  <li>Microsoft CP/M SoftCard (Z80) (*)
+</ul>
+
+(*) Only a single instance of these cards can be selected.
+<br>
+<br>
+
+Available cards for the Apple //e's auxiliary slot are:
+<ul>
+  <li>80 Column (1KiB)
+  <li>Extended 80 Column (64KiB)
+  <li>RamWorks III (configurable up to 16MiB)
+</ul>
+
+<hr>
+
+<strong>Card specific options and notes:</strong><br>
+If a card supports extra options, then an ellipsis ('...') will be enabled after the slot drop-down menu.
+<br>
+<br>
+
+<strong>Disk II interface</strong><br>
+Typically this is inserted into slot 6 (occasionally with a second in slot 5).<br>
+<br>
+Extra options:
+<ul>
+<li>Floppy 1-2</li>
+  <ul>
+    <li>Select the .dsk, .do, .po or .woz image file for this floppy disk drive.</li>
+  </ul>
+<li>Swap</li>
+  <ul>
+    <li>Swap the floppy disk images.</li>
+	<li><strong>Warning!</strong> If done during image access this could result in undefined behavior (eg. Apple II program crash) or data corruption on the image.</li>
+  </ul>
+<li>Show status for slots 5 & 6:</li>
+  <ul>
+    <li>In 2x windowed-mode, optionally show the Track and Sector values for Drives 1 and 2 (for any Disk II cards in slots 5 and/or 6). Hovering over this status will show a tooltip with both decimal and hexadecimal values, and the track includes the full fractional quarter track value too.</li>
+  </ul>
+</ul>
+
+<strong>Hard disk controller</strong><br>
+Typically this is inserted into slot 7 (occasionally with a second in slot 5).<br>
+<br>
+Extra options:
+<ul>
+<li>HDD 1-8</li>
+  <ul>
+    <li>Select the .hdv, 2mg or .po image file for this hard disk drive.</li>
+  </ul>
+<li>Swap 1 and 2</li>
+  <ul>
+    <li>Swap the hard disk images.</li>
+	<li><strong>Warning!</strong> If done during image access this could result in undefined behavior (eg. Apple II program crash) or data corruption on the image.</li>
+  </ul>
+</ul>
+
+<strong>Printer interface</strong><br>
+Typically this is inserted into slot 1.<br>
+<br>
+
+Extra options:
+<ul>
+<li>Printer dump filename:</li>
+  <ul>
+    <li>Data sent to the printer is stored in a text file.
+Use this setting to select its location.</li>
+  </ul>
+<li>Dump to printer:</li>
+  <ul>
+    <li><span style="font-weight: bold; font-style: italic;">Use with caution!</span></li>
+    <li>Enables dumping to a real printer. If
+disabled, the printout is stored only in printer.txt file in the AppleWin folder.
+It's recommended to use a printer compatible with the printer selected in the Apple II applications.
+With modern printers trying to print images will result in printing tens of
+pages of nonsense. Requires command line switch -use-real-printer.</li>
+  </ul>
+<li>Encoding conversion for clones:</li>
+  <ul>
+    <li>Characters are encoded from the character set used in
+the real hardware to ASCII. For Pravets 8 this converts MIK to ASCII.
+Enabling this could cause problems when printing images.</li>
+  </ul>
+<li>Filter unprintable characters:</li>
+  <ul>
+    <li>Some characters represent commands for the printer and
+shall not be printed. When saving them to the printer dump file they
+may appear as some strange symbols. (You will want to disable filtering
+when dumping to a real printer.)</li>
+  </ul>
+<li>Append to print-file:</li>
+  <ul>
+    <li>When disabled, the previous print file is replaced (unless it has a
+different name) by the newly created print file. Otherwise the newly
+printed data is added to the existing print file. (You will want to
+disable appending when dumping to a real printer.)</li>
+  </ul>
+</li>Terminate printing after idle:</li>
+  <ul>
+When printing is started, a printer file is created and it is
+closed either after the specified time expires, or when
+the emulator is reset. This setting is emulation speed dependent.
+  </ul>
+</ul>
+
+<strong>Mouse card:</strong><br>
+Typically this is inserted into slot 4.<br>
+Disables joystick emulation with mouse.<br>
+<br>
+
+Extra options:
+<ul>
+  <li>Show cross-hairs in window's frame:</li>
+  <ul>
+    <li>Configure whether you want cross-hairs or not</li>
+  </ul>
+  <li>Restrict mouse to Apple window:</li>
+  <ul>
+    <li>Restricting is useful for paint applications</li>
+    <li>When unrestricted, the emulated mouse is fully integrated with the Window desktop:
+moving in and out of the AppleWin window will switch between Windows' and the Apple's mouse cursor.</li>
+    <li>NB. Even when unrestricted, you won't be able to move the mouse outside the Apple window for GEOS. This is not a bug.</li>
+    <li>Tip: Use Ctrl+Left Mouse Button to show the Windows mouse cursor (eg. essential for GEOS).</li>
+  </ul>
+</ul>
+
+<strong>Super Serial Card:</strong><br>
+Typically this is inserted into slot 1.<br>
+The extra option will remap the emulated Apple's serial port to your PC's serial port (or TCP port 1977).<br>
+See <a href="card-ssc.html">Super Serial Card</a> for more details.<br>
+<br>
+
+<strong>4Play Joystick card:</strong><br>
+Typically this is inserted into slot 3, 4 or 5.<br>
+On real hardware this card allows up to 4 Atari 9-pin joysticks to be connected.<br>
+Under emulation, the first 2 Windows-detected controllers will be used, and then for joysticks 3 and 4, use keys: ESDF+ZX and IJKL+NM. Note these keys will also be readable from the keyboard.<br>
+<li>Since it only uses the slot's DEVICE SELECT space ($C0Bx for slot 3) then it can co-exist with an 80-column card in the Apple //e's AUX slot. NB. For a real PAL Apple //e, then a slot riser card is required for it to fit.<br>
+See Lukazi's <a target="_blank" href="https://lukazi.blogspot.com/2016/04/apple-ii-4play-joystick-card.html">4Play card</a> and <a target="_blank" href="https://lukazi.blogspot.com/2017/08/apple-ii-4play-joystick-card-software.html">4Play card software</a> blogs for more information.<br>
+<br>
+
+<strong>SNES MAX card:</strong><br>
+Typically this is inserted into slot 3, 4 or 5.<br>
+On real hardware this card allows up to 2 SNES controllers to be connected and all 12 buttons can be read.<br>
+Under emulation, the first 2 Windows-detected controllers will be used, ideally with 12 (or more) buttons eg. Logitech F310, PlayStation Dualshock 4, DualSense. Note that for some controllers (eg. 8BitDo NES30 Pro) the buttons need remapping, so use the command line switches -snes-max-alt-joy1 or -snes-max-alt-joy2 to remap.<br>
+<li>Since it only uses the slot's DEVICE SELECT space ($C0Bx for slot 3) then it can co-exist with an 80-column card in the Apple //e's AUX slot. NB. This card is small, so no slot riser card is required.<br>
+See Lukazi's <a target="_blank" href="https://lukazi.blogspot.com/2021/06/game-controller-snes-max-snes.html">SNES MAX</a> blog for more information.<br>
+<br>
+
+<strong>Uthernet / Uthernet II:</strong><br>
+Typically this is inserted into slot 3.<br>
+The extra option allows you to choose which network interface card (NIC) you want to 
+use with the Uthernet or Uthernet II card.<br>
+<br>
+
+<strong>VidHD</strong><br>
+Typically this is inserted into slot 3.<br>
+Insert a VidHD card into any slot (and when in slot 3 it can co-exist with an 80-column card in the Apple //e's AUX slot).<br>
+Allows all Apple II models to support the IIgs' Super Hi-Res (SHR) video modes and is supported by eg. <a target="_blank" href="https://archive.org/details/TotalReplay">Total Replay</a>.<br>
+<br>
+
+<strong>Microsoft CP/M SoftCard:</strong><br>
+Typically this is inserted into slot 4 or 5.<br>
+Emulates a CP/M card, complete with full Z80 emulation.<br>
+<br>
+
+</body>
+</html>
