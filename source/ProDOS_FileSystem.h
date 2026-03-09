@@ -67,7 +67,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	struct ProDOS_VolumeExtra_t
 	{
 		uint16_t bitmap_block;
-		uint16_t total_blocks;
+		uint16_t total_blocks; // NOTE: Special Case: For a 32 MB volume this is 0xFFFF and not 0x0000
 	};
 
 	struct ProDOS_SubDirExtra_t
@@ -299,7 +299,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 		memset( &pDiskBytes[ offset ], 0xFF, size );
 
-		volume->meta.total_blocks = (uint16_t)blocks;
+		// GH #1469 32-MB HD creation bug
+		volume->meta.total_blocks = (blocks > 0xFFFF) // ProDOS MAX VOLUME BLOCKS
+			? (uint16_t)0xFFFF
+			: (uint16_t)blocks
+			;
 		return (int)((size + PRODOS_BLOCK_SIZE - 1) / PRODOS_BLOCK_SIZE);
 	}
 
