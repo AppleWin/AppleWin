@@ -2168,17 +2168,20 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		"C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe");
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
 
-	static uint32_t bNewDiskCopyBASIC     = true;
-	static uint32_t bNewDiskCopyBitsyBoot = true;
-	static uint32_t bNewDiskCopyBitsyBye  = true;
-	static uint32_t bNewDiskCopyProDOS    = true;
+	static uint32_t bNewDiskCopyNoSlotClock = false;
+	static uint32_t bNewDiskCopyBASIC       = true;
+	static uint32_t bNewDiskCopyBitsyBoot   = true;
+	static uint32_t bNewDiskCopyBitsyBye    = true;
+	static uint32_t bNewDiskCopyProDOS      = true;
 
 	const char REG_KEY_DISK_PREFRENCES[] = "Preferences"; // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
 
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BASIC     , TRUE, &bNewDiskCopyBASIC     );
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BOOT, TRUE, &bNewDiskCopyBitsyBoot );
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BYE , TRUE, &bNewDiskCopyBitsyBye  );
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_PRODOS_SYS, TRUE, &bNewDiskCopyProDOS    );
+	// Computer\HKEY_CURRENT_USER\SOFTWARE\AppleWin\CurrentVersion\Preferences
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_NOSLOTCLOCK, TRUE, &bNewDiskCopyNoSlotClock );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BASIC      , TRUE, &bNewDiskCopyBASIC       );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BOOT , TRUE, &bNewDiskCopyBitsyBoot   );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BYE  , TRUE, &bNewDiskCopyBitsyBye    );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_PRODOS_SYS , TRUE, &bNewDiskCopyProDOS      );
 
 	class UtilPopup_Toggle
 	{
@@ -2256,15 +2259,15 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 		// If image-file is read-only (or a gzip) then disable these menu items
 		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_ON, MF_GRAYED);
 		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_OFF, MF_GRAYED);
-
 	}
 
 	// New Disk options for ProDOS file copy on format
 	{
-		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_PRODOS    , bNewDiskCopyProDOS    );
-		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BITSY_BOOT, bNewDiskCopyBitsyBoot );
-		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BITSY_BYE , bNewDiskCopyBitsyBye  );
-		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BASIC     , bNewDiskCopyBASIC     );
+		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_NOSLOTCLOCK, bNewDiskCopyNoSlotClock );
+		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_PRODOS     , bNewDiskCopyProDOS      );
+		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BITSY_BOOT , bNewDiskCopyBitsyBoot   );
+		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BITSY_BYE  , bNewDiskCopyBitsyBye    );
+		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BASIC      , bNewDiskCopyBASIC       );
 	};
 
 	// Disk images QoL always enabled since they prompt which disk image to create/modify.
@@ -2439,7 +2442,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 			if (nRes)
 			{
-				New_DOSProDOS_Disk(pTitle, pathname, nDiskSize, bIsDOS33, bNewDiskCopyBitsyBoot, bNewDiskCopyBitsyBye, bNewDiskCopyBASIC, bNewDiskCopyProDOS, this);
+				New_DOSProDOS_Disk(pTitle, pathname, nDiskSize, bIsDOS33, bNewDiskCopyNoSlotClock, bNewDiskCopyBitsyBoot, bNewDiskCopyBitsyBye, bNewDiskCopyBASIC, bNewDiskCopyProDOS, this);
 			}
 		}
 	}
@@ -2462,6 +2465,11 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_BASIC)
 	{
 		UtilPopup_Toggle toggle( hmenu, iCommand, REGVALUE_PREF_NEW_DISK_COPY_BASIC, &bNewDiskCopyBASIC );
+	}
+	else
+	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_NOSLOTCLOCK)
+	{
+		UtilPopup_Toggle toggle( hmenu, iCommand, REGVALUE_PREF_NEW_DISK_COPY_NOSLOTCLOCK, &bNewDiskCopyNoSlotClock );
 	}
 	else // --- Advanced ---
 	if (iCommand == ID_DISKMENU_SELECT_BOOT_SECTOR)
