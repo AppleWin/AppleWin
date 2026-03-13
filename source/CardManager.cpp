@@ -436,7 +436,7 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 		BYTE haveCard[CT_NUM_CARDS];
 		memset(haveCard, kInvalidSlot, sizeof(haveCard));
 
-		for (int i = SLOT0; i < NUM_SLOTS; i++)
+		for (UINT i = SLOT1; i < NUM_SLOTS; i++)
 		{
 			if (IsSingleInstanceCard(currConfig[i]))
 				haveCard[currConfig[i]] = i;
@@ -460,6 +460,33 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 			choices += '\0';
 
 			choicesList.push_back(thisCard);
+		}
+
+		// Scan for any advanced/debug cards that aren't in cardsInSlots1to7[]
+		// . eg. advanced cards added from the cmd line
+		std::set<SS_CARDTYPE> advancedCards;
+		for (UINT i = SLOT1; i < NUM_SLOTS; i++)
+		{
+			bool found = false;
+			for (UINT j = 0; j < std::size(cardsInSlots1to7); j++)
+			{
+				if (currConfig[i] == cardsInSlots1to7[j])
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				advancedCards.insert(currConfig[i]);
+		}
+
+		for (auto card : advancedCards)
+		{
+			std::string name = Card::GetCardName(card);
+			choices += name;
+			choices += '\0';
+
+			choicesList.push_back(card);
 		}
 	}
 
