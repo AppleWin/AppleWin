@@ -120,6 +120,7 @@ public:
 
 	void ForbidSaveDiskImageToRegistry() { m_saveDiskImageToRegistry = false; }
 
+	static const std::string& GetSnapshotCardNameOld(void);
 	static const std::string& GetSnapshotCardName(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);

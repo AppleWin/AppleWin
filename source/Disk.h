@@ -183,6 +183,7 @@ public:
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
 	void SetFirmware13Sector(void) { m_force13SectorFirmware = true; }
 
+	static const std::string& GetSnapshotCardNameOld(void);
 	static const std::string& GetSnapshotCardName(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);

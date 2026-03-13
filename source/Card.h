@@ -1,5 +1,7 @@
 #pragma once
 
+// *** DON'T CHANGE THE ORDER OF THESE ENUMS ***
+// (As they are saved to the Registry)
 enum SS_CARDTYPE
 {
 	CT_Empty = 0,
@@ -7,10 +9,10 @@ enum SS_CARDTYPE
 	CT_SSC,				// Apple Super Serial Card
 	CT_MockingboardC,	// Soundcard
 	CT_GenericPrinter,
-	CT_GenericHDD,		// Hard disk
+	CT_GenericHDD,		// Hard disk controller
 	CT_GenericClock,
 	CT_MouseInterface,
-	CT_Z80,
+	CT_Z80,				// Z80 SoftCard
 	CT_Phasor,			// Soundcard
 	CT_Echo,			// Soundcard
 	CT_SAM,				// Soundcard: Software Automated Mouth

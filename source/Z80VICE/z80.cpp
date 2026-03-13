@@ -6456,10 +6456,16 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 #define SS_YAML_KEY_REGL2 "L'"
 #define SS_YAML_KEY_ACTIVE "Active"
 
-const std::string& Z80_GetSnapshotCardName(void)
+const std::string& Z80_GetSnapshotCardNameOld(void)
 {
 	static const std::string name("Z80");
 	return name;
+}
+
+const std::string& Z80_GetSnapshotCardName(void)
+{
+    static const std::string name("Z80 SoftCard");
+    return name;
 }
 
 void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)

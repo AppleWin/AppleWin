@@ -1257,9 +1257,15 @@ static const UINT kUNIT_VERSION = 6;
 #define SS_YAML_KEY_FIFO_INDEX "FIFO Index"
 #define SS_YAML_KEY_FIRMWARE "Firmware"
 
-const std::string& HarddiskInterfaceCard::GetSnapshotCardName(void)
+const std::string& HarddiskInterfaceCard::GetSnapshotCardNameOld(void)
 {
 	static const std::string name("Generic HDD");
+	return name;
+}
+
+const std::string& HarddiskInterfaceCard::GetSnapshotCardName(void)
+{
+	static const std::string name("Hard Disk Controller");
 	return name;
 }
 

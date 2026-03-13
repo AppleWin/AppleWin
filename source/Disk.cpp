@@ -2280,9 +2280,15 @@ static const UINT kUNIT_VERSION = 9;
 #define SS_YAML_KEY_TRACK_IMAGE_DIRTY "Track Image Dirty"
 #define SS_YAML_KEY_TRACK_IMAGE "Track Image"
 
-const std::string& Disk2InterfaceCard::GetSnapshotCardName(void)
+const std::string& Disk2InterfaceCard::GetSnapshotCardNameOld(void)
 {
 	static const std::string name("Disk][");
+	return name;
+}
+
+const std::string& Disk2InterfaceCard::GetSnapshotCardName(void)
+{
+	static const std::string name("Disk II");
 	return name;
 }
 

@@ -197,7 +197,7 @@ SS_CARDTYPE Card::GetCardType(const std::string & card)
 	{
 		return CT_MouseInterface;
 	}
-	else if (card == Z80Card::GetSnapshotCardName())
+	else if (card == Z80Card::GetSnapshotCardName() || card == Z80Card::GetSnapshotCardNameOld())
 	{
 		return CT_Z80;
 	}
@@ -213,11 +213,11 @@ SS_CARDTYPE Card::GetCardType(const std::string & card)
 	{
 		return CT_SAM;
 	}
-	else if (card == Disk2InterfaceCard::GetSnapshotCardName())
+	else if (card == Disk2InterfaceCard::GetSnapshotCardName() || card == Disk2InterfaceCard::GetSnapshotCardNameOld())
 	{
 		return CT_Disk2;
 	}
-	else if (card == HarddiskInterfaceCard::GetSnapshotCardName())
+	else if (card == HarddiskInterfaceCard::GetSnapshotCardName() || card == HarddiskInterfaceCard::GetSnapshotCardNameOld())
 	{
 		return CT_GenericHDD;
 	}
