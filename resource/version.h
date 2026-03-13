@@ -1,4 +1,4 @@
-#define APPLEWIN_VERSION 1,31,0,1
+#define APPLEWIN_VERSION 1,31,0,2
 
 #define xstr(a) str(a)
 #define str(a) #a

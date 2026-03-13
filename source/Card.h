@@ -3,7 +3,7 @@
 enum SS_CARDTYPE
 {
 	CT_Empty = 0,
-	CT_Disk2,			// Apple Disk][
+	CT_Disk2,			// Apple Disk II
 	CT_SSC,				// Apple Super Serial Card
 	CT_MockingboardC,	// Soundcard
 	CT_GenericPrinter,

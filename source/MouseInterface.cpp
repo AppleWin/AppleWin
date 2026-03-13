@@ -601,8 +601,6 @@ void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 	OnMouseEvent();
 }
 
-#define SS_YAML_VALUE_CARD_MOUSE "Mouse Card"
-
 #define SS_YAML_KEY_MC6821 "MC6821"
 #define SS_YAML_KEY_PRA "PRA"
 #define SS_YAML_KEY_DDRA "DDRA"
@@ -637,7 +635,7 @@ void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 
 const std::string& CMouseInterface::GetSnapshotCardName(void)
 {
-	static const std::string name(SS_YAML_VALUE_CARD_MOUSE);
+	static const std::string name("Mouse Card");
 	return name;
 }
 

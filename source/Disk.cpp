@@ -2239,8 +2239,6 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 9: Added: absolute path
 static const UINT kUNIT_VERSION = 9;
 
-#define SS_YAML_VALUE_CARD_DISK2 "Disk]["
-
 #define SS_YAML_KEY_PHASES "Phases"
 #define SS_YAML_KEY_CURRENT_DRIVE "Current Drive"
 #define SS_YAML_KEY_DISK_ACCESSED "Disk Accessed"	// deprecated at v7
@@ -2284,7 +2282,7 @@ static const UINT kUNIT_VERSION = 9;
 
 const std::string& Disk2InterfaceCard::GetSnapshotCardName(void)
 {
-	static const std::string name(SS_YAML_VALUE_CARD_DISK2);
+	static const std::string name("Disk][");
 	return name;
 }
 

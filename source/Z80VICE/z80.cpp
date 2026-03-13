@@ -6429,8 +6429,6 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 
 //===========================================================================
 
-#define SS_YAML_VALUE_CARD_Z80 "Z80"
-
 #define SS_YAML_KEY_REGA "A"
 #define SS_YAML_KEY_REGB "B"
 #define SS_YAML_KEY_REGC "C"
@@ -6460,7 +6458,7 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 
 const std::string& Z80_GetSnapshotCardName(void)
 {
-	static const std::string name(SS_YAML_VALUE_CARD_Z80);
+	static const std::string name("Z80");
 	return name;
 }
 
