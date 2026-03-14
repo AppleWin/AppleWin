@@ -363,7 +363,10 @@ void CPropertySheetHelper::ApplyNewConfigForRestart()
 	}
 
 	if (CONFIG_CHANGED(m_SlotAux))
+	{
+		SetApple2Type(m_ConfigNew.m_Apple2Type);	// Needed by InsertAux()
 		SetSlot(SLOT_AUX, m_ConfigNew.m_SlotAux);
+	}
 
 	if (CONFIG_CHANGED(m_RamWorksMemorySize))
 		SetRamWorksMemorySize(m_ConfigNew.m_RamWorksMemorySize);
