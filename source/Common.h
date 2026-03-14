@@ -115,6 +115,7 @@ enum AppMode_e
 #define  REGVALUE_SLOT5					"Slot 5"			// GH#977: Deprecated from 1.30.4
 #define  REGVALUE_VERSION				"Version"
 #define  REGVALUE_AUX_NUM_BANKS			"Number of Banks"
+#define  REGVALUE_SATURN_NUM_BANKS		"Number of Banks"
 #define REG_CONFIG_SLOT_AUX			"Slot Auxiliary"
 #define REG_CONFIG_SLOT				"Slot "
 #define  REGVALUE_CARD_TYPE			"Card type"

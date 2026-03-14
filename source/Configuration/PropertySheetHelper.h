@@ -34,7 +34,7 @@ public:
 	CConfigNeedingRestart& GetConfigNew(void) { return m_ConfigNew; }
 	bool IsConfigChangedForRestart(void) { return m_ConfigNew != m_ConfigOld; }
 	void SetDoBenchmark(void) { m_bDoBenchmark = true; }
-	void ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew);
+	void ApplyNewConfigFromSnapshot();
 	void ConfigSaveApple2Type(eApple2Type apple2Type);
 	void SetSlot(UINT slot, SS_CARDTYPE newCardType);
 	bool IsOkToResetConfig(HWND hWnd);

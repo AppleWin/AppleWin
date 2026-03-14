@@ -67,6 +67,7 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_SlotAux = CT_Empty;
 	m_tfeVirtualDNS = false;
 	m_RamWorksMemorySize = 0;
+	memset(m_SaturnMemorySize, 0, sizeof(m_SaturnMemorySize));
 	m_serialPortItem = 0;
 	m_mouseShowCrosshair = 0;
 	m_mouseRestrictToWindow = 0;
@@ -78,15 +79,6 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_saveStateOnExit = false;
 	m_enableTheFreezesF8Rom = 0;
 	m_gameIOConnectorType = DT_EMPTY;
-}
-
-// Create from current global configuration
-// . called from Snapshot_LoadState_v2()
-CConfigNeedingRestart CConfigNeedingRestart::Create()
-{
-	CConfigNeedingRestart config;
-	config.Reload();
-	return config;
 }
 
 // Update from current global configuration
@@ -139,6 +131,10 @@ void CConfigNeedingRestart::Reload()
 		{
 			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 				m_slotInfoForHDC[slot].pathname[i] = dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(slot)).HarddiskGetFullPathName(i);
+		}
+		else if (m_Slot[slot] == CT_Saturn128K)
+		{
+			m_SaturnMemorySize[slot] = dynamic_cast<Saturn128K&>(cardManager.GetRef(slot)).GetSaturnMemorySize();
 		}
 	}
 
@@ -195,6 +191,7 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_tfeInterface = other.m_tfeInterface;
 	m_tfeVirtualDNS = other.m_tfeVirtualDNS;
 	m_RamWorksMemorySize = other.m_RamWorksMemorySize;
+	memcpy(m_SaturnMemorySize, other.m_SaturnMemorySize, sizeof(m_SaturnMemorySize));
 	m_parallelPrinterCard = other.m_parallelPrinterCard;
 	m_serialPortItem = other.m_serialPortItem;
 	m_mouseShowCrosshair = other.m_mouseShowCrosshair;
@@ -235,6 +232,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 		m_tfeInterface == other.m_tfeInterface &&
 		m_tfeVirtualDNS == other.m_tfeVirtualDNS &&
 		m_RamWorksMemorySize == other.m_RamWorksMemorySize &&
+		memcmp(m_SaturnMemorySize, other.m_SaturnMemorySize, sizeof(m_SaturnMemorySize)) == 0 &&
 		m_serialPortItem == other.m_serialPortItem &&
 		m_enableTheFreezesF8Rom == other.m_enableTheFreezesF8Rom;
 }

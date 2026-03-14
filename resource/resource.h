@@ -73,6 +73,7 @@
 #define IDD_PRINTER                     170
 #define IDD_MOUSECARD                   171
 #define IDD_RAMWORKS3                   172
+#define IDD_SATURN                      174
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -169,6 +170,11 @@
 #define IDC_RW3_4MB                     1127
 #define IDC_RW3_8MB                     1128
 #define IDC_RW3_16MB                    1129
+#define IDC_SLIDER_SATURN_SIZE          1130
+#define IDC_SATURN_16KB                 1131
+#define IDC_SATURN_32KB                 1132
+#define IDC_SATURN_64KB                 1133
+#define IDC_SATURN_128KB                1134
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003
