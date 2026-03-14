@@ -23,14 +23,9 @@ struct SlotInfoForHDC
 class CConfigNeedingRestart
 {
 public:
-	// zero initialise
-	CConfigNeedingRestart();
+	CConfigNeedingRestart();	// zero initialise
 
-	// create from current global configuration
-	static CConfigNeedingRestart Create();
-
-	// update from current global configuration
-	void Reload();
+	void Reload();	// update from current global configuration
 
 	const CConfigNeedingRestart& operator= (const CConfigNeedingRestart& other);
 
@@ -66,6 +61,7 @@ public:
 	std::string m_tfeInterface;
 	bool m_tfeVirtualDNS;
 	uint32_t m_RamWorksMemorySize;	// Size in 64K banks
+	BYTE m_SaturnMemorySize[NUM_SLOTS];	// Size in 16K banks
 	ParallelPrinterCard m_parallelPrinterCard;	// Use entire card object, as there are many config vars
 	CSuperSerialCard m_SSC;	// Use entire card object, as there are some methods req'd by config
 	UINT m_serialPortItem;	// SSC: Just one config var for this card (at the moment)

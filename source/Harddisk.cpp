@@ -1238,8 +1238,6 @@ bool HarddiskInterfaceCard::ImageSwap(void)
 // 6: Added: absolute path
 static const UINT kUNIT_VERSION = 6;
 
-#define SS_YAML_VALUE_CARD_HDD "Generic HDD"
-
 #define SS_YAML_KEY_CURRENT_UNIT "Current Unit"
 #define SS_YAML_KEY_COMMAND "Command"
 
@@ -1259,9 +1257,15 @@ static const UINT kUNIT_VERSION = 6;
 #define SS_YAML_KEY_FIFO_INDEX "FIFO Index"
 #define SS_YAML_KEY_FIRMWARE "Firmware"
 
+const std::string& HarddiskInterfaceCard::GetSnapshotCardNameOld(void)
+{
+	static const std::string name("Generic HDD");
+	return name;
+}
+
 const std::string& HarddiskInterfaceCard::GetSnapshotCardName(void)
 {
-	static const std::string name(SS_YAML_VALUE_CARD_HDD);
+	static const std::string name("Hard Disk Controller");
 	return name;
 }
 

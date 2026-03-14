@@ -53,6 +53,8 @@ private:
 	INT_PTR DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	static INT_PTR CALLBACK DlgProcMouseCard(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	INT_PTR DlgProcMouseCardInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	static INT_PTR CALLBACK DlgProcSaturn(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
+	INT_PTR DlgProcSaturnInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	static INT_PTR CALLBACK DlgProcRamWorks3(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	INT_PTR DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
@@ -72,6 +74,7 @@ private:
 	void DlgHarddiskOK(HWND hWnd);
 	void DlgPrinterOK(HWND hWnd);
 	void DlgMouseCardOK(HWND hWnd);
+	void DlgSaturnOK(HWND hWnd);
 	void DlgRamWorks3OK(HWND hWnd);
 
 	UINT RemovalConfirmation(UINT command);

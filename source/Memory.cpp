@@ -2771,9 +2771,15 @@ const std::string& MemGetSnapshotCardNameExtended80Col()
 	return name;
 }
 
-const std::string& MemGetSnapshotCardNameRamWorksIII()
+const std::string& MemGetSnapshotCardNameRamWorksIIIOld()
 {
 	static const std::string name("RamWorksIII");
+	return name;
+}
+
+const std::string& MemGetSnapshotCardNameRamWorksIII()
+{
+	static const std::string name("RamWorks III");
 	return name;
 }
 
@@ -3019,14 +3025,14 @@ static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, cons
 		cardType = CT_80Col;
 	else if (card == MemGetSnapshotCardNameExtended80Col())
 		cardType = CT_Extended80Col;
-	else if (card == MemGetSnapshotCardNameRamWorksIII())
+	else if (card == MemGetSnapshotCardNameRamWorksIII() || card == MemGetSnapshotCardNameRamWorksIIIOld())
 		cardType = CT_RamWorksIII;
 	else
 		throw std::runtime_error(SS_YAML_KEY_UNIT ": AuxSlot: Unknown card: " + card);
 
 	// "State"
 	UINT numAuxBanks = 0, activeAuxBank = 0;
-	if (card == MemGetSnapshotCardNameExtended80Col() || card == MemGetSnapshotCardNameRamWorksIII())
+	if (cardType == CT_Extended80Col || cardType == CT_RamWorksIII)
 	{
 		numAuxBanks = yamlLoadHelper.LoadUint(SS_YAML_KEY_NUMAUXBANKS);
 		activeAuxBank = yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVEAUXBANK);

@@ -150,20 +150,18 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 		case IDC_SLOT6_OPTION:
 		case IDC_SLOT7_OPTION:
 			{
-				const UINT slot = LOWORD(wparam) - IDC_SLOT0_OPTION;
-				const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_Slot[slot];
+				ms_slot = LOWORD(wparam) - IDC_SLOT0_OPTION;
+				const SS_CARDTYPE cardInSlot = m_PropertySheetHelper.GetConfigNew().m_Slot[ms_slot];
 
 				if (!CardTypeHasOptions(cardInSlot))
 					break;
 
 				if (cardInSlot == CT_Disk2)
 				{
-					ms_slot = slot;
 					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_FLOPPY_DISK_DRIVES, hWnd, CPageSlots::DlgProcDisk2);
 				}
 				else if (cardInSlot == CT_GenericHDD)
 				{
-					ms_slot = slot;
 					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_HARD_DISK_DRIVES, hWnd, CPageSlots::DlgProcHarddisk);
 				}
 				else if (cardInSlot == CT_Uthernet || cardInSlot == CT_Uthernet2)
@@ -184,6 +182,10 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				else if (cardInSlot == CT_MouseInterface)
 				{
 					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_MOUSECARD, hWnd, CPageSlots::DlgProcMouseCard);
+				}
+				else if (cardInSlot == CT_Saturn128K)
+				{
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_SATURN, hWnd, CPageSlots::DlgProcSaturn);
 				}
 			}
 			break;
@@ -250,6 +252,7 @@ BOOL CPageSlots::CardTypeHasOptions(SS_CARDTYPE card)
 		card == CT_SSC ||
 		card == CT_GenericPrinter ||
 		card == CT_MouseInterface ||
+		card == CT_Saturn128K ||
 		card == CT_Uthernet ||
 		card == CT_Uthernet2 ||
 		card == CT_RamWorksIII) ? TRUE : FALSE;
@@ -1115,6 +1118,66 @@ void CPageSlots::DlgMouseCardOK(HWND hWnd)
 {
 	m_PropertySheetHelper.GetConfigNew().m_mouseShowCrosshair = IsDlgButtonChecked(hWnd, IDC_MOUSE_CROSSHAIR) ? 1 : 0;
 	m_PropertySheetHelper.GetConfigNew().m_mouseRestrictToWindow = IsDlgButtonChecked(hWnd, IDC_MOUSE_RESTRICT_TO_WINDOW) ? 1 : 0;
+}
+
+//===========================================================================
+
+INT_PTR CALLBACK CPageSlots::DlgProcSaturn(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	// Switch from static func to our instance
+	return CPageSlots::ms_this->DlgProcSaturnInternal(hWnd, message, wparam, lparam);
+}
+
+INT_PTR CPageSlots::DlgProcSaturnInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	switch (message)
+	{
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
+		case IDOK:
+			DlgSaturnOK(hWnd);
+			EndDialog(hWnd, 0);
+			break;
+
+		case IDCANCEL:
+			EndDialog(hWnd, 0);
+			break;
+
+		default:
+			return FALSE;
+		}
+		break;
+
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		break;
+
+	case WM_INITDIALOG:
+	{
+		SendDlgItemMessage(hWnd, IDC_SLIDER_SATURN_SIZE, TBM_SETRANGE, TRUE, MAKELONG(1, 8));
+		SendDlgItemMessage(hWnd, IDC_SLIDER_SATURN_SIZE, TBM_SETPAGESIZE, 0, 1);
+		SendDlgItemMessage(hWnd, IDC_SLIDER_SATURN_SIZE, TBM_SETTIC, 0, 1);	// 16K
+		SendDlgItemMessage(hWnd, IDC_SLIDER_SATURN_SIZE, TBM_SETTIC, 0, 2);	// 32K
+		SendDlgItemMessage(hWnd, IDC_SLIDER_SATURN_SIZE, TBM_SETTIC, 0, 4);	// 64K
+		SendDlgItemMessage(hWnd, IDC_SLIDER_SATURN_SIZE, TBM_SETTIC, 0, 8);	// 128K
+
+		const uint32_t size = m_PropertySheetHelper.GetConfigNew().m_SaturnMemorySize[ms_slot];	// 16K banks
+		SendDlgItemMessage(hWnd, IDC_SLIDER_SATURN_SIZE, TBM_SETPOS, TRUE, size);
+	}
+	break;
+
+	default:
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+void CPageSlots::DlgSaturnOK(HWND hWnd)
+{
+	const uint32_t size = (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_SATURN_SIZE, TBM_GETPOS, 0, 0);
+	m_PropertySheetHelper.GetConfigNew().m_SaturnMemorySize[ms_slot] = size;
 }
 
 //===========================================================================

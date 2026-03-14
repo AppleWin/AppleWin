@@ -43,6 +43,7 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles);
 BYTE z80_RDMEM(WORD Addr);
 void z80_WRMEM(WORD Addr, BYTE Value);
 
+const std::string& Z80_GetSnapshotCardNameOld(void);
 const std::string& Z80_GetSnapshotCardName(void);
 void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
 bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version);

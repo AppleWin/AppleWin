@@ -443,8 +443,7 @@ static void Snapshot_LoadState_v2(void)
 		// . A change in h/w via loading a save-state avoids this VM restart
 		// The latter is the desired approach (as the former needs a "power-on" / F2 to start things again)
 
-		const CConfigNeedingRestart configNew = CConfigNeedingRestart::Create();
-		GetPropertySheet().ApplyNewConfigFromSnapshot(configNew);	// Saves new state to Registry (not slot/cards though)
+		GetPropertySheet().ApplyNewConfigFromSnapshot();	// Saves new state to Registry (not slot/cards though)
 
 		MemInitializeFromSnapshot();
 

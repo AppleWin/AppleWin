@@ -712,7 +712,7 @@ static void RepeatInitialization(void)
 	// Apply the memory expansion switches after loading the Apple II machine type
 	if (g_cmdLine.uSaturnBanks)
 	{
-		Saturn128K::SetSaturnMemorySize(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
+		Saturn128K::SetSaturnMemorySizeSlot0(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
 		if (!g_cmdLine.bSlotEmpty[SLOT0])
 			SetExpansionMemType(CT_Saturn128K);
 		g_cmdLine.uSaturnBanks = 0;		// Don't reapply after a restart

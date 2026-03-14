@@ -25,9 +25,9 @@ public:
 	virtual void ResetAllToDefault();
 	virtual void ApplyConfigAfterClose(UINT bmPages);
 
-	void ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
+	void ApplyNewConfigFromSnapshot()
 	{
-		m_PropertySheetHelper.ApplyNewConfigFromSnapshot(ConfigNew);
+		m_PropertySheetHelper.ApplyNewConfigFromSnapshot();
 	}
 	void ConfigSaveApple2Type(eApple2Type apple2Type)
 	{

@@ -1408,8 +1408,6 @@ void CSuperSerialCard::SetRegistrySerialPortName(void)
 //    Removed: redundant data (encapsulated in Command & Control bytes)
 static const UINT kUNIT_VERSION = 2;
 
-#define SS_YAML_VALUE_CARD_SSC "Super Serial Card"
-
 #define SS_YAML_KEY_DIPSWDEFAULT "DIPSW Default"
 #define SS_YAML_KEY_DIPSWCURRENT "DIPSW Current"
 
@@ -1433,7 +1431,7 @@ static const UINT kUNIT_VERSION = 2;
 
 const std::string& CSuperSerialCard::GetSnapshotCardName(void)
 {
-	static const std::string name(SS_YAML_VALUE_CARD_SSC);
+	static const std::string name("Super Serial Card");
 	return name;
 }
 

@@ -354,6 +354,12 @@ void CPropertySheetHelper::ApplyNewConfigForRestart()
 			if (CONFIG_CHANGED(m_serialPortItem))
 				GetCardMgr().GetSSC()->RescanCOMPortsAndSetSerialPortItem(m_ConfigNew.m_serialPortItem);
 		}
+
+		if (m_ConfigNew.m_Slot[slot] == CT_Saturn128K)
+		{
+			if (CONFIG_CHANGED(m_SaturnMemorySize[slot]))
+				dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).SetSaturnMemorySize(m_ConfigNew.m_SaturnMemorySize[slot]);
+		}
 	}
 
 	if (CONFIG_CHANGED(m_SlotAux))
@@ -371,13 +377,23 @@ void CPropertySheetHelper::ApplyNewConfigForRestart()
 
 // Called from Snapshot_LoadState_v2()
 // . A convenient way to save newly loaded state to Registry
-void CPropertySheetHelper::ApplyNewConfigFromSnapshot(const CConfigNeedingRestart& ConfigNew)
+void CPropertySheetHelper::ApplyNewConfigFromSnapshot()
 {
-	SaveComputerType(ConfigNew.m_Apple2Type);
-	SaveCpuType(ConfigNew.m_CpuType);
-	SetRamWorksMemorySize(ConfigNew.m_RamWorksMemorySize);
-	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, ConfigNew.m_videoRefreshRate);
-	//REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, ConfigNew.m_bEnableTheFreezesF8Rom);	// Not currently in save-state
+	CConfigNeedingRestart config;
+	config.Reload();
+
+	SaveComputerType(config.m_Apple2Type);
+	SaveCpuType(config.m_CpuType);
+
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (config.m_Slot[slot] == CT_Saturn128K)
+			dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).SetSaturnMemorySize(config.m_SaturnMemorySize[slot]);
+	}
+
+	SetRamWorksMemorySize(config.m_RamWorksMemorySize);
+	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, config.m_videoRefreshRate);
+	//REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, config.m_bEnableTheFreezesF8Rom);	// Not currently in save-state
 }
 
 // Called when PSPs are created
@@ -461,6 +477,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 			strMsgMain += GetSlot(SLOT_AUX);
 		else if (m_ConfigNew.m_SlotAux == CT_RamWorksIII && CONFIG_CHANGED(m_RamWorksMemorySize))
 			strMsgMain += ". RamWorks III memory size changed\n";
+
+		if (memcmp(m_ConfigOld.m_SaturnMemorySize, m_ConfigNew.m_SaturnMemorySize, sizeof(m_ConfigOld.m_SaturnMemorySize)) != 0)
+			strMsgMain += ". Saturn memory size has changed\n";
 
 		if (CONFIG_CHANGED(m_tfeInterface))
 			strMsgMain += ". Uthernet interface has changed\n";

@@ -1,22 +1,24 @@
 #pragma once
 
+// *** DON'T CHANGE THE ORDER OF THESE ENUMS ***
+// (As they are saved to the Registry)
 enum SS_CARDTYPE
 {
 	CT_Empty = 0,
-	CT_Disk2,			// Apple Disk][
+	CT_Disk2,			// Apple Disk II
 	CT_SSC,				// Apple Super Serial Card
 	CT_MockingboardC,	// Soundcard
 	CT_GenericPrinter,
-	CT_GenericHDD,		// Hard disk
+	CT_GenericHDD,		// Hard disk controller
 	CT_GenericClock,
 	CT_MouseInterface,
-	CT_Z80,
+	CT_Z80,				// Z80 SoftCard
 	CT_Phasor,			// Soundcard
 	CT_Echo,			// Soundcard
 	CT_SAM,				// Soundcard: Software Automated Mouth
 	CT_80Col,			// 80 column card (1K)
 	CT_Extended80Col,	// Extended 80-col card (64K)
-	CT_RamWorksIII,		// RamWorksIII (up to 8MB)
+	CT_RamWorksIII,		// RamWorks III (up to 16MB)
 	CT_Uthernet,
 	CT_LanguageCard,	// Apple][ or ][+ in slot-0
 	CT_LanguageCardIIe,	// Apple//e LC instance (not a card)

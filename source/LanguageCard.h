@@ -90,9 +90,11 @@ public:
 
 	void SetMemMainLanguageCard(void);
 	uint8_t ReadByteFromBank(uint8_t bank, uint16_t phyAddr);
+	uint8_t GetSaturnMemorySize();
+	void SetSaturnMemorySize(uint8_t banks);
 
-	static UINT	GetSaturnMemorySize();
-	static void	SetSaturnMemorySize(UINT banks);
+	static uint8_t GetSaturnMemorySizeSlot0();
+	static void SetSaturnMemorySizeSlot0(uint8_t banks);
 
 	static BYTE __stdcall IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 

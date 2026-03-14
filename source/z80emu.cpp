@@ -40,6 +40,11 @@ void Z80Card::InitializeIO(LPBYTE pCxRomPeripheral)
 
 //===========================================================================
 
+const std::string& Z80Card::GetSnapshotCardNameOld(void)
+{
+	return Z80_GetSnapshotCardNameOld();
+}
+
 const std::string& Z80Card::GetSnapshotCardName(void)
 {
 	return Z80_GetSnapshotCardName();
