@@ -75,7 +75,9 @@ public:
 
 	void SetDevice(UINT device) { m_device = device; }
 	void SetCardMode(PHASOR_MODE mode);
+	SSI263Type GetType() { return m_type; }
 	void SetType(SSI263Type type) { m_type = type; }
+	SSI263Type GetSC01() { return m_hasSC01 ? SC01 : SSI263Empty; }
 	void SetSC01(SSI263Type type) { m_hasSC01 = (type == SC01); }
 
 	void DSUninit(void);

@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Log.h"
 #include "Memory.h"
+#include "Registry.h"
 #include "SoundCore.h"
 #include "SynchronousEventManager.h"
 #include "YamlHelper.h"
@@ -96,6 +97,23 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 		const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
 		m_MBSubUnit[i].sy6522.InitSyncEvents(m_syncEvent[id0], m_syncEvent[id1]);
 		m_MBSubUnit[i].ssi263.SetDevice(i);
+
+		// Load speech chip config from Registry
+		uint32_t type;
+		std::string regSection = RegGetConfigSlotSection(m_slot);
+		if (i == 0)
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, TRUE, &type, SSI263AP);
+		else
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, TRUE, &type, SSI263AP);
+		m_MBSubUnit[i].ssi263.SetType(SSI263Type(type));
+
+		if (i == 0)
+		{
+			uint32_t hasSC01;
+			std::string regSection = RegGetConfigSlotSection(m_slot);
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, TRUE, &hasSC01, TRUE);
+			m_MBSubUnit[i].ssi263.SetSC01(hasSC01 ? SC01 : SSI263Empty);
+		}
 	}
 
 	AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
@@ -108,6 +126,27 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 MockingboardCard::~MockingboardCard(void)
 {
 	Destroy();
+}
+
+//---------------------------------------------------------------------------
+
+void MockingboardCard::SetSocketSSI263(BYTE socket, SSI263Type type)
+{
+	m_MBSubUnit[socket].ssi263.SetType(type);
+
+	std::string regSection = RegGetConfigSlotSection(m_slot);
+	if (socket == 0)
+		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, TRUE, type);
+	else
+		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, TRUE, type);
+}
+
+void MockingboardCard::SetSocketSC01(SSI263Type type)
+{
+	m_MBSubUnit[0].ssi263.SetSC01(type);
+
+	std::string regSection = RegGetConfigSlotSection(m_slot);
+	RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, TRUE, type == SC01 ? TRUE : FALSE);
 }
 
 //---------------------------------------------------------------------------

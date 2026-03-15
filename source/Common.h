@@ -124,6 +124,9 @@ enum AppMode_e
 #define  REGVALUE_LAST_DISK_1		"Last Disk Image 1"
 #define  REGVALUE_LAST_DISK_2		"Last Disk Image 2"
 #define  REGVALUE_LAST_HARDDISK_	"Last Harddisk Image "
+#define REGVALUE_MOCKINGBOARD_SSI263_SOCKET0 "SSI263 Socket 0"
+#define REGVALUE_MOCKINGBOARD_SSI263_SOCKET1 "SSI263 Socket 1"
+#define REGVALUE_MOCKINGBOARD_SC01 "SC01"
 
 // Preferences 
 #define REG_PREFS                              "Preferences"

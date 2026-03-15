@@ -71,6 +71,7 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_serialPortItem = 0;
 	m_mouseShowCrosshair = 0;
 	m_mouseRestrictToWindow = 0;
+	memset(m_Mockingboard, 0, sizeof(m_Mockingboard));
 	m_disk2Card.ForbidSaveDiskImageToRegistry();
 	m_harddiskCard.ForbidSaveDiskImageToRegistry();
 
@@ -136,6 +137,12 @@ void CConfigNeedingRestart::Reload()
 		{
 			m_SaturnMemorySize[slot] = dynamic_cast<Saturn128K&>(cardManager.GetRef(slot)).GetSaturnMemorySize();
 		}
+		else if (m_Slot[slot] == CT_MockingboardC || m_Slot[slot] == CT_Phasor)
+		{
+			m_Mockingboard[slot].ssi263A = dynamic_cast<MockingboardCard&>(cardManager.GetRef(slot)).GetSocketSSI263(0);
+			m_Mockingboard[slot].ssi263B = dynamic_cast<MockingboardCard&>(cardManager.GetRef(slot)).GetSocketSSI263(1);
+			m_Mockingboard[slot].sc01 = dynamic_cast<MockingboardCard&>(cardManager.GetRef(slot)).GetSocketSC01();
+		}
 	}
 
 	m_RamWorksMemorySize = GetRamWorksMemorySize();
@@ -196,6 +203,7 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_serialPortItem = other.m_serialPortItem;
 	m_mouseShowCrosshair = other.m_mouseShowCrosshair;
 	m_mouseRestrictToWindow = other.m_mouseRestrictToWindow;
+	memcpy(m_Mockingboard, other.m_Mockingboard, sizeof(m_Mockingboard));
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
 		for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
@@ -233,6 +241,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 		m_tfeVirtualDNS == other.m_tfeVirtualDNS &&
 		m_RamWorksMemorySize == other.m_RamWorksMemorySize &&
 		memcmp(m_SaturnMemorySize, other.m_SaturnMemorySize, sizeof(m_SaturnMemorySize)) == 0 &&
+		memcmp(m_Mockingboard, other.m_Mockingboard, sizeof(m_Mockingboard)) == 0 &&
 		m_serialPortItem == other.m_serialPortItem &&
 		m_enableTheFreezesF8Rom == other.m_enableTheFreezesF8Rom;
 }

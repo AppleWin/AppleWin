@@ -74,6 +74,7 @@
 #define IDD_MOUSECARD                   171
 #define IDD_RAMWORKS3                   172
 #define IDD_SATURN                      174
+#define IDD_MOCKINGBOARD                175
 #define IDC_KEYB_BUFFER_ENABLE          1005
 #define IDC_SAVESTATE                   1006
 #define IDC_SAVESTATE_ON_EXIT           1007
@@ -175,6 +176,9 @@
 #define IDC_SATURN_32KB                 1132
 #define IDC_SATURN_64KB                 1133
 #define IDC_SATURN_128KB                1134
+#define IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET0 1135
+#define IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET1 1136
+#define IDC_SLOT_OPT_SC01_ENABLE        1137
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003

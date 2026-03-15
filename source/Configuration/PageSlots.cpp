@@ -187,6 +187,10 @@ INT_PTR CPageSlots::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 				{
 					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_SATURN, hWnd, CPageSlots::DlgProcSaturn);
 				}
+				else if (cardInSlot == CT_MockingboardC || cardInSlot == CT_Phasor)
+				{
+					DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_MOCKINGBOARD, hWnd, CPageSlots::DlgProcMockingboard);
+				}
 			}
 			break;
 
@@ -251,7 +255,9 @@ BOOL CPageSlots::CardTypeHasOptions(SS_CARDTYPE card)
 		card == CT_GenericHDD ||
 		card == CT_SSC ||
 		card == CT_GenericPrinter ||
+		card == CT_MockingboardC ||
 		card == CT_MouseInterface ||
+		card == CT_Phasor ||
 		card == CT_Saturn128K ||
 		card == CT_Uthernet ||
 		card == CT_Uthernet2 ||
@@ -1178,6 +1184,76 @@ void CPageSlots::DlgSaturnOK(HWND hWnd)
 {
 	const uint32_t size = (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_SATURN_SIZE, TBM_GETPOS, 0, 0);
 	m_PropertySheetHelper.GetConfigNew().m_SaturnMemorySize[ms_slot] = size;
+}
+
+//===========================================================================
+
+INT_PTR CALLBACK CPageSlots::DlgProcMockingboard(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	// Switch from static func to our instance
+	return CPageSlots::ms_this->DlgProcMockingboardInternal(hWnd, message, wparam, lparam);
+}
+
+INT_PTR CPageSlots::DlgProcMockingboardInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+	switch (message)
+	{
+	case WM_COMMAND:
+		switch (LOWORD(wparam))
+		{
+		case IDOK:
+			DlgMockingboardOK(hWnd);
+			EndDialog(hWnd, 0);
+			break;
+
+		case IDCANCEL:
+			EndDialog(hWnd, 0);
+			break;
+
+		default:
+			return FALSE;
+		}
+		break;
+
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		break;
+
+	case WM_INITDIALOG:
+	{
+		// UI matches SMS's MB-C layout:
+		// . socket-1 (top) main SSI263
+		// . socket-0 (btm) unused except by mb-audit
+		// NB. Phasor's physical socket locations are reversed (bottom is main SSI263)
+		const char choices[] = "Empty\0SSI263P\0SSI263AP\0";
+		const SSI263Type ssi263B = m_PropertySheetHelper.GetConfigNew().m_Mockingboard[ms_slot].ssi263B;
+		const SSI263Type ssi263A = m_PropertySheetHelper.GetConfigNew().m_Mockingboard[ms_slot].ssi263A;
+		const SSI263Type sc01 = m_PropertySheetHelper.GetConfigNew().m_Mockingboard[ms_slot].sc01;
+		const int choiceB = ssi263B == SSI263P ? 1 : ssi263B == SSI263AP ? 2 : 0;
+		const int choiceA = ssi263A == SSI263P ? 1 : ssi263A == SSI263AP ? 2 : 0;
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET1, choices, choiceB);	// top socket for main SSI263
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET0, choices, choiceA);
+		CheckDlgButton(hWnd, IDC_SLOT_OPT_SC01_ENABLE, sc01 == SC01 ? BST_CHECKED : BST_UNCHECKED);
+	}
+	break;
+
+	default:
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+void CPageSlots::DlgMockingboardOK(HWND hWnd)
+{
+	const UINT choiceB = (UINT)SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET1, CB_GETCURSEL, 0, 0);
+	const UINT choiceA = (UINT)SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET0, CB_GETCURSEL, 0, 0);
+	const SSI263Type ssi263B = choiceB == 1 ? SSI263P : choiceB == 2 ? SSI263AP : SSI263Empty;
+	const SSI263Type ssi263A = choiceA == 1 ? SSI263P : choiceA == 2 ? SSI263AP : SSI263Empty;
+	const SSI263Type sc01 = IsDlgButtonChecked(hWnd, IDC_SLOT_OPT_SC01_ENABLE) ? SC01 : SSI263Empty;
+	m_PropertySheetHelper.GetConfigNew().m_Mockingboard[ms_slot].ssi263B = ssi263B;
+	m_PropertySheetHelper.GetConfigNew().m_Mockingboard[ms_slot].ssi263A = ssi263A;
+	m_PropertySheetHelper.GetConfigNew().m_Mockingboard[ms_slot].sc01 = sc01;
 }
 
 //===========================================================================

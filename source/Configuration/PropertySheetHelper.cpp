@@ -360,6 +360,16 @@ void CPropertySheetHelper::ApplyNewConfigForRestart()
 			if (CONFIG_CHANGED(m_SaturnMemorySize[slot]))
 				dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).SetSaturnMemorySize(m_ConfigNew.m_SaturnMemorySize[slot]);
 		}
+
+		if (m_ConfigNew.m_Slot[slot] == CT_MockingboardC || m_ConfigNew.m_Slot[slot] == CT_Phasor)
+		{
+			if (CONFIG_CHANGED(m_Mockingboard[slot].ssi263A))
+				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).SetSocketSSI263(0, m_ConfigNew.m_Mockingboard[slot].ssi263A);
+			if (CONFIG_CHANGED(m_Mockingboard[slot].ssi263B))
+				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).SetSocketSSI263(1, m_ConfigNew.m_Mockingboard[slot].ssi263B);
+			if (CONFIG_CHANGED(m_Mockingboard[slot].sc01))
+				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).SetSocketSC01(m_ConfigNew.m_Mockingboard[slot].sc01);
+		}
 	}
 
 	if (CONFIG_CHANGED(m_SlotAux))
@@ -483,6 +493,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (memcmp(m_ConfigOld.m_SaturnMemorySize, m_ConfigNew.m_SaturnMemorySize, sizeof(m_ConfigOld.m_SaturnMemorySize)) != 0)
 			strMsgMain += ". Saturn memory size has changed\n";
+
+		if (memcmp(m_ConfigOld.m_Mockingboard, m_ConfigNew.m_Mockingboard, sizeof(m_ConfigOld.m_Mockingboard)) != 0)
+			strMsgMain += ". Mockingboard/Phasor config has changed\n";
 
 		if (CONFIG_CHANGED(m_tfeInterface))
 			strMsgMain += ". Uthernet interface has changed\n";

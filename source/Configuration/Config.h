@@ -6,6 +6,7 @@
 #include "../Disk.h"
 #include "../Harddisk.h"
 #include "../Joystick.h"
+#include "../MockingboardDefs.h"
 #include "../ParallelPrinter.h"
 #include "../SerialComms.h"
 #include "../Video.h"
@@ -18,6 +19,13 @@ struct SlotInfoForFDC
 struct SlotInfoForHDC
 {
 	std::string pathname[NUM_HARDDISKS];
+};
+
+struct SlotInfoForMB
+{
+	SSI263Type ssi263A;
+	SSI263Type ssi263B;
+	SSI263Type sc01;
 };
 
 class CConfigNeedingRestart
@@ -67,6 +75,7 @@ public:
 	UINT m_serialPortItem;	// SSC: Just one config var for this card (at the moment)
 	UINT m_mouseShowCrosshair;
 	UINT m_mouseRestrictToWindow;
+	SlotInfoForMB m_Mockingboard[NUM_SLOTS];
 	SlotInfoForFDC m_slotInfoForFDC[NUM_SLOTS];
 	SlotInfoForHDC m_slotInfoForHDC[NUM_SLOTS];
 	Disk2InterfaceCard m_disk2Card;				// For image selection and validation
