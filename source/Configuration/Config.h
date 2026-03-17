@@ -87,4 +87,5 @@ public:
 	std::string m_ciderPressPathname;
 	UINT m_enableTheFreezesF8Rom;
 	DONGLETYPE m_gameIOConnectorType;
+	bool m_NoSlotClock;
 };

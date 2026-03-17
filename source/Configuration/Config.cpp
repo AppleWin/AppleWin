@@ -80,6 +80,7 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_saveStateOnExit = false;
 	m_enableTheFreezesF8Rom = 0;
 	m_gameIOConnectorType = DT_EMPTY;
+	m_NoSlotClock = false;
 }
 
 // Update from current global configuration
@@ -164,6 +165,7 @@ void CConfigNeedingRestart::Reload()
 	m_ciderPressPathname = ciderPressPathname;
 	m_enableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_gameIOConnectorType = GetCopyProtectionDongleType();
+	m_NoSlotClock = MemHasNoSlotClock();
 }
 
 const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeedingRestart& other)
@@ -218,6 +220,7 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_ciderPressPathname = other.m_ciderPressPathname;
 	m_enableTheFreezesF8Rom = other.m_enableTheFreezesF8Rom;
 	m_gameIOConnectorType = other.m_gameIOConnectorType;
+	m_NoSlotClock = other.m_NoSlotClock;
 	return *this;
 }
 
@@ -230,7 +233,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
 	// . [Input] m_joystickType[], m_pdlXTrim, m_pdlYTrim
 	// . [Slots] m_parallelPrinterCard, m_mouseShowCrosshair, m_mouseRestrictToWindow
-	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_ciderPressPathname, m_gameIOConnectorType
+	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_ciderPressPathname, m_gameIOConnectorType, m_NoSlotClock
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&

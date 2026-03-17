@@ -2028,6 +2028,13 @@ void MemInitialize()
 
 	//
 
+	// Load the No-Slot clock state
+	uint32_t hasNoSlotClock;
+	REGLOAD_DEFAULT(REGVALUE_NO_SLOT_CLOCK, &hasNoSlotClock, 1);
+	hasNoSlotClock ? MemInsertNoSlotClock() : MemRemoveNoSlotClock();
+
+	//
+
 	CreateLanguageCard();
 
 	MemInitializeROM();

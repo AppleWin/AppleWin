@@ -90,6 +90,7 @@ enum AppMode_e
 #define  REGVALUE_SWAP_BUTTONS_0_AND_1 "Swap buttons 0 and 1"
 #define  REGVALUE_MOUSE_CROSSHAIR    "Mouse crosshair"
 #define  REGVALUE_MOUSE_RESTRICT_TO_WINDOW "Mouse restrict to window"
+#define  REGVALUE_NO_SLOT_CLOCK      "No-Slot clock"
 #define  REGVALUE_THE_FREEZES_F8_ROM "The Freeze's F8 Rom"
 #define  REGVALUE_CIDERPRESSLOC      "CiderPress Location"
 #define  REGVALUE_DUMP_TO_PRINTER    "Dump to printer"

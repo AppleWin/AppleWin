@@ -179,6 +179,7 @@
 #define IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET0 1135
 #define IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET1 1136
 #define IDC_SLOT_OPT_SC01_ENABLE        1137
+#define IDC_NO_SLOT_CLOCK               1138
 #define IDM_EXIT                        40001
 #define IDM_HELP                        40002
 #define IDM_ABOUT                       40003

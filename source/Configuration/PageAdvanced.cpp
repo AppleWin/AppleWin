@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../SaveState.h"
 #include "../CardManager.h"
 #include "../CopyProtectionDongles.h"
+#include "../Memory.h"
 #include "../resource/resource.h"
 
 CPageAdvanced* CPageAdvanced::ms_this = 0;	// reinit'd in ctor
@@ -143,6 +144,13 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 			}
 			break;
 
+		case IDC_NO_SLOT_CLOCK:
+			{
+				const bool newState = IsDlgButtonChecked(hWnd, IDC_NO_SLOT_CLOCK) ? true : false;
+				m_PropertySheetHelper.GetConfigNew().m_NoSlotClock = newState;
+			}
+			break;
+
 		case IDC_BENCHMARK:
 			if (!IsOkToBenchmark(hWnd, m_PropertySheetHelper.IsConfigChangedForRestart()))
 				break;
@@ -175,6 +183,8 @@ void CPageAdvanced::InitOptions(HWND hWnd)
 	InitFreezeDlgButton(hWnd);
 	InitCloneDropdownMenu(hWnd);
 	InitGameIOConnectorDropdownMenu(hWnd);
+
+	CheckDlgButton(hWnd, IDC_NO_SLOT_CLOCK, m_PropertySheetHelper.GetConfigNew().m_NoSlotClock ? BST_CHECKED : BST_UNCHECKED);
 }
 
 void CPageAdvanced::DlgOK(HWND hWnd)
@@ -217,6 +227,10 @@ void CPageAdvanced::ApplyConfigAfterClose()
 	// Save the copy protection dongle type
 	SetCopyProtectionDongleType(m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
 	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
+
+	// Save the No-Slot clock state
+	m_PropertySheetHelper.GetConfigNew().m_NoSlotClock ? MemInsertNoSlotClock() : MemRemoveNoSlotClock();
+	REGSAVE(REGVALUE_NO_SLOT_CLOCK, m_PropertySheetHelper.GetConfigNew().m_NoSlotClock ? 1 : 0);
 }
 
 // Advanced->Clone: Menu item to eApple2Type
