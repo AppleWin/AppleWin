@@ -111,7 +111,7 @@ const char * PCapBackend::tfe_lib_version(void)
 void PCapBackend::SetRegistryInterface(UINT slot, const std::string& name)
 {
     std::string regSection = RegGetConfigSlotSection(slot);
-    RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, 1, name);
+    RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, name);
 }
 
 std::string PCapBackend::GetRegistryInterface(UINT slot)

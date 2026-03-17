@@ -104,7 +104,7 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 		if (i == 0)
 			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, TRUE, &type, SSI263AP);
 		else
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, TRUE, &type, SSI263AP);
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, TRUE, &type, SSI263AP);	// socket-1 for main SSI263
 		m_MBSubUnit[i].ssi263.SetType(SSI263Type(type));
 
 		if (i == 0)

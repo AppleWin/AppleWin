@@ -1231,7 +1231,7 @@ INT_PTR CPageSlots::DlgProcMockingboardInternal(HWND hWnd, UINT message, WPARAM 
 		const SSI263Type sc01 = m_PropertySheetHelper.GetConfigNew().m_Mockingboard[ms_slot].sc01;
 		const int choiceB = ssi263B == SSI263P ? 1 : ssi263B == SSI263AP ? 2 : 0;
 		const int choiceA = ssi263A == SSI263P ? 1 : ssi263A == SSI263AP ? 2 : 0;
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET1, choices, choiceB);	// top socket for main SSI263
+		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET1, choices, choiceB);	// socket-1 (top) for main SSI263
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_MB_SSI263_SOCKET0, choices, choiceA);
 		CheckDlgButton(hWnd, IDC_SLOT_OPT_SC01_ENABLE, sc01 == SC01 ? BST_CHECKED : BST_UNCHECKED);
 	}
