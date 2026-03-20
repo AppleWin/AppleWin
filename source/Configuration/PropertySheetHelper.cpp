@@ -386,6 +386,9 @@ void CPropertySheetHelper::ApplyNewConfigForRestart()
 
 	if (CONFIG_CHANGED(m_enableTheFreezesF8Rom))
 		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, m_ConfigNew.m_enableTheFreezesF8Rom);
+
+	if (CONFIG_CHANGED(m_NoSlotClock))
+		REGSAVE(REGVALUE_NO_SLOT_CLOCK, m_ConfigNew.m_NoSlotClock ? 1 : 0);
 }
 
 // Called from Snapshot_LoadState_v2()
@@ -407,6 +410,7 @@ void CPropertySheetHelper::ApplyNewConfigFromSnapshot()
 	SetRamWorksMemorySize(config.m_RamWorksMemorySize);
 	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, config.m_videoRefreshRate);
 	//REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, config.m_bEnableTheFreezesF8Rom);	// Not currently in save-state
+	REGSAVE(REGVALUE_NO_SLOT_CLOCK, config.m_NoSlotClock ? 1 : 0);
 }
 
 // Called when PSPs are created
@@ -508,6 +512,9 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 
 		if (CONFIG_CHANGED(m_serialPortItem))
 			strMsgMain += ". SSC config has changed\n";
+
+		if (CONFIG_CHANGED(m_NoSlotClock))
+			strMsgMain += ". No-Slot clock has changed\n";
 	}
 
 	std::string strMsgPost("\n");

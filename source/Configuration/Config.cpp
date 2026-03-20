@@ -233,7 +233,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
 	// . [Input] m_joystickType[], m_pdlXTrim, m_pdlYTrim
 	// . [Slots] m_parallelPrinterCard, m_mouseShowCrosshair, m_mouseRestrictToWindow
-	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_ciderPressPathname, m_gameIOConnectorType, m_NoSlotClock
+	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_ciderPressPathname, m_gameIOConnectorType
 
 	return	m_Apple2Type == other.m_Apple2Type &&
 		m_CpuType == other.m_CpuType &&
@@ -246,7 +246,8 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 		memcmp(m_SaturnMemorySize, other.m_SaturnMemorySize, sizeof(m_SaturnMemorySize)) == 0 &&
 		memcmp(m_Mockingboard, other.m_Mockingboard, sizeof(m_Mockingboard)) == 0 &&
 		m_serialPortItem == other.m_serialPortItem &&
-		m_enableTheFreezesF8Rom == other.m_enableTheFreezesF8Rom;
+		m_enableTheFreezesF8Rom == other.m_enableTheFreezesF8Rom &&
+		m_NoSlotClock == other.m_NoSlotClock;
 }
 
 bool CConfigNeedingRestart::operator!= (const CConfigNeedingRestart& other) const

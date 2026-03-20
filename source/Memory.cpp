@@ -2214,7 +2214,7 @@ void MemInitializeCustomROM(void)
 
 // Called by:
 // . MemInitialize()
-// . Snapshot_LoadState_v2()
+// . MemInitializeFromSnapshot()
 //
 // Since called by LoadState(), then this must not init any cards
 // - it should only init the card I/O hooks

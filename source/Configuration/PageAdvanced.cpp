@@ -227,10 +227,6 @@ void CPageAdvanced::ApplyConfigAfterClose()
 	// Save the copy protection dongle type
 	SetCopyProtectionDongleType(m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
 	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
-
-	// Save the No-Slot clock state
-	m_PropertySheetHelper.GetConfigNew().m_NoSlotClock ? MemInsertNoSlotClock() : MemRemoveNoSlotClock();
-	REGSAVE(REGVALUE_NO_SLOT_CLOCK, m_PropertySheetHelper.GetConfigNew().m_NoSlotClock ? 1 : 0);
 }
 
 // Advanced->Clone: Menu item to eApple2Type
