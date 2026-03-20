@@ -342,6 +342,12 @@ void CPropertySheetHelper::ApplyNewConfigForRestart()
 
 		// Keep going, as card may not have changed, but card's config could have
 
+		if (m_ConfigNew.m_Slot[slot] == CT_Disk2)
+		{
+			if (CONFIG_CHANGED(m_diskII13SectorFirmware))
+				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).Set13SectorFirmware(m_ConfigNew.m_diskII13SectorFirmware[slot]);
+		}
+
 		if (m_ConfigNew.m_Slot[slot] == CT_Uthernet || m_ConfigNew.m_Slot[slot] == CT_Uthernet2)
 		{
 			// NB. Assume we don't have both cards inserted
@@ -403,6 +409,9 @@ void CPropertySheetHelper::ApplyNewConfigFromSnapshot()
 
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
+//		if (config.m_Slot[slot] == CT_Disk2)
+//			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).Set13SectorFirmware(config.m_diskII13SectorFirmware[slot]);	// Not currently in save-state
+
 		if (config.m_Slot[slot] == CT_Saturn128K)
 			dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).SetSaturnMemorySize(config.m_SaturnMemorySize[slot]);
 	}
@@ -501,17 +510,20 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 		if (memcmp(m_ConfigOld.m_Mockingboard, m_ConfigNew.m_Mockingboard, sizeof(m_ConfigOld.m_Mockingboard)) != 0)
 			strMsgMain += ". Mockingboard/Phasor config has changed\n";
 
+		if (memcmp(m_ConfigOld.m_diskII13SectorFirmware, m_ConfigNew.m_diskII13SectorFirmware, sizeof(m_ConfigOld.m_diskII13SectorFirmware)) != 0)
+			strMsgMain += ". Disk II firmware has changed\n";
+
 		if (CONFIG_CHANGED(m_tfeInterface))
 			strMsgMain += ". Uthernet interface has changed\n";
 
 		if (CONFIG_CHANGED(m_tfeVirtualDNS))
 			strMsgMain += ". Uthernet Virtual DNS has changed\n";
 
-		if (CONFIG_CHANGED(m_enableTheFreezesF8Rom))
-			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
-
 		if (CONFIG_CHANGED(m_serialPortItem))
 			strMsgMain += ". SSC config has changed\n";
+
+		if (CONFIG_CHANGED(m_enableTheFreezesF8Rom))
+			strMsgMain += ". F8 ROM changed (The Freeze's F8 Rom)\n";
 
 		if (CONFIG_CHANGED(m_NoSlotClock))
 			strMsgMain += ". No-Slot clock has changed\n";

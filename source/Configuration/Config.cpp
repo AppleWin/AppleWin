@@ -71,6 +71,7 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_serialPortItem = 0;
 	m_mouseShowCrosshair = 0;
 	m_mouseRestrictToWindow = 0;
+	memset(m_diskII13SectorFirmware, 0, sizeof(m_diskII13SectorFirmware));
 	memset(m_Mockingboard, 0, sizeof(m_Mockingboard));
 	m_disk2Card.ForbidSaveDiskImageToRegistry();
 	m_harddiskCard.ForbidSaveDiskImageToRegistry();
@@ -126,6 +127,8 @@ void CConfigNeedingRestart::Reload()
 		}
 		else if (m_Slot[slot] == CT_Disk2)
 		{
+			m_diskII13SectorFirmware[slot] = dynamic_cast<Disk2InterfaceCard&>(cardManager.GetRef(slot)).Get13SectorFirmware();
+
 			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
 				m_slotInfoForFDC[slot].pathname[i] = dynamic_cast<Disk2InterfaceCard&>(cardManager.GetRef(slot)).DiskGetFullPathName(i);
 		}
@@ -205,6 +208,7 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_serialPortItem = other.m_serialPortItem;
 	m_mouseShowCrosshair = other.m_mouseShowCrosshair;
 	m_mouseRestrictToWindow = other.m_mouseRestrictToWindow;
+	memcpy(m_diskII13SectorFirmware, other.m_diskII13SectorFirmware, sizeof(m_diskII13SectorFirmware));
 	memcpy(m_Mockingboard, other.m_Mockingboard, sizeof(m_Mockingboard));
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
@@ -244,8 +248,9 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 		m_tfeVirtualDNS == other.m_tfeVirtualDNS &&
 		m_RamWorksMemorySize == other.m_RamWorksMemorySize &&
 		memcmp(m_SaturnMemorySize, other.m_SaturnMemorySize, sizeof(m_SaturnMemorySize)) == 0 &&
-		memcmp(m_Mockingboard, other.m_Mockingboard, sizeof(m_Mockingboard)) == 0 &&
 		m_serialPortItem == other.m_serialPortItem &&
+		memcmp(m_diskII13SectorFirmware, other.m_diskII13SectorFirmware, sizeof(m_diskII13SectorFirmware)) == 0 &&
+		memcmp(m_Mockingboard, other.m_Mockingboard, sizeof(m_Mockingboard)) == 0 &&
 		m_enableTheFreezesF8Rom == other.m_enableTheFreezesF8Rom &&
 		m_NoSlotClock == other.m_NoSlotClock;
 }

@@ -441,6 +441,8 @@ void CPageSlots::ResetToDefault()
 
 	if (IsAppleIIe(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
 		configNew.m_SlotAux = GetCardMgr().QueryDefaultCardForSlot(SLOT_AUX, configNew.m_Apple2Type);
+
+	memset(configNew.m_diskII13SectorFirmware, 0, sizeof(configNew.m_diskII13SectorFirmware));
 }
 
 //===========================================================================
@@ -490,11 +492,14 @@ INT_PTR CPageSlots::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 		break;
 
 	case WM_INITDIALOG:
+		InitComboFloppyDrive(hWnd, ms_slot);
+
 		if (ms_slot == SLOT5 || ms_slot == SLOT6)
 			CheckDlgButton(hWnd, IDC_DISKII_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiStatus() ? BST_CHECKED : BST_UNCHECKED);
 		else
 			EnableWindow(GetDlgItem(hWnd, IDC_DISKII_STATUS_ENABLE), FALSE);
-		InitComboFloppyDrive(hWnd, ms_slot);
+
+		CheckDlgButton(hWnd, IDC_DISKII_13_SECTOR_FW_ENABLE, m_PropertySheetHelper.GetConfigNew().m_diskII13SectorFirmware[ms_slot] ? BST_CHECKED : BST_UNCHECKED);
 		break;
 
 	default:
@@ -668,6 +673,9 @@ void CPageSlots::DlgDisk2OK(HWND hWnd)
 				win32Frame.FrameRefreshStatus(DRAW_BACKGROUND | DRAW_LEDS | DRAW_DISK_STATUS);
 		}
 	}
+
+	const bool newDiskii13SectorFW = IsDlgButtonChecked(hWnd, IDC_DISKII_13_SECTOR_FW_ENABLE) ? true : false;
+	m_PropertySheetHelper.GetConfigNew().m_diskII13SectorFirmware[ms_slot] = newDiskii13SectorFW;
 }
 
 //===========================================================================

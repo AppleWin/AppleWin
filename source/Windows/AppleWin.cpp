@@ -799,7 +799,7 @@ static void RepeatInitialization(void)
 	{
 		if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetFirmware13Sector();
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).Set13SectorFirmware(true);
 		}
 		else if (GetCardMgr().QuerySlot(i) == CT_GenericHDD)
 		{

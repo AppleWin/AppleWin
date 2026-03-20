@@ -181,7 +181,8 @@ public:
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	bool DriveSwap(void);
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
-	void SetFirmware13Sector(void) { m_force13SectorFirmware = true; }
+	bool Get13SectorFirmware();
+	void Set13SectorFirmware(const bool is13Sector);
 
 	static const std::string& GetSnapshotCardNameOld(void);
 	static const std::string& GetSnapshotCardName(void);

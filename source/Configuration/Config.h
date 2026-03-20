@@ -75,6 +75,7 @@ public:
 	UINT m_serialPortItem;	// SSC: Just one config var for this card (at the moment)
 	UINT m_mouseShowCrosshair;
 	UINT m_mouseRestrictToWindow;
+	bool m_diskII13SectorFirmware[NUM_SLOTS];
 	SlotInfoForMB m_Mockingboard[NUM_SLOTS];
 	SlotInfoForFDC m_slotInfoForFDC[NUM_SLOTS];
 	SlotInfoForHDC m_slotInfoForHDC[NUM_SLOTS];

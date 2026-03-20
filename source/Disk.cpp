@@ -71,11 +71,16 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
 	m_enhanceDisk = kEnhanceDiskAccessSpeed_Default;
-	m_is13SectorFirmware = false;
-	m_force13SectorFirmware = false;
+	m_is13SectorFirmware = false;	// depends on m_force13SectorFirmware & woz image metadata
 	m_deferredStepperEvent = false;
 	m_deferredStepperAddress = 0;
 	m_deferredStepperCumulativeCycles = 0;
+
+	uint32_t tmp;
+	std::string regSection = RegGetConfigSlotSection(m_slot);
+	const uint32_t kForce13SectorFirmware_Default = 0;
+	RegLoadValue(regSection.c_str(), REGVALUE_DISKII_13_SECTOR_FIRMWARE, TRUE, &tmp, kForce13SectorFirmware_Default);
+	m_force13SectorFirmware = tmp ? true : false;
 
 	ResetLogicStateSequencer();
 
@@ -2049,6 +2054,19 @@ bool Disk2InterfaceCard::DriveSwap(void)
 }
 
 //===========================================================================
+
+bool Disk2InterfaceCard::Get13SectorFirmware()
+{
+	return m_force13SectorFirmware;
+}
+
+void Disk2InterfaceCard::Set13SectorFirmware(const bool is13Sector)
+{
+	m_force13SectorFirmware = is13Sector;
+
+	std::string regSection = RegGetConfigSlotSection(m_slot);
+	RegSaveValue(regSection.c_str(), REGVALUE_DISKII_13_SECTOR_FIRMWARE, TRUE, is13Sector ? 1 : 0);
+}
 
 bool Disk2InterfaceCard::GetFirmware(WORD lpNameId, BYTE* pDst)
 {
