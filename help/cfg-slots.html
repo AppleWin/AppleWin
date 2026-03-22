@@ -75,6 +75,10 @@ Extra options:
   <ul>
     <li>In 2x windowed-mode, optionally show the Track and Sector values for Drives 1 and 2 (for any Disk II cards in slots 5 and/or 6). Hovering over this status will show a tooltip with both decimal and hexadecimal values, and the track includes the full fractional quarter track value too.</li>
   </ul>
+<li>13-sector Firmware:</li>
+  <ul>
+    <li><strong>Advanced:</strong> Force the Disk II interface card to use the older 13-sector firmware.</li>
+  </ul>
 </ul>
 
 <strong>Hard Disk Controller</strong><br>
@@ -183,6 +187,28 @@ Under emulation, the first 2 Windows-detected controllers will be used, ideally 
 <li>Since it only uses the slot's DEVICE SELECT space ($C0Bx for slot 3) then it can co-exist with an 80-column card in the Apple //e's AUX slot. NB. This card is small, so no slot riser card is required.<br>
 See Lukazi's <a target="_blank" href="https://lukazi.blogspot.com/2021/06/game-controller-snes-max-snes.html">SNES MAX</a> blog for more information.<br>
 <br>
+
+<strong>Mockingboard C / Phasor:</strong><br>
+See <a href="sound.html">Sound</a> for more details.<br>
+<ul>
+  <li>SSI263 $Cs40 (main)</li>
+    <ul>
+      <li>Configure the SSI263 speech chip socket to be empty or with an SSI263:</li>
+        <ul>
+          <li>SSI263P is the original.</li>
+          <li>SSI263AP is the updated verson.</li>
+        </ul>
+    </ul>
+  <li>SSI263 $Cs20 (unused)</li>
+    <ul>
+      <li>Configure the SSI263 speech chip socket to be empty or with an SSI263.</li>
+	  <li>To date, an SSI263 in this socket is only supported by <span style="font-family: Courier New,Courier,monospace;">mb-audit</span>.</li>
+    </ul>
+  <li>SC-01</li>
+    <ul>
+      <li>Enable an <em>aftermarket</em> hardware modification to support a Votrax SC-01 speech chip.</li>
+    </ul>
+</ul>
 
 <strong>Uthernet / Uthernet II:</strong><br>
 Typically this is inserted into slot 3.<br>

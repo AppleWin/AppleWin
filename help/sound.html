@@ -12,19 +12,17 @@
 
 		<h3>Sound:</h3>
 		<p>AppleWin emulates the Apple II's internal speaker, the Mockingboard (or Phasor) sound card and also the SAM card.</p>
-		<p>Use the AppleWin Configuration tab labelled <em>Slots</em>.</p>
-		<p>If you want to use a sound card then use at least DirectX&nbsp;9.</p>
+		<p>Use the AppleWin Configuration tab labelled <a href="cfg-slots.html">Slots</a> to select sound card(s) and configure them.</p>
 
 		<h4>Speaker:</h4>
 		<p>You can now only emulate this with a PC sound card.</p>
 
 		<h4>Mockingboard:</h4>
+		A 'Mockingboard C' card is a 'Mockingboard A' card with an SSI263 speech chip (typically the older SSI263P).<br>
 		<p>Mockingboards can be plugged into any Apple II slot.</p>
-		<p>Each Mockingboard is a type 'C': 2x AY-3-8913 (3-channel sound generator) &amp; 2x SSI263 (speech chip)<br>
-			Each AY-3-8913 is fully emulated (tone, noise &amp; envelope).<br>
+		<p>Each Mockingboard is a type 'C': 2x AY-3-8913 (3-channel sound generator) and an SSI263 (speech chip)<br>
+			Each AY-3-8913 is fully emulated (tone, noise and envelope).<br>
 			Each SY6522 (that controls an AY-3-8913) can generate precise timer interrupts or phoneme-complete interrupts.<br>
-			Emulation of the SSI263 is basic at the moment and only plays back phonemes at a fixed rate without any support for inflection or filters.<br>
-			Additionally the Votrax/SC-01 (predecessor to the SSI263) is emulated by remapping Votrax phonemes to the SSI263's.<br>
 			<br>
 			NB. Some Mockingboard compatible software requires the card to be in a specific slot (usually slot 4).<br>
 			Some software support dual Mockingboards in slots 4 and 5 (eg. Ultima V and a few French Touch demos).<br>
@@ -32,13 +30,20 @@
 		</p>
 
 		<h4>Phasor:</h4>
+		A Phasor card includes an SSI263 speech chip (typically the newer SSI263AP).<br>
 		<p>Phasors can be plugged into any Apple II slot.</p>
 		<p>A Phasor is roughly equivalent to 2 Mockingboards and has 4x AY-3-8913.<br>
 			It powers up in a hardware-identical mode to the Mockingboard type 'C', and so is compatible with all Mockingboard titles.<br>
 			Using software (to access memory mapped I/O) it can be switched to native Phasor mode (4x AY8913s) or Echo+ mode (but without the TMS5220 speech chip).
 		</p>
-		<br>
 
+		<h4>Speech chips:</h4>
+		Both the Mockingboard C and Phasor cards support up to two SSI263s and an aftermarket hardware modification for a Votrax SC-01 (the predecessor to the SSI263).<br>
+		Emulation of the SSI263 is basic at the moment and only plays back phonemes at a fixed rate without any support for inflection or filters.<br>
+		Two types of SSI263 are supported: SSI263P (original, with a reset bug) and SSI263AP (updated with the reset bug fixed).<br>
+		Additionally the Votrax SC-01 is <em>simply</em> emulated by remapping SC-01 phonemes to the SSI263's.<br>
+
+		<br>
 		<p>There are a number of games and demos that support Mockingboard (or Phasor), eg:</p>
 		<ul>
 			<li>Adventure Construction Set</li>
@@ -51,7 +56,8 @@
 			<li>Crimewave (Votrax speech)</li>
 			<li>Crypt of Medea (Votrax speech)</li>
 			<li><a target="_blank" href="https://github.com/tomcw/Cybernoid">Cybernoid Music Disk</a></li>
-			<li>French Touch demos, eg. (NOT SO) Cheap Tunes, Plasmagoria, Raster Bars, Tribute + many others</li>
+			<li><a target="_blank" href="http://www.deater.net/weave/vmwprod/demos/">Deater's demos and demakes</a></li>
+			<li><a target="_blank" href="http://fr3nch.t0uch.free.fr/">French Touch demos</a>, eg. (NOT SO) Cheap Tunes, Plasmagoria, Raster Bars, Tribute + many others</li>
 			<li>Lady Tut (Mockingboard version)</li>
 			<li><a target="_blank" href="https://github.com/tomcw/mb-audit">mb-audit: diagnostics & tests</a></li>
 			<li>Mockingboard software (Sweet Micro Systems)</li>
@@ -61,7 +67,7 @@
 			<li>One on one (Mockingboard version)</li>
 			<li>Phasor software (Applied Engineering)</li>
 			<li>Popeye</li>
-			<li>Rescue Raiders v1.3 (SSI263 speech only)</li>
+			<li>Rescue Raiders v1.3+ (SSI263 speech only)</li>
 			<li>Silent Service</li>
 			<li>Skyfox</li>
 			<li>The Spy Strikes Back (Votrax speech)</li>
