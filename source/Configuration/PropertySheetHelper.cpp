@@ -414,6 +414,13 @@ void CPropertySheetHelper::ApplyNewConfigFromSnapshot()
 
 		if (config.m_Slot[slot] == CT_Saturn128K)
 			dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).SetSaturnMemorySize(config.m_SaturnMemorySize[slot]);
+
+		if (config.m_Slot[slot] == CT_MockingboardC || config.m_Slot[slot] == CT_Phasor)
+		{
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).SetSocketSSI263(0, config.m_Mockingboard[slot].ssi263A);
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).SetSocketSSI263(1, config.m_Mockingboard[slot].ssi263B);
+			dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(slot)).SetSocketSC01(config.m_Mockingboard[slot].sc01);
+		}
 	}
 
 	SetRamWorksMemorySize(config.m_RamWorksMemorySize);

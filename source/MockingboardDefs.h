@@ -9,6 +9,9 @@ enum SSI263Type
 {
 	SSI263Empty, SSI263P, SSI263AP, SC01, SSI263Unknown /* for cmd line */
 };
+const SSI263Type kSSI263A_Default = SSI263Empty;
+const SSI263Type kSSI263B_Default = SSI263AP;
+const SSI263Type kSC01_Default = SC01;
 
 const UINT NUM_SY6522 = 2;
 const UINT NUM_AY8913 = 4;	// Phasor has 4, MB has 2

@@ -102,16 +102,16 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 		uint32_t type;
 		std::string regSection = RegGetConfigSlotSection(m_slot);
 		if (i == 0)
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, TRUE, &type, SSI263Empty);
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, TRUE, &type, kSSI263A_Default);
 		else
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, TRUE, &type, SSI263AP);	// socket-1 for main SSI263
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, TRUE, &type, kSSI263B_Default);	// socket-1 for main SSI263
 		m_MBSubUnit[i].ssi263.SetType(SSI263Type(type));
 
 		if (i == 0)
 		{
 			uint32_t hasSC01;
 			std::string regSection = RegGetConfigSlotSection(m_slot);
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, TRUE, &hasSC01, TRUE);
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, TRUE, &hasSC01, kSC01_Default == SC01 ? TRUE : FALSE);
 			m_MBSubUnit[i].ssi263.SetSC01(hasSC01 ? SC01 : SSI263Empty);
 		}
 	}

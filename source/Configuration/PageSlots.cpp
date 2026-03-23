@@ -425,6 +425,10 @@ void CPageSlots::ApplyConfigAfterClose()
 	REGSAVE(REGVALUE_MOUSE_CROSSHAIR, m_mouseShowCrosshair);
 	REGSAVE(REGVALUE_MOUSE_RESTRICT_TO_WINDOW, m_mouseRestrictToWindow);
 
+	// Mockingboard/Phasor card
+	// . do any non-restart config changes here (none at the moment)
+	// . (A change to ssi263A/ssi263B/sc01 requires a restart)
+
 	// RamWorks3 card
 	// . do any non-restart config changes here (none at the moment)
 	// . (A change to RamWorksMemorySize requires a restart)
@@ -443,6 +447,16 @@ void CPageSlots::ResetToDefault()
 		configNew.m_SlotAux = GetCardMgr().QueryDefaultCardForSlot(SLOT_AUX, configNew.m_Apple2Type);
 
 	memset(configNew.m_diskII13SectorFirmware, 0, sizeof(configNew.m_diskII13SectorFirmware));
+
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		if (configNew.m_Slot[slot] == CT_MockingboardC || configNew.m_Slot[slot] == CT_Phasor)
+		{
+			configNew.m_Mockingboard[slot].ssi263A = kSSI263A_Default;
+			configNew.m_Mockingboard[slot].ssi263B = kSSI263B_Default;
+			configNew.m_Mockingboard[slot].sc01 = kSC01_Default;
+		}
+	}
 }
 
 //===========================================================================
