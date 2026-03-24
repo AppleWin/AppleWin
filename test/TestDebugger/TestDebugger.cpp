@@ -6,9 +6,6 @@
 #include "../../source/Debugger/Debugger_Types.h"
 #include "../../source/Debugger/Debugger_Assembler.h"	// Pull in default args for _6502_GetTargets()
 
-// NB. DebugDefs.h must come after Debugger_Types.h which declares these as extern
-#include "../../source/Debugger/DebugDefs.h"
-
 // From FrameBase
 class FrameBase
 {
@@ -712,7 +709,7 @@ int GH451_test(void)
 
 //-------------------------------------
 
-int _tmain(int argc, _TCHAR* argv[])
+int main(int argc, char* argv[])
 {
 	int res = 1;
 	init();

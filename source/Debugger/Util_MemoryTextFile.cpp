@@ -105,7 +105,7 @@ void MemoryTextFile_t::GetLinePointers()
 
 			// DOS/Win "Text" mode converts LF CR (0D 0A) to CR (0D)
 			// but just in case, the file is read in binary.
-			int nEOL = pStartNextLine - pEnd;
+			int nEOL = int (pStartNextLine - pEnd);
 			while (nEOL-- > 1)
 			{
 				*pEnd++ = ' ';

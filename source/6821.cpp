@@ -230,12 +230,12 @@ void C6821::mc6821_reset_internal(unsigned int dnr)
 
 /*-----------------------------------------------------------------------*/
 
-//static void REGPARM3 mc6821_store(drive_context_t *drv, WORD addr, BYTE byte)
+//static void mc6821_store(drive_context_t *drv, WORD addr, BYTE byte)
 //{
 //    mc6821_store_internal((WORD)(addr & 3), byte, drv->mynumber);
 //}
 //
-//static BYTE REGPARM2 mc6821_read(drive_context_t *drv, WORD addr)
+//static BYTE mc6821_read(drive_context_t *drv, WORD addr)
 //{
 //    return mc6821_read_internal((WORD)(addr & 3), drv->mynumber);
 //}

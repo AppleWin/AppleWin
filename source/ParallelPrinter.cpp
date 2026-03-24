@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 void ParallelPrinterCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-	const DWORD PRINTDRVR_SIZE = APPLE_SLOT_SIZE;
+	const uint32_t PRINTDRVR_SIZE = APPLE_SLOT_SIZE;
 	BYTE* pData = GetFrame().GetResource(IDR_PRINTDRVR_FW, "FIRMWARE", PRINTDRVR_SIZE);
 	if(pData == NULL)
 		return;
@@ -58,9 +58,9 @@ bool ParallelPrinterCard::CheckPrint(void)
 	m_inactivity = 0;
 	if (m_file == NULL)
 	{
-		//TCHAR filepath[MAX_PATH * 2];
-		//_tcsncpy(filepath, g_sProgramDir, MAX_PATH);
-		//_tcsncat(filepath, _T("Printer.txt"), MAX_PATH);
+		//char filepath[MAX_PATH * 2];
+		//strncpy(filepath, g_sProgramDir, MAX_PATH);
+		//_tcsncat(filepath, "Printer.txt", MAX_PATH);
 		//file = fopen(filepath, "wb");
 		if (m_bPrinterAppend )
 			m_file = fopen(ParallelPrinterCard::GetFilename().c_str(), "ab");
@@ -77,13 +77,14 @@ void ParallelPrinterCard::ClosePrint(void)
 	{
 		fclose(m_file);
 		m_file = NULL;
+#ifdef _WIN32
 		std::string ExtendedFileName = "copy \"";
 		ExtendedFileName.append (ParallelPrinterCard::GetFilename());
 		ExtendedFileName.append ("\" prn");
 		//if (g_bDumpToPrinter) ShellExecute(NULL, "print", Printer_GetFilename(), NULL, NULL, 0); //Print through Notepad
 		if (m_bDumpToPrinter)
 			system (ExtendedFileName.c_str ()); //Print through console. This is supposed to be the better way, because it shall print images (with older printers only).
-			
+#endif
 	}
 	m_inactivity = 0;
 }
@@ -189,7 +190,7 @@ void ParallelPrinterCard::GetRegistryConfig(void)
 {
 	std::string regSection = RegGetConfigSlotSection(m_slot);
 
-	DWORD dwTmp;
+	uint32_t dwTmp;
 	char szFilename[MAX_PATH];
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, TRUE, &dwTmp))
@@ -204,7 +205,7 @@ void ParallelPrinterCard::GetRegistryConfig(void)
 	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, TRUE, &dwTmp))
 		SetPrinterAppend(dwTmp ? true : false);
 
-	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, 1, szFilename, MAX_PATH, TEXT("")))
+	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, 1, szFilename, MAX_PATH, ""))
 		SetFilename(szFilename);
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_IDLE_LIMIT, TRUE, &dwTmp))
@@ -224,8 +225,6 @@ void ParallelPrinterCard::SetRegistryConfig(void)
 
 //===========================================================================
 
-#define SS_YAML_VALUE_CARD_PRINTER "Generic Printer"
-
 #define SS_YAML_KEY_INACTIVITY "Inactivity"
 #define SS_YAML_KEY_IDLELIMIT "Printer Idle Limit"
 #define SS_YAML_KEY_FILENAME "Print Filename"
@@ -238,7 +237,7 @@ void ParallelPrinterCard::SetRegistryConfig(void)
 
 const std::string& ParallelPrinterCard::GetSnapshotCardName(void)
 {
-	static const std::string name(SS_YAML_VALUE_CARD_PRINTER);
+	static const std::string name("Generic Printer");
 	return name;
 }
 
@@ -260,9 +259,6 @@ void ParallelPrinterCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 
 bool ParallelPrinterCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
 {
-	if (m_slot != SLOT1)	// fixme
-		Card::ThrowErrorInvalidSlot(CT_GenericPrinter, m_slot);
-
 	if (version != 1)
 		Card::ThrowErrorInvalidVersion(CT_GenericPrinter, version);
 

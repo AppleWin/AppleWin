@@ -8,8 +8,7 @@
 		link="#008000" vlink="#008000">
 		<h2 style="COLOR: rgb(0,128,0)">Configuration Settings</h2>
 		<hr size="4">
-		<img style="FLOAT: right; WIDTH: 354px; HEIGHT: 497px" src="img/config.png" alt="Configuration settings"
-			hspace="5" vspace="5">
+		<img style="FLOAT: right; WIDTH: 340px; HEIGHT: 491px" src="img/cfg-config.png" alt="Configuration settings" hspace="5" vspace="5">
 	
 		<strong>Model:</strong><br>
 		This describes the mode of emulation. &nbsp;You have the option of emulating 
@@ -27,6 +26,12 @@
 		<strong>Confirm reboot:</strong><br>
 		Show "Confirm reboot" message box when F2 is pressed.<br>
 		<br>
+
+		<strong>Master Volume:</strong><br>
+		Set the volume for the speaker and any sound cards.<br>
+		<br>
+
+		<hr>
 
 		<strong>Video:</strong><br>
 		AppleWin can display Apple video in a variety of modes. The display can also be 
@@ -60,50 +65,47 @@
 		When video mode is 'Color (Composite Idealized)' then vertically blend the hi-res screen.<br>
 		<br>
 
+		<strong>50Hz video:</strong><br>
+		When checked, this option will run the emulated machine with a 50Hz(PAL) video refresh rate.
+		The default is unchecked, for 60Hz(NTSC).<br>
+		<br>
+
 		<strong>Full-Screen: Show drive/keyboard status:</strong><br>
 		When in full-screen mode, show floppy (activity and track) and harddisk status (activity); keyboard caps-lock status and if emulation is paused.<br>
 		<br>
 
-		<strong>VidHD in slot 3</strong><br>
-		Insert a VidHD card into slot 3 (which can co-exist with an 80-column card in the Apple //e's AUX slot).<br>
-		Allows all Apple II models to support the IIgs' Super Hi-Res (SHR) video modes and is supported by eg. <a href="https://archive.org/details/TotalReplay">Total Replay</a>.<br>
-		<br>
-
 		<hr>
 
-		<strong>Serial Port:</strong><br>
-		This option will remap the emulated Apple's serial port to your PC's serial port (or TCP port 1977).<br>
-		See <a href="card-ssc.html">Super Serial Card</a> for more details.<br>
+		<strong>Emulation Speed Control:</strong><br><br>
+
+		<strong>Enhanced disk access speed:</strong><br>
+		Here you can choose the speed at which the system can access
+		an emulated floppy disk drive.
+		By default, you would want "Enhanced Speed" so that data can
+		be accessed as fast as possible. However, it is also possible that
+		certain programs might depend on the "Authentic Speed" to function
+		properly. This is the speed at which the real hardware
+		would access data from your drives.
+		<br>
 		<br>
 
-		<strong>Ethernet Settings...:</strong><br>
-		This allows to choose which network interface card (NIC) you want to 
-		use with the Uthernet or Uthernet II card.<br>
-		<br>
+		<strong>Scroll Lock acts as toggle for full-speed CPU:</strong><br>
+		<ul>
+		  <li>When checked, you can permanently enable full-speed CPU when Scroll Lock is on.</li>
+		  <li>When unchecked, only when Scroll Lock is depressed will you get full-speed CPU.</li>
+		</ul>
 
-		<strong>Emulation Speed Control:</strong><br>
+		<strong>Select Custom Speed (in MHz):</strong><br>
 		This option let's you control the processor speed of the emulated system. You 
 		may choose to use an authentic speed (matching the speed of the original 
 		processor from the system) or you can underclock or overclock the emulated 
 		processor speed from half-speed to as fast as your PC can emulate.<br>
 		<br>
 
-		<strong>50Hz video:</strong><br>
-		When checked, this option will run the emulated machine with a 50Hz(PAL) video refresh rate.
-		The default is unchecked, for 60Hz(NTSC).<br>
-		<br>
+		<hr>
 
-		<strong>Benchmark Emulator:</strong><br>
-		This will run a benchmark test that will show how fast your PC can emulate an 
-		Apple //e system with this emulator. In order to run the benchmark, the 
-		emulated machine must be reset and you will lose any unsaved work. You will be 
-		prompted before you continue this action. The results given are:<br>
-		<ul>
-			<li> Pure Video FPS
-			<li> Pure CPU MHz (video update)
-			<li> Pure CPU MHz (full-speed)
-			<li> Expected average video game performance (in FPS)
-		</ul>
-	</li>
+		<strong>Reset all to Default:</strong><br>
+		Reset all configuration across all configuration pages to the default values.
+
 	</body>
 </html>

@@ -68,18 +68,27 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 	if (pImageInfo->pImageType && pImageInfo->pImageType->GetType() == eImageHDV)
 	{
 		if (bExpectFloppy)
+		{
+			ImageClose(*ppImageInfo);
+			*ppImageInfo = NULL;
 			Err = eIMAGE_ERROR_UNSUPPORTED_HDV;
+		}
+
+		if (Err == eIMAGE_ERROR_NONE)
+			*pWriteProtected = pImageInfo->bWriteProtected;
+
 		return Err;
 	}
 
 	// THE FILE MATCHES A KNOWN FORMAT
 
 	_ASSERT(bExpectFloppy);
-	if (!bExpectFloppy)
+	if (!bExpectFloppy || !pImageInfo->uNumTracks)
+	{
+		ImageClose(*ppImageInfo);
+		*ppImageInfo = NULL;
 		return eIMAGE_ERROR_UNSUPPORTED;
-
-	if (!pImageInfo->uNumTracks)
-		return eIMAGE_ERROR_UNSUPPORTED;
+	}
 
 	*pWriteProtected = pImageInfo->bWriteProtected;
 
@@ -157,7 +166,7 @@ void ImageWriteTrack(	ImageInfo* const pImageInfo,
 		eImageType imageType = pImageInfo->pImageType->GetType();
 		if (imageType == eImageWOZ1 || imageType == eImageWOZ2)
 		{
-			DWORD dummy;
+			uint32_t dummy;
 			bool res = sg_DiskImageHelper.WOZUpdateInfo(pImageInfo, dummy);
 			_ASSERT(res);
 		}
@@ -252,14 +261,14 @@ UINT ImageGetMaxNibblesPerTrack(ImageInfo* const pImageInfo)
 
 void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName)
 {
-	TCHAR   imagetitle[ MAX_DISK_FULL_NAME+1 ];
+	char   imagetitle[ MAX_DISK_FULL_NAME+1 ];
 	LPCTSTR startpos = pPathname;
 
 	// imagetitle = <FILENAME.EXT>
-	if (_tcsrchr(startpos, TEXT(PATH_SEPARATOR)))
-		startpos = _tcsrchr(startpos, TEXT(PATH_SEPARATOR))+1;
+	if (strrchr(startpos, PATH_SEPARATOR))
+		startpos = strrchr(startpos, PATH_SEPARATOR)+1;
 
-	_tcsncpy(imagetitle, startpos, MAX_DISK_FULL_NAME);
+	strncpy(imagetitle, startpos, MAX_DISK_FULL_NAME);
 	imagetitle[MAX_DISK_FULL_NAME] = 0;
 
 	// if imagetitle contains a lowercase char, then found=1 (why?)
@@ -274,7 +283,7 @@ void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pF
 	}
 
 	if ((!found) && (loop > 2))
-		CharLowerBuff(imagetitle+1, _tcslen(imagetitle+1));
+		CharLowerBuff(imagetitle+1, (uint32_t)strlen(imagetitle+1));
 
 	// pFullName = <FILENAME.EXT>
 	pFullName = imagetitle;
@@ -282,8 +291,8 @@ void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pF
 	if (imagetitle[0])
 	{
 		LPTSTR dot = imagetitle;
-		if (_tcsrchr(dot, TEXT('.')))
-			dot = _tcsrchr(dot, TEXT('.'));
+		if (strrchr(dot, '.'))
+			dot = strrchr(dot, '.');
 		if (dot > imagetitle)
 			*dot = 0;
 	}

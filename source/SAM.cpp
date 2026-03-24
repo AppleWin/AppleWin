@@ -58,9 +58,6 @@ BYTE __stdcall SAMCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG n
 	// with the SAM data. The mute gets reset after the speaker code detects
 	// silence.
 
-	if (soundtype != SOUND_WAVE)
-		return MemReadFloatingBus(nExecutedCycles);
-
 	// use existing speaker code to bring timing up to date
 	BYTE res = SpkrToggle(pc, addr, bWrite, d, nExecutedCycles);
 

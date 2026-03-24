@@ -19,8 +19,8 @@ typedef struct
 	bool	bInterrupts;	// NB. Can't be read from s/w
 } SSC_DIPSW;
 
-#define TEXT_SERIAL_COM TEXT("COM")
-#define TEXT_SERIAL_TCP TEXT("TCP")
+#define TEXT_SERIAL_COM "COM"
+#define TEXT_SERIAL_TCP "TCP"
 
 class CSuperSerialCard : public Card
 {
@@ -35,11 +35,11 @@ public:
 	virtual void	SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool	LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
-	void    CommSetSerialPort(DWORD dwNewSerialPortItem);
-
 	std::string const& GetSerialPortChoices();
-	DWORD	GetSerialPort() { return m_dwSerialPortItem; }	// Drop-down list item
+	DWORD	GetSerialPortItem() { return m_dwSerialPortItem; }	// Config's drop-down list item
+	void    SetSerialPortItem(DWORD dwNewSerialPortItem);
 	const std::string& GetSerialPortName() { return m_currentSerialPortName; }
+	void RescanCOMPortsAndSetSerialPortItem(DWORD newSerialPortItem);
 	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
 	void	SupportDCD(bool bEnable) { m_bCfgSupportDCD = bEnable; }	// Status
 
@@ -75,7 +75,7 @@ private:
 	static DWORD WINAPI	CommThread(LPVOID lpParameter);
 	bool	CommThInit();
 	void	CommThUninit();
-	UINT	GetNumSerialPortChoices() { return m_vecSerialPortsItems.size(); }
+	UINT	GetNumSerialPortChoices() { return (UINT) m_vecSerialPortsItems.size(); }
 	void	ScanCOMPorts();
 	void	SetSerialPortName(const char* pSerialPortName);
 	void	SetRegistrySerialPortName(void);

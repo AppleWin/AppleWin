@@ -34,9 +34,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 namespace _ini {
 	//===========================================================================
-	BOOL RegLoadString(LPCTSTR section, LPCTSTR key, BOOL /*peruser*/, LPTSTR buffer, DWORD chars)
+	BOOL RegLoadString(LPCTSTR section, LPCTSTR key, BOOL /*peruser*/, LPTSTR buffer, uint32_t chars)
 	{
-		DWORD n = GetPrivateProfileString(section, key, NULL, buffer, chars, g_sConfigFile.c_str());
+		uint32_t n = GetPrivateProfileString(section, key, NULL, buffer, chars, g_sConfigFile.c_str());
 		return n > 0;
 	}
 
@@ -56,7 +56,7 @@ namespace _ini {
 }
 
 //===========================================================================
-BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars)
+BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, uint32_t chars)
 {
 	if (!g_sConfigFile.empty())
 		return _ini::RegLoadString(section, key, peruser, buffer, chars);
@@ -86,7 +86,7 @@ BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, D
 }
 
 //===========================================================================
-BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, DWORD chars, LPCTSTR defaultValue)
+BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, uint32_t chars, LPCTSTR defaultValue)
 {
 	BOOL success = RegLoadString(section, key, peruser, buffer, chars);
 	if (!success)
@@ -95,19 +95,19 @@ BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, D
 }
 
 //===========================================================================
-BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD* value) {
-	TCHAR buffer[32];
+BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t* value) {
+	char buffer[32];
 	if (!RegLoadString(section, key, peruser, buffer, 32))
 	{
 		return FALSE;
 	}
 
-	*value = (DWORD)_ttoi(buffer);
+	*value = (uint32_t)atoi(buffer);
 	return TRUE;
 }
 
 //===========================================================================
-BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD* value, DWORD defaultValue) {
+BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t* value, uint32_t defaultValue) {
 	BOOL success = RegLoadValue(section, key, peruser, value);
 	if (!success)
 		*value = defaultValue;
@@ -141,13 +141,13 @@ void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::strin
 			0,
 			REG_SZ,
 			(CONST LPBYTE)buffer.c_str(),
-			(buffer.size() + 1) * sizeof(TCHAR));
+			(uint32_t)((buffer.size() + 1) * sizeof(char)));
 		RegCloseKey(keyhandle);
 	}
 }
 
 //===========================================================================
-void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, DWORD value) {
+void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t value) {
 	std::string strValue = StrFormat("%d", value);
 	RegSaveString(section, key, peruser, strValue.c_str());
 }

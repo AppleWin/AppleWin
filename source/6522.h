@@ -3,7 +3,7 @@
 class SY6522
 {
 public:
-	SY6522(UINT slot, bool isMegaAudio) : m_slot(slot), m_isMegaAudio(isMegaAudio), m_isBusDriven(false)
+	SY6522(UINT slot, bool isMegaAudio) : m_slot(slot), m_isMegaAudio(isMegaAudio), m_isBusDriven(false), m_bad6522(false)
 	{
 		for (UINT i = 0; i < kNumTimersPer6522; i++)
 			m_syncEvent[i] = NULL;
@@ -18,6 +18,11 @@ public:
 	{
 		m_syncEvent[0] = event0;
 		m_syncEvent[1] = event1;
+	}
+
+	void InitBadState(bool bad6522)
+	{
+		m_bad6522 = bad6522;
 	}
 
 	void Reset(const bool powerCycle);
@@ -55,6 +60,7 @@ public:
 	void SetRegIRA(BYTE reg) { m_regs.ORA = reg; }
 	bool IsTimer1IrqDelay(void) { return m_timer1IrqDelay ? true : false; }
 	void SetBusBeingDriven(bool state) { m_isBusDriven = state; }
+	bool IsBad(void) { return m_bad6522; }
 
 	BYTE Read(BYTE nReg);
 	void Write(BYTE nReg, BYTE nValue);
@@ -91,6 +97,7 @@ private:
 
 	UINT GetOpcodeCyclesForRead(BYTE reg);
 	UINT GetOpcodeCyclesForWrite(BYTE reg);
+	UINT GetOpcodeCycles(BYTE reg, UINT zpOpcodeCycles, UINT opcodeCycles, BYTE zpOpcode, BYTE opcode, bool abs16x, bool abs16y, bool indx, bool indy);
 
 	void StartTimer2(void);
 	void StartTimer1_LoadStateV1(void);
@@ -148,4 +155,7 @@ private:
 	bool m_isBusDriven;
 
 	static const UINT kExtraMegaAudioTimerCycles = kExtraTimerCycles + 1;
+
+	// For mb-audit
+	bool m_bad6522;
 };

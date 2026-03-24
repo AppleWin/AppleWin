@@ -782,6 +782,10 @@ void AY8913::sound_ay_write( int reg, int val, libspectrum_dword now )
     ay_change[ ay_change_count ].val = val;
     ay_change_count++;
   }
+  else
+  {
+    LogOutput("AY reg write discarded: %02X = %02X\n", reg, val);
+  }
 }
 
 

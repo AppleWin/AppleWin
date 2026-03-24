@@ -39,14 +39,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	Arg_t g_aArgRaw[ MAX_ARGS ]; // pre-processing
 	Arg_t g_aArgs  [ MAX_ARGS ]; // post-processing (cooked)
 
-	const TCHAR TCHAR_LF     = TEXT('\x0D');
-	const TCHAR TCHAR_CR     = TEXT('\x0A');
-	const TCHAR TCHAR_SPACE  = TEXT(' ');
-	const TCHAR TCHAR_TAB    = TEXT('\t');
-//	const TCHAR TCHAR_QUOTED = TEXT('"');
-	const TCHAR TCHAR_QUOTE_DOUBLE = TEXT('"');
-	const TCHAR TCHAR_QUOTE_SINGLE = TEXT('\'');
-	const TCHAR TCHAR_ESCAPE = TEXT('\x1B');
+	const char TCHAR_LF     = '\x0D';
+	const char TCHAR_CR     = '\x0A';
+	const char TCHAR_SPACE  = ' ';
+	const char TCHAR_TAB    = '\t';
+//	const char TCHAR_QUOTED = '"';
+	const char TCHAR_QUOTE_DOUBLE = '"';
+	const char TCHAR_QUOTE_SINGLE = '\'';
+	const char TCHAR_ESCAPE = '\x1B';
 
 
 	// NOTE: ArgToken_e and g_aTokens must match!
@@ -66,7 +66,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{ TOKEN_DOLLAR      , TYPE_STRING  , "$"  },
 		{ TOKEN_EQUAL       , TYPE_OPERATOR, "="  },
 		{ TOKEN_EXCLAMATION , TYPE_OPERATOR, "!"  }, // NOT
-		{ TOKEN_FSLASH      , TYPE_OPERATOR, "/"  }, // div
+		{ TOKEN_FSLASH      , TYPE_OPERATOR, "/"  }, // Address prefix delimiter
 		{ TOKEN_GREATER_THAN, TYPE_OPERATOR, ">"  }, // TODO/FIXME: Parser will break up '>=' (needed for uber breakpoints)
 		{ TOKEN_HASH        , TYPE_OPERATOR, "#"  },
 		{ TOKEN_LESS_THAN   , TYPE_OPERATOR, "<"  },
@@ -76,19 +76,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		{ TOKEN_PERCENT     , TYPE_OPERATOR, "%"  }, // mod
 		{ TOKEN_PIPE        , TYPE_OPERATOR, "|"  }, // bit-or
 		{ TOKEN_PLUS        , TYPE_OPERATOR, "+"  }, // add
-//		{ TOKEN_QUESTION    , TYPE_OPERATOR, TEXT('?')  }, // Not a token 1) wildcard needs to stay together with other chars
+//		{ TOKEN_QUESTION    , TYPE_OPERATOR, '?'  }, // Not a token 1) wildcard needs to stay together with other chars
 		{ TOKEN_QUOTE_SINGLE, TYPE_QUOTED_1, "\'" },
 		{ TOKEN_QUOTE_DOUBLE, TYPE_QUOTED_2, "\"" }, // for strings
-		{ TOKEN_SEMI        , TYPE_STRING  , ";"  },
+		{ TOKEN_COMMENT_EOL , TYPE_STRING  , ";"  },
 		{ TOKEN_SPACE       , TYPE_STRING  , " "  }, // space is also a delimiter between tokens/args
 		{ TOKEN_STAR        , TYPE_OPERATOR, "*"  }, // Not a token 1) wildcard needs to stay together with other chars
-//		{ TOKEN_TAB         , TYPE_STRING  , TEXT('\t') }
+//		{ TOKEN_TAB         , TYPE_STRING  , '\t' }
 		{ TOKEN_TILDE       , TYPE_OPERATOR, "~"  }, // C/C++: Not.  Used for console.
 
-		{ TOKEN_COMMENT_EOL , TYPE_STRING  , "//" },
+		{ TOKEN_DIVIDE_FLOOR, TYPE_OPERATOR, "//" }, // div
 		{ TOKEN_GREATER_EQUAL,TYPE_OPERATOR, ">=" },
 		{ TOKEN_LESS_EQUAL  , TYPE_OPERATOR, "<=" },
-		{ TOKEN_NOT_EQUAL  , TYPE_OPERATOR , "!=" }
+		{ TOKEN_NOT_EQUAL   , TYPE_OPERATOR, "!=" }
 	};
 
 // Arg ____________________________________________________________________________________________
@@ -104,14 +104,14 @@ int _Arg_1( int nValue )
 //===========================================================================
 int _Arg_1( LPTSTR pName )
 {
-	int nLen = _tcslen( g_aArgs[1].sArg );
+	size_t nLen = strlen( g_aArgs[1].sArg );
 	if (nLen < MAX_ARG_LEN)
 	{
-		_tcscpy( g_aArgs[1].sArg, pName );
+		strcpy( g_aArgs[1].sArg, pName );
 	}
 	else
 	{
-		_tcsncpy( g_aArgs[1].sArg, pName, MAX_ARG_LEN );
+		strncpy( g_aArgs[1].sArg, pName, MAX_ARG_LEN );
 	}
 	return 1;
 }
@@ -205,12 +205,12 @@ bool ArgsGetValue ( Arg_t *pArg, WORD * pAddressValue_, const int nBase )
 	if (pArg == NULL)
 		return false;
 
-	TCHAR *pSrc = & (pArg->sArg[ 0 ]);
-	TCHAR *pEnd = NULL;
+	char *pSrc = & (pArg->sArg[ 0 ]);
+	char *pEnd = NULL;
 
 	if (pAddressValue_)
 	{
-		*pAddressValue_ = (WORD)(_tcstoul( pSrc, &pEnd, nBase) & _6502_MEM_END);
+		*pAddressValue_ = (WORD)(strtoul( pSrc, &pEnd, nBase) & _6502_MEM_END);
 		return true;
 	}
 
@@ -234,7 +234,7 @@ bool ArgsGetImmediateValue ( Arg_t *pArg, WORD * pAddressValue_ )
 
 // Read console input, process the raw args, turning them into tokens and types.
 //===========================================================================
-int	ArgsGet ( TCHAR * pInput )
+int	ArgsGet ( char * pInput )
 {
 	LPCTSTR pSrc = pInput;
 	LPCTSTR pEnd = NULL;
@@ -263,7 +263,7 @@ int	ArgsGet ( TCHAR * pInput )
 	{
 		// Technically, there shouldn't be any leading spaces,
 		// since pressing the spacebar is an alias for TRACE.
-		// However, there is spaces between arguments
+		// However, there are spaces between arguments
 		pSrc = const_cast<char*>( SkipWhiteSpace( pSrc ));
 
 		if (pSrc)
@@ -274,20 +274,16 @@ int	ArgsGet ( TCHAR * pInput )
 				pEnd = SkipUntilToken( pSrc+1, g_aTokens, NUM_TOKENS, &iTokenEnd );
 			}
 
-			if (iTokenSrc == TOKEN_COMMENT_EOL)
-				break; //pArg->eToken = iTokenSrc;
-			
+			if ((iTokenSrc == TOKEN_COMMENT_EOL) ||
+				(iArg == 0 && iTokenSrc == TOKEN_DIVIDE_FLOOR))	// Double FORWARD SLASH at start of line
+				break;
+
 			if (iTokenSrc == NO_TOKEN)
 			{
 				iTokenSrc = TOKEN_ALPHANUMERIC;
 			}
 
 			iType = g_aTokens[ iTokenSrc ].eType;
-
-			if (iTokenSrc == TOKEN_SEMI)
-			{
-				// TODO - command separator, must handle non-quoted though!
-			}
 
 			if (iTokenSrc == TOKEN_QUOTE_DOUBLE)
 			{
@@ -303,7 +299,7 @@ int	ArgsGet ( TCHAR * pInput )
 
 			if (pEnd)
 			{
-				nBuf = pEnd - pSrc;
+				nBuf = (int)(pEnd - pSrc);
 			}
 
 			if (nBuf > 0)
@@ -313,7 +309,7 @@ int	ArgsGet ( TCHAR * pInput )
 				//if (iTokenSrc == TOKEN_QUOTE_DOUBLE)
 				//	nLen = nBuf;
 				nLen = MIN( nBuf, MAX_ARG_LEN ); // NOTE: see Arg_t.sArg[] // GH#481
-				_tcsncpy( pArg->sArg, pSrc, nLen );
+				strncpy( pArg->sArg, pSrc, nLen );
 				pArg->sArg[ nLen ] = 0;
 				pArg->nArgLen      = nLen;
 				pArg->eToken       = iTokenSrc;
@@ -377,7 +373,7 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 				continue;
 
 			// Handle one char names
-			if ((pArg->nArgLen == 1) && (pArg->sArg[0] == g_aBreakpointSource[ iReg ][0]))
+			if ((pArg->nArgLen == 1) && (_stricmp(pArg->sArg, g_aBreakpointSource[iReg]) == 0))
 			{
 				switch ( iReg )
 				{
@@ -393,7 +389,7 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 			else
 			if (iReg == BP_SRC_REG_PC)
 			{
-				if ((pArg->nArgLen == 2) && (_tcscmp( pArg->sArg, g_aBreakpointSource[ iReg ] ) == 0))
+				if ((pArg->nArgLen == 2) && (_stricmp( pArg->sArg, g_aBreakpointSource[ iReg ] ) == 0))
 				{
 					*pAddressValue_ = regs.pc       ; bStatus = true; break;
 				}
@@ -408,8 +404,8 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 void ArgsRawParse ( void )
 {
 	const int BASE = 16; // hex
-	TCHAR *pSrc  = NULL;
-	TCHAR *pEnd  = NULL;
+	char *pSrc  = NULL;
+	char *pEnd  = NULL;
 
 	int    iArg = 1;
 	Arg_t *pArg = & g_aArgRaw[ iArg ];
@@ -423,7 +419,7 @@ void ArgsRawParse ( void )
 	{
 		pSrc  = & (pArg->sArg[ 0 ]);
 
-		nAddressArg = (WORD)(_tcstoul( pSrc, &pEnd, BASE) & _6502_MEM_END);
+		nAddressArg = (WORD)(strtoul( pSrc, &pEnd, BASE) & _6502_MEM_END);
 		nAddressValue = nAddressArg;
 
 		bool bFound = false;
@@ -461,8 +457,8 @@ void ArgsRawParse ( void )
 int ArgsCook ( const int nArgs )
 {
 	const int BASE = 16; // hex
-	TCHAR *pSrc  = NULL;
-	TCHAR *pEnd2 = NULL;
+	char *pSrc  = NULL;
+	char *pEnd2 = NULL;
 
 	int    nArg = nArgs;
 	int    iArg = 1;
@@ -503,7 +499,9 @@ int ArgsCook ( const int nArgs )
 				pArg->bType |= TYPE_NO_REG;
 			}
 			else
+			{
 				return ARG_SYNTAX_ERROR;
+			}
 		}
 
 		if (pArg->bType & TYPE_OPERATOR) // prev op type == address?
@@ -543,13 +541,14 @@ int ArgsCook ( const int nArgs )
 					pArg->bSymbol = true;
 				}
 
-				// Comma and Colon are range operators, but they are not parsed here,
-				// since args no longer have a 1st and 2nd value
-/*
-					pPrev->eToken = TOKEN_COLON;
-					pPrev->bType |= TYPE_ADDRESS;
-					pPrev->bType |= TYPE_RANGE;
-*/
+				// TOKEN_COMMA and TOKEN_COLON are range operators, but they are not parsed here - see Range_Get()
+
+				if (pArg->eToken == TOKEN_FSLASH) // FORWARD SLASH (address delimiter)
+				{
+					// not parsed here - see Range_GetPrefix()
+					pPrev->bType &= ~TYPE_ADDRESS;	// Not necessary
+					nParamLen = 0;
+				}
 
 				if (pArg->eToken == TOKEN_AMPERSAND) // AND   & delta
 				{
@@ -621,20 +620,15 @@ int ArgsCook ( const int nArgs )
 				{
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
-						  ArgsGetRegisterValue( pNext, & nAddressRHS );
+						ArgsGetRegisterValue( pNext, & nAddressRHS );
 					}
 					pPrev->nValue *= nAddressRHS;
 					pPrev->bType |= TYPE_VALUE; // signal already up to date
 					nParamLen = 2;
 				}
 
-				if (pArg->eToken == TOKEN_FSLASH) // FORWARD SLASH / delta
+				if (pArg->eToken == TOKEN_DIVIDE_FLOOR) // Double FORWARD SLASH   divide-floor delta
 				{
-					if (pNext->eToken == TOKEN_FSLASH) // Comment
-					{					
-						nArg = iArg - 1;
-						return nArg;
-					}
 					if (! ArgsGetImmediateValue( pNext, & nAddressRHS ))
 					{
 						ArgsGetRegisterValue( pNext, & nAddressRHS );
@@ -662,8 +656,8 @@ int ArgsCook ( const int nArgs )
 					pArg->nValue   = 0; // nAddressRHS;
 					pArg->bSymbol = false;
 
-					int nPointers = g_vMemorySearchResults.size();
-					if ((nPointers) &&
+					size_t nPointers = g_vMemorySearchResults.size();
+					if (nPointers &&
 						(nAddressRHS < nPointers))
 					{
 						pArg->nValue   = g_vMemorySearchResults.at( nAddressRHS );
@@ -726,15 +720,17 @@ int ArgsCook ( const int nArgs )
 							// pArg->bType |= TYPE_INDIRECT;
 							// pArg->nValue  =  nAddressVal;
 							//nAddressVal = pNext->nValue;
-							pArg->nValue  =  * (WORD*) (mem + nAddressVal);
-							pArg->bType   = TYPE_VALUE | TYPE_ADDRESS | TYPE_NO_REG;
+							pArg->nValue = ReadWordFromMemory(nAddressVal);
+							pArg->bType = TYPE_VALUE | TYPE_ADDRESS | TYPE_NO_REG;
 
 							iArg++; // eat ')'
 							nArg -= 2;
 							nParamLen = 0;
 						}
 						else
+						{
 							return ARG_SYNTAX_ERROR; // ERROR: unbalanced/unmatched ( )
+						}
 					}
 				}							
 
@@ -746,8 +742,12 @@ int ArgsCook ( const int nArgs )
 						nParamLen = 1;
 					}
 					else
+					{
 						return ARG_SYNTAX_ERROR;
+					}
 				}
+
+				//
 
 				if (nParamLen)
 				{
@@ -757,11 +757,13 @@ int ArgsCook ( const int nArgs )
 				}
 			}
 			else
+			{
 				return ARG_SYNTAX_ERROR;
+			}
 		}
 		else // not an operator, try (1) address, (2) symbol lookup
 		{
-			nAddressArg = (WORD)(_tcstoul( pSrc, &pEnd2, BASE) & _6502_MEM_END);
+			nAddressArg = (WORD)(strtoul( pSrc, &pEnd2, BASE) & _6502_MEM_END);
 
 			if (! (pArg->bType & TYPE_NO_REG))
 			{
@@ -804,11 +806,10 @@ const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, con
 	if (! pSrc)
 		return NULL;
 
-	const TCHAR        *pName  = NULL;
+	const char        *pName  = NULL;
 	int   iToken;
 
-	// Look-ahead for <=
-	// Look-ahead for >=
+	// Look ahead for: //, <=, >=, !=
 	for (iToken = _TOKEN_FLAG_MULTI; iToken < NUM_TOKENS; iToken++ )
 	{
 		pName = & (g_aTokens[ iToken ].sToken[0]);
@@ -840,12 +841,12 @@ const char * ParserFindToken( const char *pSrc, const TokenTable_t *aTokens, con
 
 
 //===========================================================================
-const TCHAR * FindTokenOrAlphaNumeric ( const TCHAR *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ )
+const char * FindTokenOrAlphaNumeric ( const char *pSrc, const TokenTable_t *aTokens, const int nTokens, ArgToken_e * pToken_ )
 {
 	if ( pToken_ )
 		*pToken_ = NO_TOKEN;
 
-	const TCHAR *pEnd = pSrc;
+	const char *pEnd = pSrc;
 
 	if (pSrc && (*pSrc))
 	{
@@ -866,7 +867,7 @@ const TCHAR * FindTokenOrAlphaNumeric ( const TCHAR *pSrc, const TokenTable_t *a
 
 
 //===========================================================================
-void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop )
+void TextConvertTabsToSpaces( char *pDeTabified_, LPCTSTR pText, const int nDstSize, int nTabStop )
 {
 	int TAB_SPACING = 8;
 	int TAB_SPACING_1 = 16;
@@ -937,9 +938,9 @@ void TextConvertTabsToSpaces( TCHAR *pDeTabified_, LPCTSTR pText, const int nDst
 
 // @return Length of new string
 //===========================================================================
-int RemoveWhiteSpaceReverse ( TCHAR *pSrc )
+int RemoveWhiteSpaceReverse ( char *pSrc )
 {
-	int   nLen = _tcslen( pSrc );
+	int   nLen = (int)strlen( pSrc );
 	char *pDst = pSrc + nLen;
 	while (nLen--)
 	{

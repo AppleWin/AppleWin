@@ -114,7 +114,7 @@ BYTE Pravets::ConvertToKeycode(WPARAM key, BYTE keycode)
 	{
 		P8Shift = true;
 		if (GetApple2Type() == A2TYPE_PRAVETS8A)
-			keycode = key + 32;
+			keycode = (BYTE)(key + 32);
 	}
 
 	//Remap some keys for Pravets82/M

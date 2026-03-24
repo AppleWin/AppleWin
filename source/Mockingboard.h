@@ -31,8 +31,8 @@ public:
 	void ReinitializeClock(void);
 	void MuteControl(bool mute);
 	void UpdateCycles(ULONG executedCycles);
-	bool IsActive(void);
-	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
+	bool IsActiveToPreventFullSpeed(void);
+	void SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax);
 	void SetCumulativeCycles(void);
 	UINT MB_Update(void);
 	short** GetVoiceBuffers(void) { return m_ppAYVoiceBuffer; }
@@ -48,6 +48,12 @@ public:
 	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 	BYTE GetPCR(BYTE nDevice);
 	bool IsAnyTimer1Active(void);
+	void UseBad6522A(void) { m_MBSubUnit[0].sy6522.InitBadState(true); }
+	void UseBad6522B(void) { m_MBSubUnit[1].sy6522.InitBadState(true); }
+	SSI263Type GetSocketSSI263(BYTE socket) { return m_MBSubUnit[socket].ssi263.GetType(); }
+	void SetSocketSSI263(BYTE socket, SSI263Type type);
+	SSI263Type GetSocketSC01() { return m_MBSubUnit[0].ssi263.GetSC01(); }
+	void SetSocketSC01(SSI263Type type);
 
 	struct DEBUGGER_MB_SUBUNIT
 	{
@@ -58,6 +64,7 @@ public:
 		BYTE nAYCurrentRegister[NUM_AY8913_PER_SUBUNIT];
 		char szState[NUM_AY8913_PER_SUBUNIT][3];	// "--"(INACTIVE), "RD", "WR", "LA"
 		bool isAYLatchedAddressValid[NUM_AY8913_PER_SUBUNIT];
+		bool is6522Bad;
 	};
 	struct DEBUGGER_MB_CARD
 	{
@@ -72,7 +79,7 @@ public:
 	static std::string GetSnapshotCardNameSDMusic(void);
 
 	static const unsigned short NUM_MB_CHANNELS = 2;
-	static const DWORD SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
+	static const uint32_t SAMPLE_RATE = 44100;	// Use a base freq so that DirectX (or sound h/w) doesn't have to up/down-sample
 
 private:
 	enum MockingboardUnitState_e { AY_NOP0, AY_NOP1, AY_INACTIVE, AY_READ, AY_NOP4, AY_NOP5, AY_WRITE, AY_LATCH };
@@ -117,6 +124,7 @@ private:
 	void AY8913_Reset(BYTE subunit);
 	void AY8913_Write(BYTE subunit, BYTE ay, BYTE value);
 	void UpdateIFRandIRQ(MB_SUBUNIT* pMB, BYTE clr_mask, BYTE set_mask);
+	void SetPhasorMode(PHASOR_MODE newMode);
 
 	void Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	bool Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
@@ -171,7 +179,7 @@ private:
 
 	//
 
-	bool m_phasorEnable;
+	bool m_isPhasorCard;
 	PHASOR_MODE m_phasorMode;
 	UINT m_phasorClockScaleFactor;
 

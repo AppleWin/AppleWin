@@ -391,11 +391,7 @@ float YamlLoadHelper::LoadFloat(const std::string& key)
 		m_bDoGetMapRemainder = false;
 		throw std::runtime_error(m_currentMapName + ": Missing: " + key);
 	}
-#if (_MSC_VER >= 1900)
-	return strtof(value.c_str(), NULL);			// MSVC++ 14.0  _MSC_VER == 1900 (Visual Studio 2015 version 14.0)
-#else
-	return (float) strtod(value.c_str(), NULL);	// NB. strtof() requires VS2015
-#endif
+	return strtof(value.c_str(), NULL);
 }
 
 double YamlLoadHelper::LoadDouble(const std::string& key)
@@ -560,7 +556,7 @@ void YamlSaveHelper::SaveMemory(const LPBYTE pMemBase, const UINT uMemSize, cons
 	size_t lineSize = kIndent+6+2*kStride+2;	// "AAAA: 00010203...3F\n\00" = 6+ 2*64 +2
 	char* const pLine = new char [lineSize];
 
-	for (DWORD addr = offset; addr < (uMemSize + offset); addr += kStride)
+	for (uint32_t addr = offset; addr < (uMemSize + offset); addr += kStride)
 	{
 		char* pDst = pLine;
 		for (UINT i=0; i<kIndent; i++)

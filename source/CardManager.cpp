@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CardManager.h"
 #include "Registry.h"
 
+#include "BreakpointCard.h"
 #include "Disk.h"
 #include "FourPlay.h"
 #include "Harddisk.h"
@@ -110,7 +111,9 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		m_slot[slot] = new SNESMAXCard(slot);
 		break;
 	case CT_VidHD:
-		m_slot[slot] = new VidHDCard(slot);
+		_ASSERT(m_pVidHDCard == NULL);
+		if (m_pVidHDCard) break;	// Only support one VidHD card
+		m_slot[slot] = m_pVidHDCard = new VidHDCard(slot);
 		break;
 	case CT_Uthernet2:
 		m_slot[slot] = new Uthernet2(slot);
@@ -132,7 +135,9 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 			m_slot[slot] = new Saturn128K(slot, Saturn128K::kMaxSaturnBanks);
 		}
 		break;
-
+	case CT_BreakpointCard:
+		m_slot[slot] = new BreakpointCard(slot);
+		break;
 	default:
 		_ASSERT(0);
 		break;
@@ -173,6 +178,9 @@ void CardManager::RemoveInternal(UINT slot)
 		case CT_Saturn128K:
 			if (slot == SLOT0)
 				GetLanguageCardMgr().SetLanguageCard(CT_Empty);
+			break;
+		case CT_VidHD:
+			m_pVidHDCard = NULL;
 			break;
 		case CT_Z80:
 			m_pZ80Card = NULL;
@@ -219,10 +227,22 @@ void CardManager::InsertAuxInternal(SS_CARDTYPE type)
 		RemoveAux();	// creates a new EmptyCard
 }
 
-void CardManager::InsertAux(SS_CARDTYPE type)
+void CardManager::InsertAux(SS_CARDTYPE type, bool updateRegistry/*=true*/)
 {
+	// Only update aux slot if a //e or above (GH#1428)
+	// ...otherwise we'll lose the card in the aux slot when switching //e -> II+ -> //e
+	if (!IsAppleIIeOrAbove(GetApple2Type()))
+		return;
+
 	InsertAuxInternal(type);
-	RegSetConfigSlotNewCardType(SLOT_AUX, type);
+	if (updateRegistry)
+	{
+		if (type != CT_RamWorksIII)
+			SetRamWorksMemorySize(1, false);	// 1x 64K bank for Empty/80Col/Extended80Col cards
+
+		RegSetConfigSlotNewCardType(SLOT_AUX, type);
+		SetRegistryAuxNumberOfBanks();
+	}
 }
 
 void CardManager::RemoveAuxInternal()
@@ -298,4 +318,204 @@ void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 			m_slot[i]->SaveSnapshot(yamlSaveHelper);
 		}
 	}
+}
+
+SS_CARDTYPE CardManager::QueryDefaultCardForSlot(UINT slot, eApple2Type model)
+{
+	const SS_CARDTYPE defaultCards[] = {
+	CT_Empty,	// or LC or LC//e
+	CT_GenericPrinter,
+	CT_SSC,
+	CT_Empty,
+	CT_MockingboardC,
+	CT_Empty,
+	CT_Disk2,
+	CT_Empty,
+	};
+
+	if (slot == SLOT0)
+	{
+		if (IsApple2Original(model))
+			return CT_Empty;
+		if (IsApple2PlusOrClone(model))
+			return CT_LanguageCard;
+		return CT_LanguageCardIIe;
+	}
+	else if (slot <= SLOT7)
+	{
+		return defaultCards[slot];
+	}
+
+	// SLOT_AUX
+	_ASSERT(slot == SLOT_AUX);
+	return CT_Extended80Col;
+}
+
+bool CardManager::IsSingleInstanceCard(SS_CARDTYPE card)
+{
+	const SS_CARDTYPE uniqueCards[] = {
+	CT_MouseInterface,
+	CT_SSC,
+	CT_GenericPrinter,
+	CT_Z80,
+	CT_FourPlay,
+	CT_SNESMAX,
+	CT_Uthernet,
+	CT_Uthernet2,
+	CT_VidHD
+	};
+
+	for (int i = 0; i < std::size(uniqueCards); i++)
+	{
+		if (card == uniqueCards[i])
+			return true;
+	}
+
+	return false;
+}
+
+void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::string& choices, std::vector<SS_CARDTYPE>& choicesList)
+{
+	// Availability & order of cards in drop-down menu:
+	const SS_CARDTYPE cardsOnlyInSlot0[] =
+	{
+	CT_Empty,
+	CT_LanguageCard,
+	CT_Saturn128K,
+	};
+
+	// Availability & order of cards in drop-down menu:
+	const SS_CARDTYPE cardsInSlots1to7[] =
+	{
+	CT_Empty,
+	CT_Disk2,
+	CT_GenericHDD,
+	CT_GenericPrinter,
+	CT_MouseInterface,
+	CT_Saturn128K,
+	CT_SSC,
+	// Controllers
+	CT_FourPlay,
+	CT_SNESMAX,
+	// Sound
+	CT_MockingboardC,
+	CT_Phasor,
+	//	CT_MegaAudio,	// Exclude mb-audit test h/w for now
+	//	CT_SDMusic,		// Exclude mb-audit test h/w for now
+	CT_SAM,
+	// (continue with alphabetic)
+	CT_Uthernet,
+	CT_Uthernet2,
+	CT_VidHD,
+	CT_Z80,
+	//	CT_GenericClock,
+	//	CT_Echo,
+	//	CT_80Col,
+	//	CT_Extended80Col,
+	//	CT_RamWorksIII,
+	//	CT_LanguageCardIIe,
+	//	CT_BreakpointCard,
+	};
+
+	choicesList.clear();
+
+	if (slot == SLOT0)
+	{
+		for (UINT i = 0; i < std::size(cardsOnlyInSlot0); i++)
+		{
+			std::string name = Card::GetCardName(cardsOnlyInSlot0[i]);
+			choices += name;
+			choices += '\0';
+
+			choicesList.push_back(cardsOnlyInSlot0[i]);
+		}
+	}
+	else
+	{
+		const UINT kInvalidSlot = NUM_SLOTS;
+		BYTE haveCard[CT_NUM_CARDS];
+		memset(haveCard, kInvalidSlot, sizeof(haveCard));
+
+		for (UINT i = SLOT1; i < NUM_SLOTS; i++)
+		{
+			if (IsSingleInstanceCard(currConfig[i]))
+				haveCard[currConfig[i]] = i;
+		}
+
+		for (UINT i = 0; i < std::size(cardsInSlots1to7); i++)
+		{
+			const SS_CARDTYPE thisCard = cardsInSlots1to7[i];
+
+			// Prevent both Uthernet & Uthernet2 cards being plugged in at the same time
+			if (thisCard == CT_Uthernet && haveCard[CT_Uthernet2] != kInvalidSlot && haveCard[CT_Uthernet2] != slot)
+				continue;	// Already have a Uthernet2 card selected in another slot, so prevent Uthernet
+			if (thisCard == CT_Uthernet2 && haveCard[CT_Uthernet] != kInvalidSlot && haveCard[CT_Uthernet] != slot)
+				continue;	// Already have a Uthernet card selected in another slot, so prevent Uthernet2
+
+			if (IsSingleInstanceCard(thisCard) && haveCard[thisCard] != kInvalidSlot && haveCard[thisCard] != slot)
+				continue;
+
+			std::string name = Card::GetCardName(thisCard);
+			choices += name;
+			choices += '\0';
+
+			choicesList.push_back(thisCard);
+		}
+
+		// Scan for any advanced/debug cards that aren't in cardsInSlots1to7[]
+		// . eg. advanced cards added from the cmd line
+		std::set<SS_CARDTYPE> advancedCards;
+		for (UINT i = SLOT1; i < NUM_SLOTS; i++)
+		{
+			bool found = false;
+			for (UINT j = 0; j < std::size(cardsInSlots1to7); j++)
+			{
+				if (currConfig[i] == cardsInSlots1to7[j])
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				advancedCards.insert(currConfig[i]);
+		}
+
+		for (auto card : advancedCards)
+		{
+			std::string name = Card::GetCardName(card);
+			choices += name;
+			choices += '\0';
+
+			choicesList.push_back(card);
+		}
+	}
+
+	choices += '\0';
+}
+
+void CardManager::GetCardChoicesForAuxSlot(std::string& choices, std::vector<SS_CARDTYPE>& choicesList)
+{
+	// Availability & order of cards in drop-down menu:
+	const SS_CARDTYPE cards[] =
+	{
+	CT_Empty,
+	CT_80Col,
+	CT_Extended80Col,
+	CT_RamWorksIII
+	};
+
+	choicesList.clear();
+
+	for (UINT i = 0; i < std::size(cards); i++)
+	{
+		const SS_CARDTYPE thisCard = cards[i];
+
+		std::string name = Card::GetCardName(thisCard);
+		choices += name;
+		choices += '\0';
+
+		choicesList.push_back(thisCard);
+	}
+
+	choices += '\0';
 }

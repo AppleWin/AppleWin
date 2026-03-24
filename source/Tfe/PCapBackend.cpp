@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Common.h"
 #include "../Registry.h"
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #include <iphlpapi.h>
 #endif
 
@@ -76,7 +76,7 @@ void PCapBackend::update(const ULONG /* nExecutedCycles */)
 void PCapBackend::getMACAddress(const uint32_t address, MACAddress & mac)
 {
     // this is only expected to be called for IP addresses on the same network
-#ifdef _MSC_VER
+#ifdef _WIN32
     const DWORD dwSourceAddress = INADDR_ANY;
     ULONG len = sizeof(MACAddress::address);
     SendARP(address, dwSourceAddress, mac.address, &len);
@@ -111,14 +111,14 @@ const char * PCapBackend::tfe_lib_version(void)
 void PCapBackend::SetRegistryInterface(UINT slot, const std::string& name)
 {
     std::string regSection = RegGetConfigSlotSection(slot);
-    RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, 1, name);
+    RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, name);
 }
 
 std::string PCapBackend::GetRegistryInterface(UINT slot)
 {
     char interfaceName[MAX_PATH];
     std::string regSection = RegGetConfigSlotSection(slot);
-    RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, interfaceName, sizeof(interfaceName), TEXT(""));
+    RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, interfaceName, sizeof(interfaceName), "");
     return interfaceName;
 }
 

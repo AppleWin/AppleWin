@@ -1,4 +1,75 @@
 /*
+2.9.4.4 Fixed: Ctrl Right-Arrow now updates targets (GH #1460)
+2.9.4.3 Fixed: Stack info shows correct return address if stack wraps around (GH #1457)
+2.9.4.2 Added: QoL right arrow on RTS to use the stack return address (GH #1456)
+    Example:
+       100:61 FA
+       1FD:FD FE FF 00
+       R PC FBFC
+       R S FD   ; FFFF sans overflow
+       R S FE   ; 6200 with overflow
+       R S FF   ; FA62 with overflow
+2.9.4.1 Fixed: Right arrow follow bytes marked up as data (GH #1455)
+    Example:
+        222A:2C 22 34
+        DA 222A
+        R PC 222A
+        Right-Arrow
+    And
+        2220:41 42 42 00
+        ASC 2220:2220+3
+        R PC 2220
+        Right-Arrow
+2.9.4.0 Fixed: Right arrow follow branch address when target branch address was negative ($81 .. $FF) (GH #1451)
+    Example:
+        2FE:90 81
+        2FE:90 FF
+
+2.9.3.4 Released with AppleWin 1.31.0.0
+
+2.9.3.4 Added: LOG to display debugger's current output level.
+2.9.3.3 Fixed: VERSION is always displayed regardless of console output level.
+2.9.3.2 Fixed: Duplicate symbols' address is displayed as an error.
+2.9.3.1 Added: STARTUP to re-load debugger symbol files.
+2.9.3.0 Added: LOG to control debugger's console output level verbosity.
+    No parameters will display the current level.
+    Examples of valid parameters:
+      LOG NONE
+      LOG ERROR
+      LOG WARN
+      LOG INFO
+      LOG DEFAULT
+      LOG ALL
+      LOG OFF
+      LOG ON
+
+2.9.2.8 Released with AppleWin 1.30.21.0
+
+2.9.2.8 Fixed: Debugger mem copy when source end address is less than the source start address copies too many bytes.
+    Example:
+        2000<6000.6ffm
+2.9.2.7 Added: QoL for Debugger's view output screen.
+   When using the debugger to view the ouput screen such as `HGR`, `HGR2`, etc. allow the
+   keys 0-5 to display the specificed video # page, or 9 to see the current video mode.
+     0 Pseudo   Page 0 ($0000 for graphics, else text page 1)
+     1 Hardware Page 1 ($2000 for graphics, else text $0400)
+     2 Hardware Page 2 ($4000 for graphics, else text $0800)
+     3 Pseudo   Page 3 ($6000 for graphics, else text page 1)
+     4 Pseudo   Page 4 ($8000 for graphics, else text page 1)
+     5 Pseudo   Page 5 ($A000 for graphics, else text page 1)
+     9 Current mode and page
+2.9.2.6 Added: QoL: Turning a symbol table on/off now shows the current status.
+2.9.2.5 Added: Symbol table for DOS 3.3 using file A2_DOS33.SYM2
+    Add symbols via: SYMDOS33 <symbol> = <addr>
+    To disable: SYMDOS33 OFF
+    To renable: SYMDOS33 ON
+2.9.2.4 Fixed: DA RESET = 3F2 was displaying help instead of being parsed.
+2.9.2.3 Fixed: DB HGR = 2000:3FFF and DB FOO = 300 wasn't parsing correctly from 2.9.1.3. Fix for commit 48e0fe3a.
+2.9.2.2 Fixed: DB HGR = 2000:3FFF was displaying help instead of being parsed.
+2.9.2.1 Added: Error message when trying to add a symbol > 51 characters.
+
+2.9.2.0 Released with AppleWin 1.30.20.0
+
 2.9.2.0 Fixed: Debugger: Step-over WAIT can fail #1194
 2.9.1.26 Fixed: When adding symbols list the address first then the name for readability
 2.9.1.25 Fixed: R P ## wasn't setting P flag status register.

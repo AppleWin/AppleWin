@@ -139,7 +139,7 @@ CMouseInterface::CMouseInterface(UINT slot) :
 	m_pSlotRom(NULL),
 	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for MouseInterfaces
 {
-	if (m_slot != 4)	// fixme
+	if (m_slot == SLOT0)
 		ThrowErrorInvalidSlot();
 
 	m_6821.SetListenerB( this, M6821_Listener_B );
@@ -235,10 +235,12 @@ void CMouseInterface::SetSlotRom()
 	if (pCxRomPeripheral == NULL)
 		return;
 
-	UINT uOffset = (m_by6821B << 7) & 0x0700;
-	memcpy(pCxRomPeripheral+m_slot*256, m_pSlotRom+uOffset, 256);
-	if (mem)
-		memcpy(mem+0xC000+m_slot*256, m_pSlotRom+uOffset, 256);
+	// m_by6821B (b#0000ppp0) defines the 3-bit ROM page that is switched in at $Cs00
+	const UINT offset = (m_by6821B << 7) & 0x0700;
+	memcpy(pCxRomPeripheral + m_slot * APPLE_SLOT_SIZE, m_pSlotRom + offset, APPLE_SLOT_SIZE);
+
+	if (GetIsMemCacheValid() && mem)
+		memcpy(mem + APPLE_IO_BEGIN + m_slot * APPLE_SLOT_SIZE, m_pSlotRom + offset, APPLE_SLOT_SIZE);
 }
 
 //===========================================================================
@@ -318,7 +320,7 @@ void CMouseInterface::On6821_B(BYTE byData)
 
 		//
 
-		SetSlotRom();	// Update Cn00 ROM page
+		SetSlotRom();	// Update Cs00 ROM page
 	}
 }
 
@@ -599,8 +601,6 @@ void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 	OnMouseEvent();
 }
 
-#define SS_YAML_VALUE_CARD_MOUSE "Mouse Card"
-
 #define SS_YAML_KEY_MC6821 "MC6821"
 #define SS_YAML_KEY_PRA "PRA"
 #define SS_YAML_KEY_DDRA "DDRA"
@@ -635,7 +635,7 @@ void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 
 const std::string& CMouseInterface::GetSnapshotCardName(void)
 {
-	static const std::string name(SS_YAML_VALUE_CARD_MOUSE);
+	static const std::string name("Mouse Card");
 	return name;
 }
 

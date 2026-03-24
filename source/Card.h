@@ -1,22 +1,24 @@
 #pragma once
 
+// *** DON'T CHANGE THE ORDER OF THESE ENUMS ***
+// (As they are saved to the Registry)
 enum SS_CARDTYPE
 {
 	CT_Empty = 0,
-	CT_Disk2,			// Apple Disk][
+	CT_Disk2,			// Apple Disk II
 	CT_SSC,				// Apple Super Serial Card
 	CT_MockingboardC,	// Soundcard
 	CT_GenericPrinter,
-	CT_GenericHDD,		// Hard disk
+	CT_GenericHDD,		// Hard disk controller
 	CT_GenericClock,
 	CT_MouseInterface,
-	CT_Z80,
+	CT_Z80,				// Z80 SoftCard
 	CT_Phasor,			// Soundcard
 	CT_Echo,			// Soundcard
 	CT_SAM,				// Soundcard: Software Automated Mouth
 	CT_80Col,			// 80 column card (1K)
 	CT_Extended80Col,	// Extended 80-col card (64K)
-	CT_RamWorksIII,		// RamWorksIII (up to 8MB)
+	CT_RamWorksIII,		// RamWorks III (up to 16MB)
 	CT_Uthernet,
 	CT_LanguageCard,	// Apple][ or ][+ in slot-0
 	CT_LanguageCardIIe,	// Apple//e LC instance (not a card)
@@ -27,6 +29,8 @@ enum SS_CARDTYPE
 	CT_Uthernet2,
 	CT_MegaAudio,		// Soundcard
 	CT_SDMusic,			// Soundcard
+	CT_BreakpointCard,
+	CT_NUM_CARDS
 };
 
 enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS, SLOT_AUX, GAME_IO_CONNECTOR };
@@ -41,7 +45,7 @@ public:
 	virtual ~Card(void) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral) = 0;
-	virtual void Destroy() = 0;
+	virtual void Destroy() = 0;		// Called by CardManager::Destroy() on WM_DESTROY
 	virtual void Reset(const bool powerCycle) = 0;
 	virtual void Update(const ULONG nExecutedCycles) = 0;
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) = 0;
@@ -49,6 +53,7 @@ public:
 
 	SS_CARDTYPE QueryType(void) { return m_type; }
 
+	static const std::string& GetCardNameEmpty();
 	std::string GetCardName(void);
 	static std::string GetCardName(const SS_CARDTYPE cardType);
 	static SS_CARDTYPE GetCardType(const std::string & card);

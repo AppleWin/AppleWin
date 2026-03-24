@@ -27,8 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Tfe/IPRaw.h"
 #include "Tfe/DNS.h"
 #include "W5100.h"
-#include "../Registry.h"
-
+#include "Registry.h"
 
 // Virtual DNS
 // Virtual DNS is an extension to the W5100
@@ -44,9 +43,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // in the checks below we allow both in all cases
 // (errno == SOCK_EINPROGRESS || errno == SOCK_EWOULDBLOCK)
 // this works, bu we could instead define 2 functions and check only the correct one
-#ifdef _MSC_VER
+#ifdef _WIN32
 
+#ifndef _SSIZE_T_DEFINED
 typedef int ssize_t;
+#endif
 typedef int socklen_t;
 
 #define sock_error() WSAGetLastError()
@@ -198,7 +199,7 @@ void Socket::clearFD()
 {
     if (myFD != INVALID_SOCKET)
     {
-#ifdef _MSC_VER
+#ifdef _WIN32
         closesocket(myFD);
 #else
         close(myFD);
@@ -269,13 +270,13 @@ void Socket::process()
 {
     if (myFD != INVALID_SOCKET && mySocketStatus == W5100_SN_SR_SOCK_SYNSENT)
     {
-#ifdef _MSC_VER
+#ifdef _WIN32
         FD_SET writefds, exceptfds;
         FD_ZERO(&writefds);
         FD_ZERO(&exceptfds);
         FD_SET(myFD, &writefds);
         FD_SET(myFD, &exceptfds);
-        const timeval timeout = {0, 0};
+        timeval timeout = {0, 0}; // non const for old versions of msys2 / mxe
         if (select(0, NULL, &writefds, &exceptfds, &timeout) > 0)
 #else
         pollfd pfd = {.fd = myFD, .events = POLLOUT};
@@ -369,7 +370,10 @@ const std::string& Uthernet2::GetSnapshotCardName()
 
 Uthernet2::Uthernet2(UINT slot) : Card(CT_Uthernet2, slot)
 {
-#ifdef _MSC_VER
+    if (m_slot == SLOT0)
+        ThrowErrorInvalidSlot();
+
+#ifdef _WIN32
     WSADATA wsaData;
     myWSAStartup = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (myWSAStartup)
@@ -385,7 +389,7 @@ Uthernet2::Uthernet2(UINT slot) : Card(CT_Uthernet2, slot)
 
 Uthernet2::~Uthernet2()
 {
-#ifdef _MSC_VER
+#ifdef _WIN32
     if (myWSAStartup == 0)
     {
         WSACleanup();
@@ -632,7 +636,7 @@ void Uthernet2::receiveOnePacketRaw()
                     const uint8_t socketProtocol = myMemory[socket.registerAddress + W5100_SN_PROTO];
                     if (payload && packetProtocol == socketProtocol)
                     {
-                        ipRawSocket = i;
+                        ipRawSocket = (int)i;
                         break; // a valid IPRAW socket has been found
                     }
                 }
@@ -708,7 +712,7 @@ void Uthernet2::receiveOnePacketFromSocket(const size_t i)
             std::vector<uint8_t> buffer(freeRoom - 1); // do not fill the buffer completely
             sockaddr_in source = {0};
             socklen_t len = sizeof(sockaddr_in);
-            const ssize_t data = recvfrom(socket.getFD(), reinterpret_cast<char *>(buffer.data()), buffer.size(), 0, (struct sockaddr *)&source, &len);
+            const ssize_t data = recvfrom(socket.getFD(), reinterpret_cast<char *>(buffer.data()), (int)buffer.size(), 0, (struct sockaddr *)&source, &len);
 #ifdef U2_LOG_TRAFFIC
             const char *proto = socket.getStatus() == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
 #endif
@@ -785,7 +789,7 @@ void Uthernet2::sendDataIPRaw(const size_t i, std::vector<uint8_t> &payload)
     LogFileOutput("U2: Send IPRAW[%" SIZE_T_FMT "]: %" SIZE_T_FMT " (%" SIZE_T_FMT ") bytes\n", i, payload.size(), packet.size());
 #endif
 
-    myNetworkBackend->transmit(packet.size(), packet.data());
+    myNetworkBackend->transmit((int)packet.size(), packet.data());
 }
 
 void Uthernet2::sendDataMacRaw(const size_t i, std::vector<uint8_t> &packet) const
@@ -802,7 +806,7 @@ void Uthernet2::sendDataMacRaw(const size_t i, std::vector<uint8_t> &packet) con
         LogFileOutput("U2: Send MACRAW[%" SIZE_T_FMT "]: XX:XX:XX:XX:XX:XX -> XX:XX:XX:XX:XX:XX: %" SIZE_T_FMT " bytes\n", i, packet.size());
     }
 #endif
-    myNetworkBackend->transmit(packet.size(), packet.data());
+    myNetworkBackend->transmit((int)packet.size(), packet.data());
 }
 
 void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
@@ -818,7 +822,7 @@ void Uthernet2::sendDataToSocket(const size_t i, std::vector<uint8_t> &data)
         destination.sin_addr.s_addr = dest;
         destination.sin_port = *reinterpret_cast<const uint16_t *>(myMemory.data() + socket.registerAddress + W5100_SN_DPORT0);
 
-        const ssize_t res = sendto(socket.getFD(), reinterpret_cast<const char *>(data.data()), data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
+        const ssize_t res = sendto(socket.getFD(), reinterpret_cast<const char *>(data.data()), (int)data.size(), 0, (const struct sockaddr *)&destination, sizeof(destination));
 #ifdef U2_LOG_TRAFFIC
         const char *proto = socket.getStatus() == W5100_SN_SR_SOCK_UDP ? "UDP" : "TCP";
         LogFileOutput("U2: Send %s[%" SIZE_T_FMT "]: %" SIZE_T_FMT " of %" SIZE_T_FMT " bytes\n", proto, i, res, data.size());
@@ -918,7 +922,7 @@ void Uthernet2::openSystemSocket(const size_t i, const int type, const int proto
     }
     else
     {
-#ifdef _MSC_VER
+#ifdef _WIN32
         u_long on = 1;
         const int res = ioctlsocket(fd, FIONBIO, &on);
 #else
@@ -1469,7 +1473,15 @@ BYTE __stdcall u2_C0(WORD programcounter, WORD address, BYTE write, BYTE value, 
 
 void Uthernet2::InitializeIO(LPBYTE pCxRomPeripheral)
 {
-    RegisterIoHandler(m_slot, u2_C0, u2_C0, nullptr, nullptr, this, nullptr);
+    const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
+    myNetworkBackend = GetFrame().CreateNetworkBackend(interfaceName);
+    if (!myNetworkBackend->isValid())
+    {
+        // Interface doesn't exist or user picked an interface that isn't Ethernet!
+        GetFrame().FrameMessageBox("Uthernet II interface isn't valid!\nReconfigure the Interface via 'Ethernet Settings'.", "Uthernet Interface", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+    }
+
+    RegisterIoHandler(m_slot, u2_C0, u2_C0, IO_Null, IO_Null, this, nullptr);
 }
 
 void Uthernet2::getMACAddress(const uint32_t address, const MACAddress * & mac)
@@ -1658,7 +1670,7 @@ bool Uthernet2::GetRegistryVirtualDNS(UINT slot)
     // as it is backward compatible
     // (except for the initial value of PTIMER which is anyway never used)
 
-    DWORD enabled = 1;
+    uint32_t enabled = 1;
     RegLoadValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, &enabled);
     return enabled != 0;
 }

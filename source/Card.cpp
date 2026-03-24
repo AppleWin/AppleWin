@@ -23,11 +23,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Uthernet1.h"
 #include "Uthernet2.h"
+#include "BreakpointCard.h"
 #include "Mockingboard.h"
 #include "ParallelPrinter.h"
-#include "z80emu.h"
 #include "FourPlay.h"
 #include "LanguageCard.h"
+#include "Memory.h"
 #include "MouseInterface.h"
 #include "SAM.h"
 #include "SerialComms.h"
@@ -112,6 +113,12 @@ bool DummyCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	return false;
 }
 
+const std::string& Card::GetCardNameEmpty()
+{
+	static const std::string name("Empty");
+	return name;
+}
+
 std::string Card::GetCardName(void)
 {
 	return GetCardName(m_type);
@@ -122,7 +129,7 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 	switch (cardType)
 	{
 	case CT_Empty:
-		return "Empty";
+		return Card::GetCardNameEmpty();
 	case CT_LanguageCard:
 		return LanguageCardSlot0::GetSnapshotCardName();
 	case CT_Saturn128K:
@@ -149,6 +156,12 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 		return "Echo";
 	case CT_SAM:
 		return SAMCard::GetSnapshotCardName();
+	case CT_80Col:
+		return MemGetSnapshotCardName80Col();
+	case CT_Extended80Col:
+		return MemGetSnapshotCardNameExtended80Col();
+	case CT_RamWorksIII:
+		return MemGetSnapshotCardNameRamWorksIII();
 	case CT_Uthernet:
 		return Uthernet1::GetSnapshotCardName();
 	case CT_FourPlay:
@@ -163,6 +176,8 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 		return MockingboardCard::GetSnapshotCardNameMegaAudio();
 	case CT_SDMusic:
 		return MockingboardCard::GetSnapshotCardNameSDMusic();
+	case CT_BreakpointCard:
+		return BreakpointCard::GetSnapshotCardName();
 	default:
 		return "Unknown";
 	}
@@ -171,79 +186,43 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 SS_CARDTYPE Card::GetCardType(const std::string & card)
 {
 	if (card == ParallelPrinterCard::GetSnapshotCardName())
-	{
 		return CT_GenericPrinter;
-	}
 	else if (card == CSuperSerialCard::GetSnapshotCardName())
-	{
 		return CT_SSC;
-	}
 	else if (card == CMouseInterface::GetSnapshotCardName())
-	{
 		return CT_MouseInterface;
-	}
-	else if (card == Z80Card::GetSnapshotCardName())
-	{
+	else if (card == Z80Card::GetSnapshotCardName() || card == Z80Card::GetSnapshotCardNameOld())
 		return CT_Z80;
-	}
 	else if (card == MockingboardCard::GetSnapshotCardName())
-	{
 		return CT_MockingboardC;
-	}
 	else if (card == MockingboardCard::GetSnapshotCardNamePhasor())
-	{
 		return CT_Phasor;
-	}
 	else if (card == SAMCard::GetSnapshotCardName())
-	{
 		return CT_SAM;
-	}
-	else if (card == Disk2InterfaceCard::GetSnapshotCardName())
-	{
+	else if (card == Disk2InterfaceCard::GetSnapshotCardName() || card == Disk2InterfaceCard::GetSnapshotCardNameOld())
 		return CT_Disk2;
-	}
-	else if (card == HarddiskInterfaceCard::GetSnapshotCardName())
-	{
+	else if (card == HarddiskInterfaceCard::GetSnapshotCardName() || card == HarddiskInterfaceCard::GetSnapshotCardNameOld())
 		return CT_GenericHDD;
-	}
 	else if (card == Uthernet1::GetSnapshotCardName())
-	{
 		return CT_Uthernet;
-	}
 	else if (card == LanguageCardSlot0::GetSnapshotCardName())
-	{
 		return CT_LanguageCard;
-	}
 	else if (card == Saturn128K::GetSnapshotCardName())
-	{
 		return CT_Saturn128K;
-	}
 	else if (card == FourPlayCard::GetSnapshotCardName())
-	{
 		return CT_FourPlay;
-	}
 	else if (card == SNESMAXCard::GetSnapshotCardName())
-	{
 		return CT_SNESMAX;
-	}
 	else if (card == VidHDCard::GetSnapshotCardName())
-	{
 		return CT_VidHD;
-	}
 	else if (card == Uthernet2::GetSnapshotCardName())
-	{
 		return CT_Uthernet2;
-	}
 	else if (card == MockingboardCard::GetSnapshotCardNameMegaAudio())
-	{
 		return CT_MegaAudio;
-	}
 	else if (card == MockingboardCard::GetSnapshotCardNameSDMusic())
-	{
 		return CT_SDMusic;
-	}
+	else if (card == BreakpointCard::GetSnapshotCardName())
+		return CT_BreakpointCard;
 	else
-	{
 		throw std::runtime_error("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
-	}
 }

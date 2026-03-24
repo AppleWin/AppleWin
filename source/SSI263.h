@@ -7,8 +7,10 @@ class SSI263
 public:
 	SSI263(UINT slot) : m_slot(slot)
 	{
+		m_type = SSI263AP;
 		m_device = -1;	// undefined
 		m_cardMode = PH_Mockingboard;
+		m_hasSC01 = true;	// only for m_device==0
 		m_pPhonemeData00 = NULL;
 
 		ResetState(true);
@@ -20,9 +22,13 @@ public:
 
 	void ResetState(const bool powerCycle)
 	{
-		m_currentActivePhoneme = -1;
-		m_isVotraxPhoneme = false;
-		m_votraxPhoneme = 0;
+		if (powerCycle)
+		{
+			m_currentActivePhoneme = -1;
+			m_isVotraxPhoneme = false;	// SC01 has no RESET pin
+			m_votraxPhoneme = 0;		// SC01 has no RESET pin
+		}
+
 		m_cyclesThisAudioFrame = 0;
 
 		//
@@ -40,7 +46,7 @@ public:
 		//
 
 		m_numSamplesError = 0;
-		m_byteOffset = (DWORD)-1;
+		m_byteOffset = (uint32_t)-1;
 		m_currSampleSum = 0;
 		m_currNumSamples = 0;
 		m_currSampleMod4 = 0;
@@ -53,7 +59,7 @@ public:
 		m_durationPhoneme = MODE_PHONEME_TRANSITIONED_INFLECTION;	// Typical function & phoneme=$00
 		m_inflection = 0;
 		m_rateInflection = 0;
-		m_ctrlArtAmp = powerCycle ? CONTROL_MASK : 0;				// Chip power-on, so CTL=1 (power-down / standby)
+		m_ctrlArtAmp = (powerCycle || m_type == SSI263AP) ? CONTROL_MASK : 0;				// Chip power-on, so CTL=1 (power-down / standby)
 		m_filterFreq = powerCycle ? FILTER_FREQ_SILENCE : 0;		// Empirically observed at chip power-on (GH#1302)
 
 		m_currentMode.mode = 0;
@@ -69,37 +75,43 @@ public:
 
 	void SetDevice(UINT device) { m_device = device; }
 	void SetCardMode(PHASOR_MODE mode);
+	SSI263Type GetType() { return m_type; }
+	void SetType(SSI263Type type) { m_type = type; }
+	SSI263Type GetSC01() { return m_hasSC01 ? SC01 : SSI263Empty; }
+	void SetSC01(SSI263Type type) { m_hasSC01 = (type == SC01); }
 
-	bool DSInit(void);
 	void DSUninit(void);
 
 	void Reset(const bool powerCycle, const bool isPhasorCard);
-	bool IsPhonemeActive(void) { return m_currentActivePhoneme >= 0; }
 
 	BYTE Read(ULONG nExecutedCycles);
 	void Write(BYTE nReg, BYTE nValue);
 
 	void Mute(void);
 	void Unmute(void);
-	void SetVolume(DWORD dwVolume, DWORD dwVolumeMax);
+	void SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax);
 
 	void PeriodicUpdate(UINT executedCycles);
 	void Update(void);
 	void SetSpeechIRQ(void);
 
 	void Votrax_Write(BYTE nValue);
-	bool GetVotraxPhoneme(void) { return m_isVotraxPhoneme; }
 	void SetVotraxPhoneme(bool value) { m_isVotraxPhoneme = value; }
 
-	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version);
-	void SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
-	void SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
+	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, UINT subunit);
+	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit);
 
 private:
+	bool IsPhonemeActive(void)
+	{
+		// If SSI263.CONTROL=1 then "m_currentActivePhoneme >= 0" is still true
+		// Also valid regardless of m_isVotraxPhoneme state
+		return m_currentActivePhoneme >= 0;
+	}
 	void Play(unsigned int nPhoneme);
 	void Stop(void);
 	void UpdateIRQ(void);
+	void RepeatPhoneme(void);
 	void UpdateAccurateLength(void);
 	void SetDeviceModeAndInts(void);
 
@@ -107,10 +119,16 @@ private:
 	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 	BYTE GetPCR(BYTE nDevice);
 
+	bool Init(void);
+	bool DSInit(void);
+
+	void SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
+	void SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
+
 	static const BYTE m_Votrax2SSI263[/*64*/];
 
 	static const unsigned short m_kNumChannels = 1;
-	static const DWORD m_kDSBufferByteSize = MAX_SAMPLES * sizeof(short) * m_kNumChannels;
+	static const uint32_t m_kDSBufferByteSize = MAX_SAMPLES * sizeof(short) * m_kNumChannels;
 	short m_mixBufferSSI263[m_kDSBufferByteSize / sizeof(short)];
 	VOICE SSI263SingleVoice;
 
@@ -139,12 +157,23 @@ private:
 	// Filter frequency range
 	static const BYTE FILTER_FREQ_SILENCE = 0xFF;
 
+	SSI263Type m_type;
 	UINT m_slot;
 	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
 	PHASOR_MODE m_cardMode;
+	bool m_hasSC01;
 	short* m_pPhonemeData00;
 
-	int m_currentActivePhoneme;				// -1 (if none) or SSI263 or SC01 phoneme
+	// ctor/power-cycle: Set to -1
+	// Play(): Set to [$00-$3F] on a write to DURPHON register.
+	// UpdateIRQ(): OR'd with kPhonemeLeadoutFlag when phoneme ends.
+	// RepeatPhoneme(): AND'd with PHONEME_MASK, if SSI263.CONTROL==0 call Play() again.
+	// SSI263.CONTROL 1->0 will call Play().
+	// NB. Can be used to detect overlapping phonemes in Play().
+	// NB. For SSI263 (and SC01) once >=0 then this remains the case (even when SSI263.CONTROL=1).
+	static const UINT kPhonemeLeadoutFlag = 0x100;
+	int m_currentActivePhoneme;				// -1 (if none) or SSI263/SC01 phoneme (& can be OR'd with kPhonemeLeadoutFlag)
+
 	bool m_isVotraxPhoneme;
 	BYTE m_votraxPhoneme;
 	UINT m_cyclesThisAudioFrame;
@@ -164,7 +193,7 @@ private:
 	//
 
 	int m_numSamplesError;
-	DWORD m_byteOffset;
+	uint32_t m_byteOffset;
 	int m_currSampleSum;
 	int m_currNumSamples;
 	UINT m_currSampleMod4;

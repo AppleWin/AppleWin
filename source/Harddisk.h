@@ -105,10 +105,11 @@ public:
 	const std::string& GetFullName(const int iDrive);
 	const std::string& HarddiskGetFullPathName(const int iDrive);
 	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
-	bool Select(const int iDrive);
+	bool UserSelectNewDiskImageOnly(const int drive, LPCSTR pszFilename, std::string& openFilename, DWORD flags);
 	bool Insert(const int iDrive, const std::string& pathname);
 	void Unplug(const int iDrive);
-	void LoadLastDiskImage(const int iDrive);
+	void NotifyInvalidImage(const std::string& szImageFilename);
+	void LoadLastDiskImage(const int drive);
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
 	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }
 	void UseHdcFirmwareV2(void) { m_useHdcFirmwareV2 = true; }
@@ -117,6 +118,9 @@ public:
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
 	bool ImageSwap(void);
 
+	void ForbidSaveDiskImageToRegistry() { m_saveDiskImageToRegistry = false; }
+
+	static const std::string& GetSnapshotCardNameOld(void);
 	static const std::string& GetSnapshotCardName(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
@@ -127,7 +131,6 @@ public:
 private:
 	void CleanupDriveInternal(const int iDrive);
 	void CleanupDrive(const int iDrive);
-	void NotifyInvalidImage(const std::string & szImageFilename);
 	void SaveLastDiskImage(const int drive);
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);
@@ -136,10 +139,10 @@ private:
 	BYTE GetNumConnectedDevices(void);
 	BYTE GetProDOSBlockDeviceUnit(void);
 	HardDiskDrive* GetUnit(void);
-	BYTE CmdExecute(HardDiskDrive* pHDD);
+	BYTE CmdExecute(HardDiskDrive* pHDD, const ULONG nExecutedCycles);
 	BYTE CmdStatus(HardDiskDrive* pHDD);
-	void SetIdString(WORD addr, const char* str);
-	BYTE SmartPortCmdStatus(HardDiskDrive* pHDD);
+	void SetIdString(std::vector<BYTE>& status, const std::string& idStr);
+	BYTE SmartPortCmdStatus(HardDiskDrive* pHDD, const ULONG nExecutedCycles);
 	UINT GetImageSizeInBlocks(ImageInfo* const pImageInfo, const bool is16bit = false);
 	void SaveSnapshotHDDUnit(YamlSaveHelper& yamlSaveHelper, const UINT unit);
 	bool LoadSnapshotHDDUnit(YamlLoadHelper& yamlLoadHelper, const UINT unit, const UINT version);
@@ -158,6 +161,7 @@ private:
 	HdcMode m_useHdcFirmwareMode;
 
 	bool m_saveDiskImage;	// Save the DiskImage name to Registry
+	bool m_saveDiskImageToRegistry;
 
 	HardDiskDrive m_hardDiskDrive[NUM_HARDDISKS];
 	HardDiskDrive m_smartPortController;		// unit-0 is the SmartPort controller

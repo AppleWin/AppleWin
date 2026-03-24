@@ -243,7 +243,7 @@ Cn_BLK			php
 				ldy #0
 
 -				lda BLK_Cmd,y
-				sta IO_BlkCmdFifo,x		; BLK_Cmd's are $0x
+				sta IO_BlkCmdFifo,x		; BLK_Cmd's are $0x (NB. not range-checked unlike SP cmds)
 				iny						; BLK_UnitNum's are DSSS0000 : if SSS does NOT match physical slot...
 										; ...hardware should handle the remap by adding +2 to the REAL dev_ID
 				cpy #6					; that way, a BLK controller can support 4 devices (see $CnFE byte below)
@@ -276,7 +276,9 @@ Cn_BLK_Done		lsr 					; Post: C=0 or 1
 Cn_SP			lda (Ptr1),y			; CMD byte
 
 				cmp #SP_Cmd_format
-				bcs Cn_SP_E_BADCALL		; only STATUS, READBLOCK & WRITEBLOCK supported
+				beq +
+				bcs Cn_SP_E_BADCALL		; only STATUS, READBLOCK, WRITEBLOCK & FORMAT supported
++										; C=1 if FORMAT cmd [*1]
 
 				ldx Slot_n0
 
@@ -290,18 +292,28 @@ Cn_SP			lda (Ptr1),y			; CMD byte
 				lda (Ptr1),y
 
 				sta Ptr1+1
-				pla 
+				pla
 				sta Ptr1				; Now Ptr1 = Param list
 
-				ldy #0					; Param Cnt
+				ldy #0					; Param Idx (in bytes)
 
 				lda (Ptr1),y
-				cmp #3					; STATUS, READBLOCK & WRITEBLOCK = all 3 parameters
-				sec
+!if 1 {									; (This parameter-checking code could be removed to free up some space)
+				bcs @format				; NB. C-flag untouched from above [*1]
+				cmp #3					; STATUS, READBLOCK & WRITEBLOCK: all have 3 parameters
+				beq +
 				bne Cn_SP_E_BADCNT
+@format			cmp #1					; FORMAT: has 1 parameter
+				bne Cn_SP_E_BADCNT
++
+}
 
--				iny						; UnitNum (B),  MemPtr (L/H), DiskBlock (L/M/H) -> IO (R,W)
-				lda (Ptr1),y			; UnitNum (B),  MemPtr (L/H), StatusCode (B) -> IO (S)
+				; Parameter-1:  Parameter-2:  Parameter-3:
+				; UnitNum (B),  MemPtr (L/H), StatusCode (B)    -> IO (STATUS)
+				; UnitNum (B),  MemPtr (L/H), DiskBlock (L/M/H) -> IO (READ,WRITE)
+				; UnitNum (B)                                   -> IO (FORMAT)
+-				iny						; Always copy 6 more bytes to the FIFO regardless of the command
+				lda (Ptr1),y
 				sta IO_SPCmdFifo,x		; UnitNum Range is 0 (smartport controller itself), 1,2,3.....
 				cpy #6					; blockNums are 24-bit for SP calls
 				bcc -
@@ -364,7 +376,8 @@ Cn_SP_E_BADCNT	ldx #E_BADCNT
 ; $C7 = Removable, Interruptable, #Volumes=1, Supports write/read/status
 ; $D7 = Removable, Interruptable, #Volumes=2, Supports write/read/status
 ; $F7 = Removable, Interruptable, #Volumes=4, Supports write/read/status
-; $BF = Removable, Interruptable, #Volumes=4, Supports format/write/read/status (KEGS / IIGS)
+; $FF = Removable, Interruptable, #Volumes=4, Supports format/write/read/status
+; $BF = Removable,              , #Volumes=4, Supports format/write/read/status (KEGS / IIGS)
 ;
 ; $CnFF = offset to BLK entry point
 ;--------------------------------------
@@ -372,8 +385,8 @@ Cn_SP_E_BADCNT	ldx #E_BADCNT
 *= $00FB	; org $00FB
 !warn "CsFB padding = ", * - @checkCsFB
 ;--------------------------------------
-				!byte $00 				; Smart port ID Type byte
+				!byte $00 				; SmartPort ID Type byte
 				!word $0000 			; how many blocks are on the device. Zero means use status call
-				!byte $F7 				; specifics about the device (number of drives, read/write/format capability, etc)
+				!byte $FF 				; specifics about the device (number of drives, read/write/format capability, etc)
 				!byte <Cn_Entry_BLK		; entry point offset for ProDOS (must be $0a)
 ;--------------------------------------

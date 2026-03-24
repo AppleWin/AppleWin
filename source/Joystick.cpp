@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 enum {DEVICE_NONE=0, DEVICE_JOYSTICK, DEVICE_KEYBOARD, DEVICE_MOUSE, DEVICE_JOYSTICK_THUMBSTICK2};
 
 // Indexed by joytype[n]
-static const DWORD joyinfo[6] =	{	DEVICE_NONE,
+static const uint32_t joyinfo[6] =	{	DEVICE_NONE,
 									DEVICE_JOYSTICK,
 									DEVICE_KEYBOARD,	// Cursors (prev: Numpad-Standard)
 									DEVICE_KEYBOARD,	// Numpad (prev: Numpad-Centering)
@@ -90,7 +90,7 @@ static int   joysubx[2]     = {0,0};
 static int   joysuby[2]     = {0,0};
 
 // Value persisted to Registry for REGVALUE_JOYSTICK0_EMU_TYPE
-static DWORD joytype[2]            = {J0C_JOYSTICK1, J1C_DISABLED};	// Emulation Type for joysticks #0 & #1
+static uint32_t joytype[JN_NUM] = { kJoystick_Default[JN_JOYSTICK0], kJoystick_Default[JN_JOYSTICK1] };	// Emulation Type for joysticks #0 & #1
 
 static BOOL  setbutton[3]   = {0,0,0};	// Used when a mouse button is pressed/released
 
@@ -99,8 +99,8 @@ static int   ypos[2]        = { PDL_MAX,PDL_MAX };
 
 static UINT64 g_paddleInactiveCycle[4] = { 0 };	// Abs cycle that each paddle becomes inactive after PTRIG strobe
 
-static short g_nPdlTrimX = 0;
-static short g_nPdlTrimY = 0;
+static short g_nPdlTrimX = kPdlXTrim_Default;
+static short g_nPdlTrimY = kPdlYTrim_Default;
 
 enum {JOYPORT_LEFTRIGHT=0, JOYPORT_UPDOWN=1};
 
@@ -136,8 +136,8 @@ static void CheckJoystick0()
 	if (JOYSTICK_1 < 0)
 		return;
 
-  static DWORD lastcheck = 0;
-  DWORD currtime = GetTickCount();
+  static uint32_t lastcheck = 0;
+  uint32_t currtime = GetTickCount();
   if ((currtime-lastcheck >= 10) || joybutton[0] || joybutton[1])
   {
     lastcheck = currtime;
@@ -160,8 +160,8 @@ static void CheckJoystick0()
 
 static void CheckJoystick1()
 {
-  static DWORD lastcheck = 0;
-  DWORD currtime = GetTickCount();
+  static uint32_t lastcheck = 0;
+  uint32_t currtime = GetTickCount();
   if ((currtime-lastcheck >= 10) || joybutton[2])
   {
     lastcheck = currtime;
@@ -796,7 +796,7 @@ void JoySetButton(eBUTTON number, eBUTTONSTATE down)
 }
 
 //===========================================================================
-BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber, const bool bMousecardActive)
+BOOL JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, const bool bMousecardActive)
 {
   if(joytype[nJoystickNumber] == newtype)
 	  return 1;	// Already set to this type. Return OK.
@@ -809,22 +809,22 @@ BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber, const 
     if (nJoyID < 0 || joyGetDevCaps(nJoyID, &caps, sizeof(JOYCAPS)) != JOYERR_NOERROR)
     {
       MessageBox(window,
-                 TEXT("The emulator is unable to read your PC joystick.  ")
-                 TEXT("Ensure that your game port is configured properly, ")
-                 TEXT("that the joystick is firmly plugged in, and that ")
-                 TEXT("you have a joystick driver installed."),
-                 TEXT("Configuration"),
+                 "The emulator is unable to read your PC joystick.  "
+                 "Ensure that your game port is configured properly, "
+                 "that the joystick is firmly plugged in, and that "
+                 "you have a joystick driver installed.",
+                 "Configuration",
                  MB_ICONEXCLAMATION | MB_SETFOREGROUND);
       return 0;
     }
     if ((joyinfo[newtype] == DEVICE_JOYSTICK_THUMBSTICK2) && (caps.wNumAxes < 4))
     {
       MessageBox(window,
-                 TEXT("The emulator is unable to read thumbstick 2.  ")
-                 TEXT("Ensure that your game port is configured properly, ")
-                 TEXT("that the joystick is firmly plugged in, and that ")
-                 TEXT("you have a joystick driver installed."),
-                 TEXT("Configuration"),
+                 "The emulator is unable to read thumbstick 2.  "
+                 "Ensure that your game port is configured properly, "
+                 "that the joystick is firmly plugged in, and that "
+                 "you have a joystick driver installed.",
+                 "Configuration",
                  MB_ICONEXCLAMATION | MB_SETFOREGROUND);
       return 0;
     }
@@ -836,22 +836,22 @@ BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber, const 
 	{
 		// Shouldn't be necessary, since Property Sheet's logic should prevent this option being given to the user.
 	  MessageBox(window,
-				 TEXT("Mouse interface card is enabled - unable to use mouse for joystick emulation."),
-				 TEXT("Configuration"),
+				 "Mouse interface card is enabled - unable to use mouse for joystick emulation.",
+				 "Configuration",
 				 MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 	  return 0;
 	}
 
     MessageBox(window,
-               TEXT("To begin emulating a joystick with your mouse, move ")
-               TEXT("the mouse cursor over the emulated screen of a running ")
-               TEXT("program and click the left mouse button.  During the ")
-               TEXT("time the mouse is emulating a joystick, you will not ")
-               TEXT("be able to use it to perform mouse functions, and the ")
-               TEXT("mouse cursor will not be visible.  To end joystick ")
-               TEXT("emulation and regain the mouse cursor, click the left ")
-               TEXT("mouse button while pressing Ctrl."),
-               TEXT("Configuration"),
+               "To begin emulating a joystick with your mouse, move "
+               "the mouse cursor over the emulated screen of a running "
+               "program and click the left mouse button.  During the "
+               "time the mouse is emulating a joystick, you will not "
+               "be able to use it to perform mouse functions, and the "
+               "mouse cursor will not be visible.  To end joystick "
+               "emulation and regain the mouse cursor, click the left "
+               "mouse button while pressing Ctrl.",
+               "Configuration",
                MB_ICONINFORMATION | MB_SETFOREGROUND);
   }
   else if (joyinfo[newtype] == DEVICE_KEYBOARD)
@@ -859,13 +859,13 @@ BOOL JoySetEmulationType(HWND window, DWORD newtype, int nJoystickNumber, const 
 	  if (newtype == J0C_KEYBD_CURSORS || newtype == J1C_KEYBD_CURSORS)
 	  {
 			MessageBox(window,
-						TEXT("Using cursor keys to emulate a joystick can cause conflicts.\n\n")
-						TEXT("Be aware that 'cursor-up' = CTRL+K, and 'cursor-down' = CTRL+J.\n")
-						TEXT("EG. Lode Runner uses CTRL+K/J to switch between keyboard/joystick modes ")
-						TEXT("(and cursor-left/right to control speed).\n\n")
-						TEXT("Also if cursor keys are blocked from being read from the Apple keyboard ")
-						TEXT("then even simple AppleSoft command-line editing (cursor left/right) will not work."),
-						TEXT("Configuration"),
+						"Using cursor keys to emulate a joystick can cause conflicts.\n\n"
+						"Be aware that 'cursor-up' = CTRL+K, and 'cursor-down' = CTRL+J.\n"
+						"EG. Lode Runner uses CTRL+K/J to switch between keyboard/joystick modes "
+						"(and cursor-left/right to control speed).\n\n"
+						"Also if cursor keys are blocked from being read from the Apple keyboard "
+						"then even simple AppleSoft command-line editing (cursor left/right) will not work.",
+						"Configuration",
 						MB_ICONINFORMATION | MB_SETFOREGROUND);
 	  }
   }
@@ -922,7 +922,7 @@ void JoyDisableUsingMouse()
 
 //===========================================================================
 
-void JoySetJoyType(UINT num, DWORD type)
+void JoySetJoyType(UINT num, uint32_t type)
 {
 	_ASSERT(num <= JN_JOYSTICK1);
 	if (num > JN_JOYSTICK1)
@@ -948,7 +948,7 @@ void JoySetJoyType(UINT num, DWORD type)
 	JoySetTrim(JoyGetTrim(false), false);
 }
 
-DWORD JoyGetJoyType(UINT num)
+uint32_t JoyGetJoyType(UINT num)
 {
 	_ASSERT(num <= JN_JOYSTICK1);
 	if (num > JN_JOYSTICK1)

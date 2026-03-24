@@ -99,44 +99,44 @@ read_func_ptr_t io_read_tab[0x101];
 
 /* Generic memory access.  */
 #if 0
-static void REGPARM2 z80mem_store(WORD addr, BYTE value)
+static void z80mem_store(WORD addr, BYTE value)
 {
     _z80mem_write_tab_ptr[addr >> 8](addr, value);
 }
 
-static BYTE REGPARM1 z80mem_read(WORD addr)
+static BYTE z80mem_read(WORD addr)
 {
     return _z80mem_read_tab_ptr[addr >> 8](addr);
 }
 #endif
 
-BYTE REGPARM1 bios_read(WORD addr)
+BYTE bios_read(WORD addr)
 {
     return z80bios_rom[addr & 0x0fff];
 }
 
-void REGPARM2 bios_store(WORD addr, BYTE value)
+void bios_store(WORD addr, BYTE value)
 {
     z80bios_rom[addr] = value;
 }
 
-//static BYTE REGPARM1 z80_read_zero(WORD addr)	// [AppleWin-TC]
+//static BYTE z80_read_zero(WORD addr)	// [AppleWin-TC]
 //{
 //    return mem_page_zero[addr];
 //}
 //
-//static void REGPARM2 z80_store_zero(WORD addr, BYTE value)
+//static void z80_store_zero(WORD addr, BYTE value)
 //{
 //    mem_page_zero[addr] = value;
 //}
 
-static BYTE REGPARM1 read_unconnected_io(WORD addr)
+static BYTE read_unconnected_io(WORD addr)
 {
 //    log_message(z80mem_log, "Read from unconnected IO %04x", addr);				// [AppleWin-TC]
     return 0;
 }
 
-static void REGPARM2 store_unconnected_io(WORD addr, BYTE value)
+static void store_unconnected_io(WORD addr, BYTE value)
 {
 //    log_message(z80mem_log, "Store to unconnected IO %04x %02x", addr, value);	// [AppleWin-TC]
 }

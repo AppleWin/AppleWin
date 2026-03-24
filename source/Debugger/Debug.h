@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Common.h"
+#include "../MemoryDefs.h"
 
 #include "Debugger_Types.h"
 #include "Debugger_DisassemblerData.h"
@@ -13,6 +14,7 @@
 #include "Debugger_Display.h"
 #include "Debugger_Symbols.h"
 #include "Util_MemoryTextFile.h"
+#include "BreakpointCard.h"
 
 // Globals __________________________________________________________________
 
@@ -20,7 +22,7 @@
 	extern bool g_bDebuggerEatKey;
 
 // Benchmarking
-	extern DWORD      extbench;
+	extern uint32_t      extbench;
 
 // Bookmarks
 	extern int          g_nBookmarks;
@@ -45,13 +47,11 @@
 		, BP_HIT_VIDEO_POS                      = (1 << 12)
 	};
 
-	extern int          g_bDebugBreakpointHit;
-
 	extern int          g_nBreakpoints;
 	extern Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
 
 	extern const char  *g_aBreakpointSource [ NUM_BREAKPOINT_SOURCES   ];
-	extern const TCHAR *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
+	extern const char *g_aBreakpointSymbols[ NUM_BREAKPOINT_OPERATORS ];
 
 	extern int  g_nDebugBreakOnInvalid ;
 	extern int  g_iDebugBreakOnOpcode  ;
@@ -71,7 +71,7 @@
 			bool operator() ( const Command_t & rLHS, const Command_t & rRHS ) const
 			{
 				// return true if lhs<rhs
-				return (_tcscmp( rLHS.m_sName, rRHS.m_sName ) <= 0) ? true : false;
+				return (strcmp( rLHS.m_sName, rRHS.m_sName ) <= 0) ? true : false;
 			}
 	};
 
@@ -177,8 +177,9 @@
 	void	DebugDisplay ( BOOL bInitDisasm = FALSE );
 	void	DebugInitialize ();
 	void	DebugReset(void);
+	bool	DebugQueryAnyBreakpointsSet ();
 
-	void	DebuggerInputConsoleChar( TCHAR ch );
+	void	DebuggerInputConsoleChar( char ch );
 	void	DebuggerProcessKey( int keycode );
 
 	void	DebuggerUpdate();
@@ -191,3 +192,7 @@
 	bool	DebuggerCheckMemBreakpoints(WORD nAddress, WORD nSize, bool isDmaToMemory);
 
 	void	ClearTempBreakpoints();
+	void	DebugSetAutoRunScript(std::string& sAutoRunScriptFilename);
+
+	typedef void(*CBFUNCTION)(uint8_t slot, INTERCEPTBREAKPOINT interceptBreakpoint);
+	void	InterceptBreakpoints(uint8_t slot, CBFUNCTION cbfunction);
