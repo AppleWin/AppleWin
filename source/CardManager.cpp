@@ -374,7 +374,7 @@ bool CardManager::IsSingleInstanceCard(SS_CARDTYPE card)
 	return false;
 }
 
-void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::string& choices, std::vector<SS_CARDTYPE>& choicesList)
+void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::vector<SS_CARDTYPE>& choicesList)
 {
 	// Availability & order of cards in drop-down menu:
 	const SS_CARDTYPE cardsOnlyInSlot0[] =
@@ -421,12 +421,9 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 
 	if (slot == SLOT0)
 	{
+		choicesList.reserve(std::size(cardsOnlyInSlot0));
 		for (UINT i = 0; i < std::size(cardsOnlyInSlot0); i++)
 		{
-			std::string name = Card::GetCardName(cardsOnlyInSlot0[i]);
-			choices += name;
-			choices += '\0';
-
 			choicesList.push_back(cardsOnlyInSlot0[i]);
 		}
 	}
@@ -442,6 +439,7 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 				haveCard[currConfig[i]] = i;
 		}
 
+		choicesList.reserve(std::size(cardsInSlots1to7));
 		for (UINT i = 0; i < std::size(cardsInSlots1to7); i++)
 		{
 			const SS_CARDTYPE thisCard = cardsInSlots1to7[i];
@@ -454,10 +452,6 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 
 			if (IsSingleInstanceCard(thisCard) && haveCard[thisCard] != kInvalidSlot && haveCard[thisCard] != slot)
 				continue;
-
-			std::string name = Card::GetCardName(thisCard);
-			choices += name;
-			choices += '\0';
 
 			choicesList.push_back(thisCard);
 		}
@@ -482,18 +476,12 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 
 		for (auto card : advancedCards)
 		{
-			std::string name = Card::GetCardName(card);
-			choices += name;
-			choices += '\0';
-
 			choicesList.push_back(card);
 		}
 	}
-
-	choices += '\0';
 }
 
-void CardManager::GetCardChoicesForAuxSlot(std::string& choices, std::vector<SS_CARDTYPE>& choicesList)
+void CardManager::GetCardChoicesForAuxSlot(std::vector<SS_CARDTYPE>& choicesList)
 {
 	// Availability & order of cards in drop-down menu:
 	const SS_CARDTYPE cards[] =
@@ -506,16 +494,10 @@ void CardManager::GetCardChoicesForAuxSlot(std::string& choices, std::vector<SS_
 
 	choicesList.clear();
 
+	choicesList.reserve(std::size(cards));
 	for (UINT i = 0; i < std::size(cards); i++)
 	{
 		const SS_CARDTYPE thisCard = cards[i];
-
-		std::string name = Card::GetCardName(thisCard);
-		choices += name;
-		choices += '\0';
-
 		choicesList.push_back(thisCard);
 	}
-
-	choices += '\0';
 }
