@@ -785,7 +785,7 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 	{
 		// GH#57 - drive lights in full screen mode (Slot 6 only)
 
-		if (!g_bFullScreen_ShowSubunitStatus)
+		if (!g_bFullScreen_ShowSubunitStatus || GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
 			return;
 
 		std::string strTrackDrive1, strSectorDrive1, strTrackDrive2, strSectorDrive2;
@@ -811,7 +811,11 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 		if (g_nViewportScale == 1 || !GetWindowedModeShowDiskiiStatus())
 			return;
 
-		DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
+		// Slot 6's Disk II
+		if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
+		{
+			DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
+		}
 
 		// Slot 5's Disk II
 		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)

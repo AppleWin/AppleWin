@@ -508,9 +508,9 @@ INT_PTR CPageSlots::DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam,
 	case WM_INITDIALOG:
 		InitComboFloppyDrive(hWnd, ms_slot);
 
-		if (ms_slot == SLOT5 || ms_slot == SLOT6)
-			CheckDlgButton(hWnd, IDC_DISKII_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiStatus() ? BST_CHECKED : BST_UNCHECKED);
-		else
+		CheckDlgButton(hWnd, IDC_DISKII_STATUS_ENABLE, Win32Frame::GetWin32Frame().GetWindowedModeShowDiskiiStatus() ? BST_CHECKED : BST_UNCHECKED);
+
+		if (ms_slot != SLOT5 && ms_slot != SLOT6)
 			EnableWindow(GetDlgItem(hWnd, IDC_DISKII_STATUS_ENABLE), FALSE);
 
 		CheckDlgButton(hWnd, IDC_DISKII_13_SECTOR_FW_ENABLE, m_PropertySheetHelper.GetConfigNew().m_diskII13SectorFirmware[ms_slot] ? BST_CHECKED : BST_UNCHECKED);
