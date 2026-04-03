@@ -440,13 +440,14 @@ IDR_TKCLOCK_FW          FIRMWARE                "TKClock.rom"
 /// We write our own custom boot sector so the user doesn't crash to the monitor when booting it.
 /// Technically not firmware but since it never changes we put this resource here.
 /// </summary>
-IDR_BOOT_SECTOR         FIRMWARE                "..\\firmware\\BootSector\\bootsector.bin"
-IDR_OS_DOS33            FIRMWARE                "..\\firmware\\OS\\dos33c.bin"
-IDR_OS_PRODOS243        FIRMWARE                "..\\firmware\\OS\\prodos243.bin"
-IDR_BOOT_SECTOR_PRODOS243 FIRMWARE              "..\\firmware\\OS\\bootsector_prodos243.bin"
-IDR_FILE_BASIC17        FIRMWARE                "..\\firmware\\OS\\basic17.system.bin"
-IDR_FILE_BITSY_BOOT     FIRMWARE                "..\\firmware\\OS\\bitsy.boot.bin"
-IDR_FILE_BITSY_BYE      FIRMWARE                "..\\firmware\\OS\\quit.system.bin"
+IDR_BOOT_SECTOR             FIRMWARE            "..\\firmware\\BootSector\\bootsector.bin"
+IDR_OS_DOS33                FIRMWARE            "..\\firmware\\OS\\dos33c.bin"
+IDR_OS_PRODOS243            FIRMWARE            "..\\firmware\\OS\\prodos243.bin"
+IDR_BOOT_SECTOR_PRODOS243   FIRMWARE            "..\\firmware\\OS\\bootsector_prodos243.bin"
+IDR_FILE_BASIC17            FIRMWARE            "..\\firmware\\OS\\basic17.system.bin"
+IDR_FILE_BITSY_BOOT         FIRMWARE            "..\\firmware\\OS\\bitsy.boot.bin"
+IDR_FILE_BITSY_BYE          FIRMWARE            "..\\firmware\\OS\\quit.system.bin"
+IDR_FILE_NOSLOTCLOCK_PRODOS FIRMWARE            "..\\firmware\\OS\\ns.clock.system.bin"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -513,6 +514,7 @@ BEGIN
         MENUITEM "On format copy Bitsy Boot",                                                   ID_DISKMENU_NEW_DISK_COPY_BITSY_BOOT
         MENUITEM "On format copy Bitsy Bye",                                                    ID_DISKMENU_NEW_DISK_COPY_BITSY_BYE
         MENUITEM "On format copy BASIC.SYSTEM",                                                 ID_DISKMENU_NEW_DISK_COPY_BASIC
+        MENUITEM "On format copy No Slot Clock",                                                ID_DISKMENU_NEW_DISK_COPY_NOSLOTCLOCK
         MENUITEM SEPARATOR
         MENUITEM "New &DOS 3.3 5.25\x22 \x28140 KB\x29 disk image... \x28Standard 35 Track\x29",ID_DISKMENU_NEW_DOS33_140K_DISK
         MENUITEM "New DOS 3.3 5.25\x22 \x28160 KB\x29 disk image... \x28Extended 40 Track\x29", ID_DISKMENU_NEW_DOS33_160K_DISK

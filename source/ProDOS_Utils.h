@@ -26,7 +26,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 class FrameBase;
 
 void New_DOSProDOS_Disk( const char * pTitle, const std::string & pathname, const size_t nDiskSize,
-	const bool bIsDOS33, const bool bNewDiskCopyBitsyBoot, const bool bNewDiskCopyBitsyBye, const bool bNewDiskCopyBASIC, const bool bNewDiskCopyProDOS,
+	const bool bIsDOS33,
+	const bool bNewDiskCopyNoSlotClock, const bool bNewDiskCopyBitsyBoot, const bool bNewDiskCopyBitsyBye, const bool bNewDiskCopyBASIC, const bool bNewDiskCopyProDOS,
 	FrameBase *pFrame );                                                      // file will be overwritten
 void New_Blank_Disk( const char * pTitle, const std::string & pathname, 
 	const size_t nDiskSize, const bool bIsHardDisk, FrameBase *pFrame );      // file will be overwritten
