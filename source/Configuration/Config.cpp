@@ -31,7 +31,6 @@
 #include "../Speaker.h"
 #include "../Uthernet2.h"
 #include "../Tfe/PCapBackend.h"
-#include "../Windows/Win32Frame.h"
 
 
 // Zero (or default) initialise - values not important, as they get set correctly in Reload()
@@ -96,7 +95,7 @@ void CConfigNeedingRestart::Reload()
 	m_videoStyle = GetVideo().GetVideoStyle();
 	m_videoRefreshRate = GetVideo().GetVideoRefreshRate();
 	m_monochromeRGB = GetVideo().GetMonochromeRGB();
-	m_fullScreen_ShowSubunitStatus = Win32Frame::GetWin32Frame().GetFullScreenShowSubunitStatus();
+	m_fullScreen_ShowSubunitStatus = GetFrame().GetFullScreenShowSubunitStatus();
 	m_scrollLockToggle = GetPropertySheet().GetScrollLockToggle();
 	m_enhanceDiskAccessSpeed = GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk();
 	m_machineSpeed = g_dwSpeed;
