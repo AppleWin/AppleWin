@@ -260,6 +260,17 @@ UINT ImageGetMaxNibblesPerTrack(ImageInfo* const pImageInfo)
 	return pImageInfo ? pImageInfo->maxNibblesPerTrack : NIBBLES_PER_TRACK;
 }
 
+bool ImageIsZeroTracksValidForThisType(ImageInfo* const pImageInfo)
+{
+	if (!pImageInfo || !pImageInfo->pImageType)
+		return false;
+
+	if (pImageInfo->pImageType->GetType() == eImageAPL || pImageInfo->pImageType->GetType() == eImagePRG)
+		return true;
+
+	return false;
+}
+
 void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName)
 {
 	char   imagetitle[ MAX_DISK_FULL_NAME+1 ];

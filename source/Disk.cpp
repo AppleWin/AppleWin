@@ -311,6 +311,9 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 	if (ImagePhaseToTrack(pFloppy->m_imagehandle, pDrive->m_phasePrecise, false) >= ImageGetNumTracks(pFloppy->m_imagehandle))
 	{
+		if (ImageIsZeroTracksValidForThisType(pFloppy->m_imagehandle))
+			return;
+
 		_ASSERT(0);	// What can cause this? Add a comment to replace this assert.
 		// Boot with DOS 3.3 Master in D1
 		// Create a blank disk in D2
