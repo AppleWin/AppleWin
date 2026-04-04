@@ -569,7 +569,7 @@ std::string CPropertySheetHelper::GetSlot(const UINT slot)
 	}
 	else if (slot == SLOT_AUX)
 	{
-		strMsg = ". Slot Aux:";
+		strMsg = ". Slot Aux: ";
 
 		oldCardType = m_ConfigOld.m_SlotAux;
 		newCardType = m_ConfigNew.m_SlotAux;
