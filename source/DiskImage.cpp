@@ -83,7 +83,8 @@ ImageError_e ImageOpen(	const std::string & pszImageFilename,
 	// THE FILE MATCHES A KNOWN FORMAT
 
 	_ASSERT(bExpectFloppy);
-	if (!bExpectFloppy || !pImageInfo->uNumTracks)
+	const eImageType type = pImageInfo->pImageType ? pImageInfo->pImageType->GetType() : eImageUNKNOWN;
+	if (!bExpectFloppy || (!pImageInfo->uNumTracks && type != eImageAPL && type != eImagePRG))
 	{
 		ImageClose(*ppImageInfo);
 		*ppImageInfo = NULL;
