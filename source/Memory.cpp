@@ -302,7 +302,7 @@ static void ResetDefaultMachineMemTypes(void)
 	g_MemTypeAppleIIe = CT_Extended80Col;
 }
 
-// Called from MemInitialize(), MemLoadSnapshot()
+// Called from MemLoadSnapshot()
 static void SetExpansionMemTypeDefault(void)
 {
 	SS_CARDTYPE defaultType = IsApple2Original(GetApple2Type()) ? g_MemTypeAppleII
@@ -367,7 +367,7 @@ void SetExpansionMemType(const SS_CARDTYPE type, bool updateRegistry/*=true*/)
 		}
 	}
 
-	GetCardMgr().Insert(SLOT0, newSlot0Card);
+	GetCardMgr().Insert(SLOT0, newSlot0Card, updateRegistry);
 	GetCardMgr().InsertAux(newSlotAuxCard, updateRegistry);
 }
 
@@ -391,6 +391,8 @@ void CreateLanguageCard(void)
 		// only ever a CT_LanguageCardIIe for a //e
 		if (slot0CardType != CT_LanguageCardIIe)
 			GetCardMgr().Insert(SLOT0, CT_LanguageCardIIe);
+
+		SetMemMainLanguageCard(nullptr, SLOT0, true);	// Force this, as LoadConfiguration() calls this twice when memmain==0 (for //e)
 	}
 }
 
@@ -2011,8 +2013,6 @@ void MemInitialize()
 	}
 
 	RWpages[0] = memaux;
-
-	SetExpansionMemTypeDefault();
 
 #ifdef RAMWORKS
 	if (GetCardMgr().QueryAux() == CT_RamWorksIII)

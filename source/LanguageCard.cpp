@@ -304,10 +304,15 @@ Saturn128K::Saturn128K(UINT slot, UINT banks)
 	: LanguageCardSlot0(CT_Saturn128K, slot)
 {
 	m_uSaturnActiveBank = 0;
+	m_uSaturnTotalBanks = banks;	// /banks/ (from cmd line) overrides banks from Registry
 
-	const uint32_t kSaturnBanksDefault = (banks == 0) ? kMaxSaturnBanks : banks;
-	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegLoadValue(regSection.c_str(), REGVALUE_SATURN_NUM_BANKS, TRUE, &m_uSaturnTotalBanks, kSaturnBanksDefault);
+	SetSaturnMemorySizeSlot0(0);	// reset (eg. if there's a VM restart, due to user changing # banks)
+
+	if (banks == 0)
+	{
+		std::string regSection = RegGetConfigSlotSection(m_slot);
+		RegLoadValue(regSection.c_str(), REGVALUE_SATURN_NUM_BANKS, TRUE, &m_uSaturnTotalBanks, kMaxSaturnBanks);
+	}
 
 	for (UINT i=0; i<kMaxSaturnBanks; i++)
 		m_aSaturnBanks[i] = NULL;
@@ -564,6 +569,10 @@ uint8_t Saturn128K::GetSaturnMemorySizeSlot0()
 
 void Saturn128K::SetSaturnMemorySizeSlot0(uint8_t banks)
 {
+	_ASSERT(banks <= kMaxSaturnBanks);
+	if (banks > kMaxSaturnBanks)
+		banks = kMaxSaturnBanks;
+
 	g_uSaturnBanksFromCmdLine = banks;
 }
 

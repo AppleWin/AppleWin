@@ -688,7 +688,11 @@ static void RepeatInitialization(void)
 	}
 
 	if (g_cmdLine.model != A2TYPE_MAX)
+	{
 		SetApple2Type(g_cmdLine.model);
+		GetPropertySheet().ConfigSaveApple2Type(g_cmdLine.model);
+		g_cmdLine.model = A2TYPE_MAX;	// Don't reapply after a restart
+	}
 
 	RGB_SetVideocard(g_cmdLine.rgbCard, g_cmdLine.rgbCardForegroundColor, g_cmdLine.rgbCardBackgroundColor);
 
@@ -715,6 +719,7 @@ static void RepeatInitialization(void)
 		Saturn128K::SetSaturnMemorySizeSlot0(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
 		if (!g_cmdLine.bSlotEmpty[SLOT0])
 			SetExpansionMemType(CT_Saturn128K);
+		dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(SLOT0)).SetSaturnMemorySize(g_cmdLine.uSaturnBanks);
 		g_cmdLine.uSaturnBanks = 0;		// Don't reapply after a restart
 	}
 
