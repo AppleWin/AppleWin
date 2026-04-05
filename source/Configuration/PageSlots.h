@@ -60,6 +60,8 @@ private:
 	static INT_PTR CALLBACK DlgProcRamWorks3(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	INT_PTR DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
+	static std::string GetCardNameChoices(const std::vector<SS_CARDTYPE> &choicesList);
+
 	void InitComboFloppyDrive(HWND hWnd, UINT slot);
 	bool CheckFloppyPathnameInUse(const std::string& pathname, BYTE& inUseSlot, BYTE& inUseDrive);
 	void HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);

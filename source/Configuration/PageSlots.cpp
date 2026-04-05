@@ -51,6 +51,18 @@ const char CPageSlots::m_defaultHDDOptions[] =
 				"Select Hard Disk Image...\0"
 				"Unplug Hard Disk Image\0";
 
+std::string CPageSlots::GetCardNameChoices(const std::vector<SS_CARDTYPE> &choicesList)
+{
+    std::string choices;
+    for (const auto &card : choicesList)
+    {
+        choices += Card::GetCardName(card);
+        choices += '\0';
+    }
+    choices += '\0';
+    return choices;
+}
+
 INT_PTR CALLBACK CPageSlots::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
@@ -278,8 +290,8 @@ void CPageSlots::InitOptions(HWND hWnd)
 
 	if (IsApple2PlusOrClone(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
 	{
-		std::string choices;
-		GetCardMgr().GetCardChoicesForSlot(SLOT0, currConfig, choices, m_choicesList[SLOT0]);
+		GetCardMgr().GetCardChoicesForSlot(SLOT0, currConfig, m_choicesList[SLOT0]);
+		const std::string choices = GetCardNameChoices(m_choicesList[SLOT0]);
 		int currentChoice = CardTypeToComboItem(SLOT0);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0, choices.c_str(), currentChoice);
 
@@ -296,8 +308,8 @@ void CPageSlots::InitOptions(HWND hWnd)
 
 	for (int slot = SLOT1; slot < NUM_SLOTS; slot++)
 	{
-		std::string choices;
-		GetCardMgr().GetCardChoicesForSlot(slot, currConfig, choices, m_choicesList[slot]);
+		GetCardMgr().GetCardChoicesForSlot(slot, currConfig, m_choicesList[slot]);
+		const std::string choices = GetCardNameChoices(m_choicesList[slot]);
 		int currentChoice = CardTypeToComboItem(slot);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0 + slot, choices.c_str(), currentChoice);
 
@@ -307,8 +319,8 @@ void CPageSlots::InitOptions(HWND hWnd)
 
 	if (IsAppleIIe(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
 	{
-		std::string choices;
-		GetCardMgr().GetCardChoicesForAuxSlot(choices, m_choicesListAux);
+		GetCardMgr().GetCardChoicesForAuxSlot(m_choicesListAux);
+		const std::string choices = GetCardNameChoices(m_choicesListAux);
 		int currentChoice = CardTypeToComboItem(SLOT_AUX);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOTAUX, choices.c_str(), currentChoice);
 
