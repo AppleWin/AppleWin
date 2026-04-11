@@ -47,11 +47,11 @@ CPageConfig* CPageConfig::ms_this = 0;	// reinit'd in ctor
 
 enum APPLEIICHOICE {MENUITEM_IIORIGINAL, MENUITEM_IIPLUS, MENUITEM_IIJPLUS, MENUITEM_IIE, MENUITEM_ENHANCEDIIE, MENUITEM_CLONE};
 const char CPageConfig::m_ComputerChoices[] =
-				"Apple ][ (Original)\0"
-				"Apple ][+\0"
-				"Apple ][ J-Plus\0"
-				"Apple //e\0"
-				"Enhanced Apple //e\0"
+				"Apple II (original)\0"
+				"Apple II Plus\0"
+				"Apple II J-Plus\0"
+				"Apple //e (original)\0"
+				"Apple //e (enhanced)\0"
 				"Clone\0";
 
 INT_PTR CALLBACK CPageConfig::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)

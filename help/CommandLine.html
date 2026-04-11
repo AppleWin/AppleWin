@@ -47,18 +47,18 @@
 		NB. Only SmartPort firmware for enhanced //e supports hard disks 5-8.<br><br>
 		NB. For -d1,-d2,-s5d1,-s5d2,-h1,-h2,-s5h*,-s7h*, if pathname is "", then the disk is ejected or the hard disk is unplugged.<br><br>
 		-model &lt;apple2|apple2p|apple2jp|apple2e|apple2ee&gt;<br>
-		Select the machine model: Apple II, Apple II+, Apple II J-Plus, Apple //e, Enhanced Apple //e.<br><br>
+		Select the machine model: Apple II, Apple II Plus, Apple II J-Plus, Apple //e (original), Apple //e (enhanced).<br><br>
 		-clock-multiplier &lt;value&gt;<br>
 		Where value is between 0.5 and 3.9, and is a base-clock multiplier, roughly mapping to 0.5MHz - 3.9MHz<br><br>
 		-s0 &lt;saturn|saturn64|saturn128&gt;<br>
-		Insert a Saturn 64K or Saturn 128K card into slot 0 in the Apple II or II+ machines (or similar clone).<br>
+		Insert a Saturn 64K or Saturn 128K card into slot 0 in the Apple II or II Plus machines (or similar clone).<br>
 		Where -s0 saturn is an alias for -s0 saturn128.<br><br>
 		-s3 &lt;saturn|saturn128&gt;<br>
 		Insert a Saturn 128K card into slot 3 in any Apple II machine.<br>
 		Use this configuration for Robocom Ltd's (Robo Systems') CAD software in combination with the Interface Module protection dongle in the Game I/O Connector.<br><br>
 		-s0 &lt;languagecard|lc&gt;<br>
 		Insert an Apple 16K Language Card into slot 0 in the original Apple II and use the F8 auto-start ROM.<br>
-		NB. The Apple II+ already defaults to having a Language Card, so this switch is not required.<br><br>
+		NB. The Apple II Plus already defaults to having a Language Card, so this switch is not required.<br><br>
 		-s&lt;N&gt; empty<br>
 		Remove any card from slot N (N=1-7).<br>
 		NB. '-s7 empty' is useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br>
@@ -124,7 +124,7 @@
 		-f8rom &lt;file&gt;<br>
 		Use custom 2K ROM for any Apple II machine at [$F800..$FFFF]. &lt;file&gt; must be 2048 bytes long.<br><br>
 		-videorom &lt;file&gt;<br>
-		Use an alternate custom 2K video ROM for Apple II or II+ machines (but not clones).<br>
+		Use an alternate custom 2K video ROM for Apple II or II Plus machines (but not clones).<br>
 		Use an alternate European or custom 4K, 8K or 16K (top 8K only) video ROM for the original or Enhanced //e (but not clones).<br><br>
 		-printscreen<br>
 		Enable the dialog box to display the last file saved to<br><br>
@@ -259,7 +259,7 @@
 		</ul>
 		-s&lt;n&gt; hdc-[sp|bm2|bm4]
 		<ul>
-			<li>hdc-sp: Force HDC SmartPort firmware for II/II+/Unenhanced //e machines (now won't autoboot from HDD-1).</li>
+			<li>hdc-sp: Force HDC SmartPort firmware for II, II Plus, //e (original) machines (now won't autoboot from HDD-1).</li>
 			<li>hdc-bm2: Modify HDC firmware: $Cn07=$3C (block mode, not SmartPort), and $CnFE to report supporting 2 block mode devices.</li>
 			<li>hdc-bm4: Modify HDC firmware: $Cn07=$3C (block mode, not SmartPort), and $CnFE to report supporting 4 block mode devices.</li>
 		</ul>

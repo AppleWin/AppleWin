@@ -46,12 +46,12 @@ enum AppMode_e
 #define  BTN_SETUP         7
 
 // TODO: Move to StringTable.h
-#define	TITLE_APPLE_2			"Apple ][ Emulator"
-#define	TITLE_APPLE_2_PLUS		"Apple ][+ Emulator"
-#define	TITLE_APPLE_2_JPLUS		"Apple ][ J-Plus Emulator"
-#define	TITLE_APPLE_2E			"Apple //e Emulator"
-#define	TITLE_APPLE_2E_ENHANCED	"Enhanced Apple //e Emulator"
-#define TITLE_APPLE_2C          "Apple //e Emulator"
+#define	TITLE_APPLE_2			"Apple II Emulator"
+#define	TITLE_APPLE_2_PLUS		"Apple II Plus Emulator"
+#define	TITLE_APPLE_2_JPLUS		"Apple II J-Plus Emulator"
+#define	TITLE_APPLE_2E			"Apple //e (original) Emulator"
+#define	TITLE_APPLE_2E_ENHANCED	"Apple //e (enhanced) Emulator"
+#define TITLE_APPLE_2C          "Apple //c Emulator"
 #define	TITLE_PRAVETS_82        "Pravets 82 Emulator"
 #define	TITLE_PRAVETS_8M        "Pravets 8M Emulator"
 #define	TITLE_PRAVETS_8A        "Pravets 8A Emulator"
