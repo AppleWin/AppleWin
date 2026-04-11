@@ -288,32 +288,25 @@ void CPageSlots::InitOptions(HWND hWnd)
 	for (int i = SLOT0; i < NUM_SLOTS; i++)
 		currConfig[i] = m_PropertySheetHelper.GetConfigNew().m_Slot[i];
 
-	if (IsApple2PlusOrClone(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
+	for (int slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
-		GetCardMgr().GetCardChoicesForSlot(SLOT0, currConfig, m_choicesList[SLOT0]);
-		const std::string choices = GetCardNameChoices(m_choicesList[SLOT0]);
-		int currentChoice = CardTypeToComboItem(SLOT0);
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0, choices.c_str(), currentChoice);
+		if (slot == SLOT0 && IsAppleIIe(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
+		{
+			enable = FALSE;
+			enableOpt = FALSE;
+		}
+		else
+		{
+			GetCardMgr().GetCardChoicesForSlot(slot, currConfig, m_choicesList[slot]);
+			const std::string choices = GetCardNameChoices(m_choicesList[slot]);
+			int currentChoice = CardTypeToComboItem(slot);
+			m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0 + slot, choices.c_str(), currentChoice);
 
-		enable = TRUE;
-		enableOpt = CardTypeHasOptions(m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT0]);
-	}
-	else
-	{
-		enable = FALSE;
-		enableOpt = FALSE;
-	}
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT0), enable);
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT0_OPTION), enableOpt);
+			enable = TRUE;
+			enableOpt = CardTypeHasOptions(m_PropertySheetHelper.GetConfigNew().m_Slot[slot]);
+		}
 
-	for (int slot = SLOT1; slot < NUM_SLOTS; slot++)
-	{
-		GetCardMgr().GetCardChoicesForSlot(slot, currConfig, m_choicesList[slot]);
-		const std::string choices = GetCardNameChoices(m_choicesList[slot]);
-		int currentChoice = CardTypeToComboItem(slot);
-		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0 + slot, choices.c_str(), currentChoice);
-
-		enableOpt = CardTypeHasOptions(m_PropertySheetHelper.GetConfigNew().m_Slot[slot]);
+		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0 + slot), enable);
 		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0_OPTION + slot), enableOpt);
 	}
 
@@ -332,6 +325,7 @@ void CPageSlots::InitOptions(HWND hWnd)
 		enable = FALSE;
 		enableOpt = FALSE;
 	}
+
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX_OPTION), enableOpt);
 
