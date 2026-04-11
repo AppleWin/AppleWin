@@ -7,10 +7,10 @@ AppleWin is a fully-featured emulator supporting different Apple II models and c
 
 Apple II models supported include:
 
-* ][
-* ][+
-* //e
-* //e Enhanced
+* II (original)
+* II Plus
+* //e (original)
+* //e (enhanced)
 * Various clones (Pravets, TK3000, Base 64)
 
 There is currently no support for the //c, //c+, Laser 128, Laser 128EX, Laser 128EX2, or Apple IIgs.
