@@ -557,7 +557,7 @@ bool CPageSlots::CheckFloppyPathnameInUse(const std::string& pathname, BYTE& inU
 				if (dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).DiskGetFullPathName(i) == pathname)
 				{
 					inUseSlot = slot;
-					inUseDrive = i + 1;
+					inUseDrive = i;
 					return true;
 				}
 			}
@@ -596,25 +596,26 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 		BYTE inUseSlot = 0, inUseDrive = 0;
 		if (CheckFloppyPathnameInUse(pathname, inUseSlot, inUseDrive))
 		{
+			if (inUseSlot == slot && inUseDrive == driveSelected)
+				return InitComboFloppyDrive(hWnd, slot);			// User picked the same image, so restore combo
+
 			m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = "";
 
-			std::string strText = StrFormat("%s already mounted in slot %d, drive %d.", pathname.c_str(), inUseSlot, inUseDrive);
+			std::string strText = StrFormat("%s already mounted in slot %d, drive %d.", pathname.c_str(), inUseSlot, inUseDrive + 1);
 			GetFrame().FrameMessageBox(strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 			return;
 		}
-		else
-		{
-			// Not in use: insert image to validate it
-			ImageError_e error = card.InsertDisk(driveSelected, pathname, false, false);
-			if (error != eIMAGE_ERROR_NONE)
-			{
-				card.NotifyInvalidImage(driveSelected, pathname, error);
-				m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = "";
-				return;
-			}
 
-			m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = pathname;
+		// Not in use: insert image to validate it
+		ImageError_e error = card.InsertDisk(driveSelected, pathname, false, false);
+		if (error != eIMAGE_ERROR_NONE)
+		{
+			card.NotifyInvalidImage(driveSelected, pathname, error);
+			m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = "";
+			return;
 		}
+
+		m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = pathname;
 
 		// Add floppy drive name as item 0 and select it
 		if (dwOpenDialogIndex > 0)
@@ -789,7 +790,7 @@ bool CPageSlots::CheckHDDPathnameInUse(const std::string& pathname, BYTE& inUseS
 				if (dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).HarddiskGetFullPathName(i) == pathname)
 				{
 					inUseSlot = slot;
-					inUseDrive = i + 1;
+					inUseDrive = i;
 					return true;
 				}
 			}
@@ -828,25 +829,26 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 		BYTE inUseSlot = 0, inUseDrive = 0;
 		if (CheckHDDPathnameInUse(pathname, inUseSlot, inUseDrive))
 		{
+			if (inUseSlot == slot && inUseDrive == driveSelected)
+				return InitComboHDD(hWnd, slot);			// User picked the same image, so restore combo
+
 			m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = "";
 
-			std::string strText = StrFormat("%s already mounted in slot %d, drive %d.", pathname.c_str(), inUseSlot, inUseDrive);
+			std::string strText = StrFormat("%s already mounted in slot %d, drive %d.", pathname.c_str(), inUseSlot, inUseDrive + 1);
 			GetFrame().FrameMessageBox(strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 			return;
 		}
-		else
-		{
-			// Not in use: insert image to validate it
-			bool error = card.Insert(driveSelected, pathname);
-			if (error != true)
-			{
-				card.NotifyInvalidImage(pathname);
-				m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = "";
-				return;
-			}
 
-			m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = pathname;
+		// Not in use: insert image to validate it
+		bool error = card.Insert(driveSelected, pathname);
+		if (error != true)
+		{
+			card.NotifyInvalidImage(pathname);
+			m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = "";
+			return;
 		}
+
+		m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = pathname;
 
 		// Add hard drive name as item 0 and select it
 		if (dwOpenDialogIndex > 0)
