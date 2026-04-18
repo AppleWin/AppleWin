@@ -79,6 +79,7 @@ public:
 	UINT m_mouseShowCrosshair;
 	UINT m_mouseRestrictToWindow;
 	bool m_diskII13SectorFirmware[NUM_SLOTS];
+	HdcMode m_hdcFirmware[NUM_SLOTS];
 	SlotInfoForMB m_Mockingboard[NUM_SLOTS];
 	SlotInfoForFDC m_slotInfoForFDC[NUM_SLOTS];
 	SlotInfoForHDC m_slotInfoForHDC[NUM_SLOTS];

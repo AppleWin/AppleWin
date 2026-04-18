@@ -776,7 +776,13 @@ INT_PTR CPageSlots::DlgProcHarddiskInternal(HWND hWnd, UINT message, WPARAM wpar
 		break;
 
 	case WM_INITDIALOG:
-		InitComboHDD(hWnd, ms_slot);
+		{
+			InitComboHDD(hWnd, ms_slot);
+
+			const char choices[] = "Auto\0SmartPort mode\0ProDOS block mode (2 devices)\0ProDOS block mode (4 devices)\0";
+			const int choice = (int) m_PropertySheetHelper.GetConfigNew().m_hdcFirmware[ms_slot];
+			m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT_OPT_COMBO_HDC_FW, choices, choice);
+		}
 		break;
 
 	default:
@@ -943,6 +949,8 @@ void CPageSlots::HandleHDDSwap(HWND hWnd, UINT slot)
 
 void CPageSlots::DlgHarddiskOK(HWND hWnd)
 {
+	const HdcMode choice = (HdcMode)SendDlgItemMessage(hWnd, IDC_SLOT_OPT_COMBO_HDC_FW, CB_GETCURSEL, 0, 0);
+	m_PropertySheetHelper.GetConfigNew().m_hdcFirmware[ms_slot] = choice;
 }
 
 void CPageSlots::ConfigResetHarddisk(UINT slot)
@@ -950,6 +958,7 @@ void CPageSlots::ConfigResetHarddisk(UINT slot)
 	CConfigNeedingRestart& configNew = m_PropertySheetHelper.GetConfigNew();
 	if (configNew.m_Slot[slot] == CT_GenericHDD)
 	{
+		m_PropertySheetHelper.GetConfigNew().m_hdcFirmware[slot] = HdcDefault;
 		for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 			configNew.m_slotInfoForHDC[slot].pathname[i] = "";
 	}

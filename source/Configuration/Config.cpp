@@ -90,6 +90,7 @@ void CConfigNeedingRestart::ResetAllCardOptions(UINT slot)
 	for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
 		m_slotInfoForFDC[slot].pathname[i] = "";
 
+	m_hdcFirmware[slot] = HdcDefault;
 	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 		m_slotInfoForHDC[slot].pathname[i] = "";
 
@@ -150,6 +151,8 @@ void CConfigNeedingRestart::Reload()
 		}
 		else if (m_Slot[slot] == CT_GenericHDD)
 		{
+			m_hdcFirmware[slot] = dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(slot)).GetHdcFirmwareMode();
+
 			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 				m_slotInfoForHDC[slot].pathname[i] = dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(slot)).HarddiskGetFullPathName(i);
 		}
@@ -229,6 +232,7 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_mouseShowCrosshair = other.m_mouseShowCrosshair;
 	m_mouseRestrictToWindow = other.m_mouseRestrictToWindow;
 	memcpy(m_diskII13SectorFirmware, other.m_diskII13SectorFirmware, sizeof(m_diskII13SectorFirmware));
+	memcpy(m_hdcFirmware, other.m_hdcFirmware, sizeof(m_hdcFirmware));
 	memcpy(m_Mockingboard, other.m_Mockingboard, sizeof(m_Mockingboard));
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
@@ -270,6 +274,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 		memcmp(m_SaturnMemorySize, other.m_SaturnMemorySize, sizeof(m_SaturnMemorySize)) == 0 &&
 		m_serialPortItem == other.m_serialPortItem &&
 		memcmp(m_diskII13SectorFirmware, other.m_diskII13SectorFirmware, sizeof(m_diskII13SectorFirmware)) == 0 &&
+		memcmp(m_hdcFirmware, other.m_hdcFirmware, sizeof(m_hdcFirmware)) == 0 &&
 		memcmp(m_Mockingboard, other.m_Mockingboard, sizeof(m_Mockingboard)) == 0 &&
 		m_enableTheFreezesF8Rom == other.m_enableTheFreezesF8Rom &&
 		m_NoSlotClock == other.m_NoSlotClock;

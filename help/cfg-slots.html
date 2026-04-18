@@ -95,6 +95,16 @@ Extra options:
     <li>Swap the hard disk images.</li>
 	<li><strong>Warning!</strong> If done during image access this could result in undefined behavior (eg. Apple II program crash) or data corruption on the image.</li>
   </ul>
+<li>Firmware type:</li>
+  <ul>
+    <li><strong>Advanced:</strong> Auto or force SmartPort mode (//e (enhanced)), ProDOS block mode: 2 or 4 devices.</li>
+	<ul>
+	  <li>Auto will select the mode depending on the Apple II mode.</li>
+	  <li>SmartPort mode: odd ROM bytes at $Cs01-07: $20 $00 $03 $00.</li>
+	  <li>ProDOS block mode: odd ROM bytes at $Cs01-07: $20 $00 $03 $3C.</li>
+	  <li>2 or 4 devices is selected via ROM byte at offset $CsFE (bit 5).</li>
+	</ul>
+  </ul>
 </ul>
 
 <strong>Printer interface</strong><br>

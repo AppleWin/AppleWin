@@ -129,6 +129,7 @@ enum AppMode_e
 #define REGVALUE_MOCKINGBOARD_SSI263_SOCKET1 "SSI263 Socket 1"
 #define REGVALUE_MOCKINGBOARD_SC01 "SC01"
 #define REGVALUE_DISKII_13_SECTOR_FIRMWARE "13-sector Firmware"
+#define REGVALUE_HDC_FIRMWARE "Firmware"
 
 // Preferences 
 #define REG_PREFS                              "Preferences"

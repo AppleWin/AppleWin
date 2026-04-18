@@ -153,7 +153,7 @@ Overview
 
 
 HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
-	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_isFirmwareV1or2(false), m_useHdcFirmwareV1(false), m_useHdcFirmwareV2(false), m_useHdcFirmwareMode(HdcDefault)
+	Card(CT_GenericHDD, slot), m_userNumBlocks(0), m_isFirmwareV1or2(false), m_useHdcFirmwareV1(false), m_useHdcFirmwareV2(false)
 {
 	if (m_slot == SLOT0)
 		ThrowErrorInvalidSlot();
@@ -182,6 +182,11 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	m_saveStateFirmwareV2 = false;
 	m_saveStateFirmwareValid = false;
 	memset(m_saveStateFirmware, 0, sizeof(m_saveStateFirmware));
+
+	uint32_t tmp;
+	std::string regSection = RegGetConfigSlotSection(m_slot);
+	RegLoadValue(regSection.c_str(), REGVALUE_HDC_FIRMWARE, TRUE, &tmp, HdcDefault);
+	m_useHdcFirmwareMode = (HdcMode)tmp;
 }
 
 HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
@@ -199,6 +204,19 @@ void HarddiskInterfaceCard::Reset(const bool powerCycle)
 }
 
 //===========================================================================
+
+HdcMode HarddiskInterfaceCard::GetHdcFirmwareMode()
+{
+	return m_useHdcFirmwareMode;
+}
+
+void HarddiskInterfaceCard::SetHdcFirmwareMode(HdcMode hdcMode)
+{
+	m_useHdcFirmwareMode = hdcMode;
+
+	std::string regSection = RegGetConfigSlotSection(m_slot);
+	RegSaveValue(regSection.c_str(), REGVALUE_HDC_FIRMWARE, TRUE, (UINT)m_useHdcFirmwareMode);
+}
 
 void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 {

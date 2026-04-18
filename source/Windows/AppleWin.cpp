@@ -816,7 +816,11 @@ static void RepeatInitialization(void)
 				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV1();
 			if (g_cmdLine.useHdcFirmwareV2)
 				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV2();
-			dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetHdcFirmwareMode(g_cmdLine.slotInfo[i].useHdcFirmwareMode);
+			if (g_cmdLine.slotInfo[i].useHdcFirmwareMode != HdcUndefinedFromCmdLine)
+			{
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetHdcFirmwareMode(g_cmdLine.slotInfo[i].useHdcFirmwareMode);
+				g_cmdLine.slotInfo[i].useHdcFirmwareMode = HdcUndefinedFromCmdLine;	// Don't reapply after a restart
+			}
 		}
 		else if (GetCardMgr().GetMockingboardCardMgr().IsMockingboard(i))
 		{

@@ -14,7 +14,7 @@ struct CmdLine
 		SlotInfo()
 		{
 			isDiskII13 = false;
-			useHdcFirmwareMode = HdcDefault;
+			useHdcFirmwareMode = HdcUndefinedFromCmdLine;
 			useBad6522A = false;
 			useBad6522B = false;
 			socketSSI263[0] = socketSSI263[1] = socketSC01 = SSI263Unknown;

@@ -38,7 +38,7 @@ enum HardDrive_e
 
 enum HdcMode
 {
-	HdcDefault, HdcSmartPort, HdcBlockMode2Devices, HdcBlockMode4Devices
+	HdcDefault, HdcSmartPort, HdcBlockMode2Devices, HdcBlockMode4Devices, HdcUndefinedFromCmdLine
 };
 
 // For SP read/write block cmds, a 24-bit blockNum => 8GiB capacity
@@ -113,7 +113,8 @@ public:
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
 	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }
 	void UseHdcFirmwareV2(void) { m_useHdcFirmwareV2 = true; }
-	void SetHdcFirmwareMode(HdcMode hdcMode) { m_useHdcFirmwareMode = hdcMode; }
+	HdcMode GetHdcFirmwareMode();
+	void SetHdcFirmwareMode(HdcMode hdcMode);
 
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
 	bool ImageSwap(void);
