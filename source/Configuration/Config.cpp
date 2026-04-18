@@ -62,16 +62,17 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_swapButtons0and1 = false;
 
 	// Slots
-	memset(m_Slot, 0, sizeof(m_Slot));
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+	{
+		m_Slot[slot] = CT_Empty;
+		ResetAllCardOptions(slot);
+	}
 	m_SlotAux = CT_Empty;
 	m_tfeVirtualDNS = false;
 	m_RamWorksMemorySize = 0;
-	memset(m_SaturnMemorySize, 0, sizeof(m_SaturnMemorySize));
 	m_serialPortItem = 0;
 	m_mouseShowCrosshair = 0;
 	m_mouseRestrictToWindow = 0;
-	memset(m_diskII13SectorFirmware, 0, sizeof(m_diskII13SectorFirmware));
-	memset(m_Mockingboard, 0, sizeof(m_Mockingboard));
 	m_disk2Card.ForbidSaveDiskImageToRegistry();
 	m_harddiskCard.ForbidSaveDiskImageToRegistry();
 
@@ -81,6 +82,22 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_enableTheFreezesF8Rom = 0;
 	m_gameIOConnectorType = DT_EMPTY;
 	m_NoSlotClock = false;
+}
+
+void CConfigNeedingRestart::ResetAllCardOptions(UINT slot)
+{
+	m_diskII13SectorFirmware[slot] = false;
+	for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+		m_slotInfoForFDC[slot].pathname[i] = "";
+
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+		m_slotInfoForHDC[slot].pathname[i] = "";
+
+	m_SaturnMemorySize[slot] = 0;
+
+	m_Mockingboard[slot].ssi263A = SSI263Empty;
+	m_Mockingboard[slot].ssi263B = SSI263Empty;
+	m_Mockingboard[slot].sc01 = SSI263Empty;
 }
 
 // Update from current global configuration
@@ -145,6 +162,10 @@ void CConfigNeedingRestart::Reload()
 			m_Mockingboard[slot].ssi263A = dynamic_cast<MockingboardCard&>(cardManager.GetRef(slot)).GetSocketSSI263(0);
 			m_Mockingboard[slot].ssi263B = dynamic_cast<MockingboardCard&>(cardManager.GetRef(slot)).GetSocketSSI263(1);
 			m_Mockingboard[slot].sc01 = dynamic_cast<MockingboardCard&>(cardManager.GetRef(slot)).GetSocketSC01();
+		}
+		else if (m_Slot[slot] == CT_Empty)
+		{
+			ResetAllCardOptions(slot);
 		}
 	}
 

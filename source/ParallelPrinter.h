@@ -12,14 +12,9 @@ public:
 			ThrowErrorInvalidSlot();
 
 		m_inactivity = 0;
-		m_printerIdleLimit = 10;
 		m_file = NULL;
 
-		m_bDumpToPrinter = false;
-		m_bConvertEncoding = false;
-		m_bFilterUnprintable = false;
-		m_bPrinterAppend = false;
-		m_bEnableDumpToRealPrinter = false;
+		ResetDefaultOptions();
 	}
 	virtual ~ParallelPrinterCard(void) {}
 
@@ -52,9 +47,8 @@ public:
 
 	const std::string& GetFilename(void);
 	void SetFilename(const std::string& prtFilename);
-	UINT GetIdleLimit(void);
-	void SetIdleLimit(UINT Duration);
-
+	UINT GetIdleLimit(void) { return m_printerIdleLimit; }
+	void SetIdleLimit(UINT value) { m_printerIdleLimit = value; }
 	bool GetDumpToPrinter(void) { return m_bDumpToPrinter; }
 	void SetDumpToPrinter(bool value) { m_bDumpToPrinter = value; }
 	bool GetConvertEncoding(void) { return m_bConvertEncoding; }
@@ -64,7 +58,17 @@ public:
 	bool GetPrinterAppend(void) { return m_bPrinterAppend; }
 	void SetPrinterAppend(bool value) { m_bPrinterAppend = value; }
 	bool GetEnableDumpToRealPrinter(void) { return m_bEnableDumpToRealPrinter; }
-	void SetEnableDumpToRealPrinter(bool value) { m_bEnableDumpToRealPrinter = value; }
+	void SetEnableDumpToRealPrinter(bool value) { m_bEnableDumpToRealPrinter = value; }	// Set by cmd-line only
+
+	void ResetDefaultOptions()
+	{
+		m_printerIdleLimit = 10;
+		m_bDumpToPrinter = false;
+		m_bConvertEncoding = false;
+		m_bFilterUnprintable = false;
+		m_bPrinterAppend = false;
+		m_bEnableDumpToRealPrinter = false;
+	}
 
 	void GetRegistryConfig(void);
 	void SetRegistryConfig(void);
@@ -74,10 +78,10 @@ private:
 	void ClosePrint(void);
 
 	uint32_t m_inactivity;
-	UINT m_printerIdleLimit;
 	FILE* m_file;
 	std::string m_szPrintFilename;
 
+	UINT m_printerIdleLimit;
 	bool m_bDumpToPrinter;
 	bool m_bConvertEncoding;
 	bool m_bFilterUnprintable;

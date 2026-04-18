@@ -416,18 +416,22 @@ bool HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname
 	else
 		m_hardDiskDrive[iDrive].m_bWriteProtected = (dwAttributes & FILE_ATTRIBUTE_READONLY) ? true : false;
 
-	// Check if image is being used by the other HDD, and unplug it in order to be swapped
+	// Check if image is being used by any other HDD, and unplug it in order to be swapped
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 	{
-		const std::string & pszOtherPathname = HarddiskGetFullPathName(!iDrive);
+		if (i == iDrive)
+			continue;
 
-		char szCurrentPathname[MAX_PATH]; 
+		const std::string& pszOtherPathname = HarddiskGetFullPathName(i);
+
+		char szCurrentPathname[MAX_PATH];
 		DWORD uNameLen = GetFullPathName(pathname.c_str(), MAX_PATH, szCurrentPathname, NULL);
 		if (uNameLen == 0 || uNameLen >= MAX_PATH)
 			strcpy_s(szCurrentPathname, MAX_PATH, pathname.c_str());
 
 		if (!strcmp(pszOtherPathname.c_str(), szCurrentPathname))
 		{
-			Unplug(!iDrive);
+			Unplug(i);
 			GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 		}
 	}

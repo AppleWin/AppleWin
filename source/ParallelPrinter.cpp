@@ -174,16 +174,6 @@ void ParallelPrinterCard::SetFilename(const std::string& prtFilename)
 	}
 }
 
-UINT ParallelPrinterCard::GetIdleLimit(void)
-{
-	return m_printerIdleLimit;
-}
-
-void ParallelPrinterCard::SetIdleLimit(UINT Duration)
-{	
-	m_printerIdleLimit = Duration;
-}
-
 //===========================================================================
 
 void ParallelPrinterCard::GetRegistryConfig(void)

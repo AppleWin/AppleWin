@@ -30,6 +30,9 @@ struct SlotInfoForMB
 
 class CConfigNeedingRestart
 {
+private:
+	void ResetAllCardOptions(UINT slot);
+
 public:
 	CConfigNeedingRestart();	// zero initialise
 

@@ -39,6 +39,7 @@ protected:
 
 private:
 	void InitOptions(HWND hWnd);
+	void ResetCardOptionsToDefault(UINT slot);
 	void DiskCardCleanup();
 	int CardTypeToComboItem(UINT slot);
 	BOOL CardTypeHasOptions(SS_CARDTYPE card);
@@ -81,6 +82,15 @@ private:
 	void DlgSaturnOK(HWND hWnd);
 	void DlgMockingboardOK(HWND hWnd);
 	void DlgRamWorks3OK(HWND hWnd);
+
+	void ConfigResetDisk2(UINT slot);
+	void ConfigResetHarddisk(UINT slot);
+	void ConfigResetSSC(UINT slot);
+	void ConfigResetPrinter(UINT slot);
+	void ConfigResetMouseCard(UINT slot);
+	void ConfigResetSaturn(UINT slot);
+	void ConfigResetMockingboard(UINT slot);
+	void ConfigResetRamWorks();
 
 	UINT RemovalConfirmation(UINT command);
 
