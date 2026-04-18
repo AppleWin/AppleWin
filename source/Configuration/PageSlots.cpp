@@ -1386,6 +1386,8 @@ void CPageSlots::ConfigResetMockingboard(UINT slot)
 
 //===========================================================================
 
+static bool g_rw3SliderMoved = false;
+
 INT_PTR CALLBACK CPageSlots::DlgProcRamWorks3(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	// Switch from static func to our instance
@@ -1396,6 +1398,10 @@ INT_PTR CPageSlots::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wpa
 {
 	switch (message)
 	{
+	case WM_HSCROLL:
+		g_rw3SliderMoved = true;
+		break;
+
 	case WM_COMMAND:
 		switch (LOWORD(wparam))
 		{
@@ -1429,6 +1435,8 @@ INT_PTR CPageSlots::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wpa
 
 		const uint32_t size = m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize / 16;	// Convert from 64K banks to MB
 		SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_SETPOS, TRUE, size);
+
+		g_rw3SliderMoved = false;
 	}
 	break;
 
@@ -1441,6 +1449,11 @@ INT_PTR CPageSlots::DlgProcRamWorks3Internal(HWND hWnd, UINT message, WPARAM wpa
 
 void CPageSlots::DlgRamWorks3OK(HWND hWnd)
 {
+	// Slider UI is in 1MB chunks, but from save-state, can have finer granularity, eg. 4x 64K
+	// So only use slider position if user has touched it
+	if (!g_rw3SliderMoved)
+		return;
+
 	const uint32_t size = (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_RW3_SIZE, TBM_GETPOS, 0, 0);
 	m_PropertySheetHelper.GetConfigNew().m_RamWorksMemorySize = size * 16;	// Convert from MB to 64K banks
 }
