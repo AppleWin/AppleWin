@@ -100,18 +100,13 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		switch (LOWORD(wparam))
 		{
 		case IDC_AUTHENTIC_SPEED:	// Authentic Machine Speed
-			SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPOS, 1, SPEED_NORMAL);
-			EnableTrackbar(hWnd, 0);
+			SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPOS, TRUE, SPEED_NORMAL);
+			EnableTrackbar(hWnd, FALSE);
 			break;
 
 		case IDC_CUSTOM_SPEED:		// Select Custom Speed
 			SetFocus(GetDlgItem(hWnd, IDC_SLIDER_CPU_SPEED));
-			EnableTrackbar(hWnd, 1);
-			break;
-
-		case IDC_SLIDER_CPU_SPEED:	// CPU speed slider
-			CheckRadioButton(hWnd, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);
-			EnableTrackbar(hWnd, 1);
+			EnableTrackbar(hWnd, TRUE);
 			break;
 
 		case IDC_MONOCOLOR:
@@ -197,7 +192,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 				(pt.y >= rect.top) && (pt.y <= rect.bottom))
 			{
 				CheckRadioButton(hWnd, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);
-				EnableTrackbar(hWnd,1);
+				EnableTrackbar(hWnd, TRUE);
 				SetFocus(GetDlgItem(hWnd,IDC_SLIDER_CPU_SPEED));
 				ScreenToClient(GetDlgItem(hWnd,IDC_SLIDER_CPU_SPEED),&pt);
 				PostMessage(GetDlgItem(hWnd,IDC_SLIDER_CPU_SPEED),WM_LBUTTONDOWN,wparam,MAKELONG(pt.x,pt.y));
