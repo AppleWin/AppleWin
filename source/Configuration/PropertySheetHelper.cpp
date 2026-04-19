@@ -344,13 +344,13 @@ void CPropertySheetHelper::ApplyNewConfigForRestart()
 
 		if (m_ConfigNew.m_Slot[slot] == CT_Disk2)
 		{
-			if (CONFIG_CHANGED(m_diskII13SectorFirmware))
+			if (CONFIG_CHANGED(m_diskII13SectorFirmware[slot]))
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).Set13SectorFirmware(m_ConfigNew.m_diskII13SectorFirmware[slot]);
 		}
 
 		if (m_ConfigNew.m_Slot[slot] == CT_GenericHDD)
 		{
-			if (CONFIG_CHANGED(m_hdcFirmware))
+			if (CONFIG_CHANGED(m_hdcFirmware[slot]))
 				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).SetHdcFirmwareMode(m_ConfigNew.m_hdcFirmware[slot]);
 		}
 
