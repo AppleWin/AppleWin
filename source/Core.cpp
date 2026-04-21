@@ -69,12 +69,12 @@ bool		g_bDisableDirectInput = false;
 bool		g_bDisableDirectSound = false;
 bool		g_bDisableDirectSoundMockingboard = false;
 
-uint32_t		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
+DWORD		g_dwSpeed		= SPEED_NORMAL;	// Affected by Config dialog's speed slider bar
 double		g_fCurrentCLK6502 = CLK_6502_NTSC;	// Affected by Config dialog's speed slider bar
 static double g_fMHz		= 1.0;			// Affected by Config dialog's speed slider bar
 
 int			g_nCpuCyclesFeedback = 0;
-uint32_t       g_dwCyclesThisFrame = 0;
+DWORD       g_dwCyclesThisFrame = 0;
 
 int			g_nMemoryClearType = MIP_FF_FF_00_00; // Note: -1 = random MIP in Memory.cpp MemReset()
 
@@ -128,7 +128,7 @@ void LogPerfTimings(void)
 
 //===========================================================================
 
-static uint32_t dwLogKeyReadTickStart;
+static DWORD dwLogKeyReadTickStart;
 static bool bLogKeyReadDone = false;
 
 void LogFileTimeUntilFirstKeyReadReset(void)
@@ -154,13 +154,13 @@ void LogFileTimeUntilFirstKeyRead(void)
 	if (!g_fh || bLogKeyReadDone)
 		return;
 
-	if ( (ReadByteFromMemory(regs.pc-3) != 0x2C)	// AZTEC: bit $c000
-		&& !((regs.pc-2) == 0xE797 && ReadByteFromMemory(regs.pc-2) == 0xB1 && ReadByteFromMemory(regs.pc-1) == 0x50)	// Phasor1: lda ($50),y
-		&& !((regs.pc-3) == 0x0895 && ReadByteFromMemory(regs.pc-3) == 0xAD)	// Rescue Raiders v1.3,v1.5: lda $c000
+	if ( (mem[regs.pc-3] != 0x2C)	// AZTEC: bit $c000
+		&& !((regs.pc-2) == 0xE797 && mem[regs.pc-2] == 0xB1 && mem[regs.pc-1] == 0x50)	// Phasor1: lda ($50),y
+		&& !((regs.pc-3) == 0x0895 && mem[regs.pc-3] == 0xAD)	// Rescue Raiders v1.3,v1.5: lda $c000
 		)
 		return;
 
-	uint32_t dwTime = GetTickCount() - dwLogKeyReadTickStart;
+	DWORD dwTime = GetTickCount() - dwLogKeyReadTickStart;
 
 	LogFileOutput("Time from emulation reboot until first $C000 access: %d msec\n", dwTime);
 
@@ -200,7 +200,7 @@ double Get6502BaseClock(void)
 
 void SetCurrentCLK6502(void)
 {
-	static uint32_t dwPrevSpeed = (uint32_t) -1;
+	static DWORD dwPrevSpeed = (DWORD) -1;
 	static VideoRefreshRate_e prevVideoRefreshRate = VR_NONE;
 
 	if (dwPrevSpeed == g_dwSpeed && GetVideo().GetVideoRefreshRate() == prevVideoRefreshRate)
@@ -269,7 +269,7 @@ bool CheckOldAppleWinVersion(void)
 
 	// version: xx.yy.zz.ww
 	char* p0 = szOldAppleWinVersion;
-	size_t len = strlen(szOldAppleWinVersion);
+	int len = strlen(szOldAppleWinVersion);
 	szOldAppleWinVersion[len] = '.';	// append a null terminator
 	szOldAppleWinVersion[len + 1] = '\0';
 	for (UINT i = 0; i < 4; i++)
@@ -283,22 +283,6 @@ bool CheckOldAppleWinVersion(void)
 	}
 
 	return bShowAboutDlg;
-}
-
-UINT GetCompilationTarget(void)
-{
-	return sizeof(void*) * 8;	// Portable (Windows, Linux); returns 32 or 64
-}
-
-std::string GetAppleWinVersionAndBuild(void)
-{
-	std::string debugStr =
-#ifdef _DEBUG
-		", debug";
-#else
-		"";
-#endif
-	return StrFormat("AppleWin version: %s (%d-bit build%s)", g_VERSIONSTRING.c_str(), GetCompilationTarget(), debugStr.c_str());
 }
 
 bool SetCurrentImageDir(const std::string& pszImageDir)

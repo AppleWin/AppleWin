@@ -28,14 +28,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 #include <sstream>
-#include <ctime>
-#if _MSVC_LANG >= 201703L // Compiler option: /std:c++17
-	#define _HAS_CXX17 1
-	#include <filesystem>
-#endif
+
 #include "Windows/Win32Frame.h"
 #include "Windows/AppleWin.h"
-#include "CmdLine.h"
 #include "Interface.h"
 #include "Keyboard.h"
 #include "Log.h"
@@ -43,22 +38,24 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Mockingboard.h"
 #include "MouseInterface.h"
 #include "Windows/DirectInput.h"
-#include "Windows/DXSoundBuffer.h"
 #include "NTSC.h"
 #include "ParallelPrinter.h"
 #include "Pravets.h"
 #include "Registry.h"
 #include "SaveState.h"
 #include "SerialComms.h"
+#include "SoundCore.h"
 #include "Uthernet1.h"
 #include "Uthernet2.h"
 #include "Speaker.h"
 #include "Utilities.h"
 #include "CardManager.h"
+#include "../resource/resource.h"
 #include "Configuration/PropertySheet.h"
 #include "Debugger/Debug.h"
-#include "ProDOS_Utils.h"
-#include "../resource/resource.h"
+#if _MSC_VER < 1900	// VS2013 or before (cl.exe v18.x or before)
+#include <sys/stat.h>
+#endif
 
 //#define ENABLE_MENU 0
 #define DEBUG_KEY_MESSAGES 0
@@ -66,7 +63,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static bool FileExists(std::string strFilename);
 
 // Must keep in sync with Disk_Status_e g_aDiskFullScreenColors
-static const uint32_t g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
+static const DWORD g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
 {
 	RGB(  0,  0,  0), // DISK_STATUS_OFF   BLACK
 	RGB(  0,255,  0), // DISK_STATUS_READ  GREEN
@@ -75,28 +72,6 @@ static const uint32_t g_aDiskFullScreenColorsLED[ NUM_DISK_STATUS ] =
 	RGB(  0,  0,255), // DISK_STATUS_EMPTY -blue-
 	RGB(  0,128,128)  // DISK_STATUS_SPIN  -cyan-
 };
-
-static int Util_SelectDiskImage ( const HWND hwnd, const HINSTANCE hInstance, const char * pTitle, const bool bSave, char *pFilename, const char *pFilter )
-{
-	OPENFILENAME ofn;
-	memset(&ofn, 0, sizeof(OPENFILENAME));
-
-	ofn.lStructSize     = sizeof(OPENFILENAME);
-	ofn.hwndOwner       = hwnd;
-	ofn.hInstance       = hInstance;
-	ofn.lpstrFilter     = pFilter;
-	ofn.lpstrFile       = pFilename;
-	ofn.nMaxFile        = MAX_PATH; // sizeof(szFilename);
-	ofn.lpstrInitialDir = g_sCurrentDir.c_str();
-	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
-	ofn.lpstrTitle      = pTitle;
-
-	if( bSave )
-		ofn.Flags |= OFN_FILEMUSTEXIST;
-
-	int nRes = bSave ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
-	return nRes;
-}
 
 void Win32Frame::SetAltEnterToggleFullScreen(bool mode)
 {
@@ -206,55 +181,55 @@ void Win32Frame::CreateGdiObjects(void)
 {
 	memset(buttonbitmap, 0, BUTTONS*sizeof(HBITMAP));
 
-	buttonbitmap[BTN_HELP] = (HBITMAP)LOADBUTTONBITMAP("HELP_BUTTON");
+	buttonbitmap[BTN_HELP] = (HBITMAP)LOADBUTTONBITMAP(TEXT("HELP_BUTTON"));
 
 	switch (g_Apple2Type)
 	{
 	case A2TYPE_PRAVETS82:
 	case A2TYPE_PRAVETS8M:
 	case A2TYPE_PRAVETS8A:
-		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP("RUNP_BUTTON");
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNP_BUTTON"));
 		break;
 	case A2TYPE_TK30002E:
-		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP("RUN3000E_BUTTON");
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN3000E_BUTTON"));
 		break;
 	case A2TYPE_BASE64A:
-		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP("RUNBASE64A_BUTTON");
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUNBASE64A_BUTTON"));
 		break;
 	default:
-		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP("RUN_BUTTON");
+		buttonbitmap[BTN_RUN] = (HBITMAP)LOADBUTTONBITMAP(TEXT("RUN_BUTTON"));
 		break;
 	}
 
-	buttonbitmap[BTN_DRIVE1   ] = (HBITMAP)LOADBUTTONBITMAP("DRIVE1_BUTTON");
-	buttonbitmap[BTN_DRIVE2   ] = (HBITMAP)LOADBUTTONBITMAP("DRIVE2_BUTTON");
-	buttonbitmap[BTN_DRIVESWAP] = (HBITMAP)LOADBUTTONBITMAP("DRIVESWAP_BUTTON");
-	buttonbitmap[BTN_FULLSCR  ] = (HBITMAP)LOADBUTTONBITMAP("FULLSCR_BUTTON");
-	buttonbitmap[BTN_DEBUG    ] = (HBITMAP)LOADBUTTONBITMAP("DEBUG_BUTTON");
-	buttonbitmap[BTN_SETUP    ] = (HBITMAP)LOADBUTTONBITMAP("SETUP_BUTTON");
+	buttonbitmap[BTN_DRIVE1   ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE1_BUTTON"));
+	buttonbitmap[BTN_DRIVE2   ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVE2_BUTTON"));
+	buttonbitmap[BTN_DRIVESWAP] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DRIVESWAP_BUTTON"));
+	buttonbitmap[BTN_FULLSCR  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("FULLSCR_BUTTON"));
+	buttonbitmap[BTN_DEBUG    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DEBUG_BUTTON"));
+	buttonbitmap[BTN_SETUP    ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("SETUP_BUTTON"));
 
 	//
 
-	g_hCapsLockBitmap[0] = (HBITMAP)LOADBUTTONBITMAP("LED_CAPSOFF_BITMAP");
-	g_hCapsLockBitmap[1] = (HBITMAP)LOADBUTTONBITMAP("LED_CAPSON_BITMAP");
+	g_hCapsLockBitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSOFF_BITMAP"));
+	g_hCapsLockBitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSON_BITMAP"));
 	//Pravets8 only
-	g_hCapsBitmapP8[0] = (HBITMAP)LOADBUTTONBITMAP("LED_CAPSOFF_P8_BITMAP");
-	g_hCapsBitmapP8[1] = (HBITMAP)LOADBUTTONBITMAP("LED_CAPSON_P8_BITMAP");
-	g_hCapsBitmapLat[0] = (HBITMAP)LOADBUTTONBITMAP("LED_LATOFF_BITMAP");
-	g_hCapsBitmapLat[1] = (HBITMAP)LOADBUTTONBITMAP("LED_LATON_BITMAP");
+	g_hCapsBitmapP8[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSOFF_P8_BITMAP"));
+	g_hCapsBitmapP8[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_CAPSON_P8_BITMAP"));
+	g_hCapsBitmapLat[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_LATOFF_BITMAP"));
+	g_hCapsBitmapLat[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("LED_LATON_BITMAP"));
 
-	/*charsetbitmap[0] = (HBITMAP)LOADBUTTONBITMAP("CHARSET_APPLE_BITMAP");
-	charsetbitmap[1] = (HBITMAP)LOADBUTTONBITMAP("CHARSET_82_BITMAP");
-	charsetbitmap[2] = (HBITMAP)LOADBUTTONBITMAP("CHARSET_8A_BITMAP");
-	charsetbitmap[3] = (HBITMAP)LOADBUTTONBITMAP("CHARSET_8M_BITMAP");
+	/*charsetbitmap[0] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_APPLE_BITMAP"));
+	charsetbitmap[1] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_82_BITMAP"));
+	charsetbitmap[2] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_8A_BITMAP"));
+	charsetbitmap[3] = (HBITMAP)LOADBUTTONBITMAP(TEXT("CHARSET_8M_BITMAP"));
 	*/
 	//===========================
-	g_hDiskWindowedLED[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP("DISKOFF_BITMAP");
-	g_hDiskWindowedLED[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP("DISKREAD_BITMAP");
-	g_hDiskWindowedLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP("DISKWRITE_BITMAP");
-	g_hDiskWindowedLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP("DISKPROT_BITMAP");
-	g_hDiskWindowedLED[ DISK_STATUS_EMPTY] = (HBITMAP)LOADBUTTONBITMAP("DISKOFF_BITMAP");
-	g_hDiskWindowedLED[ DISK_STATUS_SPIN ] = (HBITMAP)LOADBUTTONBITMAP("DISKREAD_BITMAP");
+	g_hDiskWindowedLED[ DISK_STATUS_OFF  ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKOFF_BITMAP"));
+	g_hDiskWindowedLED[ DISK_STATUS_READ ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKREAD_BITMAP"));
+	g_hDiskWindowedLED[ DISK_STATUS_WRITE] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKWRITE_BITMAP"));
+	g_hDiskWindowedLED[ DISK_STATUS_PROT ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKPROT_BITMAP"));
+	g_hDiskWindowedLED[ DISK_STATUS_EMPTY] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKOFF_BITMAP"));
+	g_hDiskWindowedLED[ DISK_STATUS_SPIN ] = (HBITMAP)LOADBUTTONBITMAP(TEXT("DISKREAD_BITMAP"));
 
 	btnfacebrush    = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
 	btnfacepen      = CreatePen(PS_SOLID,1,GetSysColor(COLOR_BTNFACE));
@@ -263,7 +238,7 @@ void Win32Frame::CreateGdiObjects(void)
 	smallfont = CreateFont(smallfontHeight,6,0,0,FW_NORMAL,0,0,0,ANSI_CHARSET,
 							OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,
 							DEFAULT_QUALITY,VARIABLE_PITCH | FF_SWISS,
-							"Small Fonts");
+							TEXT("Small Fonts"));
 }
 
 //===========================================================================
@@ -358,7 +333,7 @@ void Win32Frame::DrawButton (HDC passdc, int number) {
 
     ExtTextOut(dc,x+offset+22,rect.top,ETO_CLIPPED,&rect,
                pszBaseName,
-               MIN(8,(UINT)strlen(pszBaseName)),
+               MIN(8,_tcslen(pszBaseName)),
                NULL);
   }
   if (!passdc)
@@ -607,10 +582,10 @@ void Win32Frame::FrameDrawDiskLEDS( HDC passdc )
 		SetTextAlign(dc,TA_LEFT | TA_TOP);
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive1]);
-		TextOut(dc,x+ 3,y+2,"1",1);
+		TextOut(dc,x+ 3,y+2,TEXT("1"),1);
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive2]);
-		TextOut(dc,x+13,y+2,"2",1);
+		TextOut(dc,x+13,y+2,TEXT("2"),1);
 	}
 	else
 	{
@@ -655,16 +630,16 @@ void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, i
 	drive2Track = disk2Card.GetTrack(DRIVE_2);
 
 	// Probe known OS's for default Slot/Track/Sector
-	const bool isProDOS = ReadByteFromMemory(0xBF00) == 0x4C;
+	const bool isProDOS = mem[0xBF00] == 0x4C;
 	bool isSectorValid = false;
 	int drive1Sector = -1, drive2Sector = -1;
 
 	// Try DOS3.3 Sector
 	if (!isProDOS)
 	{
-		const int nDOS33slot = ReadByteFromMemory(0xB7E9) / 16;
-		const int nDOS33track = ReadByteFromMemory(0xB7EC);
-		const int nDOS33sector = ReadByteFromMemory(0xB7ED);
+		const int nDOS33slot = mem[0xB7E9] / 16;
+		const int nDOS33track = mem[0xB7EC];
+		const int nDOS33sector = mem[0xB7ED];
 
 		if ((nDOS33slot == slot)
 			&& (nDOS33track >= 0 && nDOS33track < 40)
@@ -687,9 +662,9 @@ void Win32Frame::GetTrackSector(UINT slot, int& drive1Track, int& drive2Track, i
 	{
 		// we can't just read from mem[ 0xD357 ] since it might be bank-switched from ROM
 		// and we need the Language Card RAM
-		const int nProDOStrack = *MemGetMainPtrWithLC(0xC356); // LC1 $D356
-		const int nProDOSsector = *MemGetMainPtrWithLC(0xC357); // LC1 $D357
-		const int nProDOSslot = *MemGetMainPtrWithLC(0xC359) / 16; // LC1 $D359
+		const int nProDOStrack = *MemGetMainPtr(0xC356); // LC1 $D356
+		const int nProDOSsector = *MemGetMainPtr(0xC357); // LC1 $D357
+		const int nProDOSslot = *MemGetMainPtr(0xC359) / 16; // LC1 $D359
 
 		if ((nProDOSslot == slot)
 			&& (nProDOStrack >= 0 && nProDOStrack < 40)
@@ -743,14 +718,14 @@ void Win32Frame::DrawTrackSector(HDC dc, UINT slot, int drive1Track, int drive1S
 
 	std::string text;
 	text = "T" + strTrackDrive1;
-	TextOut(dc, x + 6, y + yOffsetSlotNTrackInfo, text.c_str(), (int)text.length());
+	TextOut(dc, x + 6, y + yOffsetSlotNTrackInfo, text.c_str(), text.length());
 	text = "S" + strSectorDrive1;
-	TextOut(dc, x + 6, y + yOffsetSlotNSectorInfo, text.c_str(), (int)text.length());
+	TextOut(dc, x + 6, y + yOffsetSlotNSectorInfo, text.c_str(), text.length());
 
 	text = "T" + strTrackDrive2;
-	TextOut(dc, x + 26, y + yOffsetSlotNTrackInfo, text.c_str(), (int)text.length());
+	TextOut(dc, x + 26, y + yOffsetSlotNTrackInfo, text.c_str(), text.length());
 	text = "S" + strSectorDrive2;
-	TextOut(dc, x + 26, y + yOffsetSlotNSectorInfo, text.c_str(), (int)text.length());
+	TextOut(dc, x + 26, y + yOffsetSlotNSectorInfo, text.c_str(), text.length());
 }
 
 // Feature Request #201 Show track status
@@ -785,7 +760,7 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 	{
 		// GH#57 - drive lights in full screen mode (Slot 6 only)
 
-		if (!g_bFullScreen_ShowSubunitStatus || GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
+		if (!g_bFullScreen_ShowSubunitStatus)
 			return;
 
 		std::string strTrackDrive1, strSectorDrive1, strTrackDrive2, strSectorDrive2;
@@ -797,13 +772,13 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 			: StrFormat( "%s/%s    ", strTrackDrive2.c_str(), strSectorDrive2.c_str() );
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[ DISK_STATUS_READ ] );
-		TextOut(dc, x, y, text.c_str(), (int)text.length());
+		TextOut(dc, x, y, text.c_str(), text.length());
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive1]);
-		TextOut(dc, x + 3, y + smallfontHeight, "1", 1);
+		TextOut(dc, x + 3, y + smallfontHeight, TEXT("1"), 1);
 
 		SetTextColor(dc, g_aDiskFullScreenColorsLED[g_eStatusDrive2]);
-		TextOut(dc, x + 13, y + smallfontHeight, "2", 1);
+		TextOut(dc, x + 13, y + smallfontHeight, TEXT("2"), 1);
 	}
 	else
 	{
@@ -811,11 +786,7 @@ void Win32Frame::FrameDrawDiskStatus( HDC passdc )
 		if (g_nViewportScale == 1 || !GetWindowedModeShowDiskiiStatus())
 			return;
 
-		// Slot 6's Disk II
-		if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
-		{
-			DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
-		}
+		DrawTrackSector(dc, SLOT6, nDrive1Track, g_nSector[SLOT6][0], nDrive2Track, g_nSector[SLOT6][1]);
 
 		// Slot 5's Disk II
 		if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
@@ -868,7 +839,7 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 			{
 				SetTextAlign(dc, TA_RIGHT | TA_TOP);
 				SetTextColor(dc, g_aDiskFullScreenColorsLED[eHardDriveStatus]);
-				TextOut(dc, x + 23, y + 2, "H", 1);
+				TextOut(dc, x + 23, y + 2, TEXT("H"), 1);
 			}
 
 			if (!IS_APPLE2)
@@ -878,7 +849,7 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 					? RGB(128,128,128)
 					: RGB(  0,  0,  0) ));
 
-				TextOut(dc,x+BUTTONCX,y+2,"A",1); // NB. Caps Lock indicator is already flush right!
+				TextOut(dc,x+BUTTONCX,y+2,TEXT("A"),1); // NB. Caps Lock indicator is already flush right!
 			}
 
 			//
@@ -896,14 +867,14 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 			if (pCurrentAppModeText && pNewAppModeText != pCurrentAppModeText)
 			{
 				SetTextColor(dc, RGB(0,0,0));
-				TextOut(dc, x+BUTTONCX/2, y+13, pCurrentAppModeText, (int)strlen(pCurrentAppModeText));
+				TextOut(dc, x+BUTTONCX/2, y+13, pCurrentAppModeText, strlen(pCurrentAppModeText));
 				pCurrentAppModeText = NULL;
 			}
 
 			if (pNewAppModeText)
 			{
 				SetTextColor(dc, RGB(255,255,255));
-				TextOut(dc, x+BUTTONCX/2, y+13, pNewAppModeText, (int)strlen(pNewAppModeText));
+				TextOut(dc, x+BUTTONCX/2, y+13, pNewAppModeText, strlen(pNewAppModeText));
 				pCurrentAppModeText = pNewAppModeText;
 			}
 		}
@@ -927,7 +898,7 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 			TextOut(dc, x + 27, y + yOffsetSlot6LEDNumbers, "2", 1);
 
 			// Add text for Slot7 harddrive: "H"
-			TextOut(dc, x + 7, y + yOffsetCapsLock, "H", 1);
+			TextOut(dc, x + 7, y + yOffsetCapsLock, TEXT("H"), 1);
 
 			if (g_nViewportScale > 1)
 			{
@@ -944,7 +915,7 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 				if (GetCardMgr().QuerySlot(SLOT5) == CT_Disk2)
 				{
 					std::string slot5 = "Slot 5:";
-					TextOut(dc, x + 15, y + yOffsetSlot5Label, slot5.c_str(), (int)slot5.length());
+					TextOut(dc, x + 15, y + yOffsetSlot5Label, slot5.c_str(), slot5.length());
 					TextOut(dc, x + 7, y + yOffsetSlot5LEDNumbers, "1", 1);
 					TextOut(dc, x + 27, y + yOffsetSlot5LEDNumbers, "2", 1);
 				}
@@ -1063,8 +1034,8 @@ LRESULT Win32Frame::WndProc(
         SetNormalMode();
       if (!IsIconic(window))
         GetWindowRect(window,&framerect);
-      RegSaveValue(REG_PREFS, REGVALUE_PREF_WINDOW_X_POS, 1, framerect.left);
-      RegSaveValue(REG_PREFS, REGVALUE_PREF_WINDOW_Y_POS, 1, framerect.top);
+      RegSaveValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_X_POS), 1, framerect.left);
+      RegSaveValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_Y_POS), 1, framerect.top);
       FrameReleaseDC();
       SetUsingCursor(FALSE);
       if (helpquit) {
@@ -1123,8 +1094,8 @@ LRESULT Win32Frame::WndProc(
 
     case WM_DDE_INITIATE: {
       LogFileOutput("WM_DDE_INITIATE\n");
-      ATOM application = GlobalAddAtom("applewin");
-      ATOM topic       = GlobalAddAtom("system");
+      ATOM application = GlobalAddAtom(TEXT("applewin"));
+      ATOM topic       = GlobalAddAtom(TEXT("system"));
       if(LOWORD(lparam) == application && HIWORD(lparam) == topic)
         SendMessage((HWND)wparam,WM_DDE_ACK,(WPARAM)window,MAKELPARAM(application,topic));
       GlobalDeleteAtom(application);
@@ -1167,7 +1138,7 @@ LRESULT Win32Frame::WndProc(
 		if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 		{
 			Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
-			char filename[MAX_PATH];
+			TCHAR filename[MAX_PATH];
 			DragQueryFile((HDROP)wparam,0,filename,sizeof(filename));
 			POINT point;
 			DragQueryPoint((HDROP)wparam,&point);
@@ -1239,7 +1210,7 @@ LRESULT Win32Frame::WndProc(
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
 			SetUsingCursor(FALSE);
-			buttondown = (int)(wparam-VK_F1);
+			buttondown = wparam-VK_F1;
 			if (g_bIsFullScreen && (buttonover != -1)) {
 				if (buttonover != buttondown)
 				EraseButton(buttonover);
@@ -1361,13 +1332,13 @@ LRESULT Win32Frame::WndProc(
 					{
 						case '0':	// Toggle speed: custom speed / Full-Speed
 							if (g_dwSpeed == SPEED_MAX)
-								REGLOAD_DEFAULT(REGVALUE_EMULATION_SPEED, &g_dwSpeed, SPEED_NORMAL);
+								REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
 							else
 								g_dwSpeed = SPEED_MAX;
 							keyHandled = true; break;
 						case '1':	// Speed = 1 MHz
 							g_dwSpeed = SPEED_NORMAL;
-							REGSAVE(REGVALUE_EMULATION_SPEED, g_dwSpeed);
+							REGSAVE(TEXT(REGVALUE_EMULATION_SPEED), g_dwSpeed);
 							keyHandled = true; break;
 						case '3':	// Speed = Full-Speed
 							g_dwSpeed = SPEED_MAX;
@@ -1389,7 +1360,7 @@ LRESULT Win32Frame::WndProc(
 		}
 		else if (g_nAppMode == MODE_DEBUG)
 		{		
-			DebuggerProcessKey((int)wparam); // Debugger already active, re-direct key to debugger
+			DebuggerProcessKey(wparam); // Debugger already active, re-direct key to debugger
 		}
 		break;
 
@@ -1409,7 +1380,7 @@ LRESULT Win32Frame::WndProc(
 			}
 			else if (g_nAppMode == MODE_DEBUG)
 			{
-				DebuggerInputConsoleChar((char)wparam);
+				DebuggerInputConsoleChar((TCHAR)wparam);
 			}
 			break;
 
@@ -1418,18 +1389,17 @@ LRESULT Win32Frame::WndProc(
 		{
 			buttondown = -1;
 			if (g_bIsFullScreen)
-				EraseButton((int)(wparam-VK_F1));
+				EraseButton(wparam-VK_F1);
 			else
-				DrawButton((HDC)0, (int)(wparam-VK_F1));
+				DrawButton((HDC)0,wparam-VK_F1);
 
-			const int iButton = (int)(wparam-VK_F1);
+			const int iButton = wparam-VK_F1;
 			if (KeybGetCtrlStatus() && (wparam == VK_F3 || wparam == VK_F4))	// Ctrl+F3/F4 for drive pop-up menu (GH#817)
 			{
-				KeybUpdateCtrlShiftStatus(); // #1364
 				POINT pt;		// location of mouse click
 				pt.x = buttonx + BUTTONCX/2;
 				pt.y = buttony + BUTTONCY/2 + iButton * BUTTONCY;
-				const int iDrive = (int)(wparam - VK_F3);
+				const int iDrive = wparam - VK_F3;
 				ProcessDiskPopupMenu( window, pt, iDrive );
 
 				FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
@@ -1674,8 +1644,8 @@ LRESULT Win32Frame::WndProc(
 				if (GetCardMgr().QuerySlot(SLOT6) == CT_Disk2)
 					pDisk2Slot6 = dynamic_cast<Disk2InterfaceCard*>(GetCardMgr().GetObj(SLOT6));
 
-				std::string slot5 = pDisk2Slot5 ? pDisk2Slot5->GetFullDiskFilename((int)(pInfo->hdr.idFrom)) : "";
-				std::string slot6 = pDisk2Slot6 ? pDisk2Slot6->GetFullDiskFilename((int)(pInfo->hdr.idFrom)) : "";
+				std::string slot5 = pDisk2Slot5 ? pDisk2Slot5->GetFullDiskFilename(pInfo->hdr.idFrom) : "";
+				std::string slot6 = pDisk2Slot6 ? pDisk2Slot6->GetFullDiskFilename(pInfo->hdr.idFrom) : "";
 
 				if (pDisk2Slot5)
 				{
@@ -1721,35 +1691,25 @@ LRESULT Win32Frame::WndProc(
 				driveTooltip += "\n";
 				// hex sector
 				driveTooltip += "S$";
-
-				const char* unknown = "??";
-
-				if (g_nSector[slot][0] >= 0)
-					driveTooltip += StrFormat("%02X", g_nSector[slot][0]);
-				else
-					driveTooltip += unknown;
-
+				char sector[3] = "??";
+				if (g_nSector[slot][0] >= 0) sprintf_s(sector, "%02X", g_nSector[slot][0]);
+				driveTooltip += sector;
 				// dec sector
 				driveTooltip += " (S";
-				if (g_nSector[slot][0] >= 0)
-					driveTooltip += StrFormat("%02d", g_nSector[slot][0]);
-				else
-					driveTooltip += unknown;
+				strcpy(sector, "??");
+				if (g_nSector[slot][0] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][0]);
+				driveTooltip += sector;
 				driveTooltip += ")";
-
 				// hex sector
 				driveTooltip += "\tS$";
-				if (g_nSector[slot][1] >= 0)
-					driveTooltip += StrFormat("%02X", g_nSector[slot][1]);
-				else
-					driveTooltip += unknown;
-
+				strcpy(sector, "??");
+				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02X", g_nSector[slot][1]);
+				driveTooltip += sector;
 				// dec sector
 				driveTooltip += " (S";
-				if (g_nSector[slot][1] >= 0)
-					driveTooltip += StrFormat("%02d", g_nSector[slot][1]);
-				else
-					driveTooltip += unknown;
+				strcpy(sector, "??");
+				if (g_nSector[slot][1] >= 0) sprintf_s(sector, "%02d", g_nSector[slot][1]);
+				driveTooltip += sector;
 				driveTooltip += ")";
 
 				pInfo->lpszText = (LPTSTR)driveTooltip.c_str();
@@ -1777,7 +1737,6 @@ LRESULT Win32Frame::WndProc(
 
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
-		KeybUpdateCtrlShiftStatus(); // #1363: Shift+Right-Click to show advanced disk image formatting options
 		if ((buttonover == -1) && (message == WM_RBUTTONUP)) // HACK: BUTTON_NONE
 		{
 			int x = LOWORD(lparam);
@@ -1984,7 +1943,7 @@ void Win32Frame::ScreenWindowResize(const bool bCtrlKey)
 	else if (bCtrlKey)		// if normal screen && CTRL: then toggle scaling
 	{
 		FrameResizeWindow( (g_nViewportScale == 1) ? 2 : 1 );	// Toggle between 1x and 2x
-		REGSAVE(REGVALUE_WINDOW_SCALE, g_nViewportScale);
+		REGSAVE(TEXT(REGVALUE_WINDOW_SCALE), g_nViewportScale);
 	}
 	else
 	{
@@ -2026,16 +1985,16 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 
     case BTN_HELP:
       {
-        const std::string filename = g_sProgramDir + "APPLEWIN.CHM";
+        const std::string filename = g_sProgramDir + TEXT("APPLEWIN.CHM");
 
 		// (GH#437) For any internet downloaded AppleWin.chm files (stored on an NTFS drive) there may be an Alt Data Stream containing a Zone Identifier
 		// - try to delete it, otherwise the content won't be displayed unless it's unblock (via File Properties)
 		{
-			const std::string filename_with_zone_identifier = filename + ":Zone.Identifier";
+			const std::string filename_with_zone_identifier = filename + TEXT(":Zone.Identifier");
 			DeleteFile(filename_with_zone_identifier.c_str());
 		}
 
-        HtmlHelp(GetDesktopWindow(), filename.c_str(), HH_DISPLAY_TOC, 0);	// GH#1403
+        HtmlHelp(g_hFrameWindow,filename.c_str(),HH_DISPLAY_TOC,0);
         helpquit = 1;
       }
       break;
@@ -2056,18 +2015,7 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6)).Boot();
 
 			LogFileTimeUntilFirstKeyReadReset();
-
-			if (!DebugQueryAnyBreakpointsSet())
-			{
-				g_nAppMode = MODE_RUNNING;
-			}
-			else
-			{
-				// EG. When using -debugger-auto-run <file.txt> (to set breakpoints), then we want to be MODE_STEPPING when leaving MODE_LOGO
-				DebugBegin();
-				DebugExitDebugger();		// Exit debugger, switch to MODE_STEPPING
-				g_bDebuggerEatKey = false;	// Don't "eat" the next keypress when leaving the debugger
-			}
+			g_nAppMode = MODE_RUNNING;
 		}
 		else if ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_DEBUG) || (g_nAppMode == MODE_STEPPING) || (g_nAppMode == MODE_PAUSED))
 		{
@@ -2148,6 +2096,9 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
   }
 }
 
+
+//===========================================================================
+
 // http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/winui/windowsuserinterface/resources/menus/usingmenus.asp
 // http://www.codeproject.com/menu/MenusForBeginners.asp?df=100&forumid=67645&exp=0&select=903061
 
@@ -2156,63 +2107,19 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	if (GetCardMgr().QuerySlot(SLOT6) != CT_Disk2)
 		return;
 
-	SoundCore_SetFade(FADE_OUT);
-
 	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(SLOT6));
 
 	// This is the default installation path of CiderPress. 
 	// It shall not be left blank, otherwise  an explorer window will be open.
-	char PathToCiderPress[MAX_PATH];
+	TCHAR PathToCiderPress[MAX_PATH];
 	RegLoadString(
-		"Configuration",
+		TEXT("Configuration"),
 		REGVALUE_CIDERPRESSLOC,
 		1,
 		PathToCiderPress,
 		MAX_PATH,
-		"C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe");
+		TEXT("C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe"));
 	//TODO: A directory is open if an empty path to CiderPress is set. This has to be fixed.
-
-	static uint32_t bNewDiskCopyBASIC     = true;
-	static uint32_t bNewDiskCopyBitsyBoot = true;
-	static uint32_t bNewDiskCopyBitsyBye  = true;
-	static uint32_t bNewDiskCopyProDOS    = true;
-
-	const char REG_KEY_DISK_PREFRENCES[] = "Preferences"; // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
-
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BASIC     , TRUE, &bNewDiskCopyBASIC     );
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BOOT, TRUE, &bNewDiskCopyBitsyBoot );
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BYE , TRUE, &bNewDiskCopyBitsyBye  );
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_PRODOS_SYS, TRUE, &bNewDiskCopyProDOS    );
-
-	class UtilPopup_Toggle
-	{
-		public:
-			UtilPopup_Toggle( HMENU hMenu, int iCommand, const char *pKey, uint32_t *pVal )
-			{
-				*pVal = ! *pVal;
-				int bChecked = *pVal ? MF_CHECKED : MF_UNCHECKED;
-				CheckMenuItem(hMenu,iCommand, bChecked);
-
-				RegSaveValue(
-					"Preferences", // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
-					pKey,
-					TRUE,
-					*pVal
-				);
-			}
-	};
-
-	class UtilPopup_CheckMenu
-	{
-		public:
-			UtilPopup_CheckMenu( HMENU hMenu, int iMenuItem, uint32_t bIsChecked )
-			{
-				if (bIsChecked)
-				{
-					CheckMenuItem(hMenu, iMenuItem, MF_CHECKED);
-				}
-			}
-	};
 
 	std::string filename1= "\"";
 	filename1.append( disk2Card.GetFullName(iDrive) );
@@ -2224,10 +2131,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	//  application's resources.
 	HMENU hmenu = LoadMenu(g_hInstance, MAKEINTRESOURCE(IDR_MENU_DISK_POPUP));	// menu template
 	if (hmenu == NULL)
-	{
-		SoundCore_SetFade(FADE_IN);
 		return;
-	}
 
 	// Get the first shortcut menu in the menu template.
 	// This is the menu that TrackPopupMenu displays.
@@ -2237,79 +2141,24 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	// coordinates of the mouse click to screen coordinates.
 	ClientToScreen(hwnd, (LPPOINT) &pt);
 
-	bool bIsProtected  = disk2Card.GetProtect(iDrive);
-	bool bIsDriveEmpty = disk2Card.IsDriveEmpty(iDrive);
-	HINSTANCE hInstance = GetFrame().g_hInstance;
-
 	// Check menu depending on current floppy protection
 	{
 		int iMenuItem = ID_DISKMENU_WRITEPROTECTION_OFF;
-		if (bIsProtected)
+		if (disk2Card.GetProtect(iDrive))
 			iMenuItem = ID_DISKMENU_WRITEPROTECTION_ON;
 
 		CheckMenuItem(hmenu, iMenuItem, MF_CHECKED);
 	}
 
-	if (bIsDriveEmpty)
-	{
+	if (disk2Card.IsDriveEmpty(iDrive))
 		EnableMenuItem(hmenu, ID_DISKMENU_EJECT, MF_GRAYED);
-	}
 
-	if (bIsProtected)
+	if (disk2Card.GetProtect(iDrive))
 	{
 		// If image-file is read-only (or a gzip) then disable these menu items
 		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_ON, MF_GRAYED);
 		EnableMenuItem(hmenu, ID_DISKMENU_WRITEPROTECTION_OFF, MF_GRAYED);
-
 	}
-
-	// New Disk options for ProDOS file copy on format
-	{
-		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_PRODOS    , bNewDiskCopyProDOS    );
-		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BITSY_BOOT, bNewDiskCopyBitsyBoot );
-		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BITSY_BYE , bNewDiskCopyBitsyBye  );
-		UtilPopup_CheckMenu( hmenu, ID_DISKMENU_NEW_DISK_COPY_BASIC     , bNewDiskCopyBASIC     );
-	};
-
-	// Disk images QoL always enabled since they prompt which disk image to create/modify.
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_PRODOS_140K_DISK, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_PRODOS_160K_DISK, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_PRODOS_800K_DISK, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_PRODOS_32MB_DISK, MF_ENABLED);
-
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_DOS33_140K_DISK, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_DOS33_160K_DISK, MF_ENABLED);
-
-	ModifyMenu    (hmenu, ID_DISKMENU_ADVANCED_SEPARATOR , MF_BYCOMMAND | MF_SEPARATOR , ID_DISKMENU_ADVANCED_SEPARATOR, 0 );
-	EnableMenuItem(hmenu, ID_DISKMENU_SELECT_BOOT_SECTOR , MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_BLANK_140K_DISK, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_BLANK_160K_DISK, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_BLANK_800K_DISK, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_NEW_BLANK_32MB_DISK, MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_FORMAT_PRODOS_DISK , MF_ENABLED);
-	EnableMenuItem(hmenu, ID_DISKMENU_FORMAT_DOS33_DISK  , MF_ENABLED);
-
-#if _DEBUG
-	// Never hide menu options in debug build
-#else
-	// If SHIFT is pressed enable the advanced disk pop-up menus
-	// otherwise remove them (since there is no Win32 comamnd to hide menu items.)
-	//
-	// KeybGetCtrlStatus(); // Can't use since Ctrl-F3, Ctrl-F4 is shortcut
-	// KeybGetAltStatus();  // Can't use
-	bool bAdvanced = KeybGetShiftStatus(); // #1364
-	if (!bAdvanced)
-	{
-		RemoveMenu(hmenu, ID_DISKMENU_ADVANCED_SEPARATOR , MF_BYCOMMAND);
-		RemoveMenu(hmenu, ID_DISKMENU_SELECT_BOOT_SECTOR , MF_BYCOMMAND);
-		RemoveMenu(hmenu, ID_DISKMENU_NEW_BLANK_140K_DISK, MF_BYCOMMAND);
-		RemoveMenu(hmenu, ID_DISKMENU_NEW_BLANK_160K_DISK, MF_BYCOMMAND);
-		RemoveMenu(hmenu, ID_DISKMENU_NEW_BLANK_800K_DISK, MF_BYCOMMAND);
-		RemoveMenu(hmenu, ID_DISKMENU_NEW_BLANK_32MB_DISK, MF_BYCOMMAND);
-		RemoveMenu(hmenu, ID_DISKMENU_FORMAT_PRODOS_DISK , MF_BYCOMMAND);
-		RemoveMenu(hmenu, ID_DISKMENU_FORMAT_DOS33_DISK  , MF_BYCOMMAND);
-	}
-#endif
 
 	// Draw and track the shortcut menu.
 	int iCommand = TrackPopupMenu(
@@ -2365,346 +2214,10 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 			}
 		}
 	}
-	else
-	if((iCommand == ID_DISKMENU_NEW_PRODOS_140K_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_PRODOS_160K_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_PRODOS_800K_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_PRODOS_32MB_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_DOS33_140K_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_DOS33_160K_DISK))
-	{
-		const bool   bIsDOS33     = ((iCommand == ID_DISKMENU_NEW_DOS33_140K_DISK ) || (iCommand == ID_DISKMENU_NEW_DOS33_160K_DISK));
-		const bool   bIsFloppy    =!((iCommand == ID_DISKMENU_NEW_PRODOS_800K_DISK) || (iCommand == ID_DISKMENU_NEW_PRODOS_32MB_DISK));
-		const bool   bIsFloppy525 = ((iCommand == ID_DISKMENU_NEW_PRODOS_140K_DISK) || (iCommand == ID_DISKMENU_NEW_PRODOS_160K_DISK) || bIsDOS33);
-		const bool   bIs40Track   = ((iCommand == ID_DISKMENU_NEW_PRODOS_160K_DISK) || (iCommand == ID_DISKMENU_NEW_DOS33_160K_DISK));
-		const bool   bIsUnidisk35 =  (iCommand == ID_DISKMENU_NEW_PRODOS_800K_DISK);
-		const bool   bIsHardDisk  =  (iCommand == ID_DISKMENU_NEW_PRODOS_32MB_DISK);
-		const size_t nDiskSize    = bIsHardDisk
-									? HARDDISK_32M_SIZE
-									: bIsUnidisk35
-									  ? UNIDISK35_800K_SIZE
-									  : bIs40Track
-									    ? TRACK_DENIBBLIZED_SIZE * TRACKS_MAX
-									    : TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD
-									    ;
-
-		const char* pszTitle = "Select new blank disk image";
-
-		time_t timestamp = time( NULL );
-		tm datetime = *localtime(&timestamp);
-
-		const size_t MAX_MONTH_LEN = 32;
-		int   year               = datetime.tm_year + 1900;
-		char  mon[MAX_MONTH_LEN] = {0};
-		int   day                = datetime.tm_mday;
-		int   hour               = datetime.tm_hour;
-		int   min                = datetime.tm_min;
-		int   sec                = datetime.tm_sec;
-		strftime( mon, MAX_MONTH_LEN-1, "%b", &datetime );
-
-		std::string sExtension = bIsHardDisk
-			? ".hdv"
-			: bIsDOS33
-			  ? ".do"
-			  : ".po"
-			    ;
-
-		std::string sFileName( StrFormat(
-			  "blank_%s_%04d_%3s_%02d_%02dh_%02dm_%02ds%s"
-			, bIsFloppy ? "floppy" : "hard"
-			, year, mon, day, hour, min, sec
-			, sExtension.c_str()
-		));
-
-		std::string pathname = g_sCurrentDir;
-		pathname.append( sFileName );
-
-		const char *pTitle  = "New Disk Image";
-		const char *pSaveFilter = "All Files\0*.*\0";
-		char sPathName[ MAX_PATH ];
-		strncpy( sPathName, sFileName.c_str(), MAX_PATH-1 );
-		int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, sPathName, pSaveFilter );
-		if (nRes)
-		{
-			pathname = sPathName;
-			if (FileExists(pathname))
-			{
-				nRes = FrameMessageBox(
-					  "WARNING: Disk image already exists!\n"
-					  "\n"
-					  "(ALL DATA WILL BE LOST!)\n"
-					  "\n"
-					  "Overwrite ?"
-					, pTitle
-					, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 );
-				if (nRes == IDNO) nRes = 0;
-				else              nRes = IDOK;
-			}
-
-			if (nRes)
-			{
-				New_DOSProDOS_Disk(pTitle, pathname, nDiskSize, bIsDOS33, bNewDiskCopyBitsyBoot, bNewDiskCopyBitsyBye, bNewDiskCopyBASIC, bNewDiskCopyProDOS, this);
-			}
-		}
-	}
-	else // --- New Disk Options ---
-	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_PRODOS)
-	{
-		UtilPopup_Toggle toggle( hmenu, iCommand, REGVALUE_PREF_NEW_DISK_COPY_PRODOS_SYS, &bNewDiskCopyProDOS );
-	}
-	else
-	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_BITSY_BOOT)
-	{
-		UtilPopup_Toggle toggle( hmenu, iCommand, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BOOT, &bNewDiskCopyBitsyBoot );
-	}
-	else
-	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_BITSY_BYE)
-	{
-		UtilPopup_Toggle toggle( hmenu, iCommand, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BYE, &bNewDiskCopyBitsyBye );
-	}
-	else
-	if (iCommand == ID_DISKMENU_NEW_DISK_COPY_BASIC)
-	{
-		UtilPopup_Toggle toggle( hmenu, iCommand, REGVALUE_PREF_NEW_DISK_COPY_BASIC, &bNewDiskCopyBASIC );
-	}
-	else // --- Advanced ---
-	if (iCommand == ID_DISKMENU_SELECT_BOOT_SECTOR)
-	{
-		// Default to directory of g_cmdLine.sBootSectorFileName;
-		char sDisplayFileName[ 256+1 ] = {0};
-		char sFilename[ MAX_PATH ] = {0};
-		const size_t nDisplayFileNameMax = sizeof(sDisplayFileName);
-		const size_t nFilenameMax        = sizeof(sFilename);
-		const char *pTitle  = "Select boot sector file";
-		const char *pExistFilter = // No *.nib;*.woz;*.gz;*.zip
-			"Floppy Disk Images (*.bin,*.dsk,*.do;*.po)\0"
-			                    "*.bin;*.dsk;*.do;*.po\0"
-			"Hard Disk Images (*.hdv;)\0"
-			                  "*.hdv\0"
-			"All Files\0*.*\0";
-
-		strncpy( sDisplayFileName, g_cmdLine.sBootSectorFileName.c_str(), nDisplayFileNameMax - 2);
-		strncpy( sFilename       , g_cmdLine.sBootSectorFileName.c_str(), nFilenameMax        - 2);
-
-		sDisplayFileName[nDisplayFileNameMax-1] = 0;
-		sFilename       [nFilenameMax       -1] = 0;
-
-		if (!g_cmdLine.nBootSectorFileSize)
-		{
-			strcpy( sDisplayFileName, "(Built-in AppleWin boot sector)" );
-		}
-		else
-		if (g_cmdLine.sBootSectorFileName.length() > (nDisplayFileNameMax-1))
-		{
-			// Convert long filename to "smart" ellipsis
-			// +126 = First 126 chars filename
-			// +  4 = "...."
-			// +126 = Last 126 chars of filename
-			//= 256 chars
-			const char *pHead = g_cmdLine.sBootSectorFileName.c_str();
-			const char *pTail = pHead + g_cmdLine.sBootSectorFileName.length() - 126;
-			sDisplayFileName[0] = 0;
-			strncpy( sDisplayFileName +   0, pHead , 126 );
-			strncpy( sDisplayFileName + 126, "....",   4 );
-			strncpy( sDisplayFileName + 130, pTail , 126 );
-		}
-
-		std::string sMessage( StrFormat(
-			  "Current boot sector file is: \n"
-			  "\n"
-			  "%s\n"
-			  "\n"
-			  "Use a custom boot sector file?\n"
-			, sDisplayFileName
-		));
-		
-		// Show dialog with current boot sector disk image
-		// Ask user if they wish to replace it
-		//
-		//   [Yes]    = Use custom boot sector
-		//   [No]     = Use AppleWin boot sector
-		//   [Cancel] = Quit
-		int nRes = FrameMessageBox(sMessage.c_str(), pTitle, MB_ICONWARNING | MB_YESNOCANCEL | MB_DEFBUTTON2);
-		if (nRes == IDNO)
-		{
-			g_cmdLine.nBootSectorFileSize = 0;
-			g_cmdLine.sBootSectorFileName = "";
-		}
-		else
-		if (nRes == IDYES)
-		{
-			int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, sFilename, pExistFilter );
-			if (nRes)
-			{
-				char  sPath[ MAX_PATH];
-				DWORD res = GetFullPathName(sFilename, MAX_PATH, sPath, NULL);
-
-				FILE *pFile = fopen( sPath, "rb");
-				if (pFile)
-				{
-					fseek( pFile, 0, SEEK_END );
-					size_t nSize = ftell( pFile );
-					fseek( pFile, 0, SEEK_SET );
-					fclose( pFile );
-
-					if (nSize > 0)
-					{
-						g_cmdLine.sBootSectorFileName = sPath;
-						g_cmdLine.nBootSectorFileSize = nSize;
-					}
-					else
-					{
-						g_cmdLine.nBootSectorFileSize = 0;
-						g_cmdLine.sBootSectorFileName = "";
-						FrameMessageBox("ERROR: Couldn't read custom boot sector file.\n\nDefaulting to built-in AppleWin Boot Sector.", pTitle, MB_ICONERROR | MB_OK);
-					}
-				}
-				else
-				{
-					g_cmdLine.nBootSectorFileSize = 0;
-					g_cmdLine.sBootSectorFileName = "";
-					FrameMessageBox( "ERROR: Couldn't open custom boot sector file.\n\nDefaulting to built-in AppleWin Boot Sector.", pTitle, MB_ICONERROR | MB_OK);
-				}
-			}
-		}
-	}
-	else // --- Advanced ---
-	if((iCommand == ID_DISKMENU_NEW_BLANK_140K_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_BLANK_160K_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_BLANK_800K_DISK)
-	|| (iCommand == ID_DISKMENU_NEW_BLANK_32MB_DISK))
-	{
-		const bool   bIsFloppy    =  (iCommand != ID_DISKMENU_NEW_BLANK_32MB_DISK);
-		const bool   bIsFloppy525 = ((iCommand == ID_DISKMENU_NEW_BLANK_140K_DISK) || (iCommand == ID_DISKMENU_NEW_BLANK_160K_DISK));
-		const bool   bIs40Track   =  (iCommand == ID_DISKMENU_NEW_BLANK_160K_DISK);
-		const bool   bIsUnidisk35 =  (iCommand == ID_DISKMENU_NEW_BLANK_800K_DISK);
-		const bool   bIsHardDisk  =  (iCommand == ID_DISKMENU_NEW_BLANK_32MB_DISK);
-		const size_t nDiskSize    = bIsHardDisk
-									? HARDDISK_32M_SIZE
-									: bIsUnidisk35
-									  ? UNIDISK35_800K_SIZE
-									  : bIs40Track
-									    ? TRACK_DENIBBLIZED_SIZE * TRACKS_MAX
-									    : TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD
-									    ;
-
-		const char* pszTitle = "Select new blank disk image";
-
-		time_t timestamp = time( NULL );
-		tm datetime = *localtime(&timestamp);
-
-		const size_t MAX_MONTH_LEN = 32;
-		int   year               = datetime.tm_year + 1900;
-		char  mon[MAX_MONTH_LEN] = {0};
-		int   day                = datetime.tm_mday;
-		int   hour               = datetime.tm_hour;
-		int   min                = datetime.tm_min;
-		int   sec                = datetime.tm_sec;
-		strftime( mon, MAX_MONTH_LEN-1, "%b", &datetime );
-		std::string sFileName( StrFormat(
-			  "blank_%s_%04d_%3s_%02d_%02dh_%02dm_%02ds.%s"
-			, bIsFloppy ? "floppy" : "hard"
-			, year, mon, day, hour, min, sec
-			, bIsFloppy ? "dsk" : "hdv"
-		) );
-
-		std::string pathname = g_sCurrentDir;
-		pathname.append( sFileName );
-
-		const char *pTitle  = "New Disk Image";
-		const char *pSaveFilter = "All Files\0*.*\0";
-		char sPathName[ MAX_PATH ];
-		strncpy( sPathName, sFileName.c_str(), MAX_PATH-1 );
-		int nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, sPathName, pSaveFilter );
-		if (nRes)
-		{
-			pathname = sPathName;
-			if (FileExists(pathname))
-			{
-				nRes = FrameMessageBox(
-					  "WARNING: Disk image already exists!\n"
-					  "\n"
-					  "(ALL DATA WILL BE LOST!)\n"
-					  "\n"
-					  "Overwrite ?"
-					, pTitle
-					, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2 );
-				if (nRes == IDNO) nRes = 0;
-				else              nRes = IDOK;
-			}
-
-			if (nRes)
-			{
-				New_Blank_Disk(pTitle, pathname, nDiskSize, bIsHardDisk, this);
-			}
-		}
-	}
-	else // --- Advanced ---
-	if (iCommand == ID_DISKMENU_FORMAT_PRODOS_DISK)
-	{
-		char szFilename[ MAX_PATH ] = {0};
-		const char *pTitle  = "Select ProDOS disk image to format";
-		const char *pLoadFilter = // No *.nib;*.woz;*.gz;*.zip
-			"Floppy Disk Images (*.bin,*.dsk,*.po)\0"
-			                    "*.bin;*.dsk;*.po\0"
-			"Hard Disk Images (*.hdv;)\0"
-			                  "*.hdv\0"
-			"All Files\0*.*\0";
-
-		int nRes = FrameMessageBox(
-			"Are you sure you want to FORMAT an existing disk as a ProDOS data disk?\n"
-			"\n"
-			"(ALL DATA WILL BE LOST!)\n"
-			, "Format"
-			, MB_ICONWARNING | MB_YESNO | MB_DEFBUTTON2
-		);
-		if (nRes == IDYES)
-		{
-			nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, true, szFilename, pLoadFilter );
-			if (nRes)
-			{
-				std::string pathname = szFilename;
-				if (FileExists( pathname ))
-				{
-					Format_ProDOS_Disk(pathname, this);
-				}
-			}
-		}
-	}
-	else
-	if (iCommand == ID_DISKMENU_FORMAT_DOS33_DISK)
-	{
-		char szFilename[ MAX_PATH ] = {0};
-		const char *pTitle  = "Select DOS 3.3 disk image to format";
-		const char *pLoadFilter =
-			"Floppy Disk Images (*.bin,*.dsk,*.do)\0"
-			                    "*.bin;*.dsk;*.do\0"
-			"All Files\0*.*\0";
-
-		int nRes = FrameMessageBox(
-			"Are you sure you want to FORMAT an existing disk as a DOS 3.3 data disk?\n"
-			"\n"
-			"(ALL DATA WILL BE LOST!)\n"
-			, "Format", MB_ICONWARNING|MB_YESNO);
-		if (nRes == IDYES)
-		{
-			nRes = Util_SelectDiskImage( hwnd, hInstance, pTitle, false, szFilename, pLoadFilter );
-			if (nRes)
-			{
-				std::string pathname = szFilename;
-				if (FileExists( pathname ))
-				{
-					Format_DOS33_Disk(pathname, this);
-				}
-			}
-		}
-	}
 
 	// Destroy the menu.
 	BOOL bRes = DestroyMenu(hmenu);
 	_ASSERT(bRes);
-
-	SoundCore_SetFade(FADE_IN);
 }
 
 
@@ -2750,7 +2263,7 @@ void Win32Frame::SetFullScreenMode(void)
 		devMode.dmPelsHeight = m_bestHeightForFullScreen;
 		devMode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
 
-		uint32_t dwFlags = 0;
+		DWORD dwFlags = 0;
 		LONG res = ChangeDisplaySettings(&devMode, dwFlags);
 		m_changedDisplaySettings = true;
 	}
@@ -2950,11 +2463,9 @@ void Win32Frame::SetupTooltipControls(void)
 // NB. GetSystemMetrics(SM_CXPADDEDBORDER) returns 0 for Win7, when built with VS2008 (see GH#571)
 void Win32Frame::GetWidthHeight(int& nWidth, int& nHeight)
 {
-	const int kWidthFix = 1;	// Fix for Win32 Subsystem Version 6.00 (GH#1438)
-
 	nWidth  = g_nViewportCX + VIEWPORTX*2
 						    + BUTTONCX
-						    + (GetSystemMetrics(SM_CXFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER) + kWidthFix) * 2;
+						    + (GetSystemMetrics(SM_CXFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2;
 	nHeight = g_nViewportCY + VIEWPORTY*2
 						    + (GetSystemMetrics(SM_CYFIXEDFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER)) * 2	// NB. No SM_CYPADDEDBORDER
 						    + GetSystemMetrics(SM_CYCAPTION);
@@ -3067,7 +2578,7 @@ void Win32Frame::FrameCreateWindow(void)
 	{
 		const int nXScreen = GetSystemMetrics(SM_CXSCREEN) - nWidth;
 
-		if (RegLoadValue(REG_PREFS, REGVALUE_PREF_WINDOW_X_POS, 1, (uint32_t*)&nXPos))
+		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_X_POS), 1, (DWORD*)&nXPos))
 		{
 			if ((nXPos > nXScreen) && !g_bMultiMon)
 				nXPos = -1;	// Not fully visible, so default to centre position
@@ -3082,7 +2593,7 @@ void Win32Frame::FrameCreateWindow(void)
 	{
 		const int nYScreen = GetSystemMetrics(SM_CYSCREEN) - nHeight;
 
-		if (RegLoadValue(REG_PREFS, REGVALUE_PREF_WINDOW_Y_POS, 1, (uint32_t*)&nYPos))
+		if (RegLoadValue(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_WINDOW_Y_POS), 1, (DWORD*)&nYPos))
 		{
 			if ((nYPos > nYScreen) && !g_bMultiMon)
 				nYPos = -1;	// Not fully visible, so default to centre position
@@ -3101,7 +2612,7 @@ void Win32Frame::FrameCreateWindow(void)
 
 	// NB. g_hFrameWindow also set by WM_CREATE - NB. CreateWindow() must synchronously send WM_CREATE
 	g_hFrameWindow = CreateWindow(
-		"APPLE2FRAME",
+		TEXT("APPLE2FRAME"),
 		g_pAppTitle.c_str(),
 		WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU |
 		WS_MINIMIZEBOX | WS_VISIBLE,
@@ -3156,14 +2667,14 @@ void Win32Frame::FrameRegisterClass () {
   wndclass.style         = CS_OWNDC | CS_BYTEALIGNCLIENT;
   wndclass.lpfnWndProc   = FrameWndProc;
   wndclass.hInstance     = g_hInstance;
-  wndclass.hIcon         = LoadIcon(g_hInstance,"APPLEWIN_ICON");
+  wndclass.hIcon         = LoadIcon(g_hInstance,TEXT("APPLEWIN_ICON"));
   wndclass.hCursor       = LoadCursor(0,IDC_ARROW);
   wndclass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 #if ENABLE_MENU
   wndclass.lpszMenuName	 = (LPCSTR)IDR_MENU1;
 #endif
-  wndclass.lpszClassName = "APPLE2FRAME";
-  wndclass.hIconSm       = (HICON)LoadImage(g_hInstance,"APPLEWIN_ICON",
+  wndclass.lpszClassName = TEXT("APPLE2FRAME");
+  wndclass.hIconSm       = (HICON)LoadImage(g_hInstance,TEXT("APPLEWIN_ICON"),
                                             IMAGE_ICON,16,16,LR_DEFAULTCOLOR);
   RegisterClassEx(&wndclass);
 }
@@ -3400,7 +2911,7 @@ bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& be
 			if (vecDisplayResolutions.size() == 0 || vecDisplayResolutions.back() != std::pair<UINT,UINT>(devMode.dmPelsWidth, devMode.dmPelsHeight)	)	// Skip duplicate resolutions
 			{
 				vecDisplayResolutions.push_back( std::pair<UINT,UINT>(devMode.dmPelsWidth, devMode.dmPelsHeight) );
-				LogFileOutput("EnumDisplaySettings(%d) - %d x %d (ratio=%f)\n", iModeNum, devMode.dmPelsWidth, devMode.dmPelsHeight, (float)devMode.dmPelsWidth/(float)devMode.dmPelsHeight);
+				LogFileOutput("EnumDisplaySettings(%d) - %d x %d\n", iModeNum, devMode.dmPelsWidth, devMode.dmPelsHeight);
 			}
 		}
 	}

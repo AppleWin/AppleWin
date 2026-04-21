@@ -69,7 +69,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define SSI_CTTRAMP	0x03
 #define SSI_FILFREQ	0x04
 
-const uint32_t SAMPLE_RATE_SSI263 = 22050;
+const DWORD SAMPLE_RATE_SSI263 = 22050;
 
 //-----------------------------------------------------------------------------
 
@@ -126,9 +126,6 @@ BYTE SSI263::Read(ULONG nExecutedCycles)
 	// . inverted "A/!R" is high for REQ (ie. Request, as phoneme nearly complete)
 	// NB. this doesn't clear the IRQ
 
-	if (m_type == SSI263Empty)
-		return MemReadFloatingBus(nExecutedCycles);
-
 	return MemReadFloatingBus(m_currentMode.D7, nExecutedCycles);
 }
 
@@ -140,9 +137,6 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 	if (ssiRegs[nReg]>=0) SSI_Output();	// overwriting a reg
 	ssiRegs[nReg] = nValue;
 #endif
-
-	if (m_type == SSI263Empty)
-		return;
 
 	// SSI263 datasheet is not clear, but a write to DURPHON de-asserts the IRQ and clears D7.
 	// . Empirically writes to regs 0,1,2 (and reg3.CTL=1) all de-assert the IRQ (and writes to reg3.CTL=0 and regs 4..7 don't) (GH#1197)
@@ -216,13 +210,12 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		{
 			CpuIrqDeassert(IS_SPEECH);
 			m_currentMode.D7 = 0;
-			// NB. Don't call Stop() - mb-audit ("Classic Adventure") cuts at end, Berzap! is choppy
 		}
 		break;
 	case SSI_FILFREQ:	// RegAddr.b2=1 (b1 & b0 are: don't care)
 	default:
 #if LOG_SSI263
-		if (g_fh) fprintf(g_fh, "FFREQ = 0x%02X\n", nValue);
+		if(g_fh) fprintf(g_fh, "FFREQ = 0x%02X\n", nValue);
 #endif
 		m_filterFreq = nValue;
 		break;
@@ -321,10 +314,6 @@ void SSI263::Votrax_Write(BYTE value)
 #if LOG_SC01
 	LogOutput("SC01: %02X (= SSI263: %02X)\n", value, m_Votrax2SSI263[value & PHONEME_MASK]);
 #endif
-
-	if (!m_hasSC01)
-		return;
-
 	m_isVotraxPhoneme = true;
 	m_votraxPhoneme = value & PHONEME_MASK;
 
@@ -341,6 +330,19 @@ void SSI263::Votrax_Write(BYTE value)
 
 void SSI263::Play(unsigned int nPhoneme)
 {
+	if (!SSI263SingleVoice.lpDSBvoice)
+	{
+		return;
+	}
+
+	if (!SSI263SingleVoice.bActive)
+	{
+		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferByteSize);
+		LogFileOutput("SSI263::Play: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
+		if (!bRes)
+			return;
+	}
+
 	if (m_dbgFirst)
 	{
 		m_dbgStartTime = g_nCumulativeCycles;
@@ -350,7 +352,7 @@ void SSI263::Play(unsigned int nPhoneme)
 	}
 
 #if LOG_SSI263 || LOG_SSI263B || LOG_SC01
-	if (m_currentActivePhoneme != -1 && !(m_currentActivePhoneme & kPhonemeLeadoutFlag))
+	if (m_currentActivePhoneme != -1)
 		LogOutput("Overlapping phonemes: current=%02X, next=%02X\n", m_currentActivePhoneme&0xff, nPhoneme&0xff);
 #endif
 	m_currentActivePhoneme = nPhoneme;
@@ -404,39 +406,18 @@ void SSI263::Stop(void)
 
 //-----------------------------------------------------------------------------
 
-void SSI263::PeriodicUpdate(UINT executedCycles)
-{
-	const UINT kCyclesPerAudioFrame = 1000;
-	m_cyclesThisAudioFrame += executedCycles;
-	if (m_cyclesThisAudioFrame < kCyclesPerAudioFrame)
-		return;
-
-	m_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
-
-	Update();
-}
-
-//-----------------------------------------------------------------------------
-
 //#define DBG_SSI263_UPDATE		// NB. This outputs for all active SSI263 ring-buffers (eg. for mb-audit this may be 2 or 4)
-//#define DBG_SSI263_UPDATE_RETURN
 
 // Called by:
 // . PeriodicUpdate()
 void SSI263::Update(void)
 {
-	if (!IsPhonemeActive())
-		return;
-
-	if (!SSI263SingleVoice.lpDSBvoice || !SSI263SingleVoice.bActive)
-	{
-		if (!DSInit())
-			return;
-	}
-
 	UpdateAccurateLength();
 
-	if (g_bFullSpeed)	// NB. if true, then it's irrespective of IsPhonemeActive() - see MockingboardCard::IsActiveToPreventFullSpeed()
+	if (!SSI263SingleVoice.bActive)
+		return;
+
+	if (g_bFullSpeed)	// ie. only true when IsPhonemeActive() is true
 	{
 		if (m_phonemeLengthRemaining)
 		{
@@ -463,21 +444,18 @@ void SSI263::Update(void)
 
 	// NB. next call to this function: nowNormalSpeed = false
 	if (nowNormalSpeed)
-		m_byteOffset = (uint32_t)-1;	// ...which resets m_numSamplesError below
+		m_byteOffset = (DWORD)-1;	// ...which resets m_numSamplesError below
 
 	//-------------
 
 	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
 	HRESULT hr = SSI263SingleVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
 	if (FAILED(hr))
-	{
-		LogOutput("SSI263::Update() early return: GetCurrentPosition() failed\n");
 		return;
-	}
 
 	bool prefillBufferOnInit = false;
 
-	if (m_byteOffset == (uint32_t)-1)
+	if (m_byteOffset == (DWORD)-1)
 	{
 		// First time in this func (or transitioned from full-speed to normal speed, or a ring-buffer reset)
 #ifdef DBG_SSI263_UPDATE
@@ -548,12 +526,7 @@ void SSI263::Update(void)
 		_ASSERT(GetLastCumulativeCycles() >= m_lastUpdateCycle);
 		updateInterval = (double)(GetLastCumulativeCycles() - m_lastUpdateCycle);
 		if (updateInterval < kMinimumUpdateInterval)
-		{
-#ifdef DBG_SSI263_UPDATE_RETURN
-			LogOutput("SSI263::Update() early return: updateInterval < kMinimumUpdateInterval\n");
-#endif
 			return;
-		}
 		if (updateInterval > kMaximumUpdateInterval)
 			updateInterval = kMaximumUpdateInterval;
 
@@ -604,15 +577,12 @@ void SSI263::Update(void)
 			// When the AppleWin code restarts and reads the ring-buffer position it'll be at a random point, and maybe nearly full (>50% full)
 			// - so the code waits until it drains (nNumSamples=0 each time)
 			// - but it takes a large number of calls to this func to drain to an acceptable level
-			m_byteOffset = (uint32_t)-1;
+			m_byteOffset = (DWORD)-1;
 #if defined(DBG_SSI263_UPDATE)
 			double fTicksSecs = (double)GetTickCount() / 1000.0;
 			LogOutput("%010.3f: [SSUpdt%1d]    Reset ring-buffer\n", fTicksSecs, m_device);
 #endif
 		}
-#ifdef DBG_SSI263_UPDATE_RETURN
-		LogOutput("SSI263::Update() early return: nNumSamples == 0\n");
-#endif
 		return;
 	}
 
@@ -634,8 +604,6 @@ void SSI263::Update(void)
 
 		short* pMixBuffer = &m_mixBufferSSI263[0];
 		UINT zeroSize = nNumSamples;
-
-		// NB. If SSI263.CONTROL=1 (Power-down) then zeroSize == nNumSamples, and eventually the ring-buffer gets filled with zero samples
 
 		if (m_phonemeLengthRemaining && !prefillBufferOnInit)
 		{
@@ -679,9 +647,7 @@ void SSI263::Update(void)
 		{
 			memset(pMixBuffer, 0, zeroSize * sizeof(short));
 
-			// Only dec m_phonemeLeadoutLength when m_phonemeAccurateLengthRemaining==0
-			// . otherwise when single-stepping can get into the situation where m_phonemeLengthRemaining==0 && m_phonemeAccurateLengthRemaining!=0
-			if (!prefillBufferOnInit && !m_phonemeAccurateLengthRemaining)
+			if (!prefillBufferOnInit)
 				m_phonemeLeadoutLength -= (m_phonemeLeadoutLength > zeroSize) ? zeroSize : m_phonemeLeadoutLength;
 		}
 	}
@@ -692,29 +658,23 @@ void SSI263::Update(void)
 	short *pDSLockedBuffer0, *pDSLockedBuffer1;
 
 	hr = DSGetLock(SSI263SingleVoice.lpDSBvoice,
-		m_byteOffset, (uint32_t)nNumSamples * sizeof(short) * m_kNumChannels,
+		m_byteOffset, (DWORD)nNumSamples * sizeof(short) * m_kNumChannels,
 		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if (FAILED(hr))
-	{
-		LogOutput("SSI263::Update() early return: DSGetLock() failed\n");
 		return;
-	}
 
 	memcpy(pDSLockedBuffer0, &m_mixBufferSSI263[0], dwDSLockedBufferSize0);
-	if (pDSLockedBuffer1)
+	if(pDSLockedBuffer1)
 		memcpy(pDSLockedBuffer1, &m_mixBufferSSI263[dwDSLockedBufferSize0/sizeof(short)], dwDSLockedBufferSize1);
 
 	// Commit sound buffer
 	hr = SSI263SingleVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
 											  (void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 	if (FAILED(hr))
-	{
-		LogOutput("SSI263::Update() early return: UnLock() failed\n");
 		return;
-	}
 
-	m_byteOffset = (m_byteOffset + (uint32_t)nNumSamples*sizeof(short)*m_kNumChannels) % m_kDSBufferByteSize;
+	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples*sizeof(short)*m_kNumChannels) % m_kDSBufferByteSize;
 
 	//
 
@@ -734,31 +694,12 @@ void SSI263::Update(void)
 		}
 	}
 
-	RepeatPhoneme();
-}
-
-// Called by:
-// . Update()
-// . LoadSnapshot()
-void SSI263::RepeatPhoneme(void)
-{
-	if (m_phonemeLeadoutLength != 0)
-		return;
-
-	if (!m_isVotraxPhoneme)
+	if (m_phonemeLeadoutLength == 0)
 	{
-		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
-		{
-			// Only check _ASSERT when SSI263.CONTROL=0 (otherwise kPhonemeLeadoutFlag will be clear 2nd time Update() is called)
-			_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);
+		if (!m_isVotraxPhoneme)
 			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
-		}
-
-		m_currentActivePhoneme &= PHONEME_MASK;			// Clear kPhonemeLeadoutFlag
-	}
-	else
-	{
-		Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
+//		else	// GH#1318 - remove for now, as TR v5.1 can start with repeating phoneme in debugger 'g' mode!
+//			Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
 	}
 }
 
@@ -769,6 +710,10 @@ void SSI263::RepeatPhoneme(void)
 void SSI263::UpdateAccurateLength(void)
 {
 	if (!m_phonemeAccurateLengthRemaining)
+		return;
+
+	_ASSERT(m_lastUpdateCycle);		// Can't be 0, since set in Play()
+	if (m_lastUpdateCycle == 0)
 		return;
 
 	double updateInterval = (double)(GetLastCumulativeCycles() - m_lastUpdateCycle);
@@ -800,8 +745,7 @@ void SSI263::UpdateIRQ(void)
 	m_phonemeLengthRemaining = m_phonemeAccurateLengthRemaining = 0;	// Prevent an IRQ from the other source
 
 	_ASSERT(m_currentActivePhoneme != -1);
-	_ASSERT((m_currentActivePhoneme & kPhonemeLeadoutFlag) == 0);
-	m_currentActivePhoneme |= kPhonemeLeadoutFlag;
+	m_currentActivePhoneme = -1;
 
 	if (m_dbgFirst && m_dbgStartTime)
 	{
@@ -887,47 +831,27 @@ void SSI263::SetCardMode(PHASOR_MODE mode)
 
 //-----------------------------------------------------------------------------
 
-// Cf. void MockingboardCardManager::UpdateSoundBuffer(void)
 bool SSI263::DSInit(void)
 {
-	if (!SSI263SingleVoice.lpDSBvoice)
-	{
-		if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
-			return false;
+	//
+	// Create single SSI263 voice
+	//
 
-		if (!Init())
-			return false;
-	}
-
-	if (!SSI263SingleVoice.bActive)
-	{
-		bool bRes = DSZeroVoiceBuffer(&SSI263SingleVoice, m_kDSBufferByteSize);	// ... and Play()
-		LogFileOutput("SSI263: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
-		if (!bRes)
-			return false;
-	}
-
-	return true;
-}
-
-// Cf. bool MockingboardCardManager::Init(void)
-bool SSI263::Init(void)
-{
-	if (!DSAvailable())
-		return false;
-
-	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, m_kDSBufferByteSize, SAMPLE_RATE_SSI263, m_kNumChannels, "SSI263");
-	LogFileOutput("SSI263: DSGetSoundBuffer(), hr=0x%08X\n", hr);
+	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, DSBCAPS_CTRLVOLUME, m_kDSBufferByteSize, SAMPLE_RATE_SSI263, m_kNumChannels, "SSI263");
+	LogFileOutput("SSI263::DSInit: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{
-		LogFileOutput("SSI263: DSGetSoundBuffer failed (%08X)\n", hr);
+		LogFileOutput("SSI263::DSInit: DSGetSoundBuffer failed (%08X)\n", hr);
 		return false;
 	}
 
 	// Don't DirectSoundBuffer::Play() via DSZeroVoiceBuffer() - instead wait until this SSI263 is actually first used
 	// . different to Speaker & Mockingboard ring buffers
 	// . NB. we have 2x SSI263 per MB card, and it's rare if 1 is used (and *extremely* rare if 2 are used!)
-	// . Not so rare, as TotalReplay (at boot) will try to detect an SSI263 (by playing a $00 phoneme).
+
+	// Volume might've been setup from value in Registry
+	if (!SSI263SingleVoice.nVolume)
+		SSI263SingleVoice.nVolume = DSBVOLUME_MAX;
 
 	hr = SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
 	LogFileOutput("SSI263::DSInit: SetVolume(), hr=0x%08X\n", hr);
@@ -943,20 +867,17 @@ void SSI263::DSUninit(void)
 
 //-----------------------------------------------------------------------------
 
-// MB-C/Phasor/SSI263P phoneme continues to play after CTRL+RESET, whereas Phasor/SSI263AP doesn't (tested on real h/w)
+// SSI263 phoneme continues to play after CTRL+RESET (tested on real h/w)
 // Votrax phoneme continues to play after CTRL+RESET (tested on MAME 0.262)
 void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 {
-	if (m_type == SSI263Empty)
-		return;
-
-	if (!powerCycle && m_type == SSI263P)
+	if (!powerCycle)
 	{
 		if (isPhasorCard)
 		{
-			// [SSI263P] Empirically observed it does CTL H->L to enable ints (and set the device mode?) (GH#175)
+			// Empirically observed it does CTL H->L to enable ints (and set the device mode?) (GH#175)
 			// NB. CTRL+RESET doesn't clear m_ctrlArtAmp.CTL (ie. if the device is in power-down/standby mode then ignore RST)
-			// There's a bug in the SSI263P and RST should put the device into power-down/standby mode (ie. silence the device)
+			// Speculate that there's a bug in the SSI263 and that RST should put the device into power-down/standby mode (ie. silence the device)
 			// TODO: Stick a 'scope on !PD/!RST pin 18 to see what the Phasor h/w does.
 			if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
 				SetDeviceModeAndInts();
@@ -990,7 +911,7 @@ void SSI263::Unmute(void)
 	}
 }
 
-void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
+void SSI263::SetVolume(DWORD dwVolume, DWORD dwVolumeMax)
 {
 	SSI263SingleVoice.dwUserVolume = dwVolume;
 
@@ -998,6 +919,20 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 
 	if (SSI263SingleVoice.bActive && !SSI263SingleVoice.bMute)
 		SSI263SingleVoice.lpDSBvoice->SetVolume(SSI263SingleVoice.nVolume);
+}
+
+//-----------------------------------------------------------------------------
+
+void SSI263::PeriodicUpdate(UINT executedCycles)
+{
+	const UINT kCyclesPerAudioFrame = 1000;
+	m_cyclesThisAudioFrame += executedCycles;
+	if (m_cyclesThisAudioFrame < kCyclesPerAudioFrame)
+		return;
+
+	m_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
+
+	Update();
 }
 
 //=============================================================================
@@ -1011,83 +946,46 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 #define SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP "Control / Articulation / Amplitude"
 #define SS_YAML_KEY_SSI263_REG_FILTER_FREQ "Filter Frequency"
 #define SS_YAML_KEY_SSI263_CURRENT_MODE "Current Mode"
-#define SS_YAML_KEY_SSI263_ACTIVE_PHONEME "Active Phoneme"	// v13: deprecated
-#define SS_YAML_KEY_SSI263_TYPE "Type"	// v14
+#define SS_YAML_KEY_SSI263_ACTIVE_PHONEME "Active Phoneme"
 
-#define TYPE_SSI263_EMPTY "Empty"
-#define TYPE_SSI263_P "SSI263P"
-#define TYPE_SSI263_AP "SSI263AP"
-
-void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT subunit)
+void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
-	// Scope for SSI263 subunit (so that SC01 has same indentation)
-	{
-		YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
 
-		std::string type = m_type == SSI263Empty ? TYPE_SSI263_EMPTY
-			: m_type == SSI263P ? TYPE_SSI263_P
-			: TYPE_SSI263_AP;
-
-		yamlSaveHelper.SaveString(SS_YAML_KEY_SSI263_TYPE, type);
-
-		if (m_type != SSI263Empty)
-		{
-			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_DUR_PHON, m_durationPhoneme);
-			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_INF, m_inflection);
-			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_RATE_INF, m_rateInflection);
-			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
-			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
-			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
-		}
-	}
-
-	if (subunit == 0)	// has SC01
-		SC01_SaveSnapshot(yamlSaveHelper);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_DUR_PHON, m_durationPhoneme);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_INF, m_inflection);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_RATE_INF, m_rateInflection);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME, IsPhonemeActive());
 }
 
-void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit)
+void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version)
 {
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263))
 		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SSI263);
 
-	std::string type = TYPE_SSI263_P;	// Default prior to v14
-	if (version >= 14)
-		type = yamlLoadHelper.LoadString(SS_YAML_KEY_SSI263_TYPE);
+	m_durationPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_DUR_PHON);
+	m_inflection      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_INF);
+	m_rateInflection  = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_RATE_INF);
+	m_ctrlArtAmp      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
+	m_filterFreq      = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
+	m_currentMode.mode = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_CURRENT_MODE);
+	bool activePhoneme = (version >= 7) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME) : false;
+	m_currentActivePhoneme = !activePhoneme ? -1 : 0x00;	// Not important which phoneme, since UpdateIRQ() resets this
 
-	if (type == TYPE_SSI263_EMPTY)
-		m_type = SSI263Empty;
-	else if (type == TYPE_SSI263_P)
-		m_type = SSI263P;
-	else // TYPE_SSI263_AP
-		m_type = SSI263AP;
-
-	if (m_type != SSI263Empty)
+	if (version < 12)
 	{
-		m_durationPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_DUR_PHON);
-		m_inflection = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_INF);
-		m_rateInflection = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_RATE_INF);
-		m_ctrlArtAmp = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP);
-		m_filterFreq = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_REG_FILTER_FREQ);
-		m_currentMode.mode = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_CURRENT_MODE);
-
-		if (version >= 7 && version < 13)
-			yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME);	// Consume redundant data
-
-		if (version < 12)
+		if (m_currentMode.function == 0)	// invalid function (but in older versions this was accepted)
 		{
-			if (m_currentMode.function == 0)	// invalid function (but in older versions this was accepted)
-			{
-				m_currentMode.function = MODE_PHONEME_TRANSITIONED_INFLECTION >> DURATION_MODE_SHIFT;	// Typically this is used
-				m_currentMode.enableInts = 0;
-			}
-			else
-			{
-				m_currentMode.enableInts = 1;
-			}
+			m_currentMode.function = MODE_PHONEME_TRANSITIONED_INFLECTION >> DURATION_MODE_SHIFT;	// Typically this is used
+			m_currentMode.enableInts = 0;
 		}
-
-		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
-			m_currentActivePhoneme = m_durationPhoneme & PHONEME_MASK;
+		else
+		{
+			m_currentMode.enableInts = 1;
+		}
 	}
 
 	yamlLoadHelper.PopMap();
@@ -1098,27 +996,11 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	SetCardMode(mode);
 
 	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
-	if (m_cardMode == PH_Phasor && IsPhonemeActive() && m_currentMode.enableInts && m_currentMode.D7 == 1)
+	if (m_cardMode == PH_Phasor && (m_ctrlArtAmp & CONTROL_MASK) == 0 && m_currentMode.enableInts && m_currentMode.D7 == 1)
 		CpuIrqAssert(IS_SPEECH);
 
-	if (subunit == 0)	// has SC01
-		SC01_LoadSnapshot(yamlLoadHelper, version);
-
-	// Do this after loading both SSI263 & SC01 state, otherwise IsPhonemeActive() can indicate both are active!
-	// . EG. After loading SSI263, SSI263.CONTROL==0 (so active); and after loading SC01, m_isVotraxPhoneme==true (so active)
-
-	if (m_isVotraxPhoneme)
-		m_currentActivePhoneme = 0x00;	// For IsPhonemeActive() and SC01 chip
-
 	if (IsPhonemeActive())
-	{
-		// NB. Save-state doesn't preserve the play-position within the phoneme.
-		// It just sets IRQ (and SSI263.D7) for "phoneme complete"; and restarts it from the beginning.
-		// This may cause problems for timing sensitive code (eg. mb-audit).
-		m_currentActivePhoneme = 0x00;	// Not important which phoneme, since RepeatPhoneme()->Play() sets this
 		UpdateIRQ();		// Pre: m_device, m_cardMode
-		RepeatPhoneme();
-	}
 
 	m_lastUpdateCycle = GetLastCumulativeCycles();
 }
@@ -1130,23 +1012,13 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 
 #define SS_YAML_KEY_SC01_PHONEME "SC01 Phoneme"
 #define SS_YAML_KEY_SC01_ACTIVE_PHONEME "SC01 Active Phoneme"
-#define SS_YAML_KEY_SC01_TYPE "Type"	// v14
-
-#define TYPE_SC01_EMPTY "Empty"
-#define TYPE_SC01 "SC01"
 
 void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SC01);
 
-	std::string type = !m_hasSC01 ? TYPE_SC01_EMPTY : TYPE_SC01;
-	yamlSaveHelper.SaveString(SS_YAML_KEY_SC01_TYPE, type);
-
-	if (m_hasSC01)
-	{
-		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SC01_PHONEME, m_votraxPhoneme);
-		yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
-	}
+	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SC01_PHONEME, m_votraxPhoneme);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
 }
 
 void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
@@ -1161,17 +1033,8 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SC01))
 		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SC01);
 
-	std::string type = TYPE_SC01;	// Default prior to v14
-	if (version >= 14)
-		type = yamlLoadHelper.LoadString(SS_YAML_KEY_SC01_TYPE);
-
-	m_hasSC01 = (type == TYPE_SC01);
-
-	if (m_hasSC01)
-	{
-		m_votraxPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SC01_PHONEME);
-		m_isVotraxPhoneme = yamlLoadHelper.LoadBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME);
-	}
+	m_votraxPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SC01_PHONEME);
+	m_isVotraxPhoneme = yamlLoadHelper.LoadBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME);
 
 	yamlLoadHelper.PopMap();
 }

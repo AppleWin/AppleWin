@@ -89,12 +89,9 @@ public:
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	void SetMemMainLanguageCard(void);
-	uint8_t ReadByteFromBank(uint8_t bank, uint16_t phyAddr);
-	uint8_t GetSaturnMemorySize();
-	void SetSaturnMemorySize(uint8_t banks);
 
-	static uint8_t GetSaturnMemorySizeSlot0();
-	static void SetSaturnMemorySizeSlot0(uint8_t banks);
+	static UINT	GetSaturnMemorySize();
+	static void	SetSaturnMemorySize(UINT banks);
 
 	static BYTE __stdcall IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 
@@ -136,8 +133,6 @@ public:
 	bool SetLanguageCard(SS_CARDTYPE type);
 
 	void SetMemModeFromSnapshot(void);
-
-	uint8_t ReadByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr);
 
 private:
 	LanguageCardUnit* m_pLanguageCard;

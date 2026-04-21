@@ -12,7 +12,7 @@ public:
 	CPageAdvanced(CPropertySheetHelper& PropertySheetHelper) :
 		m_Page(PG_ADVANCED),
 		m_PropertySheetHelper(PropertySheetHelper),
-		m_uTheFreezesF8Rom(kTheFreezesF8Rom_Default)
+		m_uTheFreezesF8Rom(0)
 	{
 		CPageAdvanced::ms_this = this;
 	}
@@ -23,9 +23,6 @@ public:
 	UINT GetTheFreezesF8Rom(void){ return m_uTheFreezesF8Rom; }
 	void SetTheFreezesF8Rom(UINT uValue){ m_uTheFreezesF8Rom = uValue; }
 
-	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
-	virtual void ResetToDefault();			// IPropertySheetPage
-
 protected:
 	// IPropertySheetPage
 	virtual INT_PTR DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
@@ -34,18 +31,15 @@ protected:
 
 private:
 	void InitOptions(HWND hWnd);
-	eApple2Type GetCloneType(uint32_t NewMenuItem);
+	eApple2Type GetCloneType(DWORD NewMenuItem);
 	int GetCloneMenuItem(void);
 	void InitFreezeDlgButton(HWND hWnd);
 	void InitCloneDropdownMenu(HWND hWnd);
 	void InitGameIOConnectorDropdownMenu(HWND hWnd);
-	bool IsOkToBenchmark(HWND hWnd, const bool bConfigChanged);
 
 	static CPageAdvanced* ms_this;
-	static const char m_CloneChoices[];
-	static const char m_gameIOConnectorChoices[];
-
-	static const UINT kTheFreezesF8Rom_Default = 0;
+	static const TCHAR m_CloneChoices[];
+	static const TCHAR m_gameIOConnectorChoices[];
 
 	const PAGETYPE m_Page;
 	CPropertySheetHelper& m_PropertySheetHelper;

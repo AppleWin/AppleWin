@@ -1,42 +1,54 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
+
   <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
   <title>Hard Disk Images</title>
+
+
 </head>
 
+
 <body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
+
 <h2 style="color: rgb(0, 128, 0);">Hard Disk Images</h2>
+
 <hr size="4">
 <p style="font-weight: bold;">Overview:</p>
 
-<p>A hard disk controller (or interface) card will typically be plugged into slot 7 (or slot 5) via the
-AppleWin Configuration tab labelled Slots.</p>
+<p>A hard disk controller (or interface) card can be plugged in to slot 7 via the AppleWin Configuration tab labelled Disk.
+Just check <span style="font-style: italic;">Enable hard disk controller in slot 7</span>.</p>
 
-<p>There is provision to connect 8 hard disks (HDDs) to each card from the UI (or via the command line).
-This is done by using .hdv or 800KB .2mg files on your PC. Each hard disk can have a maximum capacity of 32MB.</p>
-
+<p>There is provision to connect two hard disks to this card.
+This is done by using .hdv or 800KB .2mg files on your PC.
+Each hard disk can have a maximum capacity of 32MB.</p>
 NB. The hard disk controller supports both fixed-disk types (up to 32MB) and 3.5" floppy types (800KB).
 
-<p>On booting, the Apple II will <span style="text-decoration: underline;">always</span>
-attempt to autoboot from slot 7 first. If the hard disk controller has no HDD images connected
-then the Apple II will attempt to boot from slot 6 (with the Disk II interface card in it).</p>
+<p>On booting, the Apple will <span style="text-decoration: underline;">always</span>
+attempt to
+autoboot from slot 7 first. If the hard disk card is unplugged (not
+enabled) then
+the Apple will then attempt to boot from slot 6 (with the Disk][
+interface card in it).</p>
 
-<p>To boot a floppy disk with the hard disk controller enabled, either hold down the
-Open-Apple key during an Apple II restart or issue PR#6 from an AppleSoft prompt.</p>
-
-<p>The firmware in the hard disk controller card defaults to:
-  <li>II, II Plus, //e (original): ProDOS block mode, supporting up to 4 HDDs.</li>
-  <li>//e (enhanced): SmartPort, supporting up to 8 HDDs.</li>
-</p>
+<p>To boot a floppy disk with the hard disk card enabled, either hold down the Open-Apple key during an Apple II restart or
+issue PR#6 from an AppleSoft prompt.</p>
 
 <p style="font-weight: bold;">Warnings:</p>
+
 <ul>
-  <li>Removing the hard disk controller or a hard disk whilst the Apple II is running
-can lead to a corrupt .hdv image if the Apple II is writing to the hard disk when it is unplugged!</li>
-  <li>Equally, exiting AppleWin can have the same affect.</li>
-  <li>Copy][+ v7.1 locks up when trying to calculate how many free blocks are
-available when running a catalog. This is a bug in Copy][+ which is fixed in later versions.</li>
+
+  <li>Unchecking <span style="font-style: italic;">Enable hard disk controller in slot 7</span> whilst the Apple is running will
+physically unplugging the hard disk card. This can lead to a corrupt
+.hdv image if the Apple is writing to the hard disk when it is unplugged!</li>
+
+  <li>Equally, exiting AppleWin
+can have the same affect.</li>
+
+  <li>Copy][+ v7.1 locks up when
+trying to calculate how many free blocks are available when running a
+catalog. This is a bug in Copy][+ which is fixed in later versions.</li>
+
 </ul>
 
 </body>

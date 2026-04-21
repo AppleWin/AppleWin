@@ -197,7 +197,9 @@ bool SNESMAXCard::ParseControllerMappingFile(UINT joyNum, const char* pathname, 
 				std::string desc = yamlLoadHelper.LoadString("Description");
 				for (UINT i = 0; i < SNESMAXCard::NUM_BUTTONS; i++)
 				{
-					const std::string buttonNum = StrFormat("%d", i + 1);
+					char szButtonNum[3] = "00";
+					sprintf_s(szButtonNum, "%d", i + 1);	// +1 as 1-based
+					std::string buttonNum = szButtonNum;
 					bool found = false;
 					std::string buttonStr = yamlLoadHelper.LoadString_NoThrow(buttonNum, found);
 					SNESMAXCard::Button button = SNESMAXCard::UNUSED;

@@ -29,7 +29,7 @@
 
 		COLOR_CUSTOM_01, COLOR_CUSTOM_02, COLOR_CUSTOM_03, COLOR_CUSTOM_04,
 		COLOR_CUSTOM_05, COLOR_CUSTOM_06, COLOR_CUSTOM_07, COLOR_CUSTOM_08,
-		COLOR_CUSTOM_09, COLOR_CUSTOM_10, COLOR_CUSTOM_11, COLOR_CUSTOM_12,
+		COLOR_CUSTOM_09, COLOR_CUSTOM_11, CUSTOM_COLOR_11, COLOR_CUSTOM_12,
 		COLOR_CUSTOM_13, COLOR_CUSTOM_14, COLOR_CUSTOM_15, COLOR_CUSTOM_16,
 
 		NUM_PALETTE,
@@ -105,18 +105,10 @@
 		, BG_INFO_CHAR       // mid Cyan
 		, FG_INFO_CHAR_HI    // White
 		, FG_INFO_CHAR_LO    // Yellow
-
+		
 		, BG_INFO_IO_BYTE    // Orange (high bit)
 		, FG_INFO_IO_BYTE    // Orange (non-high bit)
-
-		, FG_INFO_BP_MEM_READ  // Green
-		, FG_INFO_BP_MEM_WRITE // Orange
-
-		, FG_INFO_MEM_SLOT    // Yellow
-		, BG_INFO_MEM_BANK    // mid Cyan
-		, FG_INFO_MEM_BANK    // White
-		, FG_INFO_MEM_LC      //~mid Cyan
-
+		                               
 		, BG_DATA_1          // Cyan*   Window
 		, BG_DATA_2          // Cyan*
 		, FG_DATA_BYTE       // default same as FG_DISASM_OPCODE
@@ -146,7 +138,6 @@
 		, FG_AY8913_EVEN
 		, FG_AY8913_ODD
 		, FG_AY8913_FUNCTION
-		, FG_INFO_ADDRESS_SY6522_AY8913_BAD
 
 		, NUM_DEBUG_COLORS
 	};

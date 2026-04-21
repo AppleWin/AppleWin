@@ -82,9 +82,6 @@ WORD _GetDataRange (int nArgs, int iArg, DisasmData_t& tData_)
 	else
 	{
 		// DB foo = 300 // nArgs == 3
-		// 2.9.2.3: Fixed: DB HGR = 2000:3FFF and DB FOO = 300 wasn't parsing correctly from 2.9.1.3. Fix for commit 48e0fe3a.
-		if (g_aArgs[iArg].eToken == TOKEN_EQUAL)
-			iArg++;
 
 		RangeType_t eRange = Range_Get( nAddress, nAddress2, iArg);
 		if ((eRange == RANGE_HAS_END) ||
@@ -100,7 +97,10 @@ WORD _GetDataRange (int nArgs, int iArg, DisasmData_t& tData_)
 				// 2.9.1.1 Add: Support for equal sign, also make it optional for command DB
 				// DB FOO   300
 				// DB FOO = 300
-				nAddress = g_aArgs[ iArg ].nValue;
+				if (g_aArgs[2].bType == TOKEN_EQUAL)
+					nAddress = g_aArgs[ 3 ].nValue;
+				else
+					nAddress = g_aArgs[ 2 ].nValue;
 			}
 			else
 				nAddress = g_aArgs[ 1 ].nValue;
@@ -373,8 +373,7 @@ Update_t _CmdDisasmDataDefByteX (int nArgs)
 	// To "return to code" use ."X" 
 	int iCmd = g_aArgs[0].nValue - NOP_BYTE_1;
 
-	// 2.9.2.2: Bug fix: DB HGR = 2000:3FFF was displaying help instead of being parsed.
-	if (nArgs > 5) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
+	if (nArgs > 4) // 2.7.0.31 Bug fix: DB range, i.e. DB 174E:174F
 	{
 		return Help_Arg_1( CMD_DEFINE_DATA_BYTE1 + iCmd );
 	}
@@ -490,8 +489,7 @@ Update_t CmdDisasmDataDefAddress16 (int nArgs)
 {
 	int iCmd = NOP_WORD_1 - g_aArgs[0].nValue;
 
-	// 2.9.2.4 Fixed: DA RESET = 3F2 was displaying help instead of being parsed.
-	if (nArgs > 4)
+	if (! ((nArgs <= 2) || (nArgs == 4)))
 	{
 		return Help_Arg_1( CMD_DEFINE_DATA_WORD1 + iCmd );
 	}

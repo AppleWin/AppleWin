@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 /* Description: Debugger
  *
- * Author: Copyright (C) 2006-2025 Michael Pohoreski
+ * Author: Copyright (C) 2006-2010 Michael Pohoreski
  */
 
 // disable warning C4786: symbol greater than 255 character:
@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "StdAfx.h"
 
 #include "Debug.h"
+#include "DebugDefs.h"
 #include "Debugger_Win32.h"
 
 #include "../Windows/AppleWin.h"
@@ -52,7 +53,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define MAKE_VERSION(a,b,c,d) ((a<<24) | (b<<16) | (c<<8) | (d))
 
 	// See /docs/Debugger_Changelog.txt for full details
-	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,4,3);
+	const int DEBUGGER_VERSION = MAKE_VERSION(2,9,2,0);
 
 
 // Public _________________________________________________________________________________________
@@ -84,12 +85,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static DebugBreakOnDMA g_DebugBreakOnDMA[NUM_BREAK_ON_DMA];
 	static DebugBreakOnDMA g_DebugBreakOnDMAIO;
 
-	static int           g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
-	static Breakpoint_t *g_pDebugBreakpointHit = nullptr;
-
-	static WORD g_nBreakMemoryAddr = 0;
-	static std::string g_sBreakMemoryFullPrefixAddr;
-	static int g_breakpointHitID = -1;
+	int                  g_bDebugBreakpointHit = 0;       // See: BreakpointHit_t
+	static Breakpoint_t *g_pDebugBreakpointHit = nullptr; // NOTE: Only valid for BP_HIT_REG, see: CheckBreakpointsReg()
 
 	int          g_nBreakpoints = 0;
 	Breakpoint_t g_aBreakpoints[ MAX_BREAKPOINTS ];
@@ -139,6 +136,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		"* ", // Read/Write
 	};
 
+	static WORD g_uBreakMemoryAddress = 0;
+
 // Commands _______________________________________________________________________________________
 
 	int g_iCommand; // last command (enum) // used for consecutive commands
@@ -146,7 +145,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	std::vector<int>       g_vPotentialCommands; // global, since TAB-completion also needs
 	std::vector<Command_t> g_vSortedCommands;
 
-//	static const char g_aFlagNames[_6502_NUM_FLAGS+1] = "CZIDBRVN";// Reversed since arrays are from left-to-right
+//	static const char g_aFlagNames[_6502_NUM_FLAGS+1] = TEXT("CZIDBRVN");// Reversed since arrays are from left-to-right
 
 
 // Cursor (Console Input) _____________________________________________________
@@ -165,7 +164,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const int  g_nInputCursor = sizeof( g_aInputCursor );
 
 	void DebuggerCursorUpdate();
-	//char DebuggerCursorGet();
+	char DebuggerCursorGet();
 
 // Cursor (Disasm) ____________________________________________________________
 
@@ -179,17 +178,17 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	int  g_nDisasmWinHeight = 0;
 
-//	char g_aConfigDisasmAddressColon[] = " :";
+//	char g_aConfigDisasmAddressColon[] = TEXT(" :");
 
 	extern const int WINDOW_DATA_BYTES_PER_LINE = 8;
 
 #if OLD_FONT
 // Font
-	char     g_sFontNameDefault[ MAX_FONT_NAME ] = "Courier New";
-	char     g_sFontNameConsole[ MAX_FONT_NAME ] = "Courier New";
-	char     g_sFontNameDisasm [ MAX_FONT_NAME ] = "Courier New";
-	char     g_sFontNameInfo   [ MAX_FONT_NAME ] = "Courier New";
-	char     g_sFontNameBranch [ MAX_FONT_NAME ] = "Webdings";
+	TCHAR     g_sFontNameDefault[ MAX_FONT_NAME ] = TEXT("Courier New");
+	TCHAR     g_sFontNameConsole[ MAX_FONT_NAME ] = TEXT("Courier New");
+	TCHAR     g_sFontNameDisasm [ MAX_FONT_NAME ] = TEXT("Courier New");
+	TCHAR     g_sFontNameInfo   [ MAX_FONT_NAME ] = TEXT("Courier New");
+	TCHAR     g_sFontNameBranch [ MAX_FONT_NAME ] = TEXT("Webdings");
 	HFONT     g_hFontWebDings  = (HFONT)0;
 #endif
 	int       g_iFontSpacing = FONT_SPACING_CLEAN;
@@ -247,7 +246,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	ProfileOpmode_t g_aProfileOpmodes[ NUM_OPMODES ];
 	unsigned __int64 g_nProfileBeginCycles = 0; // g_nCumulativeCycles // PROFILE RESET
 
-	const std::string g_FileNameProfile = "Profile.txt"; // changed from .csv to .txt since Excel doesn't give import options.
+	const std::string g_FileNameProfile = TEXT("Profile.txt"); // changed from .csv to .txt since Excel doesn't give import options.
 	int   g_nProfileLine = 0;
 	char  g_aProfileLine[ NUM_PROFILE_LINES ][ CONSOLE_WIDTH ];
 
@@ -342,7 +341,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	static BOOL      g_bProfiling       = 0;
 	static int       g_nDebugSteps      = 0;
-	static uint32_t  g_nDebugStepCycles = 0;
+	static DWORD     g_nDebugStepCycles = 0;
 	static int       g_nDebugStepStart  = 0;
 	static int       g_nDebugStepUntil  = -1; // HACK: MAGIC #
 
@@ -353,7 +352,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static bool      g_bTraceHeader     = false; // semaphore, flag header to be printed
 	static bool      g_bTraceFileWithVideoScanner = false;
 
-	uint32_t     extbench      = 0;
+	DWORD     extbench      = 0;
 
 	static bool      g_bIgnoreNextKey = false;
 
@@ -361,11 +360,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static UINT g_LBR = LBR_UNDEFINED;	// Last Branch Record
 
 	static bool g_bScriptReadOk = false;
-
-	static std::string g_sAutoRunScriptFilename("DebuggerAutoRun.txt");
-
-	static uint8_t g_interceptBreakpointsSlot = 0;
-	static CBFUNCTION g_InterceptBreakpointsCB = nullptr;
 
 // Private ________________________________________________________________________________________
 
@@ -377,7 +371,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static	Update_t ExecuteCommand ( int nArgs );
 
 // Breakpoints
-	static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& pBP, WORD addr, DEVICE_e device, bool padding);
 	Update_t _BP_InfoNone ();
 	void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, int & nTotal );
 	void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nMax, const bool bEnabled );
@@ -388,7 +381,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 //	bool CheckBreakpoint (WORD address, BOOL memory);
 	bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, WORD nAddress, int nLen, bool bIsTempBreakpoint );
-	int  _CmdBreakpointAddCommonArg ( const int nArg, int iArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
+	int  _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint=false );
 
 // Config - Save
 	bool ConfigSave_BufferToDisk ( const char *pFileName, ConfigSave_t eConfigSave );
@@ -655,7 +648,7 @@ Update_t CmdBookmarkClear (int nArgs)
 	int iArg;
 	for (iArg = 1; iArg <= nArgs; iArg++ )
 	{
-		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			_Bookmark_Reset();
 			break;
@@ -713,7 +706,7 @@ Update_t CmdBookmarkLoad (int nArgs)
 //		strcpy( sMiniFileName, pFileName );
 	//	strcat( sMiniFileName, ".aws" ); // HACK: MAGIC STRING
 
-//		strcpy(sFileName, g_sCurrentDir); // 
+//		_tcscpy(sFileName, g_sCurrentDir); // 
 //		strcat(sFileName, sMiniFileName);
 	}
 
@@ -749,7 +742,7 @@ Update_t CmdBookmarkSave (int nArgs)
 
 		if (ConfigSave_BufferToDisk( g_aArgs[ 1 ].sArg, CONFIG_SAVE_FILE_CREATE ))
 		{
-			ConsoleBufferPush(  "Saved."  );
+			ConsoleBufferPush( TEXT( "Saved." ) );
 			return ConsoleUpdate();
 		}
 	}
@@ -790,10 +783,10 @@ Update_t CmdBenchmarkStop (int nArgs)
 	
 	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 	GetFrame().VideoRedrawScreen();
-	uint32_t currtime = GetTickCount();
+	DWORD currtime = GetTickCount();
 	while ((extbench = GetTickCount()) != currtime)
 		; // intentional busy-waiting
-	KeybQueueKeypress(' ' ,ASCII);
+	KeybQueueKeypress(TEXT(' ') ,ASCII);
 
 	return UPDATE_ALL; // 0;
 }
@@ -819,7 +812,7 @@ Update_t CmdProfile (int nArgs)
 		{
 			ProfileReset();
 			g_bProfiling = 1;
-			ConsoleBufferPush( " Resetting profile data." );
+			ConsoleBufferPush( TEXT(" Resetting profile data." ) );
 		}
 		else
 		{
@@ -1014,14 +1007,14 @@ Update_t CmdBreakOpcode (int nArgs) // Breakpoint IFF Full-speed!
 	if (nArgs > 1)
 		return HelpLastCommand();
 
-	char sAction[ CONSOLE_WIDTH ] = "Current"; // default to display
+	TCHAR sAction[ CONSOLE_WIDTH ] = TEXT("Current"); // default to display
 
 	if (nArgs == 1)
 	{
 		int iOpcode = g_aArgs[ 1] .nValue;
 		g_iDebugBreakOnOpcode = iOpcode & 0xFF;
 
-		strcpy( sAction, "Setting" );
+		_tcscpy( sAction, TEXT("Setting") );
 
 		if (iOpcode >= NUM_OPCODES)
 		{
@@ -1069,12 +1062,12 @@ Update_t CmdBreakOnInterrupt (int nArgs)
 	if (nArgs == 1 && nActive == -1)
 		return HelpLastCommand();
 
-	char sAction[CONSOLE_WIDTH] = "Current"; // default to display
+	TCHAR sAction[CONSOLE_WIDTH] = TEXT("Current"); // default to display
 
 	if (nArgs == 1)
 	{
 		g_bDebugBreakOnInterrupt = (iParam == PARAM_ON) ? true : false;
-		strcpy(sAction, "Setting");
+		_tcscpy(sAction, TEXT("Setting"));
 	}
 
 	ConsoleBufferPushFormat("%s Break on Interrupt: %s"
@@ -1115,15 +1108,8 @@ bool GetBreakpointInfo ( WORD nOffset, bool & bBreakpointActive_, bool & bBreakp
 }
 
 // returns the hit type if the breakpoint stops
-static BreakpointHit_t HitBreakpoint(Breakpoint_t * pBP, BreakpointHit_t eHitType, int iBreakpoint)
+static BreakpointHit_t hitBreakpoint(Breakpoint_t * pBP, BreakpointHit_t eHitType)
 {
-	if (pBP->bStop && g_breakpointHitID < 0)
-	{
-		g_breakpointHitID = iBreakpoint;
-		_ASSERT(g_pDebugBreakpointHit == nullptr);
-		g_pDebugBreakpointHit = pBP;
-	}
-
 	pBP->bHit = true;
 	++pBP->nHitCount;
 	return pBP->bStop ? eHitType : BP_HIT_NONE;
@@ -1172,126 +1158,6 @@ static void DebugEnterStepping()
 	GetFrame().FrameRefreshStatus(DRAW_TITLE | DRAW_DISK_STATUS);
 }
 
-
-//===========================================================================
-bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
-{
-	bool bStatus = false;
-	int iCmp = pBP->eOperator;
-
-	bool isRead = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_READ_ONLY || pBP->eSource == BP_SRC_REG_PC;
-	bool isWrite = pBP->eSource == BP_SRC_MEM_RW || pBP->eSource == BP_SRC_MEM_WRITE_ONLY;
-
-	// If no prefix filters, then BP hit
-	if (pBP->addrPrefix.nSlot     == AddressPrefix_t::kSlotInvalid
-	 && pBP->addrPrefix.nBank     == AddressPrefix_t::kBankInvalid
-	 && pBP->addrPrefix.nLangCard == AddressPrefix_t::kLangCardInvalid
-	 && pBP->addrPrefix.bIsROM    == false)
-		return true;
-
-	// Prefix filters only apply for BP_OP_EQUAL operation (for now)
-	if (iCmp != BP_OP_EQUAL)
-		return true;
-
-	// Apply any prefix filters
-
-	const UINT ramworksActiveBank = GetRamWorksActiveBank() + 1;	// [0x01..0x100]
-
-	if (nVal <= _6502_STACK_END)
-	{
-		if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
-			|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP)))
-		{
-			bStatus = true;
-		}
-	}
-	else if (TEXT_PAGE1_BEGIN <= nVal && nVal <= 0x7FF && (GetMemMode() & MF_80STORE))
-	{
-		if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_PAGE2))
-			|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
-		{
-			bStatus = true;
-		}
-	}
-	else if (HGR_PAGE1_BEGIN <= nVal && nVal <= 0x3FFF && ((GetMemMode() & (MF_80STORE | MF_HIRES)) == (MF_80STORE | MF_HIRES)))
-	{
-		if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_PAGE2))
-			|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_PAGE2)))
-		{
-			bStatus = true;
-		}
-	}
-	else if (nVal <= 0xBFFF)
-	{
-		if (isRead)
-		{
-			if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_AUXREAD))
-				|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_AUXREAD)))
-			{
-				bStatus = true;
-			}
-		}
-		if (isWrite)
-		{
-			if ((pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_AUXWRITE))
-				|| (pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_AUXWRITE)))
-			{
-				bStatus = true;
-			}
-		}
-	}
-	else if (nVal <= FIRMWARE_EXPANSION_END)
-	{
-		bStatus = true;
-	}
-	else if (0xD000 <= nVal && nVal <= _6502_MEM_END)
-	{
-		const bool bNoRamworksOrSaturnBank = pBP->addrPrefix.nSlot == AddressPrefix_t::kSlotInvalid && pBP->addrPrefix.nBank == AddressPrefix_t::kBankInvalid;
-
-		const UINT saturnActiveSlot = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC();
-		const UINT saturnActiveBank = GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetActiveBank();
-		const int saturnBank = pBP->addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid && pBP->addrPrefix.nBank != AddressPrefix_t::kBankInvalid ? pBP->addrPrefix.nBank : AddressPrefix_t::kBankInvalid;
-
-		if (GetMemMode() & MF_HIGHRAM)
-		{
-			if (bNoRamworksOrSaturnBank
-				|| (saturnBank < 0 && pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
-				|| (saturnBank < 0 && pBP->addrPrefix.nBank == ramworksActiveBank && (GetMemMode() & MF_ALTZP))
-				|| (pBP->addrPrefix.nSlot == saturnActiveSlot && saturnBank == saturnActiveBank && !(GetMemMode() & MF_ALTZP)))
-			{
-				if ((pBP->addrPrefix.nLangCard == AddressPrefix_t::kLangCardInvalid)
-					|| (pBP->addrPrefix.nLangCard == 1 && !(GetMemMode() & MF_BANK2))
-					|| (pBP->addrPrefix.nLangCard == 2 && (GetMemMode() & MF_BANK2))
-					|| (nVal >= 0xE000))
-				{
-					if (pBP->addrPrefix.bIsROM == false)		// isROM==false means "don't care" whether it's ROM or not
-					{
-						if (isRead || isWrite && (GetMemMode() & MF_WRITERAM))
-							bStatus = true;
-					}
-				}
-			}
-		}
-		else // ROM switched in
-		{
-			if (!bNoRamworksOrSaturnBank
-				|| (pBP->addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid))
-				bStatus = false;
-			else
-				bStatus = true;
-		}
-	}
-	else
-	{
-		_ASSERT(0);	// some address not accounted for
-		bStatus = true;
-	}
-
-
-	return bStatus;
-}
-
-
 //===========================================================================
 bool _CheckBreakpointValue ( Breakpoint_t *pBP, int nVal )
 {
@@ -1328,14 +1194,10 @@ bool _CheckBreakpointValue ( Breakpoint_t *pBP, int nVal )
 			break;
 	}
 
-	if (!bStatus)
-		return false;
-
-	return _CheckBreakpointValueWithPrefix(pBP, nVal);
+	return bStatus;
 }
 
 //===========================================================================
-// Only called by DebuggerCheckMemBreakpoints()
 bool _CheckBreakpointRange (Breakpoint_t* pBP, int nVal, int nSize)
 {
 	bool bStatus = false;
@@ -1353,19 +1215,6 @@ bool _CheckBreakpointRange (Breakpoint_t* pBP, int nVal, int nSize)
 		break;
 	}
 
-	if (!bStatus)
-		return false;
-
-	// Now check the range (at 256 byte intervals) with full addr prefix
-	WORD checkAddr = nVal;
-	while (checkAddr < (nVal + nSize))
-	{
-		bStatus = _CheckBreakpointValueWithPrefix(pBP, checkAddr);
-		if (bStatus)
-			break;
-		checkAddr += _6502_PAGE_SIZE;
-	}
-
 	return bStatus;
 }
 
@@ -1373,7 +1222,6 @@ bool _CheckBreakpointRange (Breakpoint_t* pBP, int nVal, int nSize)
 
 static void DebuggerBreakOnDma (WORD nAddress, WORD nSize, bool isDmaToMemory, int iBreakpoint);
 
-// Only called by Hardisk.cpp
 bool DebuggerCheckMemBreakpoints (WORD nAddress, WORD nSize, bool isDmaToMemory)
 {
 	// NB. Caller handles when (addr+size) wraps on 64K
@@ -1400,17 +1248,19 @@ bool DebuggerCheckMemBreakpoints (WORD nAddress, WORD nSize, bool isDmaToMemory)
 //===========================================================================
 int CheckBreakpointsIO ()
 {
-	int iBreakpointHit = 0;
-
 	const int NUM_TARGETS = 3;
+
 	int aTarget[ NUM_TARGETS ] =
 	{
 		NO_6502_TARGET,
 		NO_6502_TARGET,
 		NO_6502_TARGET
 	};
-
 	int  nBytes;
+	int  bBreakpointHit = 0;
+
+	int  iTarget;
+	int  nAddress;
 
 	// bIncludeNextOpcodeAddress == false:
 	// . JSR addr16: ignore addr16 as a target
@@ -1419,9 +1269,9 @@ int CheckBreakpointsIO ()
 
 	if (nBytes)
 	{
-		for (int iTarget = 0; iTarget < NUM_TARGETS; iTarget++ )
+		for (iTarget = 0; iTarget < NUM_TARGETS; iTarget++ )
 		{
-			int nAddress = aTarget[ iTarget ];
+			nAddress = aTarget[ iTarget ];
 			if (nAddress != NO_6502_TARGET)
 			{
 				for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
@@ -1433,34 +1283,31 @@ int CheckBreakpointsIO ()
 						{
 							if (_CheckBreakpointValue( pBP, nAddress ))
 							{
-								g_nBreakMemoryAddr = (WORD)nAddress;	// last BP hit
-								g_sBreakMemoryFullPrefixAddr = GetFullPrefixAddrForBreakpoint(pBP->addrPrefix, (WORD)nAddress, DEVICE_e::DEV_MEMORY, false);	// string is last BP hit
-								BYTE opcode = ReadByteFromMemory(regs.pc);
+								g_uBreakMemoryAddress = (WORD) nAddress;
+								BYTE opcode = mem[regs.pc];
 
 								if (pBP->eSource == BP_SRC_MEM_RW)
 								{
-									iBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEM, iBreakpoint);
+									bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEM);
 								}
 								else if (pBP->eSource == BP_SRC_MEM_READ_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_RI|MEM_R))
 									{
-										iBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEMR, iBreakpoint);
+										bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMR);
 									}
 								}
 								else if (pBP->eSource == BP_SRC_MEM_WRITE_ONLY)
 								{
 									if (g_aOpcodes[opcode].nMemoryAccess & (MEM_WI|MEM_W))
 									{
-										iBreakpointHit |= HitBreakpoint(pBP, BP_HIT_MEMW, iBreakpoint);
+										bBreakpointHit |= hitBreakpoint(pBP, BP_HIT_MEMW);
 									}
 								}
 								else
 								{
 									_ASSERT(0);
 								}
-
-								// Don't break - instead process all BPs so that all pBP->nHitCount's are correct
 							}
 						}
 					}
@@ -1468,13 +1315,15 @@ int CheckBreakpointsIO ()
 			}
 		}
 	}
-	return iBreakpointHit;
+	return bBreakpointHit;
 }
 
 // Returns true if a register breakpoint is triggered
 //===========================================================================
 int CheckBreakpointsReg ()
 {
+	g_pDebugBreakpointHit = nullptr;
+
 	int iAnyBreakpointHit = 0;
 
 	for (int iBreakpoint = 0; iBreakpoint < MAX_BREAKPOINTS; iBreakpoint++)
@@ -1484,7 +1333,7 @@ int CheckBreakpointsReg ()
 		if (! _BreakpointValid( pBP ))
 			continue;
 
-		bool bBreakpointHit = false;
+		bool bBreakpointHit = 0;
 
 		switch (pBP->eSource)
 		{
@@ -1512,8 +1361,8 @@ int CheckBreakpointsReg ()
 
 		if (bBreakpointHit)
 		{
-			iAnyBreakpointHit = HitBreakpoint(pBP, BP_HIT_REG, iBreakpoint);
-			// Don't break - instead process all BPs so that all pBP->nHitCount's are correct
+			iAnyBreakpointHit = hitBreakpoint(pBP, BP_HIT_REG);
+			g_pDebugBreakpointHit = pBP; // Save breakpoint so we can display which register triggered the breakpoint.
 		}
 	}
 
@@ -1539,9 +1388,8 @@ int CheckBreakpointsVideo ()
 		uint16_t vert = NTSC_GetVideoVertForDebugger();	// update video scanner's vert/horz position - needed for when in fullspeed (GH#1164)
 		if (_CheckBreakpointValue(pBP, vert))
 		{
-			iBreakpointHit = HitBreakpoint(pBP, BP_HIT_VIDEO_POS, iBreakpoint);
+			iBreakpointHit = hitBreakpoint(pBP, BP_HIT_VIDEO_POS);
 			pBP->bEnabled = false;	// Disable, otherwise it'll trigger many times on this scan-line
-			// Don't break - instead process all BPs so that all pBP->nHitCount's are correct
 		}
 	}
 
@@ -1556,7 +1404,6 @@ static int CheckBreakpointsDmaToOrFromIOMemory (void)
 	return res;
 }
 
-// Only called by Hardisk.cpp
 void DebuggerBreakOnDmaToOrFromIoMemory (WORD nAddress, bool isDmaToMemory)
 {
 	g_DebugBreakOnDMAIO.isToOrFromMemory = isDmaToMemory ? BP_DMA_TO_IO_MEM : BP_DMA_FROM_IO_MEM;
@@ -1618,7 +1465,7 @@ Update_t CmdBreakpointAddSmart (int nArgs)
 		g_aArgs[ nArgs ].nValue = g_nDisasmCurAddress;		
 	}
 
-	if ((nAddress >= APPLE_IO_BEGIN) && (nAddress <= APPLE_IO_END))
+	if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
 	{
 		return CmdBreakpointAddIO( nArgs );
 	}
@@ -1632,8 +1479,7 @@ Update_t CmdBreakpointAddSmart (int nArgs)
 
 
 //===========================================================================
-// Pre: nArgs = last valid index into g_aArgs[]
-Update_t CmdBreakpointAddReg (const int nArgs)
+Update_t CmdBreakpointAddReg (int nArgs)
 {
 	if (! nArgs)
 	{
@@ -1651,8 +1497,8 @@ Update_t CmdBreakpointAddReg (const int nArgs)
 
 	int  nFound;
 
-	int  iArg = 1;
-	while (iArg <= nArgs)
+	int  iArg   = 0;
+	while (iArg++ < nArgs)
 	{
 		char *sArg = g_aArgs[iArg].sArg;
 
@@ -1694,16 +1540,12 @@ Update_t CmdBreakpointAddReg (const int nArgs)
 
 		if ((! bHaveSrc) && (! bHaveCmp)) // Inverted/Convoluted logic: didn't find BOTH this pass, so we must have already found them.
 		{
-			int dArgs = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
+			int dArgs = _CmdBreakpointAddCommonArg( iArg, nArgs, iSrc, iCmp );
 			if (!dArgs)
 			{
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_REG );
 			}
 			iArg += dArgs;
-		}
-		else
-		{
-			iArg++;
 		}
 	}
 
@@ -1740,7 +1582,6 @@ bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoi
 		pBP->bStop     = true;
 		pBP->bHit      = false;
 		pBP->nHitCount = 0;
-		// NB. Address prefix args are set in parent _CmdBreakpointAddCommonArg()
 		bStatus = true;
 	}
 
@@ -1750,9 +1591,8 @@ bool _CmdBreakpointAddReg ( Breakpoint_t *pBP, BreakpointSource_t iSrc, Breakpoi
 
 // @return Number of args processed
 //===========================================================================
-int _CmdBreakpointAddCommonArg ( const int nArg, int iArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint )
+int _CmdBreakpointAddCommonArg ( int iArg, int nArg, BreakpointSource_t iSrc, BreakpointOperator_t iCmp, bool bIsTempBreakpoint )
 {
-	int dArgPrefix = 0;
 	int dArg = 0;
 
 	int iBreakpoint = 0;
@@ -1766,51 +1606,46 @@ int _CmdBreakpointAddCommonArg ( const int nArg, int iArg, BreakpointSource_t iS
 
 	if (iBreakpoint >= MAX_BREAKPOINTS)
 	{
-		ConsoleDisplayError("All Breakpoint slots are currently in use.");
-		return 0;	// error
+		ConsoleDisplayError("All Breakpoints slots are currently in use.");
+		return dArg;
 	}
-
-	pBP->Clear();
-
-	//
 
 	if (iArg <= nArg)
 	{
-		if (!Range_GetAllPrefixes(iArg, nArg, dArgPrefix, &pBP->addrPrefix))
-			return 0;	// error
-
 #if DEBUG_VAL_2
 		int nLen = g_aArgs[iArg].nVal2;
 #endif
-		WORD nAddress = 0;
+		WORD nAddress  = 0;
 		WORD nAddress2 = 0;
-		int  nLen = 0;
+		WORD nEnd      = 0;
+		int  nLen      = 0;
 
 		dArg = 1;
 		RangeType_t eRange = Range_Get( nAddress, nAddress2, iArg);
 		if ((eRange == RANGE_HAS_END) ||
 			(eRange == RANGE_HAS_LEN))
 		{
-			WORD nEnd = 0;	// unused
 			Range_CalcEndLen( eRange, nAddress, nAddress2, nEnd, nLen );
-			dArg = 3;
+			dArg = 2;
 		}
 
-		if (!nLen)
+		if ( !nLen)
+		{
 			nLen = 1;
+		}
 
-		if (!_CmdBreakpointAddReg( pBP, iSrc, iCmp, nAddress, nLen, bIsTempBreakpoint ))
-			dArgPrefix = dArg = 0;	// error
-		else
-			g_nBreakpoints++;
+		if (! _CmdBreakpointAddReg( pBP, iSrc, iCmp, nAddress, nLen, bIsTempBreakpoint ))
+		{
+			dArg = 0;
+		}
+		g_nBreakpoints++;
 	}
 
-	return dArgPrefix + dArg;
+	return dArg;
 }
 
 
 //===========================================================================
-// Pre: nArgs = last valid index into g_aArgs[]
 Update_t CmdBreakpointAddPC (int nArgs)
 {
 	BreakpointSource_t   iSrc = BP_SRC_REG_PC;
@@ -1826,10 +1661,10 @@ Update_t CmdBreakpointAddPC (int nArgs)
 //	int iParamSrc;
 	int iParamCmp;
 
-	int nFound = 0;
+	int  nFound = 0;
 
-	int iArg = 1;
-	while (iArg <= nArgs)
+	int  iArg   = 0;
+	while (iArg++ < nArgs)
 	{
 		char *sArg = g_aArgs[iArg].sArg;
 
@@ -1850,11 +1685,10 @@ Update_t CmdBreakpointAddPC (int nArgs)
 						break;
 				}
 			}
-			iArg++;
 		}
 		else
 		{
-			int dArg = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
+			int dArg = _CmdBreakpointAddCommonArg( iArg, nArgs, iSrc, iCmp );
 			if (! dArg)
 			{
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_PC );
@@ -1890,22 +1724,22 @@ Update_t CmdBreakpointAddMemW (int nArgs)
 	return CmdBreakpointAddMem(nArgs, BP_SRC_MEM_WRITE_ONLY);
 }
 //===========================================================================
-// Pre: nArgs = last valid index into g_aArgs[]
-Update_t CmdBreakpointAddMem (const int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
+Update_t CmdBreakpointAddMem (int nArgs, BreakpointSource_t bpSrc /*= BP_SRC_MEM_RW*/)
 {
 	BreakpointSource_t   iSrc = bpSrc;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL;
 
-	int iArg = 1;
-	while (iArg <= nArgs)
+	int iArg = 0;
+	
+	while (iArg++ < nArgs)
 	{
 		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
 		{
-			return Help_Arg_1( CMD_BREAKPOINT_ADD_MEM );
+				return Help_Arg_1( CMD_BREAKPOINT_ADD_MEM );
 		}
 		else
 		{
-			int dArg = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
+			int dArg = _CmdBreakpointAddCommonArg( iArg, nArgs, iSrc, iCmp );
 			if (! dArg)
 			{
 				return Help_Arg_1( CMD_BREAKPOINT_ADD_MEM );
@@ -1918,14 +1752,14 @@ Update_t CmdBreakpointAddMem (const int nArgs, BreakpointSource_t bpSrc /*= BP_S
 }
 
 //===========================================================================
-// Pre: nArgs = last valid index into g_aArgs[]
-Update_t CmdBreakpointAddVideo (const int nArgs)
+Update_t CmdBreakpointAddVideo (int nArgs)
 {
 	BreakpointSource_t   iSrc = BP_SRC_VIDEO_SCANNER;
 	BreakpointOperator_t iCmp = BP_OP_EQUAL;
 
-	int iArg = 1;
-	while (iArg <= nArgs)
+	int iArg = 0;
+
+	while (iArg++ < nArgs)
 	{
 		if (g_aArgs[iArg].bType & TYPE_OPERATOR)
 		{
@@ -1933,7 +1767,7 @@ Update_t CmdBreakpointAddVideo (const int nArgs)
 		}
 		else
 		{
-			int dArg = _CmdBreakpointAddCommonArg( nArgs, iArg, iSrc, iCmp );
+			int dArg = _CmdBreakpointAddCommonArg(iArg, nArgs, iSrc, iCmp);
 			if (!dArg)
 			{
 				return Help_Arg_1(CMD_BREAKPOINT_ADD_VIDEO);
@@ -2046,7 +1880,7 @@ void _BWZ_ClearViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, const int nM
 	{
 		iSlot = g_aArgs[nArgs].nValue;
 
-		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			_BWZ_RemoveAll( aBreakWatchZero, nMax, nTotal );
 			break;
@@ -2073,7 +1907,7 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 	{
 		iSlot = g_aArgs[nArgs].nValue;
 
-		if (! strcmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
+		if (! _tcscmp(g_aArgs[nArgs].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName))
 		{
 			for ( ; iSlot < nMax; iSlot++ )
 			{
@@ -2091,91 +1925,6 @@ void _BWZ_EnableDisableViaArgs ( int nArgs, Breakpoint_t * aBreakWatchZero, cons
 }
 
 //===========================================================================
-// Called by:
-// . CheckBreakpointsIO(), padding=false - to set g_sBreakMemoryFullPrefixAddr (used later for 'stop reason')
-// . _BWZ_List(),          padding=true  - ie. 'bpl'
-// . _CmdMemoryDump(),     padding=false - ie. 'm1' to show current prefix for mini mem area
-static std::string GetFullPrefixAddrForBreakpoint(const AddressPrefix_t& addrPrefix, WORD address, DEVICE_e device, bool padding)
-{
-	char sSlot    [] = "sN/";	// Saturn slot
-	char sLangCard[] = "lN/";	// Language Card 4K bank
-	int prefixPad = 1;	// whitespace padding
-	std::string prefix = CHC_INFO;	// "sN/bbb/lN/" (10 chars) or "ROM/"
-
-	if (addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid)
-	{
-		sSlot[1] = addrPrefix.nSlot + '0';
-		prefix += sSlot;
-	}
-	else
-	{
-		prefixPad += 3;
-	}
-
-	if (addrPrefix.nBank != AddressPrefix_t::kBankInvalid)
-	{
-		if (addrPrefix.nBank < 0x100)
-		{
-			prefix += StrFormat("%02X", addrPrefix.nBank);
-		}
-		else
-		{
-			prefix += StrFormat("%03X", addrPrefix.nBank);
-			prefixPad--;
-		}
-		prefix += '/';
-	}
-	else
-	{
-		prefixPad += 3;
-	}
-
-	if (addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid)
-	{
-		sLangCard[1] = addrPrefix.nLangCard + '0';
-		prefix += sLangCard;
-	}
-	else
-	{
-		prefixPad += 3;
-	}
-
-	if (addrPrefix.bIsROM)
-	{
-		prefix += "ROM/";
-		prefixPad = 6;	// 10 chars in total
-	}
-
-	std::string prefixFinal;
-
-	if (padding)
-	{
-		while (prefixPad--)
-			prefixFinal += " ";
-	}
-
-	prefixFinal += prefix;
-
-	std::string addr;
-	if (device == DEV_MEMORY)
-	{
-		addr = StrFormat(CHC_ADDRESS "%04X", address);
-	}
-	else
-	{
-		if (device == DEV_MB_SUBUNIT)			addr = "MB-";
-		else if (device == DEV_AY8913_PAIR)		addr = "AY-";
-		else									addr = "UNKNOWN-";
-
-		if (address == 0)	addr += "A";
-		else				addr += "B";
-	}
-	prefixFinal += addr;
-
-	return prefixFinal;
-}
-
-//===========================================================================
 void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool bZeroBased )
 {
 	static const char sEnabledFlags[] = "-E";
@@ -2186,39 +1935,25 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 	std::string sAddressBuf;
 	std::string const& sSymbol = GetSymbol(aBreakWatchZero[iBWZ].nAddress, 2, sAddressBuf);
 
-	const char *aMemAccess[5] =
+	const char *aMemAccess[4] =
 	{
-		 "R/W"
-		,"R  "
+		 "R  "
 		,"W  "
-		,"Vid"
+		,"R/W"
 		,"   "
 	};
 
 	int iBPM;
 	switch (aBreakWatchZero[iBWZ].eSource)
 	{
-		case BP_SRC_MEM_RW        : iBPM = 0; break;
-		case BP_SRC_MEM_READ_ONLY : iBPM = 1; break;
-		case BP_SRC_MEM_WRITE_ONLY: iBPM = 2; break;
-		case BP_SRC_VIDEO_SCANNER : iBPM = 3; break;
-		default                   : iBPM = 4; break;
+		case BP_SRC_MEM_READ_ONLY : iBPM = 0; break;
+		case BP_SRC_MEM_WRITE_ONLY: iBPM = 1; break;
+		case BP_SRC_MEM_RW        : iBPM = 2; break;
+		default                   : iBPM = 3; break;
 	}
 
-	std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(aBreakWatchZero[iBWZ].addrPrefix, aBreakWatchZero[iBWZ].nAddress, DEVICE_e::DEV_MEMORY, true);
-	if (aBreakWatchZero[iBWZ].nLength > 1)
-	{
-		fullPrefixAddr += ":";
-		std::string addrEnd = StrFormat(CHC_ADDRESS "%04X", aBreakWatchZero[iBWZ].nAddress + aBreakWatchZero[iBWZ].nLength - 1);
-		fullPrefixAddr += addrEnd;
-	}
-	else
-	{
-		fullPrefixAddr += "     ";	// 5 spaces
-	}
-
-	// ID On Stop Temp HitCounter  Prefix/Addr Mem Symbol
-	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X %s " CHC_INFO "%s" CHC_SYMBOL " %s",
+	// ID On Stop Temp HitCounter  Addr Mem Symbol
+	ConsolePrintFormat( "  #%X %c  %c    %c  %c   %08X " CHC_ADDRESS " %04X " CHC_INFO "%s" CHC_SYMBOL " %s",
 //		(bZeroBased ? iBWZ + 1 : iBWZ),
 		iBWZ,
 		sEnabledFlags[ aBreakWatchZero[ iBWZ ].bEnabled ? 1 : 0 ],
@@ -2226,7 +1961,7 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 		sTempFlags   [ aBreakWatchZero[ iBWZ ].bTemp    ? 1 : 0 ],
 		sHitFlags    [ aBreakWatchZero[ iBWZ ].bHit     ? 1 : 0 ],
 		               aBreakWatchZero[ iBWZ ].nHitCount,
-		fullPrefixAddr.c_str(),
+		               aBreakWatchZero[ iBWZ ].nAddress,
 		aMemAccess[ iBPM ],
 		sSymbol.c_str()
 	);
@@ -2234,10 +1969,10 @@ void _BWZ_List ( const Breakpoint_t * aBreakWatchZero, const int iBWZ ) //, bool
 
 void _BWZ_ListAll ( const Breakpoint_t * aBreakWatchZero, const int nMax )
 {
-	ConsolePrintFormat( "  ID On Stop Temp HitCounter    Prefix/Addr: End Mem Symbol" );
+	ConsolePrintFormat( "  ID On Stop Temp HitCounter  Addr Mem Symbol" );
 
 	int iBWZ = 0;
-	while (iBWZ < nMax)
+	while (iBWZ < nMax) // 
 	{
 		if (aBreakWatchZero[ iBWZ ].bSet)
 		{
@@ -2339,7 +2074,7 @@ Update_t CmdBreakpointSave (int nArgs)
 
 		if (ConfigSave_BufferToDisk( g_aArgs[ 1 ].sArg, CONFIG_SAVE_FILE_CREATE ))
 		{
-			ConsoleBufferPush(  "Saved."  );
+			ConsoleBufferPush( TEXT( "Saved." ) );
 			return ConsoleUpdate();
 		}
 	}
@@ -2415,8 +2150,8 @@ Update_t CmdAssemble (int nArgs)
 		int iArg = 1;
 		
 		// undocumented ASM *
-		if ((! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
-			(! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
+		if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
+			(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 		{
 			_CmdAssembleHashDump();
 		}
@@ -2557,9 +2292,9 @@ Update_t CmdStepOver (int nArgs)
 //	g_nDebugSteps = nArgs ? g_aArgs[1].nValue : 1;
 	WORD nDebugSteps = nArgs ? g_aArgs[1].nValue : 1;
 
-	while (nDebugSteps-- > 0)
+	while (nDebugSteps -- > 0)
 	{
-		BYTE nOpcode = ReadByteFromMemory(regs.pc);
+		int nOpcode = *(mem + regs.pc);
 		WORD nExpectedAddr = (regs.pc + 3) & _6502_MEM_END; // Wrap around 64K edge case when PC = $FFFD..$FFFF: 20 xx xx
 	//	int eMode = g_aOpcodes[ nOpcode ].addrmode;
 	//	int nByte = g_aOpmodes[eMode]._nBytes;
@@ -2757,7 +2492,7 @@ Update_t CmdUnassemble (int nArgs)
 Update_t CmdKey (int nArgs)
 {
 	KeybQueueKeypress(
-		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : ' ', ASCII); // FIXME!!!
+		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : TEXT(' '), ASCII); // FIXME!!!
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
@@ -2783,11 +2518,16 @@ Update_t CmdJSR (int nArgs)
 
 	WORD nAddress = g_aArgs[1].nValue & _6502_MEM_END;
 
+	// Mark Stack Page as dirty
+	*(memdirty+(regs.sp >> 8)) = 1;
+
 	// Push PC onto stack
-	WriteByteToMemory(regs.sp, ((regs.pc >> 8) & 0xFF));
+	*(mem + regs.sp) = ((regs.pc >> 8) & 0xFF);
 	regs.sp--;
-	WriteByteToMemory(regs.sp, ((regs.pc >> 0) - 1) & 0xFF);
+
+	*(mem + regs.sp) = ((regs.pc >> 0) - 1) & 0xFF;
 	regs.sp--;
+
 
 	// Jump to new address
 	regs.pc = nAddress;
@@ -2807,7 +2547,7 @@ Update_t CmdNOP (int nArgs)
 
 	while (nOpbytes--)
 	{
-		WriteByteToMemory(regs.pc + nOpbytes, 0xEA);
+		*(mem+regs.pc + nOpbytes) = 0xEA;
 	}
 
 	return UPDATE_ALL;
@@ -2817,7 +2557,7 @@ Update_t CmdNOP (int nArgs)
 Update_t CmdOut (int nArgs)
 {
 //  if ((!nArgs) ||
-//      ((g_aArgs[1].sArg[0] != '0') && (!g_aArgs[1].nValue) && (!GetAddress(g_aArgs[1].sArg))))
+//      ((g_aArgs[1].sArg[0] != TEXT('0')) && (!g_aArgs[1].nValue) && (!GetAddress(g_aArgs[1].sArg))))
 //     return DisplayHelp(CmdInput);
 
 	if (!nArgs)
@@ -2905,7 +2645,7 @@ Update_t CmdConfigColorMono (int nArgs)
 		if (iParam == PARAM_RESET)
 		{
 			ConfigColorsReset();
-			ConsoleBufferPush( " Resetting colors." );
+			ConsoleBufferPush( TEXT(" Resetting colors." ) );
 		}
 		else
 		if (iParam == PARAM_SAVE)
@@ -2974,7 +2714,7 @@ Update_t CmdConfigLoad (int nArgs)
 {
 	// TODO: CmdConfigRun( gaFileNameConfig )
 	
-//	char sFileNameConfig[ MAX_PATH ];
+//	TCHAR sFileNameConfig[ MAX_PATH ];
 	if (! nArgs)
 	{
 
@@ -3060,7 +2800,7 @@ Update_t CmdConfigSave (int nArgs)
 	{
 		void *pSrc;
 		int   nLen;
-		uint32_t nPut;
+		DWORD nPut;
 
 	// FIXME: Should be saving in Text format, not binary!
 
@@ -3114,7 +2854,7 @@ Update_t CmdConfigDisasm (int nArgs)
 
 	bool bDisplayCurrentSettings = false;
 
-//	if (! strcmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ))
+//	if (! _tcscmp( g_aArgs[ 1 ].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName ))
 	if (! nArgs)
 	{
 		bDisplayCurrentSettings = true;
@@ -3345,7 +3085,7 @@ Update_t CmdCursorLineDown (int nArgs)
 
 		if (g_bDisasmCurBad)
 		{
-//	MessageBox( NULL, "Bad Disassembly of opcodes", "Debugger", MB_OK );
+//	MessageBox( NULL, TEXT("Bad Disassembly of opcodes"), TEXT("Debugger"), MB_OK );
 
 //			g_nDisasmCurAddress = nCur;
 //			g_bDisasmCurBad = false;
@@ -3535,7 +3275,7 @@ Update_t CmdCursorLineUp (int nArgs)
 			}
 		} while (iTop < MAX_LOOK_AHEAD);
 
-		size_t nCandidates = aTopCandidates.size();
+		int nCandidates = aTopCandidates.size();
 		if (nCandidates)
 		{
 			int iBest = NO_6502_TARGET;
@@ -3806,20 +3546,7 @@ Update_t CmdCursorPageUp4K (int nArgs)
 Update_t CmdCursorSetPC (int nArgs)
 {
 	regs.pc = g_nDisasmCurAddress; // set PC to current cursor address
-
-	// 2.9.4.4 Fixed: Ctrl Right-Arrow now updates targets.
-	// We can't | UPDATE_TARGETS as that erases most of the INFO window!
-	// We really should add an UPDATE_INFO flag but for now UPDATE_ALL is good enough.
-/* Repro
-   1FD:FD FE FF 00
-   R PC FBFB
-   R S FC
-   Down-arrow
-   CTRL Right-arrow
-   Up-arrow
-   CTRL Right-arrow
-*/
-	return UPDATE_ALL;
+	return UPDATE_DISASM;
 }
 
 
@@ -3892,12 +3619,12 @@ Update_t CmdFlagSet (int nArgs)
 //===========================================================================
 Update_t CmdFlag (int nArgs)
 {
-//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_CLEAR].aName[0] ) // 'R'
+//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_CLEAR].aName[0] ) // TEXT('R')
 	if (g_iCommand == CMD_FLAG_CLEAR)
 		return CmdFlagClear( nArgs );
 	else
 	if (g_iCommand == CMD_FLAG_SET)
-//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_SET].aName[0] ) // 'S'
+//	if (g_aArgs[0].sArg[0] == g_aParameters[PARAM_FLAG_SET].aName[0] ) // TEXT('S')
 		return CmdFlagSet( nArgs );
 
 	return UPDATE_ALL; // 0;
@@ -4054,105 +3781,74 @@ Update_t CmdDisk (int nArgs)
 // Memory _________________________________________________________________________________________
 
 
-//===========================================================================
-Update_t CmdMemoryCompare(int nArgs)
-{
-	if (nArgs < 3)
-		return Help_Arg_1(CMD_MEMORY_COMPARE);
-
-	WORD nSrcAddr = g_aArgs[1].nValue;
-	WORD nDstAddr = g_aArgs[3].nValue;
-
-	WORD nSrcSymAddr;
-	WORD nDstSymAddr;
-
-	if (!nSrcAddr)
-	{
-		nSrcSymAddr = GetAddressFromSymbol(g_aArgs[1].sArg);
-		if (nSrcAddr != nSrcSymAddr)
-			nSrcAddr = nSrcSymAddr;
-	}
-
-	if (!nDstAddr)
-	{
-		nDstSymAddr = GetAddressFromSymbol(g_aArgs[3].sArg);
-		if (nDstAddr != nDstSymAddr)
-			nDstAddr = nDstSymAddr;
-	}
-
-	//	if ((!nSrcAddr) || (!nDstAddr))
-	//		return Help_Arg_1( CMD_MEMORY_COMPARE );
-
-	return UPDATE_CONSOLE_DISPLAY;
-}
-
 // TO DO:
 // . Add support for dumping Disk][ device
 //===========================================================================
-bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
+bool MemoryDumpCheck (int nArgs, WORD * pAddress_ )
 {
-	Arg_t *pArg = &g_aArgs[iArg];
+	if (! nArgs)
+		return false;
+
+	Arg_t *pArg = &g_aArgs[1];
 	WORD nAddress = pArg->nValue;
 	bool bUpdate = false;
 
 	pArg->eDevice = DEV_MEMORY;						// Default
 
-	const char* const psArg = (char*) g_aArgs[iArg].sArg;
-
-	if (_strnicmp(psArg, "MB", 2) == 0)				// Mockingboard sub-unit (6522+AY8913): "MB" or "MBn"
+	if (strncmp(g_aArgs[1].sArg, "MB", 2) == 0)		// Mockingboard sub-unit (6522+AY8913): "MBs" or "MBsn"
 	{
+		UINT slot = (UINT)-1;
 		UINT subUnit = 0;							// Default to 6522-A
-		if (strlen(psArg) == 3)						// "MBn" where n = SY6522 A or B eg. MBA
+		if (strlen(g_aArgs[1].sArg) >= 3)			// "MBs" where s = slot#
+			slot = g_aArgs[1].sArg[2] - '0';
+		if (strlen(g_aArgs[1].sArg) == 4)			// "MBsn" where s = slot#, n = SY6522 A or B eg. AY4A
+			subUnit = g_aArgs[1].sArg[3] - 'A';
+		if (slot <= 7 && subUnit <= 1)
 		{
-			const char subUnitChar = psArg[2];
-			subUnit = (subUnitChar <= 'B') ? subUnitChar - 'A' : subUnitChar - 'a';
-		}
-		if (subUnit <= 1)
-		{
-			nAddress = subUnit;						// subUnit=[0..1]
+			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
 			pArg->eDevice = DEV_MB_SUBUNIT;
 			bUpdate = true;
 		}
 	}
-	else if (_strnicmp(psArg, "AY", 2) == 0)		// AY8913: "AY" or "AYn"
+	else if (strncmp(g_aArgs[1].sArg, "AY", 2) == 0)	// AY8913: "AYs" or "AYsn"
 	{
+		UINT slot = (UINT)-1;
 		UINT subUnit = 0;							// Default to 6522-A
-		if (strlen(psArg) == 3)						// "AYn" where n = SY6522 A or B eg. AYA
+		if (strlen(g_aArgs[1].sArg) >= 3)			// "AYs" where s = slot#
+			slot = g_aArgs[1].sArg[2] - '0';
+		if (strlen(g_aArgs[1].sArg) == 4)			// "AYsn" where s = slot#, n = SY6522 A or B eg. AY4A
+			subUnit = g_aArgs[1].sArg[3] - 'A';
+		if (slot <= 7 && subUnit <= 1)
 		{
-			const char subUnitChar = psArg[2];
-			subUnit = (subUnitChar <= 'B') ? subUnitChar - 'A' : subUnitChar - 'a';
-		}
-		if (subUnit <= 1)
-		{
-			nAddress = subUnit;						// subUnit=[0..1]
+			nAddress = (slot << 4) | subUnit;		// slot=[0..7] | subUnit=[0..1]
 			pArg->eDevice = DEV_AY8913_PAIR;		// for Phasor
 			bUpdate = true;
 		}
 	}
 #ifdef SUPPORT_Z80_EMU
-	else if (strcmp(psArg, "*AF") == 0)
+	else if (strcmp(g_aArgs[1].sArg, "*AF") == 0)
 	{
-		nAddress = ReadWordFromMemory(REG_AF);
+		nAddress = *(WORD*)(mem + REG_AF);
 		bUpdate = true;
 	}
-	else if (strcmp(psArg, "*BC") == 0)
+	else if (strcmp(g_aArgs[1].sArg, "*BC") == 0)
 	{
-		nAddress = ReadWordFromMemory(REG_BC);
+		nAddress = *(WORD*)(mem + REG_BC);
 		bUpdate = true;
 	}
-	else if (strcmp(psArg, "*DE") == 0)
+	else if (strcmp(g_aArgs[1].sArg, "*DE") == 0)
 	{
-		nAddress = ReadWordFromMemory(REG_DE);
+		nAddress = *(WORD*)(mem + REG_DE);
 		bUpdate = true;
 	}
-	else if (strcmp(psArg, "*HL") == 0)
+	else if (strcmp(g_aArgs[1].sArg, "*HL") == 0)
 	{
-		nAddress = ReadWordFromMemory(REG_HL);
+		nAddress = *(WORD*)(mem + REG_HL);
 		bUpdate = true;
 	}
-	else if (strcmp(psArg, "*IX") == 0)
+	else if (strcmp(g_aArgs[1].sArg, "*IX") == 0)
 	{
-		nAddress = ReadWordFromMemory(REG_IX);
+		nAddress = *(WORD*)(mem + REG_IX);
 		bUpdate = true;
 	}
 #endif
@@ -4165,53 +3861,60 @@ bool MemoryDumpCheck (const int iArg, WORD * pAddress_ )
 
 	if (pAddress_)
 	{
-		*pAddress_ = nAddress;
+			*pAddress_ = nAddress;
 	}
 
 	return true;
 }
 
 //===========================================================================
-static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
+Update_t CmdMemoryCompare (int nArgs )
 {
-	if (!nArgs)
+	if (nArgs < 3)
+		return Help_Arg_1( CMD_MEMORY_COMPARE );
+
+	WORD nSrcAddr = g_aArgs[1].nValue;
+	WORD nDstAddr = g_aArgs[3].nValue;
+
+	WORD nSrcSymAddr;
+	WORD nDstSymAddr;
+
+	if (!nSrcAddr)
 	{
-		// Output current prefixed-address
-		if (!g_aMemDump[iWhich].bActive)
-		{
-			ConsolePrintFormat("Mini memory area-%1d not set", iWhich+1);
-		}
-		else
-		{
-			std::string fullPrefixAddr = GetFullPrefixAddrForBreakpoint(g_aMemDump[iWhich].addrPrefix, g_aMemDump[iWhich].nAddress, g_aMemDump[iWhich].eDevice, false);
-			ConsolePrintFormat("Mini memory area-%1d: %s", iWhich+1, fullPrefixAddr.c_str());
-		}
-		return ConsoleUpdate();
+		nSrcSymAddr = GetAddressFromSymbol( g_aArgs[1].sArg );
+		if (nSrcAddr != nSrcSymAddr)
+			nSrcAddr = nSrcSymAddr;
 	}
 
-	int iArg = 1;	// skip cmd
-	int dArgPrefix = 0;
-	g_aMemDump[iWhich].addrPrefix.Clear();
-	if (!Range_GetAllPrefixes(iArg, nArgs, dArgPrefix, &g_aMemDump[iWhich].addrPrefix, false))
-		return Help_Arg_1(g_iCommand);
-
-	WORD nAddress = 0;
-	if (!MemoryDumpCheck(iArg, &nAddress))
-		return Help_Arg_1(g_iCommand);
-
-	if (g_aMemDump[iWhich].addrPrefix.nSlot == AddressPrefix_t::kSlotInvalid &&
-	   (g_aArgs[iArg].eDevice == DEV_MB_SUBUNIT || g_aArgs[iArg].eDevice == DEV_AY8913_PAIR))
+	if (!nDstAddr)
 	{
-		ConsolePrintFormat("Slot prefix required for MB or AY device");
-		return ConsoleUpdate();
+		nDstSymAddr = GetAddressFromSymbol( g_aArgs[3].sArg );
+		if (nDstAddr != nDstSymAddr)
+			nDstAddr = nDstSymAddr;
+	}
+
+//	if ((!nSrcAddr) || (!nDstAddr))
+//		return Help_Arg_1( CMD_MEMORY_COMPARE );
+
+	return UPDATE_CONSOLE_DISPLAY;
+}
+
+//===========================================================================
+static Update_t _CmdMemoryDump (int nArgs, int iWhich, int iView )
+{
+	WORD nAddress = 0;
+
+	if ( ! MemoryDumpCheck(nArgs, & nAddress ) )
+	{
+		return Help_Arg_1( g_iCommand );
 	}
 
 	g_aMemDump[iWhich].nAddress = nAddress;
-	g_aMemDump[iWhich].eDevice = g_aArgs[iArg].eDevice;
+	g_aMemDump[iWhich].eDevice = g_aArgs[1].eDevice;
 	g_aMemDump[iWhich].bActive = true;
 	g_aMemDump[iWhich].eView = (MemoryView_e) iView;
 
-	return UPDATE_MEM_DUMP; // TODO: This really needed? Don't think we do any actual output
+	return UPDATE_MEM_DUMP; // TODO: This really needed? Don't think we do any actual ouput
 }
 
 //===========================================================================
@@ -4287,7 +3990,7 @@ Update_t CmdMemoryEdit (int nArgs)
 Update_t CmdMemoryEnterByte (int nArgs)
 {
 	if ((nArgs < 2) ||
-		((g_aArgs[2].sArg[0] != '0') && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
+		((g_aArgs[2].sArg[0] != TEXT('0')) && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
 	{
 		Help_Arg_1( CMD_MEMORY_ENTER_WORD );
 	}
@@ -4296,17 +3999,16 @@ Update_t CmdMemoryEnterByte (int nArgs)
 	while (nArgs >= 2)
 	{
 		WORD nData = g_aArgs[nArgs].nValue;
-
-		if (nData > 0xFF)
+		if ( nData > 0xFF)
 		{
-			WriteByteToMemory(nAddress + nArgs - 2, (BYTE)(nData >> 0));
-			WriteByteToMemory(nAddress + nArgs - 1, (BYTE)(nData >> 8));
+			*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
+			*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
 		}
 		else
 		{
-			WriteByteToMemory(nAddress + nArgs - 2, (BYTE)nData);
+			*(mem + nAddress+nArgs-2)  = (BYTE)nData;
 		}
-
+		*(memdirty+(nAddress >> 8)) = 1;
 		nArgs--;
 	}
 
@@ -4318,7 +4020,7 @@ Update_t CmdMemoryEnterByte (int nArgs)
 Update_t CmdMemoryEnterWord (int nArgs)
 {
 	if ((nArgs < 2) ||
-		((g_aArgs[2].sArg[0] != '0') && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
+		((g_aArgs[2].sArg[0] != TEXT('0')) && (!g_aArgs[2].nValue))) // arg2 not numeric or not specified
 	{
 		Help_Arg_1( CMD_MEMORY_ENTER_WORD );
 	}
@@ -4328,13 +4030,24 @@ Update_t CmdMemoryEnterWord (int nArgs)
 	{
 		WORD nData = g_aArgs[nArgs].nValue;
 
-		WriteByteToMemory(nAddress + nArgs - 2, (BYTE)(nData >> 0));
-		WriteByteToMemory(nAddress + nArgs - 1, (BYTE)(nData >> 8));
+		// Little Endian
+		*(mem + nAddress + nArgs - 2)  = (BYTE)(nData >> 0);
+		*(mem + nAddress + nArgs - 1)  = (BYTE)(nData >> 8);
 
+		*(memdirty+(nAddress >> 8)) |= 1;
 		nArgs--;
 	}
 
 	return UPDATE_ALL;
+}
+
+//===========================================================================
+void MemMarkDirty ( WORD nAddressStart, WORD nAddressEnd )
+{
+	for ( int iPage = (nAddressStart >> 8); iPage <= (nAddressEnd >> 8); iPage++ )
+	{
+		*(memdirty+iPage) = 1;
+	}
 }
 
 //===========================================================================
@@ -4360,7 +4073,8 @@ Update_t CmdMemoryFill (int nArgs)
 	}
 	else
 	{
-		RangeType_t eRange = Range_Get( nAddressStart, nAddress2, 1 );
+		RangeType_t eRange;
+		eRange = Range_Get( nAddressStart, nAddress2, 1 );
 
 		if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
 			return Help_Arg_1( CMD_MEMORY_MOVE );
@@ -4371,13 +4085,15 @@ Update_t CmdMemoryFill (int nArgs)
 
 	if ((nAddressLen > 0) && (nAddressEnd <= _6502_MEM_END))
 	{
+		MemMarkDirty( nAddressStart, nAddressEnd );
+
 		nValue = g_aArgs[nArgs].nValue & 0xFF;
 		while ( nAddressLen-- ) // v2.7.0.22
 		{
 			// TODO: Optimize - split into pre_io, and post_io
-			if ((nAddress2 < APPLE_IO_BEGIN) || (nAddress2 > APPLE_IO_END))
+			if ((nAddress2 < _6502_IO_BEGIN) || (nAddress2 > _6502_IO_END))
 			{
-				WriteByteToMemory(nAddressStart, nValue);
+				*(mem + nAddressStart) = nValue;
 			}
 			nAddressStart++;
 		}
@@ -4515,7 +4231,7 @@ Update_t CmdConfigSetDebugDir (int nArgs)
 
 
 //===========================================================================
-#if 0	// Original - TODO: delete this old "original" code
+#if 0	// Original
 Update_t CmdMemoryLoad (int nArgs)
 {
 	// BLOAD ["Filename"] , addr[, len] 
@@ -4581,6 +4297,7 @@ Update_t CmdMemoryLoad (int nArgs)
 		}
 		
 		BYTE *pMemory = new BYTE [ _6502_MEM_END + 1 ]; // default 64K buffer
+		BYTE *pDst = mem + nAddressStart;
 		BYTE *pSrc = pMemory;
 
 		if (bHaveFileName)
@@ -4608,15 +4325,15 @@ Update_t CmdMemoryLoad (int nArgs)
 			{
 				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
-					WriteByteToMemory(nAddressStart++, *pSrc++);
+					*pDst++ = *pSrc++;
 				}
-				ConsoleBufferPush(  "Loaded."  );
+				ConsoleBufferPush( TEXT( "Loaded." ) );
 			}
 			fclose( hFile );
 		}
 		else
 		{
-			ConsoleBufferPush(  "ERROR: Bad filename"  );
+			ConsoleBufferPush( TEXT( "ERROR: Bad filename" ) );
 
 			CmdConfigGetDebugDir( 0 );
 
@@ -4713,7 +4430,7 @@ Update_t CmdMemoryLoad (int nArgs)
 	const KnownFileType_t *pFileType = NULL;
 
 	const char *pFileName = g_aArgs[ 1 ].sArg;
-	int   nLen = (int) strlen( pFileName );
+	int   nLen = strlen( pFileName );
 	const char *pEnd = pFileName + nLen - 1;
 	while ( pEnd > pFileName )
 	{
@@ -4770,18 +4487,23 @@ Update_t CmdMemoryLoad (int nArgs)
 		}
 	}
 
-	std::unique_ptr<BYTE> pMemory(new BYTE[_6502_MEM_END + 1]); // default 64K buffer
-
 	if (bHaveFileName)
 	{
 		g_sMemoryLoadSaveFileName = pFileName;
 	}
 	const std::string sLoadSaveFilePath = g_sCurrentDir + g_sMemoryLoadSaveFileName; // TODO: g_sDebugDir
 	
+	BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank, true) : mem;
+	if (!pMemBankBase)
+	{
+		ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );
+		return ConsoleUpdate();
+	}
+
 	FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 	if (hFile)
 	{
-		int nFileBytes = (int) _GetFileSize( hFile );
+		size_t nFileBytes = _GetFileSize( hFile );
 
 		if (nFileBytes > _6502_MEM_END)
 			nFileBytes = _6502_MEM_END + 1; // Bank-switched RAM/ROM is only 16-bit
@@ -4792,9 +4514,7 @@ Update_t CmdMemoryLoad (int nArgs)
 			nAddressLen = nFileBytes;
 		}
 
-		size_t nRead = fread(pMemory.get() + nAddressStart, nAddressLen, 1, hFile);
-		fclose(hFile);
-
+		size_t nRead = fread( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
 		if (nRead == 1)
 		{
 			ConsoleBufferPushFormat( "Loaded @ A$%04X,L$%04X", nAddressStart, nAddressLen );
@@ -4802,27 +4522,18 @@ Update_t CmdMemoryLoad (int nArgs)
 		else
 		{
 			ConsoleBufferPush( "Error loading data." );
-			return ConsoleUpdate();
 		}
+		fclose( hFile );
 
 		if (bBankSpecified)
 		{
-			BYTE* const pMemBankBase = MemGetBankPtr(nBank);
-			if (!pMemBankBase)
-			{
-				ConsoleBufferPush("Error: Bank out of range.");
-				return ConsoleUpdate();
-			}
-
-			memcpy(pMemBankBase + nAddressStart, pMemory.get() + nAddressStart, nAddressLen);
-
 			MemUpdatePaging(TRUE);
 		}
 		else
 		{
-			for (WORD i=nAddressStart; i!=(nAddressStart+(WORD)nAddressLen); i++)
+			for (WORD i=(nAddressStart>>8); i!=((nAddressStart+(WORD)nAddressLen)>>8); i++)
 			{
-				WriteByteToMemory(i, pMemory.get()[i]);
+				memdirty[i] = 0xff;
 			}
 		}
 	}
@@ -4858,7 +4569,8 @@ Update_t CmdMemoryMove (int nArgs)
 	WORD nAddressEnd = 0;
 	int  nAddressLen = 0;
 
-	RangeType_t eRange = Range_Get( nAddressStart, nAddress2, 2 );
+	RangeType_t eRange;
+	eRange = Range_Get( nAddressStart, nAddress2, 2 );
 
 //		if (eRange == RANGE_MISSING_ARG_2)
 	if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
@@ -4866,13 +4578,18 @@ Update_t CmdMemoryMove (int nArgs)
 
 	if ((nAddressLen > 0) && (nAddressEnd <= _6502_MEM_END))
 	{
+		MemMarkDirty( nAddressStart, nAddressEnd );
+
+//			BYTE *pSrc = mem + nAddressStart;
+//			BYTE *pDst = mem + nDst;
+//			BYTE *pEnd = pSrc + nAddressLen;
+
 		while ( nAddressLen-- ) // v2.7.0.23
 		{
 			// TODO: Optimize - split into pre_io, and post_io
-			if ((nDst < APPLE_IO_BEGIN) || (nDst > APPLE_IO_END))
+			if ((nDst < _6502_IO_BEGIN) || (nDst > _6502_IO_END))
 			{
-				BYTE value = ReadByteFromMemory(nAddressStart);
-				WriteByteToMemory(nDst, value);
+				*(mem + nDst) = *(mem + nAddressStart);
 			}
 			nDst++;
 			nAddressStart++;
@@ -4885,7 +4602,7 @@ Update_t CmdMemoryMove (int nArgs)
 }
 
 //===========================================================================
-#if 0	// Original - TODO: delete this old "original" code
+#if 0	// Original
 Update_t CmdMemorySave (int nArgs)
 {
 	// BSAVE ["Filename"] , addr , len 
@@ -4941,8 +4658,8 @@ Update_t CmdMemorySave (int nArgs)
 //			(g_aArgs[ iArgComma2 ].eToken != TOKEN_COLON))
 //			return Help_Arg_1( CMD_MEMORY_SAVE );
 
-		char sLoadSaveFilePath[ MAX_PATH ];
-		strcpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
+		TCHAR sLoadSaveFilePath[ MAX_PATH ];
+		_tcscpy( sLoadSaveFilePath, g_sCurrentDir ); // g_sProgramDir
 
 		RangeType_t eRange;
 		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
@@ -4967,17 +4684,18 @@ Update_t CmdMemorySave (int nArgs)
 			{
 				BYTE *pMemory = new BYTE [ nAddressLen ];
 				BYTE *pDst = pMemory;
+				BYTE *pSrc = mem + nAddressStart;
 				
 				// memcpy -- copy out of active memory bank
 				for ( int iByte = 0; iByte < nAddressLen; iByte++ )
 				{
-					*pDst++ = ReadByteFromMemory(nAddressStart + iByte);
+					*pDst++ = *pSrc++;
 				}
 
 				FILE *hFile = fopen( sLoadSaveFilePath, "rb" );
 				if (hFile)
 				{
-					ConsoleBufferPush(  "Warning: File already exists.  Overwriting."  );
+					ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
 					fclose( hFile );
 				}
 
@@ -4987,11 +4705,11 @@ Update_t CmdMemorySave (int nArgs)
 					size_t nWrote = fwrite( pMemory, nAddressLen, 1, hFile );
 					if (nWrote == 1) // (size_t)nAddressLen)
 					{
-						ConsoleBufferPush(  "Saved."  );
+						ConsoleBufferPush( TEXT( "Saved." ) );
 					}
 					else
 					{
-						ConsoleBufferPush(  "Error saving."  );
+						ConsoleBufferPush( TEXT( "Error saving." ) );
 					}
 					fclose( hFile );
 				}
@@ -5037,7 +4755,7 @@ Update_t CmdMemorySave (int nArgs)
 		}
 		else
 		{
-			ConsoleBufferPush(  "Last saved: none"  );
+			ConsoleBufferPush( TEXT( "Last saved: none" ) );
 		}				
 	}
 	else
@@ -5093,7 +4811,8 @@ Update_t CmdMemorySave (int nArgs)
 
 		std::string sLoadSaveFilePath = g_sCurrentDir; // g_sProgramDir
 
-		RangeType_t eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
+		RangeType_t eRange;
+		eRange = Range_Get( nAddressStart, nAddress2, iArgAddress );
 
 //		if (eRange == RANGE_MISSING_ARG_2)
 		if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen ))
@@ -5113,31 +4832,17 @@ Update_t CmdMemorySave (int nArgs)
 			}
 			sLoadSaveFilePath += g_sMemoryLoadSaveFileName;
 
-			std::unique_ptr<BYTE> pMemory(new BYTE[_6502_MEM_END + 1]); // default 64K buffer
-
-			if (bBankSpecified)
+			const BYTE * const pMemBankBase = bBankSpecified ? MemGetBankPtr(nBank, true) : mem;
+			if (!pMemBankBase)
 			{
-				const BYTE* const pMemBankBase = MemGetBankPtr(nBank);
-				if (!pMemBankBase)
-				{
-					ConsoleBufferPush("Error: Bank out of range.");
-					return ConsoleUpdate();
-				}
-
-				memcpy(pMemory.get() + nAddressStart, pMemBankBase + nAddressStart, nAddressLen);
-			}
-			else
-			{
-				for (WORD i = nAddressStart; i != (nAddressStart + (WORD)nAddressLen); i++)
-				{
-					pMemory.get()[i] = ReadByteFromMemory(i);
-				}
+				ConsoleBufferPush( TEXT( "Error: Bank out of range." ) );
+				return ConsoleUpdate();
 			}
 
 			FILE *hFile = fopen( sLoadSaveFilePath.c_str(), "rb" );
 			if (hFile)
 			{
-				ConsoleBufferPush(  "Warning: File already exists.  Overwriting."  );
+				ConsoleBufferPush( TEXT( "Warning: File already exists.  Overwriting." ) );
 				fclose( hFile );
 				// TODO: BUG: Is this a bug/feature that we can over-write files and the user has no control over that?
 			}
@@ -5145,22 +4850,21 @@ Update_t CmdMemorySave (int nArgs)
 			hFile = fopen( sLoadSaveFilePath.c_str(), "wb" );
 			if (hFile)
 			{
-				size_t nWrote = fwrite(pMemory.get() + nAddressStart, nAddressLen, 1, hFile);
-				fclose(hFile);
-
+				size_t nWrote = fwrite( pMemBankBase+nAddressStart, nAddressLen, 1, hFile );
 				if (nWrote == 1)
-					ConsoleBufferPush(  "Saved."  );
+				{
+					ConsoleBufferPush( TEXT( "Saved." ) );
+				}
 				else
-					ConsoleBufferPush(  "Error saving."  );
+				{
+					ConsoleBufferPush( TEXT( "Error saving." ) );
+				}
+				fclose( hFile );
 			}
 			else
 			{
-				ConsoleBufferPush(  "Error opening file."  );
+				ConsoleBufferPush( TEXT( "Error opening file." ) );
 			}
-		}
-		else
-		{
-			ConsoleBufferPush("Error: Length = 0.");
 		}
 	}
 	
@@ -5260,7 +4964,7 @@ size_t Util_GetDebuggerText ( char* &pText_ )
 	}
 
 	*pEnd = 0;
-	g_nTextScreen = (int) (pEnd - pBeg);
+	g_nTextScreen = pEnd - pBeg;
 	
 	pText_ = pBeg;
 	return g_nTextScreen;
@@ -5276,7 +4980,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	g_nTextScreen = 0;
 	memset( pBeg, 0, sizeof( g_aTextScreen ) );
 
-	const unsigned int uBank2 = (!GetVideo().VideoGetSW80STORE() && GetVideo().VideoGetSWPAGE2()) ? 1 : 0;
+	unsigned int uBank2 = GetVideo().VideoGetSWPAGE2() ? 1 : 0;
 	LPBYTE g_pTextBank1  = MemGetAuxPtr (0x400 << uBank2);
 	LPBYTE g_pTextBank0  = MemGetMainPtr(0x400 << uBank2);
 
@@ -5311,7 +5015,7 @@ size_t Util_GetTextScreen ( char* &pText_ )
 	}
 	*pEnd = 0;
 
-	g_nTextScreen = (int) (pEnd - pBeg);
+	g_nTextScreen = pEnd - pBeg;
 	
 	pText_ = pBeg;
 	return g_nTextScreen;
@@ -5353,7 +5057,7 @@ Update_t CmdNTSC (int nArgs)
 #endif
 
 	const char *pFileName = (nArgs > 1) ? g_aArgs[ 2 ].sArg : "";
-	int   nLen = (int) strlen( pFileName );
+	int   nLen = strlen( pFileName );
 	const char *pEnd = pFileName + nLen - 1;
 	while ( pEnd > pFileName )
 	{
@@ -5762,7 +5466,7 @@ Update_t CmdNTSC (int nArgs)
 		if (iParam == PARAM_RESET)
 		{
 			NTSC_VideoInitChroma();
-			ConsoleBufferPush( " Resetting NTSC palette." );
+			ConsoleBufferPush( TEXT(" Resetting NTSC palette." ) );
 		}
 		else
 		if (iParam == PARAM_SAVE)
@@ -5799,12 +5503,12 @@ Update_t CmdNTSC (int nArgs)
 					ConsoleFilename::update( "Saved" );
 				}
 				else
-					ConsoleBufferPush(  "Error saving."  );
+					ConsoleBufferPush( TEXT( "Error saving." ) );
 			}
 			else
 			{
 					ConsoleFilename::update( "File" );
-					ConsoleBufferPush( "Error couldn't open file for writing."  );
+					ConsoleBufferPush( TEXT( "Error couldn't open file for writing." ) );
 			}
 		}
 		else
@@ -6013,7 +5717,7 @@ int _SearchMemoryFind (
 
 		uint32_t nAddress2 = nAddress;
 
-		int nMemBlocks = (int) vMemorySearchValues.size();
+		int nMemBlocks = vMemorySearchValues.size();
 		for ( int iBlock = 0; iBlock < nMemBlocks; iBlock++, nAddress2++ )
 		{
 			MemorySearch_t ms = vMemorySearchValues.at( iBlock );
@@ -6023,7 +5727,7 @@ int _SearchMemoryFind (
 				(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
 				(ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT ))
 			{
-				BYTE nTarget = ReadByteFromMemory(nAddress2);
+				BYTE nTarget = *(mem + nAddress2);
 	
 				if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
 					nTarget &= 0x0F;
@@ -6060,7 +5764,7 @@ int _SearchMemoryFind (
 						(ms.m_iType == MEM_SEARCH_NIB_HIGH_EXACT) ||
 						(ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT ))
 					{
-						BYTE nTarget = ReadByteFromMemory(nAddress3);
+						BYTE nTarget = *(mem + nAddress3);
 			
 						if (ms.m_iType == MEM_SEARCH_NIB_LOW_EXACT)
 							nTarget &= 0x0F;
@@ -6100,7 +5804,7 @@ int _SearchMemoryFind (
 //===========================================================================
 Update_t _SearchMemoryDisplay (int nArgs)
 {
-	int const nFound = (int) (g_vMemorySearchResults.size() - 1);
+	int const nFound = g_vMemorySearchResults.size() - 1;
 
 	if (nFound > 0)
 	{
@@ -6159,7 +5863,8 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 	WORD nAddressEnd = 0;
 	int  nAddressLen = 0;
 
-	RangeType_t eRange = Range_Get( nAddressStart, nAddress2 );
+	RangeType_t eRange;
+	eRange = Range_Get( nAddressStart, nAddress2 );
 
 //	if (eRange == RANGE_MISSING_ARG_2)
 	if (! Range_CalcEndLen( eRange, nAddressStart, nAddress2, nAddressEnd, nAddressLen))
@@ -6192,7 +5897,7 @@ Update_t _CmdMemorySearch (int nArgs, bool bTextIsAscii = true )
 		}
 		else
 		{
-			char *pByte = pArg->sArg;
+			TCHAR *pByte = pArg->sArg;
 
 			if (pArg->bType & TYPE_QUOTED_1)
 			{
@@ -6359,13 +6064,13 @@ Update_t CmdMemorySearchHex (int nArgs)
 //===========================================================================
 Update_t CmdRegisterSet (int nArgs)
 {
-	if (nArgs < 2) // || ((g_aArgs[2].sArg[0] != '0') && !g_aArgs[2].nValue))
+	if (nArgs < 2) // || ((g_aArgs[2].sArg[0] != TEXT('0')) && !g_aArgs[2].nValue))
 	{
 		return Help_Arg_1( CMD_REGISTER_SET );
 	}
 	else
 	{
-		char *pName = g_aArgs[1].sArg;
+		TCHAR *pName = g_aArgs[1].sArg;
 		int iParam;
 		if (FindParam( pName, MATCH_EXACT, iParam, _PARAM_REGS_BEGIN, _PARAM_REGS_END ))
 		{
@@ -6477,79 +6182,6 @@ Update_t CmdOutputEcho (int nArgs)
 	return ConsoleUpdate();
 }
 
-/*
-Description:
-	Set the debugger's "error level logging" aka the console output level
-Usage:
-	LOG
-
-	LOG NONE
-	LOG ERROR
-	LOG WARN
-	LOG INFO
-	LOG DEFAULT
-	LOG ALL
-
-	LOG OFF  // command alias for NONE
-	LOG ON   // command alias for ALL
-*/
-//===========================================================================
-Update_t CmdOutputLog (int nArgs)
-{
-	int iParam;
-
-	enum OutputLogHelp_e
-	{
-		  OUTPUT_HELP_INVALID_PARAM
-		, OUTPUT_HELP_CURRENT_LEVEL
-		, NUM_OUTPUT_LOG_HELP
-	};
-	const char *aHelp[ NUM_OUTPUT_LOG_HELP ] =
-	{
-		CHC_ERROR "Invalid parameter"                    , // NOTE: Intentionally ignore extra param
-		CHC_INFO  "Verbosity level set to " CHC_COMMAND "%s"
-	};
-	const char *pHelp = NULL;
-
-	if (!nArgs)
-	{
-		// Display the current console ouput level logging
-		pHelp = aHelp[ OUTPUT_HELP_CURRENT_LEVEL ];
-	}
-	else
-	if (nArgs == 1)
-	{
-		int nFound = FindParam( g_aArgs[ 1 ].sArg, MATCH_EXACT, iParam, _PARAM_LOG_BEGIN, _PARAM_LOG_END );
-		if (nFound)
-		{
-			int eLevel = iParam - _PARAM_LOG_BEGIN;
-			if ((eLevel >= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_NONE)
-			&&  (eLevel <= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL ))
-			{
-				ConsoleOutputLevelSet( (ConsoleOutputLevel_e)eLevel );
-			}
-		}
-		else
-			pHelp = aHelp[ OUTPUT_HELP_INVALID_PARAM ];
-	}
-	else
-	{
-		return Help_Arg_1( CMD_OUTPUT_LOG ); // Display all valid params
-	}
-
-	if (pHelp)
-	{
-		// We need to push/pop the current output level since
-		// we need to display an output message and it could be muted with the current setting
-		ConsoleOutputLevel_e eLevel = ConsoleOutputLevelGet();
-		ConsoleOutputLevelSet( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
-			iParam = _PARAM_LOG_BEGIN + eLevel;
-			ConsolePrintFormat( pHelp, g_aParameters[ iParam ].m_sName );
-		ConsoleOutputLevelSet( eLevel );
-	}
-
-	return ConsoleUpdate();
-}
 
 enum PrintState_e
 {	  PS_LITERAL
@@ -6786,7 +6418,7 @@ Update_t CmdOutputRun (int nArgs)
 		for ( int iLine = 0; iLine < nLine; iLine++ )
 		{
 			script.GetLine( iLine, g_pConsoleInput, CONSOLE_WIDTH-2 );
-			g_nConsoleInputChars = (int) strlen( g_pConsoleInput );
+			g_nConsoleInputChars = _tcslen( g_pConsoleInput );
 			bUpdateDisplay |= DebuggerProcessCommand( false );
 		}
 	}
@@ -6890,16 +6522,16 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 	g_nSourceAssembleBytes = 0;
 	g_nSourceAssemblySymbols = 0;
 
-	const uint32_t INVALID_ADDRESS = _6502_MEM_END + 1;
+	const DWORD INVALID_ADDRESS = _6502_MEM_END + 1;
 
 	int nLines = g_AssemblerSourceBuffer.GetNumLines();
 	for ( int iLine = 0; iLine < nLines; iLine++ )
 	{
 		g_AssemblerSourceBuffer.GetLine( iLine, sText, MAX_LINE - 1 );
 
-		uint32_t nAddress = INVALID_ADDRESS;
+		DWORD nAddress = INVALID_ADDRESS;
 
-		strcpy( sLine, sText );
+		_tcscpy( sLine, sText );
 		char *p = sLine;
 		p = strstr( sLine, ":" );
 		if (p)
@@ -6925,7 +6557,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					// start
 					pStart = pEnd + 1;
 					pEnd = const_cast<char*>( SkipUntilWhiteSpace( pStart ));
-					int nLen = (int) (pEnd - pStart);
+					int nLen = (pEnd - pStart);
 					if (nLen != 2)
 					{
 						break;
@@ -6934,7 +6566,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					if (TextIsHexByte( pStart ))
 					{
 						BYTE nByte = TextConvert2CharsToByte( pStart );
-						WriteByteToMemory(((WORD)nAddress) + iByte, nByte);
+						*(mem + ((WORD)nAddress) + iByte ) = nByte;
 					}
 				}
 				g_nSourceAssembleBytes += iByte;
@@ -6943,7 +6575,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 			g_aSourceDebug[ (WORD) nAddress ] = iLine; // g_nSourceAssemblyLines;
 		}
 
-		strcpy( sLine, sText );
+		_tcscpy( sLine, sText );
 		if (bAddSymbols)
 		{
 			// Add user symbol:          symbolname EQU $address
@@ -6968,7 +6600,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					pLabelEnd++;
 					pLabelStart++;
 					
-					int nLen = (int) (pLabelEnd - pLabelStart);
+					int nLen = pLabelEnd - pLabelStart;
 					nLen = MIN( nLen, MAX_SYMBOLS_LEN );
 					strncpy( sName, pLabelStart, nLen );
 					sName[ nLen - 1 ] = 0;
@@ -6988,7 +6620,7 @@ bool ParseAssemblyListing ( bool bBytesToMemory, bool bAddSymbols )
 					if (pAddress)
 					{
 						char *pAddressEnd;
-						nAddress = (uint32_t) strtol( pAddress, &pAddressEnd, 16 );
+						nAddress = (DWORD) strtol( pAddress, &pAddressEnd, 16 );
 						g_aSymbols[ SYMBOLS_SRC_2 ][ (WORD) nAddress] = sName;
 						g_nSourceAssemblySymbols++;
 					}
@@ -7168,7 +6800,6 @@ Update_t CmdCyclesReset (int /*nArgs*/)
 // View ___________________________________________________________________________________________
 
 // See: CmdWindowViewOutput (int nArgs)
-// NOTE: Keep in sync: ViewVideoPage_t, , and getVideoScannerAddressTXT
 enum ViewVideoPage_t
 {
 	VIEW_PAGE_X, // current page
@@ -7177,20 +6808,16 @@ enum ViewVideoPage_t
 	VIEW_PAGE_2,
 	VIEW_PAGE_3, // Pseudo
 	VIEW_PAGE_4, // Pseudo
-	VIEW_PAGE_5, // Pseudo
-	VIEW_PAGE_6, // Pseudo
-	VIEW_PAGE_7, // Pseudo
-	VIEW_PAGE_8  // Pseudo
+	VIEW_PAGE_5  // Pseudo
 };
 
-static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
+Update_t _ViewOutput ( ViewVideoPage_t iPage, int bVideoModeFlags )
 {
-	switch ( iPage )
+	switch ( iPage ) 
 	{
-		// NOTE: Keep in sync: _ViewOutput() getVideoScannerAddressHGR()
 		case VIEW_PAGE_X:
-			bVideoModeFlags |= (!GetVideo().VideoGetSW80STORE() && GetVideo().VideoGetSWPAGE2()) ? VF_PAGE2 : 0;
-			bVideoModeFlags |= GetVideo().VideoGetSWMIXED() ? VF_MIXED : 0;
+			bVideoModeFlags |= !GetVideo().VideoGetSWPAGE2() ? 0 : VF_PAGE2;
+			bVideoModeFlags |= !GetVideo().VideoGetSWMIXED() ? 0 : VF_MIXED;
 			break; // Page Current & current MIXED state
 		case VIEW_PAGE_0: bVideoModeFlags |= VF_PAGE0; break; // Pseudo   Page 0 ($0000)
 		case VIEW_PAGE_1: bVideoModeFlags |= 0       ; break; // Hardware Page 1 ($2000), NOTE: VF_HIRES will be passed in
@@ -7198,15 +6825,10 @@ static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 		case VIEW_PAGE_3: bVideoModeFlags |= VF_PAGE3; break; // Pseudo   Page 3 ($6000)
 		case VIEW_PAGE_4: bVideoModeFlags |= VF_PAGE4; break; // Pseudo   Page 4 ($8000)
 		case VIEW_PAGE_5: bVideoModeFlags |= VF_PAGE5; break; // Pseudo   Page 5 ($A000)
-		case VIEW_PAGE_6: bVideoModeFlags |= VF_PAGE6; break; // Pseudo   Page 6 (LC 1/2 $C000,$D000)
-		case VIEW_PAGE_7: bVideoModeFlags |= VF_PAGE7; break; // Pseudo   Page 7 (LC 2/- $D000,$E000)
-		case VIEW_PAGE_8: bVideoModeFlags |= VF_PAGE8; break; // Pseudo   Page 8 (LC RAM $E000,$F000)
 		default:
 			_ASSERT(0);
 			break;
 	}
-
-	bVideoModeFlags |= GetVideo().VideoGet80COLAUXEMPTY() ? VF_80COL_AUX_EMPTY : 0;	// Preserve this flag
 
 	DebugVideoMode::Instance().Set(bVideoModeFlags);
 	GetFrame().VideoRefreshScreen( bVideoModeFlags, true );
@@ -7294,18 +6916,6 @@ static Update_t _ViewOutput ( ViewVideoPage_t iPage, UINT bVideoModeFlags )
 	{
 		return _ViewOutput( VIEW_PAGE_5, VF_HIRES ); // Pseudo page ($A000)
 	}
-	Update_t CmdViewOutput_HGR6 (int nArgs)
-	{
-		return _ViewOutput( VIEW_PAGE_6, VF_HIRES ); // Pseudo page (LC Bank 1/2 $C000,$D000)
-	}
-	Update_t CmdViewOutput_HGR7 (int nArgs)
-	{
-		return _ViewOutput( VIEW_PAGE_7, VF_HIRES ); // Pseudo page (LC Bank 2/RAM $D000,$E000)
-	}
-	Update_t CmdViewOutput_HGR8 (int nArgs)
-	{
-		return _ViewOutput( VIEW_PAGE_8, VF_HIRES ); // Pseudo page (LC RAM $E000,$F000)
-	}
 // Double Hi-Res
 	Update_t CmdViewOutput_DHGRX (int nArgs)
 	{
@@ -7370,7 +6980,7 @@ Update_t CmdWatchAdd (int nArgs)
 		WORD nAddress = g_aArgs[iArg].nValue;
 
 		// Make sure address isn't an IO address
-		if ((nAddress >= APPLE_IO_BEGIN) && (nAddress <= APPLE_IO_END))
+		if ((nAddress >= _6502_IO_BEGIN) && (nAddress <= _6502_IO_END))
 			return ConsoleDisplayError("You cannot watch an I/O location.");
 
 		if (iWatch == NO_6502_TARGET)
@@ -7831,7 +7441,7 @@ Update_t CmdWindow (int nArgs)
 		return Help_Arg_1( CMD_WINDOW );
 
 	int iParam;
-	char *pName = g_aArgs[1].sArg;
+	TCHAR *pName = g_aArgs[1].sArg;
 	int nFound = FindParam( pName, MATCH_EXACT, iParam, _PARAM_WINDOW_BEGIN, _PARAM_WINDOW_END );
 	if (nFound)
 	{
@@ -8064,7 +7674,7 @@ Update_t CmdZeroPagePointer (int nArgs)
 int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBegin, int iParamEnd, const bool bCaseSensitive /* false */ )
 {
 	int nFound = 0;
-	int nLen     = (int) strlen( pLookupName );
+	int nLen     = _tcslen( pLookupName );
 	int iParam = 0;
 
 	if (! nLen)
@@ -8080,8 +7690,8 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 //		while (iParam < NUM_PARAMS )
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
-			char *pParamName = g_aParameters[iParam].m_sName;
-			int eCompare = strcmp(pLookupName, pParamName);
+			TCHAR *pParamName = g_aParameters[iParam].m_sName;
+			int eCompare = _tcscmp(pLookupName, pParamName);
 			if (! eCompare) // exact match?
 			{
 				nFound++;
@@ -8094,7 +7704,7 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 	if (eMatch == MATCH_FUZZY)
 	{	
 #if ALLOW_INPUT_LOWERCASE
-		char aLookup[ 256 ] = "";
+		TCHAR aLookup[ 256 ] = "";
 		for ( int i = 0; i < nLen; i++ )
 		{
 			aLookup[ i ] = toupper( pLookupName[ i ] );
@@ -8102,19 +7712,19 @@ int FindParam (LPCTSTR pLookupName, Match_e eMatch, int & iParam_, int iParamBeg
 #endif
 		for (iParam = iParamBegin; iParam <= iParamEnd; iParam++ )
 		{
-			char *pParamName = g_aParameters[ iParam ].m_sName;
+			TCHAR *pParamName = g_aParameters[ iParam ].m_sName;
 // _tcsnccmp
 
 #if ALLOW_INPUT_LOWERCASE
-			if (! strncmp(aLookup, pParamName ,nLen))
+			if (! _tcsncmp(aLookup, pParamName ,nLen))
 #else
-			if (! strncmp(pLookupName, pParamName ,nLen))
+			if (! _tcsncmp(pLookupName, pParamName ,nLen))
 #endif
 			{
 				nFound++;
 				iParam_ = g_aParameters[iParam].iCommand;
 
-				if (!_stricmp(pLookupName, pParamName)) // exact match?
+				if (!_tcsicmp(pLookupName, pParamName)) // exact match?
 				{
 					nFound = 1; // Exact match takes precidence over fuzzy matches
 					break;
@@ -8131,7 +7741,7 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 	g_vPotentialCommands.clear();
 
 	int nFound   = 0;
-	int nLen     = (int) strlen( pName );
+	int nLen     = _tcslen( pName );
 	int iCommand = 0;
 
 	if (! nLen)
@@ -8143,9 +7753,9 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 
 	while ((iCommand < NUM_COMMANDS_WITH_ALIASES)) // && (name[0] >= g_aCommands[iCommand].aName[0])) Command no longer in Alphabetical order
 	{
-		char *pCommandName = g_aCommands[iCommand].m_sName;
+		TCHAR *pCommandName = g_aCommands[iCommand].m_sName;
 //		int iCmp = strcasecmp( sCommand, pCommandName, nLen )
-		if (! strncmp(sCommand, pCommandName, nLen))
+		if (! _tcsncmp(sCommand, pCommandName, nLen))
 		{
 			pFunction_ = g_aCommands[iCommand].pFunction;
 			if (pFunction_)
@@ -8160,8 +7770,8 @@ int FindCommand ( LPCTSTR pName, CmdFuncPtr_t & pFunction_, int * iCommand_ )
 
 					if (iCommand_)
 						*iCommand_ = iCommand;
-// !strcmp
-					if (!_stricmp(sCommand, pCommandName)) // exact match?
+// !_tcscmp
+					if (!_tcsicmp(sCommand, pCommandName)) // exact match?
 					{
 	//					if (iCommand_)
 	//						*iCommand_ = iCommand;
@@ -8296,7 +7906,7 @@ Update_t ExecuteCommand (int nArgs)
 					// with:    comamnd addr
 					pArg[1] = pArg[0];
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
-					pArg->nArgLen = (int) strlen( pArg->sArg );
+					pArg->nArgLen = strlen( pArg->sArg );
 
 					pArg++;
 					pArg->nValue = nAddress;
@@ -8315,7 +7925,7 @@ Update_t ExecuteCommand (int nArgs)
 					pArg[1] = pArg[0];
 
 					strcpy( pArg->sArg, g_aCommands[ g_iCommand ].m_sName );
-					pArg->nArgLen = (int) strlen( pArg->sArg );
+					pArg->nArgLen = strlen( pArg->sArg );
 
 //					nCookMask &= ~ (1 << TOKEN_COLON);
 //					nArgs++;
@@ -8371,8 +7981,8 @@ Update_t ExecuteCommand (int nArgs)
 						{
 							//ArgsGetValue( pArg, & nAddress );
 							//ConsolePrintFormat( "Dst:%s  Src: %s  End: %s", pDst, pSrc, pEnd );
-
 							g_iCommand = CMD_MEMORY_MOVE;
+							pFunction = g_aCommands[ g_iCommand ].pFunction;
 
 							strcpy( pArg[4].sArg, pEnd );
 							strcpy( pArg[3].sArg, g_aTokens[ TOKEN_COLON ].sToken );
@@ -8390,25 +8000,6 @@ Update_t ExecuteCommand (int nArgs)
 							pArg[3].eToken = TOKEN_COLON;
 							ArgsGetValue( &pArg[4], &pArg[4].nValue );
 
-							if (pArg[4].nValue < pArg[2].nValue)
-							{
-								ConsolePrintFormat(
-									CHC_WARNING "WARN" CHC_ARG_SEP ":"
-									CHC_DEFAULT " End source address " CHC_ARG_SEP "$" CHC_ADDRESS "%04X"
-									CHC_ARG_SEP " <"
-									CHC_DEFAULT " Start source address " CHC_ARG_SEP "$" CHC_ADDRESS "%04X"
-									CHC_DEFAULT "."
-									CHC_INFO " Aborting."
-									, (pArg[4].nValue & _6502_MEM_END)
-									, (pArg[2].nValue & _6502_MEM_END)
-								);
-								ConsoleUpdate();
-								pFunction = nullptr;
-							}
-							else
-							{
-								pFunction = g_aCommands[ g_iCommand ].pFunction;
-							}
 							nFound = 1;
 							nArgs = 4;
 						}
@@ -8932,12 +8523,6 @@ void DebugBegin ()
 }
 
 //===========================================================================
-bool DebugQueryAnyBreakpointsSet()
-{
-	return g_nBreakpoints > 0;
-}
-
-//===========================================================================
 void DebugExitDebugger ()
 {
 	ClearTempBreakpoints();  // make sure we remove temp breakpoints before checking
@@ -9004,7 +8589,7 @@ static void CheckBreakOpcode ( int iOpcode )
 
 static void UpdateLBR (void)
 {
-	const BYTE nOpcode = ReadByteFromMemory(regs.pc);
+	const BYTE nOpcode = *(mem + regs.pc);
 
 	bool isControlFlowOpcode =
 		nOpcode == OPCODE_BRK ||
@@ -9035,14 +8620,6 @@ static void UpdateLBR (void)
 
 	if (isControlFlowOpcode)
 		g_LBR = regs.pc;
-}
-
-static std::string GetBreakpointHitIdString(int id)
-{
-	std::string hitId = CHC_DEFAULT "[" CHC_ARG_SEP "B#" CHC_NUM_HEX "-" CHC_DEFAULT "]"; // "[B#-]";
-	if (id != -1)
-		hitId = StrFormat(CHC_DEFAULT "[" CHC_ARG_SEP "B#" CHC_NUM_HEX "%01X" CHC_DEFAULT "]", id);
-	return hitId;
 }
 
 void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
@@ -9083,7 +8660,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 
 			if ( MemIsAddrCodeMemory(regs.pc) )
 			{
-				const BYTE nOpcode = ReadByteFromMemory(regs.pc);
+				BYTE nOpcode = *(mem+regs.pc);
 
 				// Update profiling stats
 				int nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;
@@ -9119,7 +8696,6 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 					g_bDebugBreakpointHit |= BP_HIT_INTERRUPT;
 			}
 
-			g_pDebugBreakpointHit = nullptr;	// First BP hit
 			g_bDebugBreakpointHit |= CheckBreakpointsIO() | CheckBreakpointsReg() | CheckBreakpointsVideo() | CheckBreakpointsDmaToOrFromIOMemory() | CheckBreakpointsDmaToOrFromMemory(-1);
 		}
 
@@ -9127,7 +8703,6 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 		{
 			std::string stopReason = "Unknown!";
 			bool skipStopReason = false;
-			INTERCEPTBREAKPOINT interceptBreakpoint;
 
 			if (regs.pc == g_nDebugStepUntil)
 				stopReason = StrFormat( CHC_DEFAULT "Register " CHC_REGS "PC" CHC_DEFAULT " matches '" CHC_INFO "Go until" CHC_DEFAULT "' address $" CHC_ADDRESS "%04X", g_nDebugStepUntil);
@@ -9137,33 +8712,27 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				stopReason = StrFormat("Opcode match at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", regs.pc);
 			else if (g_bDebugBreakpointHit & BP_HIT_REG)
 			{
-				stopReason = "Register matches value";
-				if (g_pDebugBreakpointHit)
-				{
-					stopReason = StrFormat( "Register %s%s%s matches value",
-						CHC_REGS,
-						g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
-						CHC_DEFAULT
-					);
-					if (g_pDebugBreakpointHit->eSource == BP_SRC_REG_PC)
-						interceptBreakpoint.Set(BPTYPE_PC, regs.pc, BPACCESS_R);
-				}
+					if (g_pDebugBreakpointHit)
+					{
+						int iBreakpoint = (g_pDebugBreakpointHit - g_aBreakpoints);
+						stopReason = StrFormat( "Register %s%s%s matches breakpoint %s#%s%d",
+							CHC_REGS,
+							g_aBreakpointSource[ g_pDebugBreakpointHit->eSource ],
+							CHC_DEFAULT,
+							CHC_ARG_SEP,
+							CHC_NUM_HEX,
+							iBreakpoint
+						);
+					}
+					else
+						stopReason = "Register matches value";
 			}
 			else if (g_bDebugBreakpointHit & BP_HIT_MEM)
-			{
-				stopReason = StrFormat("Memory access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
-				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_RW);
-			}
+				stopReason = StrFormat("Memory access at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMW)
-			{
-				stopReason = StrFormat("Write access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
-				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_W);
-			}
+				stopReason = StrFormat("Write access at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_MEMR)
-			{
-				stopReason = StrFormat("Read access at %s", g_sBreakMemoryFullPrefixAddr.c_str());
-				interceptBreakpoint.Set(BPTYPE_MEM, g_nBreakMemoryAddr, BPACCESS_R);
-			}
+				stopReason = StrFormat("Read access at " CHC_ARG_SEP "$" CHC_ADDRESS "%04X", g_uBreakMemoryAddress);
 			else if (g_bDebugBreakpointHit & BP_HIT_PC_READ_FLOATING_BUS_OR_IO_MEM)
 				stopReason = "PC reads from floating bus or I/O memory";
 			else if (g_bDebugBreakpointHit & BP_HIT_INTERRUPT)
@@ -9179,14 +8748,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				skipStopReason = true;
 
 			if (!skipStopReason)
-			{
-				if (g_InterceptBreakpointsCB != nullptr)
-					g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBreakpoint);
-
-				std::string hitId = GetBreakpointHitIdString(g_breakpointHitID);
-				ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
-				g_breakpointHitID = -1;
-			}
+				ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
 
 			for (int i = 0; i < NUM_BREAK_ON_DMA; i++)
 			{
@@ -9194,27 +8756,16 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 				if (nDebugBreakpointHit)
 				{
 					if (nDebugBreakpointHit & BP_DMA_TO_MEM)
-						stopReason = StrFormat("HDD DMA to memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd);
+						stopReason = StrFormat("HDD DMA to memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X" CHC_DEFAULT " (breakpoint %s#%s%d%s)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, CHC_ARG_SEP, CHC_NUM_HEX, g_DebugBreakOnDMA[i].BPid, CHC_DEFAULT);
 					else if (nDebugBreakpointHit & BP_DMA_FROM_MEM)
-						stopReason = StrFormat("HDD DMA from memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd);
-					std::string hitId = GetBreakpointHitIdString(g_DebugBreakOnDMA[i].BPid);
-					ConsolePrintFormat(CHC_INFO "Stop reason: %s " CHC_DEFAULT "%s", hitId.c_str(), stopReason.c_str());
-
-					if (g_InterceptBreakpointsCB != nullptr)
-					{
-						const uint8_t access = (nDebugBreakpointHit & BP_DMA_FROM_MEM) ? BPACCESS_R : BPACCESS_W;
-						interceptBreakpoint.SetDMA(g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, access);
-						g_InterceptBreakpointsCB(g_interceptBreakpointsSlot, interceptBreakpoint);
-					}
+						stopReason = StrFormat("HDD DMA from memory " CHC_ARG_SEP "$" CHC_ADDRESS "%04X" CHC_ARG_SEP "-" CHC_ADDRESS "%04X" CHC_DEFAULT " (breakpoint %s#%s%d%s)", g_DebugBreakOnDMA[i].memoryAddr, g_DebugBreakOnDMA[i].memoryAddrEnd, CHC_ARG_SEP, CHC_NUM_HEX, g_DebugBreakOnDMA[i].BPid, CHC_DEFAULT);
+					ConsolePrintFormat( CHC_INFO "Stop reason: " CHC_DEFAULT "%s", stopReason.c_str() );
 				}
 			}
 
 			ConsoleUpdate();
 
-			//
-
-			if (g_InterceptBreakpointsCB == nullptr)
-				g_nDebugSteps = 0;
+			g_nDebugSteps = 0;
 		}
 
 		if (g_nDebugSteps > 0)
@@ -9259,7 +8810,11 @@ void DebugDestroy ()
 //	DeleteObject(g_hFontDebugger);
 //	DeleteObject(g_hFontWebDings);
 
-	SymbolsClear();
+	// TODO: Symbols_Clear()
+	for ( int iTable = 0; iTable < NUM_SYMBOL_TABLES; iTable++ )
+	{
+		_CmdSymbolsClear( (SymbolTable_Index_e) iTable );
+	}
 	// TODO: DataDisassembly_Clear()
 
 	ReleaseConsoleFontDC();
@@ -9297,7 +8852,7 @@ void DebugInitialize ()
 	AssemblerOff(); // update prompt
 
 #if _DEBUG
-	uint32_t nError = 0;
+	DWORD nError = 0;
 #endif
 
 #if _DEBUG
@@ -9335,17 +8890,35 @@ void DebugInitialize ()
 	WindowUpdateConsoleDisplayedSize();
 
 	// CLEAR THE BREAKPOINT AND WATCH TABLES
-	g_nBreakMemoryAddr = 0;
-	g_breakpointHitID = -1;
-	for (int i = 0; i < MAX_BREAKPOINTS; i++)
-		g_aBreakpoints[i].Clear();
+	memset( g_aBreakpoints     , 0, MAX_BREAKPOINTS       * sizeof(Breakpoint_t));
 	g_nBreakpoints = 0;
 	memset( g_aWatches         , 0, MAX_WATCHES           * sizeof(Watches_t) );
 	g_nWatches = 0;
 	memset( g_aZeroPagePointers, 0, MAX_ZEROPAGE_POINTERS * sizeof(ZeroPagePointers_t));
 	g_nZeroPagePointers = 0;
 
-	CmdDebugStartup(0);
+	// Load Main, Applesoft, and User Symbols
+	g_bSymbolsDisplayMissingFile = false;
+
+	g_iCommand = CMD_SYMBOLS_ROM;
+	CmdSymbolsLoad(0);
+
+	g_iCommand = CMD_SYMBOLS_APPLESOFT;
+	CmdSymbolsLoad(0);
+
+	// ,0x7,0xFF // Treat zero-page as data
+	// $00 GOWARM   JSR ...
+	// $01 LOC1 DW
+	// $03 GOSTROUT JSR ...
+	// $07..$B0
+	// $B1 CHRGET
+	// $C8
+	// $C9 RNDSEED DW
+	// $D0..$FF
+
+	g_iCommand = CMD_SYMBOLS_USER_1;
+	CmdSymbolsLoad(0);
+
 	g_bSymbolsDisplayMissingFile = true;
 
 #if OLD_FONT
@@ -9416,10 +8989,10 @@ void DebugInitialize ()
 		const char *pHelp = g_aCommands[ iCmd ].pHelpSummary;
 		if (pHelp)
 		{
-			int nLen = (int) (strlen( pHelp ) + 2);
+			int nLen = _tcslen( pHelp ) + 2;
 			if (nLen > (CONSOLE_WIDTH-1))
 			{
-				ConsoleBufferPushFormat( CHC_WARNING "Warning: %s help is %d chars", pHelp, nLen );
+				ConsoleBufferPushFormat( "Warning: %s help is %d chars", pHelp, nLen );
 			}
 		}
 	}
@@ -9435,9 +9008,11 @@ void DebugInitialize ()
 	{
 		doneAutoRun = true;
 
+		const std::string debuggerAutoRunName = "DebuggerAutoRun.txt";
+
 		// Look in g_sCurrentDir, otherwise try g_sProgramDir
 
-		std::string pathname = g_sCurrentDir + g_sAutoRunScriptFilename;
+		std::string pathname = g_sCurrentDir + debuggerAutoRunName;
 		errno_t error = strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), pathname.size());
 		if (error != 0)
 		{
@@ -9451,7 +9026,7 @@ void DebugInitialize ()
 
 		if (!g_bScriptReadOk)
 		{
-			pathname = g_sProgramDir + g_sAutoRunScriptFilename;
+			pathname = g_sProgramDir + debuggerAutoRunName;
 			error = strncpy_s(g_aArgs[1].sArg, MAX_PATH, pathname.c_str(), pathname.size());
 			if (error != 0)
 			{
@@ -9465,8 +9040,6 @@ void DebugInitialize ()
 		}
 	}
 
-	ConsoleOutputLevelSet( ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL );
-
 	CmdMOTD(0);
 }
 
@@ -9477,47 +9050,9 @@ void DebugReset (void)
 	g_LBR = LBR_UNDEFINED;
 }
 
-
-// Load debugger script files
-// Called from DebugInitialize()
-// User can also call
-//===========================================================================
-Update_t CmdDebugStartup (int nArgs)
-{
-	SymbolsClear();
-
-	// Load Main, Applesoft, and User Symbols
-	g_bSymbolsDisplayMissingFile = false;
-
-	g_iCommand = CMD_SYMBOLS_ROM;
-	CmdSymbolsLoad(0);
-
-	g_iCommand = CMD_SYMBOLS_APPLESOFT;
-	CmdSymbolsLoad(0);
-
-	// 2.9.2.5 Added: Symbol table A2_DOS33.SYM2
-	g_iCommand = CMD_SYMBOLS_DOS33;
-	CmdSymbolsLoad(0);
-
-	// ,0x7,0xFF // Treat zero-page as data
-	// $00 GOWARM   JSR ...
-	// $01 LOC1 DW
-	// $03 GOSTROUT JSR ...
-	// $07..$B0
-	// $B1 CHRGET
-	// $C8
-	// $C9 RNDSEED DW
-	// $D0..$FF
-
-	g_iCommand = CMD_SYMBOLS_USER_1;
-	CmdSymbolsLoad(0);
-
-	return UPDATE_NOTHING;
-}
-
 // Add character to the input line
 //===========================================================================
-void DebuggerInputConsoleChar ( char ch )
+void DebuggerInputConsoleChar ( TCHAR ch )
 {
 	_ASSERT(g_nAppMode == MODE_DEBUG);
 
@@ -9560,7 +9095,7 @@ void DebuggerInputConsoleChar ( char ch )
 			// TODO: must fix param matching to ignore case
 #if ALLOW_INPUT_LOWERCASE
 #else
-			ch = (char)CharUpper((LPTSTR)ch);
+			ch = (TCHAR)CharUpper((LPTSTR)ch);
 #endif
 		}
 		ConsoleInputChar( ch );
@@ -9664,76 +9199,10 @@ void DebuggerProcessKey ( int keycode )
 		// VK_F# are already processed, so we can't use them to cycle next video g_nAppMode
 //		    if ((g_nAppMode != MODE_LOGO) && (g_nAppMode != MODE_DEBUG))
 
-		// 2.9.2.7 Added: QoL for Debugger's view output screen.
-		//    When using the debugger to view the ouput screen such as `HGR`, `HGR2`, etc. allow the
-		//    keys 0-5 to display the specificed video # page, or 9 to see the current video mode.
-		//      0 Pseudo   Page 0 ($0000 for graphics, else text page 1)
-		//      1 Hardware Page 1 ($2000 for graphics, else text $0400)
-		//      2 Hardware Page 2 ($4000 for graphics, else text $0800)
-		//      3 Pseudo   Page 3 ($6000 for graphics, else text page 1)
-		//      4 Pseudo   Page 4 ($8000 for graphics, else text page 1)
-		//      5 Pseudo   Page 5 ($A000 for graphics, else text page 1)
-		//      9 Current mode and page
-		//
-		// NOTE: Do we want to allow viewing mixed/full mode since 0-5 always sets fullscreen?
-		//      7 Mixed-screen mode
-		//      8 Full-screen mode
-		//
-		// NOTE: Keep in sync: ViewVideoPage_t, DebuggerProcessKey(), _ViewOutput()
-		if ((keycode >= '0') && (keycode <= '9'))
-		{
-			ViewVideoPage_t eVideoPage  = VIEW_PAGE_X;
-			UINT            bVideoFlags = 0;
+		GetVideo().ClearSHRResidue();	// Clear the framebuffer to remove any SHR residue in the borders
 
-			DebugVideoMode::Instance().Get( &bVideoFlags );
-			uint32_t        bSavedVideoModeFlags = bVideoFlags;
-
-			bVideoFlags &= ~(VF_MIXED | VF_PAGE0 | VF_PAGE2 | VF_PAGE3 | VF_PAGE4 | VF_PAGE5 | VF_PAGE6 | VF_PAGE7 | VF_PAGE8);
-			switch (keycode)
-			{
-				case '0': eVideoPage = VIEW_PAGE_0; bVideoFlags |= VF_PAGE0; break;
-				case '1': eVideoPage = VIEW_PAGE_1; /*                   */; break;
-				case '2': eVideoPage = VIEW_PAGE_2; bVideoFlags |= VF_PAGE2; break;
-				case '3': eVideoPage = VIEW_PAGE_3; bVideoFlags |= VF_PAGE3; break;
-				case '4': eVideoPage = VIEW_PAGE_4; bVideoFlags |= VF_PAGE4; break;
-				case '5': eVideoPage = VIEW_PAGE_5; bVideoFlags |= VF_PAGE5; break;
-				case '6': eVideoPage = VIEW_PAGE_6; bVideoFlags |= VF_PAGE6; break;
-				case '7': eVideoPage = VIEW_PAGE_7; bVideoFlags |= VF_PAGE7; break;
-				case '8': eVideoPage = VIEW_PAGE_8; bVideoFlags |= VF_PAGE8; break;
-				case '9': /* Don't use VIEW_PAGE_X as it is handled below*/; break;
-				default:
-					bool bUnknownViewVideoPage = false;
-					assert( bUnknownViewVideoPage );
-					break;
-			}
-
-			if (keycode == '9')
-			{
-				GetFrame().VideoRedrawScreen(); // See: CmdWindowViewOutput()
-			}
-			else
-			{
-				_ViewOutput( eVideoPage, bVideoFlags );
-				DebugDisplay();
-			}
-
-			// We need to restore the video mode since the original output may be mixed mode
-			// but switching to page 0-5 will have set full mode.
-			DebugVideoMode::Instance().Set( bSavedVideoModeFlags );
-			g_bIgnoreNextKey = true;
-		}
-		else
-		{
-			GetVideo().ClearSHRResidue();	// Clear the framebuffer to remove any SHR residue in the borders
-			DebugVideoMode::Instance().Reset();
-
-			// Technically this is a bug/feature: Leaving the debugger view output can sometimes be in the wrong view mode
-			// GetFrame().VideoRedrawScreen();
-			// DebugVideoMode::Instance().Set( GetVideo().GetVideoMode() );
-
-			UpdateDisplay( UPDATE_ALL ); // 1
-		}
-
+		DebugVideoMode::Instance().Reset();
+		UpdateDisplay( UPDATE_ALL ); // 1
 		return;
 	}
 
@@ -10126,9 +9595,9 @@ void DebuggerCursorUpdate ()
 		return;
 
 	const  int nUpdatesPerSecond = 4;
-	const  uint32_t nUpdateInternal_ms = 1000 / nUpdatesPerSecond;
-	static uint32_t nBeg = GetTickCount(); // timeGetTime();
-	       uint32_t nNow = GetTickCount(); // timeGetTime();
+	const  DWORD nUpdateInternal_ms = 1000 / nUpdatesPerSecond;
+	static DWORD nBeg = GetTickCount(); // timeGetTime();
+	       DWORD nNow = GetTickCount(); // timeGetTime();
 
 	if (((nNow - nBeg) >= nUpdateInternal_ms) && !DebugVideoMode::Instance().IsSet())
 	{
@@ -10168,19 +9637,4 @@ void DebuggerCursorNext ()
 bool IsDebugSteppingAtFullSpeed (void)
 {
 	return (g_nAppMode == MODE_STEPPING) && g_bDebugFullSpeed;
-}
-
-
-//===========================================================================
-void DebugSetAutoRunScript (std::string& sAutoRunScriptFilename)
-{
-	g_sAutoRunScriptFilename = sAutoRunScriptFilename;
-}
-
-
-//===========================================================================
-void InterceptBreakpoints(uint8_t slot, CBFUNCTION cbfunction)
-{
-	g_interceptBreakpointsSlot = slot;
-	g_InterceptBreakpointsCB = cbfunction;
 }

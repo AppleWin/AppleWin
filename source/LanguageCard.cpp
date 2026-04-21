@@ -54,7 +54,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"		// GH#700
 #include "Log.h"
 #include "Memory.h"
-#include "Registry.h"
 #include "YamlHelper.h"
 
 
@@ -161,13 +160,13 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 
 bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 {
-	BYTE param1 = ReadByteFromMemory(regs.pc - 2);
-	BYTE param2 = ReadByteFromMemory(regs.pc - 1);
+	BYTE param1 = mem[(regs.pc - 2) & 0xffff];
+	BYTE param2 = mem[(regs.pc - 1) & 0xffff];
 	if (param1 != (addr & 0xff) || param2 != 0xC0)
 		return false;
 
 	// GH#404, GH#700: INC $C083,X/C08B,X (RMW) to write enable the LC (any 6502/65C02/816)
-	BYTE opcode = ReadByteFromMemory(regs.pc - 3);
+	BYTE opcode = mem[(regs.pc - 3) & 0xffff];
 	if (opcode == 0xFE && regs.x == 0)	// INC abs,x
 		return true;
 
@@ -222,6 +221,8 @@ LanguageCardSlot0::~LanguageCardSlot0(void)
 
 static const UINT kUNIT_LANGUAGECARD_VER = 1;
 
+#define SS_YAML_VALUE_CARD_LANGUAGECARD "Language Card"
+
 #define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_LASTRAMWRITE "Last RAM Write"
 
@@ -233,7 +234,7 @@ const std::string& LanguageCardSlot0::GetSnapshotMemStructName(void)
 
 const std::string& LanguageCardSlot0::GetSnapshotCardName(void)
 {
-	static const std::string name("Language Card");
+	static const std::string name(SS_YAML_VALUE_CARD_LANGUAGECARD);
 	return name;
 }
 
@@ -303,16 +304,8 @@ UINT Saturn128K::g_uSaturnBanksFromCmdLine = 0;
 Saturn128K::Saturn128K(UINT slot, UINT banks)
 	: LanguageCardSlot0(CT_Saturn128K, slot)
 {
+	m_uSaturnTotalBanks = (banks == 0) ? kMaxSaturnBanks : banks;
 	m_uSaturnActiveBank = 0;
-	m_uSaturnTotalBanks = banks;	// /banks/ (from cmd line) overrides banks from Registry
-
-	SetSaturnMemorySizeSlot0(0);	// reset (eg. if there's a VM restart, due to user changing # banks)
-
-	if (banks == 0)
-	{
-		std::string regSection = RegGetConfigSlotSection(m_slot);
-		RegLoadValue(regSection.c_str(), REGVALUE_SATURN_NUM_BANKS, TRUE, &m_uSaturnTotalBanks, kMaxSaturnBanks);
-	}
 
 	for (UINT i=0; i<kMaxSaturnBanks; i++)
 		m_aSaturnBanks[i] = NULL;
@@ -447,6 +440,8 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 
 static const UINT kUNIT_SATURN_VER = 1;
 
+#define SS_YAML_VALUE_CARD_SATURN128 "Saturn 128"
+
 #define SS_YAML_KEY_NUM_SATURN_BANKS "Num Saturn Banks"
 #define SS_YAML_KEY_ACTIVE_SATURN_BANK "Active Saturn Bank"
 
@@ -458,7 +453,7 @@ const std::string& Saturn128K::GetSnapshotMemStructName(void)
 
 const std::string& Saturn128K::GetSnapshotCardName(void)
 {
-	static const std::string name("Saturn 128");
+	static const std::string name(SS_YAML_VALUE_CARD_SATURN128);
 	return name;
 }
 
@@ -529,57 +524,20 @@ void Saturn128K::SetMemMainLanguageCard(void)
 	::SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], m_slot);
 }
 
-uint8_t Saturn128K::ReadByteFromBank(uint8_t bank, uint16_t phyAddr)
+void Saturn128K::SetSaturnMemorySize(UINT banks)
 {
-	if (bank >= kMaxSaturnBanks)
-	{
-		_ASSERT(0);
-		return 0;
-	}
-
-	if (phyAddr < 0xC000)
-		return 0;
-
-	// LC1-4K:      physical addr [$C000-CFFF] - $C000 -> [$0000-0FFF]
-	// LC2-4K & 8K: physical addr [$D000-FFFF] - $C000 -> [$1000-3FFF]
-	return m_aSaturnBanks[bank][phyAddr - 0xC000];
+	g_uSaturnBanksFromCmdLine = banks;
 }
 
-uint8_t Saturn128K::GetSaturnMemorySize()
-{
-	return m_uSaturnTotalBanks;
-}
-
-void Saturn128K::SetSaturnMemorySize(uint8_t banks)
-{
-	_ASSERT(banks <= kMaxSaturnBanks);
-	if (banks > kMaxSaturnBanks)
-		banks = kMaxSaturnBanks;
-
-	m_uSaturnTotalBanks = banks;
-
-	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_SATURN_NUM_BANKS, TRUE, m_uSaturnTotalBanks);
-}
-
-uint8_t Saturn128K::GetSaturnMemorySizeSlot0()
+UINT Saturn128K::GetSaturnMemorySize()
 {
 	return g_uSaturnBanksFromCmdLine;
-}
-
-void Saturn128K::SetSaturnMemorySizeSlot0(uint8_t banks)
-{
-	_ASSERT(banks <= kMaxSaturnBanks);
-	if (banks > kMaxSaturnBanks)
-		banks = kMaxSaturnBanks;
-
-	g_uSaturnBanksFromCmdLine = banks;
 }
 
 //-------------------------------------
 
 /*
-* LanguageCardManager:
+* LangauageCardManager:
 * . manage reset for all cards (eg. II/II+'s LC is unaffected, whereas //e's LC is)
 * . manage lastSlotToSetMainMemLC
 * . TODO: assist with debugger's display of "sNN" for active 16K bank
@@ -634,7 +592,7 @@ bool LanguageCardManager::SetLanguageCard(SS_CARDTYPE type)
 		m_pLanguageCard = LanguageCardUnit::create(SLOT0);
 		break;
 	case CT_Saturn128K:
-		m_pLanguageCard = new Saturn128K(SLOT0, Saturn128K::GetSaturnMemorySizeSlot0());
+		m_pLanguageCard = new Saturn128K(SLOT0, Saturn128K::GetSaturnMemorySize());
 		break;
 	default:
 		_ASSERT(0);
@@ -642,21 +600,4 @@ bool LanguageCardManager::SetLanguageCard(SS_CARDTYPE type)
 	}
 
 	return true;
-}
-
-uint8_t LanguageCardManager::ReadByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr)
-{
-	if (slot > SLOT7)
-	{
-		_ASSERT(0);
-		return 0;
-	}
-
-	if (GetCardMgr().QuerySlot(slot) != CT_Saturn128K)
-	{
-		_ASSERT(0);
-		return 0;
-	}
-
-	return dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).ReadByteFromBank(bank, phyAddr);
 }

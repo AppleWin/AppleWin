@@ -8,6 +8,7 @@ public:
 
 	bool IsConditionForFullSpeed(void);
 	void Update(const ULONG nExecutedCycles);
+	void Reset(const bool powerCycle = false);
 	bool GetEnhanceDisk(void);
 	void SetEnhanceDisk(bool enhanceDisk);
 	void LoadLastDiskImage(void);

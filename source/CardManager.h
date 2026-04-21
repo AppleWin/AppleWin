@@ -13,17 +13,15 @@ public:
 		m_pMouseCard(NULL),
 		m_pSSC(NULL),
 		m_pParallelPrinterCard(NULL),
-		m_pVidHDCard(NULL),
 		m_pZ80Card(NULL)
 	{
-		// LoadConfiguration() now sets up default cards for a new install
 		InsertInternal(SLOT0, CT_Empty);
-		InsertInternal(SLOT1, CT_Empty);
-		InsertInternal(SLOT2, CT_Empty);
+		InsertInternal(SLOT1, CT_GenericPrinter);
+		InsertInternal(SLOT2, CT_SSC);
 		InsertInternal(SLOT3, CT_Empty);
 		InsertInternal(SLOT4, CT_Empty);
 		InsertInternal(SLOT5, CT_Empty);
-		InsertInternal(SLOT6, CT_Empty);
+		InsertInternal(SLOT6, CT_Disk2);
 		InsertInternal(SLOT7, CT_Empty);
 		InsertAuxInternal(CT_Extended80Col);	// For Apple //e and above
 	}
@@ -47,7 +45,7 @@ public:
 		return m_slot[slot];
 	}
 
-	void InsertAux(SS_CARDTYPE type, bool updateRegistry = true);
+	void InsertAux(SS_CARDTYPE type);
 	void RemoveAux(void);
 	SS_CARDTYPE QueryAux(void) { return m_aux->QueryType(); }
 	Card* GetObjAux(void) { _ASSERT(0); return m_aux; }	// ASSERT because this is a DummyCard
@@ -63,11 +61,6 @@ public:
 	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
 	class ParallelPrinterCard* GetParallelPrinterCard(void) { return m_pParallelPrinterCard; }
 	bool IsParallelPrinterCardInstalled(void) { return m_pParallelPrinterCard != NULL; }
-	class VidHDCard* GetVidHDCard(void) { return m_pVidHDCard; }
-	SS_CARDTYPE QueryDefaultCardForSlot(UINT slot, eApple2Type model);
-
-	void GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::vector<SS_CARDTYPE>& choicesList);
-	void GetCardChoicesForAuxSlot(std::vector<SS_CARDTYPE>& choicesList);
 
 	void InitializeIO(LPBYTE pCxRomPeripheral);
 	void Destroy(void);
@@ -80,7 +73,6 @@ private:
 	void InsertAuxInternal(SS_CARDTYPE type);
 	void RemoveInternal(UINT slot);
 	void RemoveAuxInternal(void);
-	bool IsSingleInstanceCard(SS_CARDTYPE card);
 
 	Card* m_slot[NUM_SLOTS];
 	Card* m_aux;
@@ -90,6 +82,5 @@ private:
 	class CMouseInterface* m_pMouseCard;
 	class CSuperSerialCard* m_pSSC;
 	class ParallelPrinterCard* m_pParallelPrinterCard;
-	class VidHDCard* m_pVidHDCard;
 	class Z80Card* m_pZ80Card;
 };

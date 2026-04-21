@@ -9,9 +9,6 @@ public:
 	VidHDCard(UINT slot) :
 		Card(CT_VidHD, slot)
 	{
-		if (m_slot == SLOT0)
-			ThrowErrorInvalidSlot();
-
 		m_memMode = 0;
 		m_SCREENCOLOR = 0;
 		m_NEWVIDEO = 0;
@@ -20,10 +17,7 @@ public:
 
 		GetVideo().SetVidHD(true);
 	}
-	virtual ~VidHDCard(void)
-	{
-		GetVideo().SetVidHD(false);
-	}
+	virtual ~VidHDCard(void) {}
 
 	virtual void Destroy(void) {}
 	virtual void Reset(const bool powerCycle);

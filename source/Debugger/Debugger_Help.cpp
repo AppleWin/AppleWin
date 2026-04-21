@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	http://www.codeproject.com/cpp/unicode.asp
 
-				       _tcsrev
+				TEXT()       _tcsrev
 	_UNICODE    Unicode      _wcsrev
 	_MBCS       Multi-byte   _mbsrev
 	n/a         ASCII        strrev
@@ -139,18 +139,6 @@ void Help_Range()
 }
 
 //===========================================================================
-void Help_AddressPrefix()
-{
-	ConsoleBufferPush("  Where <address> is of the form:");
-	ConsoleBufferPush("    [s<n>/][<nnn>/][l<1|2>/][rom/]<addr>");
-	ConsoleBufferPush("  Optional prefixes:");
-	ConsoleBufferPush("    s<n> - Saturn slot 0-7");
-	ConsoleBufferPush("    nnn  - RamWorks bank (0-100) or Saturn bank 0-7");
-	ConsoleBufferPush("    l<1|2> - Lang Card 4K bank 1 or 2");
-	ConsoleBufferPush("    rom  - ROM");
-}
-
-//===========================================================================
 void Help_Operators()
 {
 //	ConsolePrintFormat( " %sOperators%s:"                                 , CHC_USAGE, CHC_DEFAULT );
@@ -220,7 +208,7 @@ void _ColorizeHeader(
 	char * & pDst,const char * & pSrc,
 	const char * pHeader, const int nHeaderLen )
 {
-	size_t nLen;
+	int nLen;
 	
 	nLen = strlen( CHC_USAGE );
 	strcpy( pDst, CHC_USAGE );
@@ -259,7 +247,7 @@ void _ColorizeOperator(
 	char * & pDst, const char * & pSrc,
 	const char * pOperator )
 {
-	size_t nLen;
+	int nLen;
 	
 	nLen = strlen( pOperator );
 	strcpy( pDst, pOperator );
@@ -480,8 +468,8 @@ Update_t CmdHelpSpecific (int nArgs)
 	bool bCategory = false;
 	bool bDisplayCategory = true;
 
-	if ((! strcmp( g_aArgs[1].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName)) ||
-		(! strcmp( g_aArgs[1].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName)) )
+	if ((! _tcscmp( g_aArgs[1].sArg, g_aParameters[ PARAM_WILDSTAR ].m_sName)) ||
+		(! _tcscmp( g_aArgs[1].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName)) )
 	{
 		bAllCommands = true;
 		nArgs = NUM_COMMANDS;
@@ -952,17 +940,6 @@ Update_t CmdHelpSpecific (int nArgs)
 		case CMD_BREAKPOINT_ADD_MEMW:
 			ConsoleColorizePrint( " Usage: <range>" );
 			Help_Range();
-			Help_Examples();
-			ConsolePrintFormat("%s   %s D000", CHC_EXAMPLE, pCommand->m_sName);
-			ConsolePrintFormat("%s   %s D000,1000       ; break on memory at $D000-DFFF", CHC_EXAMPLE, pCommand->m_sName);
-			ConsolePrintFormat("%s   %s D000:DFFF       ; (same)", CHC_EXAMPLE, pCommand->m_sName);
-			//
-			Help_AddressPrefix();
-			Help_Examples();
-			ConsolePrintFormat("%s   %s 01/L1/D000,1000 ; break on memory for aux LC 4K Bank 1 at $D000-DFFF", CHC_EXAMPLE, pCommand->m_sName);
-			ConsolePrintFormat("%s   %s 00/E000         ; break on memory for main LC 8K at $E000", CHC_EXAMPLE, pCommand->m_sName);
-			ConsolePrintFormat("%s   %s 01/00FF         ; break on memory for aux at $00FF", CHC_EXAMPLE, pCommand->m_sName);
-			ConsolePrintFormat("%s   %s ROM/FF58        ; break on ROM read at $FF58", CHC_EXAMPLE, pCommand->m_sName);
 			break;
 		case CMD_BREAKPOINT_ADD_VIDEO:
 			ConsoleColorizePrint( " Usage: <vpos[,length]>" );
@@ -1239,11 +1216,11 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 		case CMD_OUTPUT_ECHO:
 			ConsoleColorizePrint( " Usage: string"    );
-//			ConsoleBufferPush( " Examples:" );
+//			ConsoleBufferPush( TEXT(" Examples:"        ) );
 			Help_Examples();
 			ConsolePrintFormat( "%s   %s Checkpoint", CHC_EXAMPLE, pCommand->m_sName );
 			ConsolePrintFormat( "%s   %s PC"        , CHC_EXAMPLE, pCommand->m_sName );
-//			ConsoleBufferPush( "  Echo the string to the console" );
+//			ConsoleBufferPush( TEXT("  Echo the string to the console" ) );
 			break;
 		case CMD_OUTPUT_PRINT: 
 			ConsoleColorizePrint( " Usage: <string | expression> [, string | expression]*"       );
@@ -1393,15 +1370,6 @@ Update_t CmdHelpSpecific (int nArgs)
 			break;
 
 	// Misc
-		case CMD_OUTPUT_LOG:
-			// Display all the params so an user knows what options are available
-			ConsoleColorizePrint( " Usage: [ <cmd> ]" );
-			ConsoleBufferPush( "  Where <cmd> is one of:" );
-			for( int iParam = _PARAM_LOG_BEGIN; iParam < _PARAM_LOG_END; iParam++ )
-				ConsolePrintFormat( "%s%-7s%s: %s", CHC_STRING, g_aParameters[ iParam ].m_sName, CHC_DEFAULT,  g_aParameters[ iParam ].pHelpSummary );
-			ConsoleBufferPush(" No arguments will display the current debugger verbosity level" );
-			break;
-
 		case CMD_VERSION:
 			ConsoleColorizePrint( " Usage: [*]" );
 			ConsoleBufferPush( "  * Display extra internal stats" );
@@ -1491,26 +1459,22 @@ Update_t CmdVersion (int nArgs)
 	int nFixMinor;
 	UnpackVersion( nVersion, nMajor, nMinor, nFixMajor, nFixMinor );
 
-	// Use ConsolePrint() like CmdMOTD does so the version is always displayed
-	std::string sText = StrFormat("  Emulator:  %s%s%s (%d-bit build)    Debugger: %s%d.%d.%d.%d%s"
+	ConsolePrintFormat( "  Emulator:  %s%s%s    Debugger: %s%d.%d.%d.%d%s"
 		, CHC_SYMBOL
 		, g_VERSIONSTRING.c_str()
 		, CHC_DEFAULT
-		, GetCompilationTarget()
-
 		, CHC_SYMBOL
 		, nMajor, nMinor, nFixMajor, nFixMinor
 		, CHC_DEFAULT
 	);
-	ConsolePrint( sText.c_str() );
 
 	if (nArgs)
 	{
 		for (int iArg = 1; iArg <= g_nArgRaw; iArg++ )
 		{
 			// * PARAM_WILDSTAR -> ? PARAM_MEM_SEARCH_WILD
-			if ((! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
-				(! strcmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
+			if ((! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_WILDSTAR        ].m_sName )) ||
+				(! _tcscmp( g_aArgs[ iArg ].sArg, g_aParameters[ PARAM_MEM_SEARCH_WILD ].m_sName )) )
 			{
 				ConsoleBufferPushFormat( "  Arg: %" SIZE_T_FMT " bytes * %d = %" SIZE_T_FMT " bytes",
 					sizeof(Arg_t), MAX_ARGS, sizeof(g_aArgs) );
@@ -1523,7 +1487,7 @@ Update_t CmdVersion (int nArgs)
 
 				ConsoleBufferPushFormat( "  Cursor(%d)  T: %04X  C: %04X  B: %04X %c D: %02X", // Top, Cur, Bot, Delta
 					g_nDisasmCurLine, g_nDisasmTopAddress, g_nDisasmCurAddress, g_nDisasmBotAddress,
-					g_bDisasmCurBad ? '*' : ' '
+					g_bDisasmCurBad ? TEXT('*') : TEXT(' ')
 					, g_nDisasmBotAddress - g_nDisasmTopAddress
 				);
 

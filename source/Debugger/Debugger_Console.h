@@ -23,18 +23,6 @@
 		CONSOLE_FIRST_LINE = 1, // where ConsoleDisplay is pushed up from
 	};
 
-	// Sorted by priority from highest to lowest (least verbose to most verbose)
-	// N.B. Keep in SYNC! _PARAM_LOG_BEGIN and ConsoleOutputLevel_e
-	enum ConsoleOutputLevel_e
-	{
-		 CONSOLE_OUTPUT_LEVEL_NONE    // log off (hide)
-		,CONSOLE_OUTPUT_LEVEL_ERROR   // log error
-		,CONSOLE_OUTPUT_LEVEL_WARN    // log warn
-		,CONSOLE_OUTPUT_LEVEL_INFO    // log info
-		,CONSOLE_OUTPUT_LEVEL_DEFAULT // log default
-		,CONSOLE_OUTPUT_LEVEL_ALL     // log on	(show)
-	};
-
 // Color ____________________________________________________________________
 
 	// typedef unsigned char conchar_t;
@@ -59,7 +47,7 @@
 	};
 	extern COLORREF g_anConsoleColor[ NUM_CONSOLE_COLORS ];
 
-	// Note: The [` ~] key should always display [~] to prevent rendering errors
+	// Note: THe ` ~ key should always display ~ to prevent rendering errors
 	#define CONSOLE_COLOR_ESCAPE_CHAR '`'
 	#define _CONSOLE_COLOR_MASK 0x7F
 
@@ -235,8 +223,8 @@
 		extern char  g_sConsoleCursor[];
 
 	// Display
-		extern char  g_aConsolePrompt[];// = ">!"; // input, assembler // NUM_PROMPTS
-		extern char  g_sConsolePrompt[];// = ">"; // No, NOT Integer Basic!  The nostalgic '*' "Monitor" doesn't look as good, IMHO. :-(
+		extern char  g_aConsolePrompt[];// = TEXT(">!"); // input, assembler // NUM_PROMPTS
+		extern char  g_sConsolePrompt[];// = TEXT(">"); // No, NOT Integer Basic!  The nostalgic '*' "Monitor" doesn't look as good, IMHO. :-(
 		extern int   g_nConsolePromptLen;
 
 		extern bool  g_bConsoleFullWidth;// = false;
@@ -247,13 +235,10 @@
 		extern int       g_nConsoleDisplayWidth  ;
 		extern conchar_t g_aConsoleDisplay[ CONSOLE_HEIGHT ][ CONSOLE_WIDTH ];
 
-	// Error Level
-		extern ConsoleOutputLevel_e g_eConsoleOutputLevel; // See: ConsoleSetOutputLevel()
-
 	// Input History
 		extern int   g_nHistoryLinesStart;// = 0;
 		extern int   g_nHistoryLinesTotal;// = 0; // number of commands entered
-		extern char  g_aHistoryLines[ HISTORY_HEIGHT ][ HISTORY_WIDTH ];// = {""};
+		extern char  g_aHistoryLines[ HISTORY_HEIGHT ][ HISTORY_WIDTH ];// = {TEXT("")};
 
 	// Input Line
 		// Raw input Line (has prompt)
@@ -278,26 +263,7 @@
 	inline void ConsolePrintVa( const char* pFormat, va_list va )
 	{
 		std::string strText = StrFormatV(pFormat, va);
-		const char* text = strText.c_str();
-
-		if (strText.length())
-		{
-			ConsoleOutputLevel_e eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_DEFAULT;
-			const char *pHead = text;
-
-			while (*pHead && isspace( *pHead ))
-				pHead++;
-
-			if (*pHead == CONSOLE_COLOR_ESCAPE_CHAR)
-			{
-				if (pHead[1] == CHC_INFO   [1]) eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_INFO ;
-				if (pHead[1] == CHC_WARNING[1]) eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_WARN ;
-				if (pHead[1] == CHC_ERROR  [1]) eConsoleOutputLevel = ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ERROR;
-			}
-			if (eConsoleOutputLevel > g_eConsoleOutputLevel)
-				return;
-		}
-		ConsolePrint(text);
+		ConsolePrint(strText.c_str());
 	}
 	inline void ConsolePrintFormat( const char* pFormat, ... ) ATTRIBUTE_FORMAT_PRINTF(1, 2);
 	inline void ConsolePrintFormat( const char* pFormat, ... )
@@ -375,18 +341,6 @@
 	void     ConsoleUpdateCursor( char ch );
 
 	Update_t ConsoleBufferTryUnpause (int nLines);
-
-	// Output Level
-	inline ConsoleOutputLevel_e ConsoleOutputLevelGet ()
-	{
-		return g_eConsoleOutputLevel;
-	}
-	inline void ConsoleOutputLevelSet (ConsoleOutputLevel_e eOutputLevel)
-	{
-		assert( eOutputLevel >= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_NONE );
-		assert( eOutputLevel <= ConsoleOutputLevel_e::CONSOLE_OUTPUT_LEVEL_ALL  );
-		g_eConsoleOutputLevel = eOutputLevel;
-	}
 
 	// Scrolling
 	Update_t ConsoleScrollHome   ();

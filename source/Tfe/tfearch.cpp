@@ -27,7 +27,7 @@
 
 /* #define WPCAP */
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 
 #ifndef NOMINMAX
 #define NOMINMAX
@@ -59,7 +59,7 @@
 // once this is set, no further attempts to load npcap will be made
 static int tfe_cannot_use = 0;
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 
 typedef pcap_t	*(*pcap_open_live_t)(const char *, int, int, int, char *);
 typedef void (*pcap_close_t)(pcap_t *);
@@ -333,13 +333,8 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
         }
 
         if (!found) {
-#if 1
-            // TC: Don't take the first adapter, as this could be any NIC (eg. WAN miniport, Bluetooth, loopback etc)
-            return NULL;
-#else
             /* just take the first adapter */
             TfePcapDevice = TfePcapAlldevs;
-#endif
         }
     }
 
@@ -366,7 +361,7 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
         return NULL;
 	}
 
-    if(g_fh) fprintf(g_fh, "PCAP: Successfully opened adapter: '%s' (%s)\n", TfePcapDevice->name, TfePcapDevice->description);
+    if(g_fh) fprintf(g_fh, "PCAP: Successfully opened adapter: '%s'\n", TfePcapDevice->name);
 
     tfe_arch_enumadapter_close();
     return TfePcapFP;
@@ -391,7 +386,7 @@ void tfe_arch_set_mac( const BYTE mac[6] )
 #endif
 }
 
-void tfe_arch_set_hashfilter(const uint32_t hash_mask[2])
+void tfe_arch_set_hashfilter(const DWORD hash_mask[2])
 {
 #if defined(TFE_DEBUG_ARCH) || defined(TFE_DEBUG_FRAMES)
     if(g_fh) fprintf( g_fh, "New hash filter set: %08X:%08X.\n",

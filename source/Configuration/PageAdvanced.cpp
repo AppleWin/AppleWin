@@ -27,31 +27,30 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "PropertySheet.h"
 
 #include "../Common.h"
+#include "../ParallelPrinter.h"
 #include "../Registry.h"
 #include "../SaveState.h"
 #include "../CardManager.h"
 #include "../CopyProtectionDongles.h"
-#include "../Memory.h"
 #include "../resource/resource.h"
 
 CPageAdvanced* CPageAdvanced::ms_this = 0;	// reinit'd in ctor
 
 enum CLONECHOICE {MENUITEM_CLONEMIN, MENUITEM_PRAVETS82=MENUITEM_CLONEMIN, MENUITEM_PRAVETS8M, MENUITEM_PRAVETS8A, MENUITEM_TK30002E, MENUITEM_BASE64A, MENUITEM_CLONEMAX};
-const char CPageAdvanced::m_CloneChoices[] =
-				"Pravets 82\0"	// Bulgarian
-				"Pravets 8M\0"	// Bulgarian
-				"Pravets 8A\0"	// Bulgarian
-				"TK3000 //e\0"	// Brazilian
-				"Base 64A\0"; 	// Taiwanese
+const TCHAR CPageAdvanced::m_CloneChoices[] =
+				TEXT("Pravets 82\0")	// Bulgarian
+				TEXT("Pravets 8M\0")	// Bulgarian
+				TEXT("Pravets 8A\0")	// Bulgarian
+				TEXT("TK3000 //e\0")	// Brazilian
+				TEXT("Base 64A\0"); 	// Taiwanese
 
-const char CPageAdvanced::m_gameIOConnectorChoices[] =
+const TCHAR CPageAdvanced::m_gameIOConnectorChoices[] =
 				"Empty\0"
 				"SDS DataKey - SpeedStar\0"		/* Protection dongle for Southwestern Data Systems "SpeedStar" Applesoft Compiler */
 				"Cortechs Corp - CodeWriter\0"	/* Protection key for Dynatech Microsoftware / Cortechs Corp "CodeWriter" */
 				"Robocom Ltd - Robo 500\0"		/* Interface Module for Robocom Ltd's Robo 500 */
 				"Robocom Ltd - Robo 1000\0"		/* Interface Module for Robocom Ltd's Robo 1000 */
-				"Robocom Ltd - Robo 1500, CAD-2P\0"	/* Interface Module for Robocom Ltd's Robo 1500, Robo Systems CAD-2P */
-				"Hayden - Applesoft Compiler\0";	/* Protection key for Hayden Book Company, Inc's Applesoft Compiler (1981) */
+				"Robocom Ltd - Robo 1500, CAD-2P\0";	/* Interface Module for Robocom Ltd's Robo 1500, Robo Systems CAD-2P */
 
 
 INT_PTR CALLBACK CPageAdvanced::DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam)
@@ -98,8 +97,14 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 		case IDC_SAVESTATE_FILENAME:
 			break;
 		case IDC_SAVESTATE_BROWSE:
-			if (m_PropertySheetHelper.SaveStateSelectImage(hWnd, "Select Save State file", true))
+			if(m_PropertySheetHelper.SaveStateSelectImage(hWnd, TEXT("Select Save State file"), true))
 				SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)m_PropertySheetHelper.GetSSNewFilename().c_str());
+			break;
+		case IDC_PRINTER_DUMP_FILENAME_BROWSE:
+			{				
+				std::string strPrinterDumpLoc = m_PropertySheetHelper.BrowseToFile(hWnd, TEXT("Select printer dump file"), REGVALUE_PRINTER_FILENAME, TEXT("Text files (*.txt)\0*.txt\0") TEXT("All Files\0*.*\0"));
+				SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)strPrinterDumpLoc.c_str());
+			}
 			break;
 		case IDC_SAVESTATE_ON_EXIT:
 			break;
@@ -112,24 +117,17 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 
 		//
 
-		case IDC_CIDERPRESS_BROWSE:
-			{
-				std::string CiderPressLoc = m_PropertySheetHelper.BrowseToFile(hWnd, "Select path to CiderPress", REGVALUE_CIDERPRESSLOC, "Applications (*.exe)\0*.exe\0" "All Files\0*.*\0");
-				SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM)CiderPressLoc.c_str());
-			}
-			break;
-
 		case IDC_THE_FREEZES_F8_ROM_FW:
 			{
-				const UINT newState = IsDlgButtonChecked(hWnd, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
-				m_PropertySheetHelper.GetConfigNew().m_enableTheFreezesF8Rom = newState;
+				const UINT uNewState = IsDlgButtonChecked(hWnd, IDC_THE_FREEZES_F8_ROM_FW) ? 1 : 0;
+				m_PropertySheetHelper.GetConfigNew().m_bEnableTheFreezesF8Rom = uNewState;
 			}
 			break;
 
 		case IDC_CLONETYPE:
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const uint32_t NewCloneMenuItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
+				const DWORD NewCloneMenuItem = (DWORD) SendDlgItemMessage(hWnd, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
 				const eApple2Type NewCloneType = GetCloneType(NewCloneMenuItem);
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewCloneType;
 				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewCloneType);
@@ -139,78 +137,54 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 		case IDC_COMBO_GAME_IO_CONNECTOR:
 			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
-				const DONGLETYPE newCopyProtectionDongleType = (DONGLETYPE)SendDlgItemMessage(hWnd, IDC_COMBO_GAME_IO_CONNECTOR, CB_GETCURSEL, 0, 0);
-				m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType = newCopyProtectionDongleType;
+				const DONGLETYPE newCopyProtectionDongleMenuItem = (DONGLETYPE)SendDlgItemMessage(hWnd, IDC_COMBO_GAME_IO_CONNECTOR, CB_GETCURSEL, 0, 0);
+				SetCopyProtectionDongleType(newCopyProtectionDongleMenuItem);
 			}
-			break;
-
-		case IDC_NO_SLOT_CLOCK:
-			{
-				const bool newState = IsDlgButtonChecked(hWnd, IDC_NO_SLOT_CLOCK) ? true : false;
-				m_PropertySheetHelper.GetConfigNew().m_NoSlotClock = newState;
-			}
-			break;
-
-		case IDC_BENCHMARK:
-			if (!IsOkToBenchmark(hWnd, m_PropertySheetHelper.IsConfigChangedForRestart()))
-				break;
-			m_PropertySheetHelper.SetDoBenchmark();
-			PropSheet_PressButton(GetParent(hWnd), PSBTN_OK);
 			break;
 		}
 		break;
 
 	case WM_INITDIALOG:
-		InitOptions(hWnd);
-		break;
+		{
+			SendDlgItemMessage(hWnd,IDC_SAVESTATE_FILENAME,WM_SETTEXT,0,(LPARAM)Snapshot_GetFilename().c_str());
+
+			CheckDlgButton(hWnd, IDC_SAVESTATE_ON_EXIT, g_bSaveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
+
+			if (GetCardMgr().IsParallelPrinterCardInstalled())
+			{
+				ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
+
+				CheckDlgButton(hWnd, IDC_DUMPTOPRINTER, card->GetDumpToPrinter() ? BST_CHECKED : BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_PRINTER_CONVERT_ENCODING, card->GetConvertEncoding() ? BST_CHECKED : BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE, card->GetFilterUnprintable() ? BST_CHECKED : BST_UNCHECKED);
+				CheckDlgButton(hWnd, IDC_PRINTER_APPEND, card->GetPrinterAppend() ? BST_CHECKED : BST_UNCHECKED);
+				SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETRANGE, 0, MAKELONG(999, 0));
+				SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_SETPOS, 0, MAKELONG(card->GetIdleLimit(), 0));
+				SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)card->GetFilename().c_str());
+
+				// Need to specify cmd-line switch: -printer-real to enable this control
+				EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), card->GetEnableDumpToRealPrinter() ? TRUE : FALSE);
+			}
+			else
+			{
+				EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_CONVERT_ENCODING), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_APPEND), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_SPIN_PRINTER_IDLE), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_PRINTER_DUMP_FILENAME), FALSE);
+			}
+
+			InitOptions(hWnd);
+
+			break;
+		}
 	}
 
 	return FALSE;
 }
 
-//
-// For InitOptions(), DlgOK() and ApplyConfigAfterClose(), see comment in PageConfig.cpp about "Property Sheet Page flow"
-//
-
-void CPageAdvanced::InitOptions(HWND hWnd)
-{
-	SendDlgItemMessage(hWnd, IDC_SAVESTATE_FILENAME, WM_SETTEXT, 0, (LPARAM)Snapshot_GetFilename().c_str());
-
-	CheckDlgButton(hWnd, IDC_SAVESTATE_ON_EXIT, m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit ? BST_CHECKED : BST_UNCHECKED);
-
-	SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, WM_SETTEXT, 0, (LPARAM)m_PropertySheetHelper.GetConfigNew().m_ciderPressPathname.c_str());
-
-	InitFreezeDlgButton(hWnd);
-	InitCloneDropdownMenu(hWnd);
-	InitGameIOConnectorDropdownMenu(hWnd);
-
-	CheckDlgButton(hWnd, IDC_NO_SLOT_CLOCK, m_PropertySheetHelper.GetConfigNew().m_NoSlotClock ? BST_CHECKED : BST_UNCHECKED);
-}
-
 void CPageAdvanced::DlgOK(HWND hWnd)
-{
-	// Update CiderPress pathname
-	{
-		char szFilename[MAX_PATH];
-		memset(szFilename, 0, sizeof(szFilename));
-		*(USHORT*)szFilename = sizeof(szFilename);
-
-		LRESULT nLineLength = SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, EM_LINELENGTH, 0, 0);
-
-		SendDlgItemMessage(hWnd, IDC_CIDERPRESS_FILENAME, EM_GETLINE, 0, (LPARAM)szFilename);
-
-		nLineLength = nLineLength > sizeof(szFilename) - 1 ? sizeof(szFilename) - 1 : nLineLength;
-		szFilename[nLineLength] = 0x00;
-
-		m_PropertySheetHelper.GetConfigNew().m_ciderPressPathname = szFilename;
-	}
-
-	m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;
-
-	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
-}
-
-void CPageAdvanced::ApplyConfigAfterClose()
 {
 	// Update save-state filename
 	{
@@ -219,18 +193,55 @@ void CPageAdvanced::ApplyConfigAfterClose()
 		m_PropertySheetHelper.SaveStateUpdate();
 	}
 
-	RegSaveString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, m_PropertySheetHelper.GetConfigNew().m_ciderPressPathname.c_str());
-
-	SetSaveStateOnExit(m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit);
-	REGSAVE(REGVALUE_SAVE_STATE_ON_EXIT, m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit ? 1 : 0);
+	g_bSaveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;
+	REGSAVE(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), g_bSaveStateOnExit ? 1 : 0);
 
 	// Save the copy protection dongle type
-	SetCopyProtectionDongleType(m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
-	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
+	RegSetConfigGameIOConnectorNewDongleType(GAME_IO_CONNECTOR, GetCopyProtectionDongleType());
+
+	if (GetCardMgr().IsParallelPrinterCardInstalled())
+	{
+		ParallelPrinterCard* card = GetCardMgr().GetParallelPrinterCard();
+
+		// Update printer dump filename
+		{
+			char szFilename[MAX_PATH];
+			memset(szFilename, 0, sizeof(szFilename));
+			*(USHORT*)szFilename = sizeof(szFilename);
+
+			UINT nLineLength = SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_LINELENGTH, 0, 0);
+
+			SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, EM_GETLINE, 0, (LPARAM)szFilename);
+
+			nLineLength = nLineLength > sizeof(szFilename) - 1 ? sizeof(szFilename) - 1 : nLineLength;
+			szFilename[nLineLength] = 0x00;
+
+			card->SetFilename(szFilename);
+		}
+
+		card->SetDumpToPrinter(IsDlgButtonChecked(hWnd, IDC_DUMPTOPRINTER) ? true : false);
+		card->SetConvertEncoding(IsDlgButtonChecked(hWnd, IDC_PRINTER_CONVERT_ENCODING) ? true : false);
+		card->SetFilterUnprintable(IsDlgButtonChecked(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE) ? true : false);
+		card->SetPrinterAppend(IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND) ? true : false);
+
+		card->SetIdleLimit((short)SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_GETPOS, 0, 0));
+
+		// Now save all the above to Registry
+		card->SetRegistryConfig();
+	}
+
+	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
+}
+
+void CPageAdvanced::InitOptions(HWND hWnd)
+{
+	InitFreezeDlgButton(hWnd);
+	InitCloneDropdownMenu(hWnd);
+	InitGameIOConnectorDropdownMenu(hWnd);
 }
 
 // Advanced->Clone: Menu item to eApple2Type
-eApple2Type CPageAdvanced::GetCloneType(uint32_t NewMenuItem)
+eApple2Type CPageAdvanced::GetCloneType(DWORD NewMenuItem)
 {
 	switch (NewMenuItem)
 	{
@@ -279,7 +290,7 @@ void CPageAdvanced::InitFreezeDlgButton(HWND hWnd)
 	const bool bIsApple2Plus = IsApple2Plus( m_PropertySheetHelper.GetConfigNew().m_Apple2Type );
 	EnableWindow(GetDlgItem(hWnd, IDC_THE_FREEZES_F8_ROM_FW), bIsApple2Plus ? TRUE : FALSE);
 
-	const UINT CheckTheFreezesRom = m_PropertySheetHelper.GetConfigNew().m_enableTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED;
+	const UINT CheckTheFreezesRom = m_PropertySheetHelper.GetConfigNew().m_bEnableTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED;
 	CheckDlgButton(hWnd, IDC_THE_FREEZES_F8_ROM_FW, CheckTheFreezesRom);
 }
 
@@ -296,40 +307,6 @@ void CPageAdvanced::InitCloneDropdownMenu(HWND hWnd)
 void CPageAdvanced::InitGameIOConnectorDropdownMenu(HWND hWnd)
 {
 	// Set copy protection dongle menu choice
-	const int nCurrentChoice = m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType;
+	const int nCurrentChoice = GetCopyProtectionDongleType();
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_COMBO_GAME_IO_CONNECTOR, m_gameIOConnectorChoices, nCurrentChoice);
-}
-
-bool CPageAdvanced::IsOkToBenchmark(HWND hWnd, const bool bConfigChanged)
-{
-	if (bConfigChanged)
-	{
-		if (MessageBox(hWnd,
-			"The hardware configuration has changed. Benchmarking will lose these changes.\n\n"
-			"Are you sure you want to do this?",
-			"Benchmarks",
-			MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
-			return false;
-	}
-
-	if (g_nAppMode == MODE_LOGO)
-		return true;
-
-	if (MessageBox(hWnd,
-		"Running the benchmarks will reset the state of "
-		"the emulated machine, causing you to lose any "
-		"unsaved work.\n\n"
-		"Are you sure you want to do this?",
-		"Benchmarks",
-		MB_ICONQUESTION | MB_OKCANCEL | MB_SETFOREGROUND) == IDCANCEL)
-		return false;
-
-	return true;
-}
-
-void CPageAdvanced::ResetToDefault()
-{
-	m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit = kSaveStateOnExit_Default;
-	m_PropertySheetHelper.GetConfigNew().m_enableTheFreezesF8Rom = kTheFreezesF8Rom_Default;
-	m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType = DT_DEFAULT;
 }

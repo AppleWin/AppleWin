@@ -10,93 +10,10 @@
 #include "CardManager.h"
 #include "Debugger/Debug.h"
 #include "Tfe/PCapBackend.h"
-#include "DXSoundBuffer.h"
 #include "../resource/resource.h"
 
 // Win32Frame methods are implemented in AppleWin, WinFrame and WinVideo.
 // in time they should be brought together and more freestanding functions added to Win32Frame.
-
-#include <intrin.h>
-
-class InstructionSet
-{
-public:
-	InstructionSet() : isAMD(false), isIntel(false), isARM64(false)
-	{
-		memset(vendor, 0, sizeof(vendor));
-		memset(brand,  0, sizeof(brand));
-
-#ifndef _M_ARM64
-		enum
-		{
-			RAX = 0,
-			RBX = 1,
-			RCX = 2,
-			RDX = 3
-		};
-		int cpuinfo[4]; // RAX, RBX, RCX, RDX
-
-		memset(functionData, 0, sizeof(functionData));
-		memset(extendedData, 0, sizeof(extendedData));
-
-		__cpuid((int*)cpuinfo, 0x0); // 0x0 get highest valid function ID.
-		__cpuidex(&functionData[0][RAX], 0x0, 0);
-
-		__cpuid(cpuinfo, 0x80000000); // 0x80000000 get highest valid extended ID.
-		numExtendedIds = cpuinfo[0];
-
-		if (numExtendedIds >= 0x80000004)
-			for (int idxExtendedId = 0x80000002; idxExtendedId <= 0x80000004; ++idxExtendedId)
-				__cpuidex(&extendedData[idxExtendedId - 0x80000000][0], idxExtendedId, 0);
-
-		// Vendor: AMD, Intel, etc.
-		int* pDst = (int*)&vendor;
-		*pDst++ = cpuinfo[RBX];
-		*pDst++ = cpuinfo[RDX];
-		*pDst++ = cpuinfo[RCX];
-
-		isAMD   = strcmp(vendor, "AuthenticAMD") == 0;
-		isIntel = strcmp(vendor, "GenuineIntel") == 0;
-
-		// Brand: AMD Ryzen Threadripper 3960X 24-Core Processor, etc.
-		for (int i = 0; i < 3; ++i)
-			memcpy(brand + 16 * i, &extendedData[i + 2][0], sizeof(cpuinfo));
-#else
-		isARM64 = true;
-
-		char answer[BUFSIZ] = "Error Reading CPU Name from Registry!", inBuffer[BUFSIZ] = "";
-		const char* csName = "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0";
-		HKEY hKey;
-		DWORD gotType, gotSize = BUFSIZ;
-		if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, csName, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
-		{
-			if (!RegQueryValueExA(hKey, "ProcessorNameString", nullptr, &gotType, (PBYTE)(inBuffer), &gotSize))
-			{
-				if ((gotType == REG_SZ) && strlen(inBuffer))
-					strcpy(brand, inBuffer);
-			}
-			RegCloseKey(hKey);
-		}
-#endif
-	}
-
-	int numFunctionIds;
-	int numExtendedIds;
-
-	char vendor[0x20];
-	char brand [0x40];
-
-	int functionData[1][4];
-	int extendedData[5][4];
-
-	bool isAMD;
-	bool isIntel;
-	bool isARM64;
-};
-
-static InstructionSet g_InstructionSet;
-
-//
 
 Win32Frame::Win32Frame()
 {
@@ -116,7 +33,7 @@ Win32Frame::Win32Frame()
 	g_bAppActive = false;
 	g_bFrameActive = false;
 	g_windowMinimized = false;
-	g_bFullScreen_ShowSubunitStatus = kFullScreen_ShowSubunitStatus_Default;
+	g_bFullScreen_ShowSubunitStatus = true;
 	g_win_fullscreen_offsetx = 0;
 	g_win_fullscreen_offsety = 0;
 	m_bestWidthForFullScreen = 0;
@@ -249,12 +166,10 @@ void Win32Frame::Benchmark(void)
 	Sleep(500);
 	Video& video = GetVideo();
 
-	uint8_t* pMemMain = MemGetMainPtr(_6502_MEM_BEGIN);
-
 	// PREPARE TWO DIFFERENT FRAME BUFFERS, EACH OF WHICH HAVE HALF OF THE
 	// BYTES SET TO 0x14 AND THE OTHER HALF SET TO 0xAA
 	int     loop;
-	LPDWORD mem32 = (LPDWORD)pMemMain;
+	LPDWORD mem32 = (LPDWORD)mem;
 	for (loop = 4096; loop < 6144; loop++)
 		*(mem32 + loop) = ((loop & 1) ^ ((loop & 0x40) >> 6)) ? 0x14141414
 		: 0xAAAAAAAA;
@@ -265,20 +180,20 @@ void Win32Frame::Benchmark(void)
 	// SEE HOW MANY TEXT FRAMES PER SECOND WE CAN PRODUCE WITH NOTHING ELSE
 	// GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
 	// SIMULATE THE ACTIVITY OF AN AVERAGE GAME
-	uint32_t totaltextfps = 0;
+	DWORD totaltextfps = 0;
 
 	video.SetVideoMode(VF_TEXT);
-	memset(pMemMain + TEXT_PAGE1_BEGIN, 0x14, TEXT_PAGE1_SIZE);
+	memset(mem + 0x400, 0x14, 0x400);
 	VideoRedrawScreen();
-	uint32_t milliseconds = GetTickCount();
+	DWORD milliseconds = GetTickCount();
 	while (GetTickCount() == milliseconds);
 	milliseconds = GetTickCount();
-	uint32_t cycle = 0;
+	DWORD cycle = 0;
 	do {
 		if (cycle & 1)
-			memset(pMemMain + TEXT_PAGE1_BEGIN, 0x14, TEXT_PAGE1_SIZE);
+			memset(mem + 0x400, 0x14, 0x400);
 		else
-			memcpy(pMemMain + TEXT_PAGE1_BEGIN, pMemMain + ((cycle & 2) ? 0x4000 : 0x6000), TEXT_PAGE1_SIZE);
+			memcpy(mem + 0x400, mem + ((cycle & 2) ? 0x4000 : 0x6000), 0x400);
 		VideoPresentScreen();
 		if (cycle++ >= 3)
 			cycle = 0;
@@ -288,9 +203,9 @@ void Win32Frame::Benchmark(void)
 	// SEE HOW MANY HIRES FRAMES PER SECOND WE CAN PRODUCE WITH NOTHING ELSE
 	// GOING ON, CHANGING HALF OF THE BYTES IN THE VIDEO BUFFER EACH FRAME TO
 	// SIMULATE THE ACTIVITY OF AN AVERAGE GAME
-	uint32_t totalhiresfps = 0;
+	DWORD totalhiresfps = 0;
 	video.SetVideoMode(VF_HIRES);
-	memset(pMemMain + HGR_PAGE1_BEGIN, 0x14, HGR_PAGE1_SIZE);
+	memset(mem + 0x2000, 0x14, 0x2000);
 	VideoRedrawScreen();
 	milliseconds = GetTickCount();
 	while (GetTickCount() == milliseconds);
@@ -298,9 +213,9 @@ void Win32Frame::Benchmark(void)
 	cycle = 0;
 	do {
 		if (cycle & 1)
-			memset(pMemMain + HGR_PAGE1_BEGIN, 0x14, HGR_PAGE1_SIZE);
+			memset(mem + 0x2000, 0x14, 0x2000);
 		else
-			memcpy(pMemMain + HGR_PAGE1_BEGIN, pMemMain + ((cycle & 2) ? 0x4000 : 0x6000), HGR_PAGE1_SIZE);
+			memcpy(mem + 0x2000, mem + ((cycle & 2) ? 0x4000 : 0x6000), 0x2000);
 		VideoPresentScreen();
 		if (cycle++ >= 3)
 			cycle = 0;
@@ -309,7 +224,7 @@ void Win32Frame::Benchmark(void)
 
 	// DETERMINE HOW MANY 65C02 CLOCK CYCLES WE CAN EMULATE PER SECOND WITH
 	// NOTHING ELSE GOING ON
-	uint32_t totalmhz10[2] = { 0,0 };	// bVideoUpdate & !bVideoUpdate
+	DWORD totalmhz10[2] = { 0,0 };	// bVideoUpdate & !bVideoUpdate
 	for (UINT i = 0; i < 2; i++)
 	{
 		CpuSetupBenchmark();
@@ -326,10 +241,10 @@ void Win32Frame::Benchmark(void)
 	// CPU BENCHMARK, REPORT AN ERROR AND OPTIONALLY TRACK IT DOWN
 	if ((regs.pc < 0x300) || (regs.pc > 0x400))
 		if (FrameMessageBox(
-			"The emulator has detected a problem while running "
-			"the CPU benchmark.  Would you like to gather more "
-			"information?",
-			"Benchmarks",
+			TEXT("The emulator has detected a problem while running ")
+			TEXT("the CPU benchmark.  Would you like to gather more ")
+			TEXT("information?"),
+			TEXT("Benchmarks"),
 			MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES) {
 			BOOL error = 0;
 			WORD lastpc = 0x300;
@@ -372,8 +287,8 @@ void Win32Frame::Benchmark(void)
 	// DO A REALISTIC TEST OF HOW MANY FRAMES PER SECOND WE CAN PRODUCE
 	// WITH FULL EMULATION OF THE CPU, JOYSTICK, AND DISK HAPPENING AT
 	// THE SAME TIME
-	uint32_t realisticfps = 0;
-	memset(pMemMain + HGR_PAGE1_BEGIN, 0xAA, HGR_PAGE1_SIZE);
+	DWORD realisticfps = 0;
+	memset(mem + 0x2000, 0xAA, 0x2000);
 	VideoRedrawScreen();
 	milliseconds = GetTickCount();
 	while (GetTickCount() == milliseconds);
@@ -383,15 +298,15 @@ void Win32Frame::Benchmark(void)
 		if (realisticfps < 10) {
 			int cycles = 100000;
 			while (cycles > 0) {
-				uint32_t executedcycles = CpuExecute(103, true);
+				DWORD executedcycles = CpuExecute(103, true);
 				cycles -= executedcycles;
 				GetCardMgr().GetDisk2CardMgr().Update(executedcycles);
 			}
 		}
 		if (cycle & 1)
-			memset(pMemMain + HGR_PAGE1_BEGIN, 0xAA, HGR_PAGE1_SIZE);
+			memset(mem + 0x2000, 0xAA, 0x2000);
 		else
-			memcpy(pMemMain + HGR_PAGE1_BEGIN, pMemMain + ((cycle & 2) ? 0x4000 : 0x6000), HGR_PAGE1_SIZE);
+			memcpy(mem + 0x2000, mem + ((cycle & 2) ? 0x4000 : 0x6000), 0x2000);
 		VideoRedrawScreen();
 		if (cycle++ >= 3)
 			cycle = 0;
@@ -400,29 +315,41 @@ void Win32Frame::Benchmark(void)
 
 	// DISPLAY THE RESULTS
 	DisplayLogo();
-
 	std::string strText = StrFormat(
-		"%s\n"	/* AppleWin version & build */
-		"\n"
-		"CPU: %s\n"
-		"\n"
 		"Pure Video FPS:\t%u hires, %u text\n"
 		"Pure CPU MHz:\t%u.%u%s (video update)\n"
 		"Pure CPU MHz:\t%u.%u%s (full-speed)\n\n"
 		"EXPECTED AVERAGE VIDEO GAME\n"
 		"PERFORMANCE: %u FPS",
-		GetAppleWinVersionAndBuild().c_str(),
-		g_InstructionSet.brand,
 		(unsigned)totalhiresfps,
 		(unsigned)totaltextfps,
 		(unsigned)(totalmhz10[0] / 10), (unsigned)(totalmhz10[0] % 10), (LPCTSTR)(IS_APPLE2 ? " (6502)" : ""),
 		(unsigned)(totalmhz10[1] / 10), (unsigned)(totalmhz10[1] % 10), (LPCTSTR)(IS_APPLE2 ? " (6502)" : ""),
 		(unsigned)realisticfps);
-
 	FrameMessageBox(
 		strText.c_str(),
 		"Benchmarks",
 		MB_ICONINFORMATION | MB_SETFOREGROUND);
+}
+
+//===========================================================================
+
+// This is called from PageConfig
+void Win32Frame::ChooseMonochromeColor(void)
+{
+	Video& video = GetVideo();
+	CHOOSECOLOR cc;
+	memset(&cc, 0, sizeof(CHOOSECOLOR));
+	cc.lStructSize = sizeof(CHOOSECOLOR);
+	cc.hwndOwner = g_hFrameWindow;
+	cc.rgbResult = video.GetMonochromeRGB();
+	cc.lpCustColors = customcolors + 1;
+	cc.Flags = CC_RGBINIT | CC_SOLIDCOLOR;
+	if (ChooseColor(&cc))
+	{
+		video.SetMonochromeRGB(cc.rgbResult);
+		ApplyVideoModeChange();
+	}
 }
 
 //===========================================================================
@@ -476,7 +403,7 @@ void Win32Frame::DisplayLogo(void)
 	}
 
 	// DRAW THE VERSION NUMBER
-	char sFontName[] = "Arial";
+	TCHAR sFontName[] = TEXT("Arial");
 	HFONT font = CreateFont(-20, 0, 0, 0, FW_NORMAL, 0, 0, 0, ANSI_CHARSET,
 		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
 		VARIABLE_PITCH | 4 | FF_SWISS,
@@ -493,7 +420,7 @@ void Win32Frame::DisplayLogo(void)
 	TextOut(hFrameDC,                       \
 		scale*540+x+xoff,scale*358+y+yoff,  \
 		strVersion.c_str(),                 \
-		(int)strVersion.length());
+		strVersion.length());
 
 	if (GetDeviceCaps(hFrameDC, PLANES) * GetDeviceCaps(hFrameDC, BITSPIXEL) <= 4) {
 		DRAWVERSION(2, 2, RGB(0x00, 0x00, 0x00));
@@ -659,9 +586,9 @@ int Win32Frame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 	return MessageBox(handle, lpText, lpCaption, uType);
 }
 
-void Win32Frame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)
+void Win32Frame::GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits)
 {
-	HBITMAP hBitmap = LoadBitmap(g_hInstance, MAKEINTRESOURCE(id));
+	HBITMAP hBitmap = LoadBitmap(g_hInstance, lpBitmapName);
 	GetBitmapBits(hBitmap, cb, lpvBits);
 	DeleteObject(hBitmap);
 }
@@ -673,13 +600,13 @@ void Win32Frame::Restart()
 	PostMessage(g_hFrameWindow, WM_CLOSE, 0, 0);
 }
 
-BYTE* Win32Frame::GetResource(WORD id, LPCSTR lpType, uint32_t dwExpectedSize)
+BYTE* Win32Frame::GetResource(WORD id, LPCSTR lpType, DWORD dwExpectedSize)
 {
 	HRSRC hResInfo = FindResource(NULL, MAKEINTRESOURCE(id), lpType);
 	if (hResInfo == NULL)
 		return NULL;
 
-	uint32_t dwResSize = SizeofResource(NULL, hResInfo);
+	DWORD dwResSize = SizeofResource(NULL, hResInfo);
 	if (dwResSize != dwExpectedSize)
 		return NULL;
 
@@ -702,9 +629,4 @@ std::shared_ptr<NetworkBackend> Win32Frame::CreateNetworkBackend(const std::stri
 {
 	std::shared_ptr<NetworkBackend> backend(new PCapBackend(interfaceName));
 	return backend;
-}
-
-std::shared_ptr<SoundBuffer> Win32Frame::CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName)
-{
-	return DXSoundBuffer::create(dwBufferSize, nSampleRate, nChannels);
 }

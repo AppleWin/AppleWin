@@ -183,9 +183,8 @@ void Uthernet1::tfe_debug_output_pp( void )
 
 Uthernet1::Uthernet1(UINT slot) : Card(CT_Uthernet, slot)
 {
-    if (m_slot == SLOT0)
+    if (m_slot != SLOT3)	// fixme
         ThrowErrorInvalidSlot();
-
     Init();
 }
 
@@ -413,7 +412,7 @@ void Uthernet1::tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress)
     case TFE_PP_ADDR_LOG_ADDR_FILTER+6:
 		{
 			unsigned int pos = 8 * (ppaddress - TFE_PP_ADDR_LOG_ADDR_FILTER + oddaddress);
-			uint32_t *p = (pos < 32) ? &tfe_hash_mask[0] : &tfe_hash_mask[1];
+			DWORD *p = (pos < 32) ? &tfe_hash_mask[0] : &tfe_hash_mask[1];
 
 			*p &= ~(0xFF << pos); /* clear out relevant bits */
 			*p |= GET_PP_8(ppaddress+oddaddress) << pos;
@@ -542,7 +541,7 @@ void Uthernet1::tfe_proceed_rx_buffer(int oddaddress) {
 }
 
 
-BYTE Uthernet1::tfe_read(WORD ioaddress)
+BYTE REGPARM1 Uthernet1::tfe_read(WORD ioaddress)
 {
     BYTE retval;
 
@@ -620,7 +619,7 @@ BYTE Uthernet1::tfe_read(WORD ioaddress)
     return retval;
 }
 
-void Uthernet1::tfe_store(WORD ioaddress, BYTE byte)
+void REGPARM2 Uthernet1::tfe_store(WORD ioaddress, BYTE byte)
 {
 	assert( ioaddress < TFE_COUNT_IO_REGISTER);
 
@@ -679,15 +678,8 @@ void Uthernet1::tfe_store(WORD ioaddress, BYTE byte)
         SET_TFE_16(TFE_ADDR_PP_DATA, GET_PP_16(tfe_packetpage_ptr));
         /* FALL THROUGH */
 
-    case TFE_ADDR_PP_PTR:
-    case TFE_ADDR_PP_PTR+1:
-
-        SET_TFE_8(ioaddress, byte);
-        break;
-
     default:
-        /* not explicitly handled */
-        assert(false);
+        SET_TFE_8(ioaddress, byte);
     }
 
 #ifdef TFE_DEBUG_STORE
@@ -1021,13 +1013,10 @@ void Uthernet1::InitializeIO(LPBYTE pCxRomPeripheral)
 {
     const std::string interfaceName = PCapBackend::GetRegistryInterface(m_slot);
     networkBackend = GetFrame().CreateNetworkBackend(interfaceName);
-    if (!networkBackend->isValid())
+    if (networkBackend->isValid())
     {
-        // Interface doesn't exist or user picked an interface that isn't Ethernet!
-        GetFrame().FrameMessageBox("Uthernet interface isn't valid!\nReconfigure the Interface via 'Ethernet Settings'.", "Uthernet Interface", MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+        RegisterIoHandler(m_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, this, NULL);
     }
-
-    RegisterIoHandler(m_slot, TfeIo, TfeIo, TfeIoCxxx, TfeIoCxxx, this, NULL);
 }
 
 void Uthernet1::Reset(const bool powerCycle)
