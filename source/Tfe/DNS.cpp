@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "DNS.h"
 
-#ifndef _WIN32
+#ifndef _MSC_VER
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netdb.h>

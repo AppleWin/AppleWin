@@ -14,8 +14,6 @@ extern std::string g_VERSIONSTRING;	// Constructed in WinMain()
 
 void SetAppleWinVersion(UINT16 major, UINT16 minor, UINT16 fix, UINT16 fix_minor);
 bool CheckOldAppleWinVersion(void);
-std::string GetAppleWinVersionAndBuild(void);
-UINT GetCompilationTarget(void);
 
 extern std::string g_pAppTitle;
 
@@ -47,11 +45,11 @@ bool SetCurrentImageDir(const std::string& pszImageDir);
 
 extern bool       g_bRestart;
 
-extern uint32_t   g_dwSpeed;
+extern DWORD      g_dwSpeed;
 extern double     g_fCurrentCLK6502;
 
 extern int        g_nCpuCyclesFeedback;
-extern uint32_t   g_dwCyclesThisFrame;
+extern DWORD      g_dwCyclesThisFrame;
 
 extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 

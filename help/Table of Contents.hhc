@@ -50,10 +50,6 @@
 				<param name="Local" value="ddi-create.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Advanced Formatting Options">
-				<param name="Local" value="ddi-advanced.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Transferring Disk Images">
 				<param name="Local" value="ddi-transfer.html">
 				</OBJECT>
@@ -68,10 +64,6 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Hard Disk Images">
 				<param name="Local" value="ddi-harddisk.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Disk Sizes">
-				<param name="Local" value="ddi-sizes.html">
 				</OBJECT>
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
@@ -128,8 +120,12 @@
 				<param name="Local" value="cfg-input.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="Slot Settings">
-				<param name="Local" value="cfg-slots.html">
+				<param name="Name" value="Sound Settings">
+				<param name="Local" value="cfg-sound.html">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Disk / Drive Settings">
+				<param name="Local" value="cfg-disk.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Advanced Settings">
@@ -182,10 +178,6 @@
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Memory">
 				<param name="Local" value="dbg-memory.html">
-				</OBJECT>
-			<LI> <OBJECT type="text/sitemap">
-				<param name="Name" value="View Output">
-				<param name="Local" value="dbg-view-output.html">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Symbols">

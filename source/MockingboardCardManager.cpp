@@ -130,7 +130,7 @@ void MockingboardCardManager::UpdateIRQ(void)
 		CpuIrqDeassert(IS_6522);
 }
 
-bool MockingboardCardManager::IsActiveToPreventFullSpeed(void)
+bool MockingboardCardManager::IsActive(void)
 {
 	if (!m_mockingboardVoice.bActive)
 		return false;
@@ -138,19 +138,19 @@ bool MockingboardCardManager::IsActiveToPreventFullSpeed(void)
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
 		if (IsMockingboard(i))
-			if (dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).IsActiveToPreventFullSpeed())
+			if (dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).IsActive())
 				return true;	// if any card is true then the condition for active is true
 	}
 
 	return false;
 }
 
-uint32_t MockingboardCardManager::GetVolume(void)
+DWORD MockingboardCardManager::GetVolume(void)
 {
 	return m_userVolume;
 }
 
-void MockingboardCardManager::SetVolume(uint32_t volume, uint32_t volumeMax)
+void MockingboardCardManager::SetVolume(DWORD volume, DWORD volumeMax)
 {
 	m_userVolume = volume;
 
@@ -270,10 +270,7 @@ void MockingboardCardManager::UpdateSoundBuffer(void)
 		// NB. DSZeroVoiceBuffer() also zeros the sound buffer, so it's better than directly calling IDirectSoundBuffer::Play():
 		// - without zeroing, then the previous sound buffer can be heard for a fraction of a second
 		// - eg. when doing Mockingboard playback, then loading a save-state which is also doing Mockingboard playback
-		bool bRes = DSZeroVoiceBuffer(&m_mockingboardVoice, SOUNDBUFFER_SIZE);	// ... and Play()
-		LogFileOutput("MBCardMgr: DSZeroVoiceBuffer(), res=%d\n", bRes ? 1 : 0);
-		if (!bRes)
-			return;
+		DSZeroVoiceBuffer(&m_mockingboardVoice, SOUNDBUFFER_SIZE);	// ... and Play()
 	}
 
 	UINT numSamples = GenerateAllSoundData();
@@ -283,10 +280,10 @@ void MockingboardCardManager::UpdateSoundBuffer(void)
 
 bool MockingboardCardManager::Init(void)
 {
-	if (!DSAvailable())
+	if (!g_bDSAvailable)
 		return false;
 
-	HRESULT hr = DSGetSoundBuffer(&m_mockingboardVoice, SOUNDBUFFER_SIZE, MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS, "MB");
+	HRESULT hr = DSGetSoundBuffer(&m_mockingboardVoice, DSBCAPS_CTRLVOLUME, SOUNDBUFFER_SIZE, MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS, "MB");
 	LogFileOutput("MBCardMgr: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{
@@ -299,9 +296,14 @@ bool MockingboardCardManager::Init(void)
 	if (!bRes)
 		return false;
 
+	m_mockingboardVoice.bActive = true;
+
+	// Volume might've been setup from value in Registry
+	if (!m_mockingboardVoice.nVolume)
+		m_mockingboardVoice.nVolume = DSBVOLUME_MAX;
+
 	hr = m_mockingboardVoice.lpDSBvoice->SetVolume(m_mockingboardVoice.nVolume);
 	LogFileOutput("MBCardMgr: SetVolume(), hr=0x%08X\n", hr);
-
 	return true;
 }
 
@@ -328,7 +330,7 @@ UINT MockingboardCardManager::GenerateAllSoundData(void)
 	if (FAILED(hr))
 		return 0;
 
-	if (m_byteOffset == (uint32_t)-1)
+	if (m_byteOffset == (DWORD)-1)
 	{
 		// First time in this func
 
@@ -446,7 +448,7 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 	SHORT* pDSLockedBuffer0, * pDSLockedBuffer1;
 
 	HRESULT hr = DSGetLock(m_mockingboardVoice.lpDSBvoice,
-		m_byteOffset, (uint32_t)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS,
+		m_byteOffset, (DWORD)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS,
 		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
 		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
 	if (FAILED(hr))
@@ -460,7 +462,7 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 	hr = m_mockingboardVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
 		(void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
 
-	m_byteOffset = (m_byteOffset + (uint32_t)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS) % SOUNDBUFFER_SIZE;
+	m_byteOffset = (m_byteOffset + (DWORD)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS) % SOUNDBUFFER_SIZE;
 
 	if (m_outputToRiff)
 		RiffPutSamples(&m_mixBuffer[0], nNumSamples);

@@ -1,12 +1,9 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-  <title>Advanced Settings</title>
-</head>
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><title>Advanced Settings</title></head>
 <body style="background-color: rgb(255, 255, 255); font-family: verdana;" alink="#008000" link="#008000" vlink="#008000">
 <h2 style="color: rgb(0, 128, 0);">Advanced Settings</h2>
-<hr size="4"><img style="width: 340px; height: 491px; float: right;" src="img/cfg-advanced.png" alt="Advanced settings" hspace="5" vspace="5">
+<hr size="4"><img style="width: 354px; height: 497px; float: right;" src="img/advanced.png" alt="Advanced settings" hspace="5" vspace="5">
 
 <p><strong>Save State Filename:</strong><br>
 This is the file name to use for save-state files. The default
@@ -24,9 +21,43 @@ Press this button to load the specified state file into
 the emulator. &nbsp;You can also load the system state during
 emulation by pressing the F12 key.</p>
 
-<p><strong>CiderPress path:</strong><br>
-Use this to specify where CiderPress is installed.<br>
-The right mouse button context menu on either of the drive icons allows you to open CiderPress with the image in the drive.<br>
+<p><strong>Printer settings </strong>(Printer is emulated in slot 1)
+</p>
+<p style="margin-left: 40px;"><strong>Printer dump filename:<br>
+</strong>
+Data sent to the printer is stored in a text file. Use
+this setting to select its location.<br>
+</p>
+<p style="margin-left: 40px;"><strong>Dump to printer:<br>
+</strong><span style="font-weight: bold; font-style: italic;">Use
+with caution!</span> Enables dumping to a real printer. If
+disabled, the printout is stored only in printer.txt file in the AppleWin folder.
+It's recommended to use a printer compatible with the printer selected in the Apple II applications.
+With modern printers trying to print images will result in printing tens of
+pages of nonsense. Requires command line switch -use-real-printer.<br>
+</p>
+<p style="margin-left: 40px;"><strong>Encoding conversion for clones:<br>
+</strong>Characters are encoded from the character set used in
+the real hardware to ASCII. For Pravets 8 this converts MIK to ASCII.
+Enabling this could cause problems when printing images.
+</p>
+<p style="margin-left: 40px;"><strong>Filter unprintable characters:<br>
+</strong>Some characters represent commands for the printer and
+shall not be printed. When saving them to the printer dump file they
+may appear as some strange symbols. (You will want to disable filtering
+when dumping to a real printer.)
+</p>
+<p style="margin-left: 40px;"><strong>Append to print-file:<br>
+</strong>When disabled, the previous print file is replaced (unless it has a
+different name) by the newly created print file. Otherwise the newly
+printed data is added to the existing print file. (You will want to
+disable appending when dumping to a real printer.)
+</p>
+<p style="margin-left: 40px;"><strong>Terminate printing after idle:<br>
+</strong>When printing is started, a printer file is created and it is
+closed either after the specified time expires, or when
+the emulator is reset. This setting is emulation speed dependent.
+</p>
 
 <p><strong>Clone:</strong><br>
 If you have specified Computer as 'Clone' on the main Configuration
@@ -42,7 +73,7 @@ Base 64A is a Taiwanese Apple II clone.<br>
 </p>
 
 <p><strong>The Freeze's non-autostart F8 rom:</strong><br>
-If you have specified Computer as 'Apple II' or 'Apple II Plus' on the main
+If you have specified Computer as 'Apple ][' or 'Apple ][+' on the main
 Configuration page, then you will be able to enable this setting.
 The Freeze F8 rom is a hacker's rom that replaces the normal 2K rom at
 $F800. <a href="cfg-advanced-freeze-rom.html">Here's the
@@ -57,29 +88,10 @@ Supported devices are:
 	<li> Southwestern Data Systems' datakey - SpeedStar (copy protection dongle)
 	<li> Dynatech Microsoftware / Cortechs Corp's protection key - CodeWriter (copy protection dongle)
 	<li> Robocom Ltd's interface module - Robo 500/1000/1500 & RoboCAD 1/2 (copy protection dongle)
-	<li> Hayden Book Company, Inc's protection key - Applesoft Compiler (copy protection dongle)
 </ul>
 NB. Copy protection dongles can interfere with joysticks (eg. buttons may be hardwired to a fixed state), so only use dongles with the intended software.<br>
 NB. Copy protection dongles can interfere with RGB cards (eg. unexpected video modes may get selected).<br>
-NB. For Apple II/II Plus models, when a joystick is selected (from the <a href="cfg-input.html">Input</a> tab), then there is also an implicit joystick connected at the same time as the device selected here (and some dongles even allowed 16-pin game connectors to be plugged in on top, eg. SDS and Robocom devices).
+NB. For Apple II/II+ models, when a joystick is selected (from the <a href="cfg-input.html">Input</a> tab), then there is also an implicit joystick connected at the same time as the device selected here.
 </p>
-
-<strong>No-Slot clock:</strong><br>
-Use this checkbox to enable the No-Slot clock.<br>
-See the documentation about this clock <a href="clock.html">here</a>.<br>
-<br>
-
-<strong>Benchmark Emulator:</strong><br>
-This will run a benchmark test that will show how fast your PC can emulate an 
-Apple //e system with this emulator. In order to run the benchmark, the 
-emulated machine must be reset and you will lose any unsaved work. You will be 
-prompted before you continue this action. The results given are:<br>
-<ul>
-	<li> Pure Video FPS
-	<li> Pure CPU MHz (video update)
-	<li> Pure CPU MHz (full-speed)
-	<li> Expected average video game performance (in FPS)
-</ul>
-Use Ctrl+C to copy the results to the clipboard.
 
 </body></html>

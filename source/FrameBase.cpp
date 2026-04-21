@@ -8,7 +8,7 @@
 FrameBase::FrameBase()
 {
 	g_hFrameWindow = (HWND)0;
-	g_bConfirmReboot = kConfirmReboot_Default;
+	g_bConfirmReboot = 1; // saved PageConfig REGSAVE
 	g_bMultiMon = 0; // OFF = load window position & clamp initial frame to screen, ON = use window position as is
 	g_bFreshReset = false;
 	g_hInstance = (HINSTANCE)0;
@@ -37,7 +37,7 @@ void FrameBase::VideoRedrawScreen(void)
 }
 
 //===========================================================================
-void FrameBase::VideoRedrawScreenDuringFullSpeed(uint32_t dwCyclesThisFrame, bool bInit /*=false*/)
+void FrameBase::VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit /*=false*/)
 {
 	if (bInit)
 	{
@@ -46,7 +46,7 @@ void FrameBase::VideoRedrawScreenDuringFullSpeed(uint32_t dwCyclesThisFrame, boo
 		return;
 	}
 
-	uint32_t dwFullSpeedDuration = GetTickCount() - dwFullSpeedStartTime;
+	DWORD dwFullSpeedDuration = GetTickCount() - dwFullSpeedStartTime;
 	if (dwFullSpeedDuration <= 16)	// Only update after every realtime ~17ms of *continuous* full-speed
 		return;
 
@@ -55,7 +55,7 @@ void FrameBase::VideoRedrawScreenDuringFullSpeed(uint32_t dwCyclesThisFrame, boo
 	VideoRedrawScreenAfterFullSpeed(dwCyclesThisFrame);
 }
 
-void FrameBase::VideoRedrawScreenAfterFullSpeed(uint32_t dwCyclesThisFrame)
+void FrameBase::VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame)
 {
 	NTSC_VideoClockResync(dwCyclesThisFrame);
 	VideoRedrawScreen();	// Better (no flicker) than using: NTSC_VideoReinitialize() or VideoReinitialize()
@@ -104,7 +104,7 @@ void FrameBase::Video_TakeScreenShot(const Video::VideoScreenShot_e ScreenShotTy
 
 //===========================================================================
 
-void FrameBase::Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotType, const char* pScreenShotFileName)
+void FrameBase::Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName)
 {
 	FILE* pFile = fopen(pScreenShotFileName, "wb");
 	if (pFile)
@@ -128,7 +128,7 @@ std::string FrameBase::Util_MakeScreenShotFileName() const
 }
 
 // Returns TRUE if file exists, else FALSE
-bool FrameBase::Util_TestScreenShotFileName(const char* pFileName)
+bool FrameBase::Util_TestScreenShotFileName(const TCHAR* pFileName)
 {
 	bool bFileExists = false;
 	FILE* pFile = fopen(pFileName, "rt");

@@ -42,8 +42,6 @@ const bool IMAGE_FORCE_WRITE_PROTECTED = true;
 const bool IMAGE_DONT_CREATE = false;
 const bool IMAGE_CREATE = true;
 
-const bool kEnhanceDiskAccessSpeed_Default = true;
-
 class FloppyDisk
 {
 public:
@@ -128,8 +126,8 @@ public:
 	unsigned __int64 m_lastStepperCycle;
 	unsigned __int64 m_motorOnCycle;
 	BYTE m_headWindow;
-	uint32_t m_spinning;
-	uint32_t m_writelight;
+	DWORD m_spinning;
+	DWORD m_writelight;
 	FloppyDisk m_disk;
 };
 
@@ -144,7 +142,7 @@ public:
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Update(const ULONG nExecutedCycles);
 
-	virtual void Destroy(void);		// No, doesn't "destroy" the disk image. Called by CardManager::Destroy()
+	virtual void Destroy(void);		// no, doesn't "destroy" the disk image.  DiskIIManagerShutdown()
 
 	void Boot(void);
 	void FlushCurrentTrack(const int drive);
@@ -177,14 +175,11 @@ public:
 	std::string GetCurrentTrackString(void);
 	std::string GetCurrentPhaseString(void);
 	LPCTSTR GetCurrentState(Disk_Status_e& eDiskState_);
-	bool UserSelectNewDiskImageOnly(const int drive, LPCSTR pszFilename, std::string& openFilename, DWORD flags);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
 	bool DriveSwap(void);
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
-	bool Get13SectorFirmware();
-	void Set13SectorFirmware(const bool is13Sector);
+	void SetFirmware13Sector(void) { m_force13SectorFirmware = true; }
 
-	static const std::string& GetSnapshotCardNameOld(void);
 	static const std::string& GetSnapshotCardName(void);
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
@@ -199,8 +194,6 @@ public:
 
 	bool GetEnhanceDisk(void);
 	void SetEnhanceDisk(bool bEnhanceDisk);
-
-	void ForbidSaveDiskImageToRegistry() { m_saveDiskImageToRegistry = false; }
 
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
@@ -275,7 +268,6 @@ private:
 	WORD m_magnetStates;	// state bits for stepper motor magnet states (phases 0 - 3)
 
 	bool m_saveDiskImage;
-	bool m_saveDiskImageToRegistry;
 	unsigned __int64 m_diskLastCycle;
 	unsigned __int64 m_diskLastReadLatchCycle;
 	FormatTrack m_formatTrack;

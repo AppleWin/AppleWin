@@ -1,30 +1,26 @@
 #pragma once
 
 #include "Common.h"
-enum JOYNUM {JN_JOYSTICK0=0, JN_JOYSTICK1, JN_NUM};
+enum JOYNUM {JN_JOYSTICK0=0, JN_JOYSTICK1};
 
 enum JOY0CHOICE {J0C_DISABLED=0, J0C_JOYSTICK1, J0C_KEYBD_CURSORS, J0C_KEYBD_NUMPAD, J0C_MOUSE, J0C_MAX};
 enum JOY1CHOICE {J1C_DISABLED=0, J1C_JOYSTICK2, J1C_KEYBD_CURSORS, J1C_KEYBD_NUMPAD, J1C_MOUSE, J1C_JOYSTICK1_THUMBSTICK2, J1C_MAX};
 
 enum {JOYSTICK_MODE_FLOATING=0, JOYSTICK_MODE_CENTERING};	// Joystick centering control
 
-const uint32_t kJoystick_Default[JN_NUM] = { J0C_JOYSTICK1, J1C_DISABLED };
-const SHORT kPdlXTrim_Default = 0;
-const SHORT kPdlYTrim_Default = 0;
-
 void    JoyInitialize();
 BOOL    JoyProcessKey(int,bool,bool,bool);
 void    JoyReset();
 void    JoySetButton(eBUTTON,eBUTTONSTATE);
-BOOL    JoySetEmulationType(HWND,uint32_t,int, const bool bMousecardActive);
+BOOL    JoySetEmulationType(HWND,DWORD,int, const bool bMousecardActive);
 void    JoySetPosition(int,int,int,int);
 BOOL    JoyUsingMouse();
 BOOL    JoyUsingKeyboard();
 BOOL    JoyUsingKeyboardCursors();
 BOOL    JoyUsingKeyboardNumpad();
 void    JoyDisableUsingMouse();
-void    JoySetJoyType(UINT num, uint32_t type);
-uint32_t   JoyGetJoyType(UINT num);
+void    JoySetJoyType(UINT num, DWORD type);
+DWORD   JoyGetJoyType(UINT num);
 void    JoySetTrim(short nValue, bool bAxisX);
 short   JoyGetTrim(bool bAxisX);
 void	JoyportControl(const UINT uControl);

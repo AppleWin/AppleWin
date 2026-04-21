@@ -50,7 +50,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Log.h"
 #include "Memory.h"
-#include "Registry.h"
 #include "SoundCore.h"
 #include "SynchronousEventManager.h"
 #include "YamlHelper.h"
@@ -75,8 +74,9 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	m_regAccessedFlag = false;
 	m_isActive = false;
 
-	m_isPhasorCard = (QueryType() == CT_Phasor);
-	SetPhasorMode(PH_Mockingboard);		// + re-init's AY CLK
+	m_phasorEnable = (QueryType() == CT_Phasor);
+	m_phasorMode = PH_Mockingboard;
+	m_phasorClockScaleFactor = 1;
 
 	m_lastMBUpdateCycle = 0;
 	m_numSamplesError = 0;
@@ -97,23 +97,6 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 		const UINT id1 = i * SY6522::kNumTimersPer6522 + 1;	// TIMER2
 		m_MBSubUnit[i].sy6522.InitSyncEvents(m_syncEvent[id0], m_syncEvent[id1]);
 		m_MBSubUnit[i].ssi263.SetDevice(i);
-
-		// Load speech chip config from Registry
-		uint32_t type;
-		std::string regSection = RegGetConfigSlotSection(m_slot);
-		if (i == 0)
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, TRUE, &type, kSSI263A_Default);
-		else
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, TRUE, &type, kSSI263B_Default);	// socket-1 for main SSI263
-		m_MBSubUnit[i].ssi263.SetType(SSI263Type(type));
-
-		if (i == 0)
-		{
-			uint32_t hasSC01;
-			std::string regSection = RegGetConfigSlotSection(m_slot);
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, TRUE, &hasSC01, kSC01_Default == SC01 ? TRUE : FALSE);
-			m_MBSubUnit[i].ssi263.SetSC01(hasSC01 ? SC01 : SSI263Empty);
-		}
 	}
 
 	AY8910_InitAll((int)g_fCurrentCLK6502, SAMPLE_RATE);
@@ -126,27 +109,6 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 MockingboardCard::~MockingboardCard(void)
 {
 	Destroy();
-}
-
-//---------------------------------------------------------------------------
-
-void MockingboardCard::SetSocketSSI263(BYTE socket, SSI263Type type)
-{
-	m_MBSubUnit[socket].ssi263.SetType(type);
-
-	std::string regSection = RegGetConfigSlotSection(m_slot);
-	if (socket == 0)
-		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, TRUE, type);
-	else
-		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, TRUE, type);
-}
-
-void MockingboardCard::SetSocketSC01(SSI263Type type)
-{
-	m_MBSubUnit[0].ssi263.SetSC01(type);
-
-	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, TRUE, type == SC01 ? TRUE : FALSE);
 }
 
 //---------------------------------------------------------------------------
@@ -180,7 +142,7 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 	//
 
 	desc += "Slot-";
-	desc += (char)('0' + m_slot);
+	desc += m_slot;
 	desc += ": ";
 
 	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
@@ -209,6 +171,8 @@ void MockingboardCard::Get6522IrqDescription(std::string& desc)
 			}
 		}
 	}
+
+	desc += "\n";
 }
 #endif
 
@@ -260,7 +224,7 @@ void MockingboardCard::WriteToORB(BYTE subunit, BYTE subunitForAY/*=0*/)
 	if ((subunit & 1) == 1)
 		AY8910_Write(subunit, 0, nValue);
 #else
-	if (m_isPhasorCard)
+	if (m_phasorEnable)
 	{
 		const int kAY1 = 2;		// Phasor/Echo+ mode: bit4=0 (active low) selects the 1st AY8913, ie. the only AY8913 in Mockingboard mode (confirmed on real Phasor h/w)
 		const int kAY2 = 1;		// Phasor/Echo+ mode: bit3=0 (active low) selects the 2nd AY8913 attached to this 6522 (unavailable in Mockingboard mode)
@@ -336,10 +300,10 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 	MockingboardUnitState_e& state = pMB->state[ay];	// GH#659
 
 #if _DEBUG
-	if (!m_isPhasorCard || m_phasorMode == PH_Mockingboard)
+	if (!m_phasorEnable || m_phasorMode == PH_Mockingboard)
 		_ASSERT(ay == AY8913_DEVICE_A);
 	if (nAYFunc == AY_READ || nAYFunc == AY_WRITE || nAYFunc == AY_LATCH)
-		if ((nAYFunc != state) || (m_isPhasorCard && m_phasorMode != PH_EchoPlus))	// Deater's Xmas2023 demo interleaves writes to both AY's (need this line to avoid ASSERT for Echo+)
+		if ((nAYFunc != state) || (m_phasorEnable && m_phasorMode != PH_EchoPlus))	// Deater's Xmas2023 demo interleaves writes to both AY's (need this line to avoid ASSERT for Echo+)
 			_ASSERT(state == AY_INACTIVE);
 #endif
 
@@ -358,7 +322,7 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 						busState = true;
 					}
 
-					if (m_isPhasorCard && m_phasorMode == PH_Phasor)	// GH#1192
+					if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
 					{
 						if (ay == AY8913_DEVICE_A)
 						{
@@ -374,7 +338,7 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 					_AYWriteReg(subunit, ay, pMB->nAYCurrentRegister[ay], r6522.GetReg(SY6522::rORA));
 				// else if invalid then just ignore
 
-				if (m_isPhasorCard && m_phasorMode == PH_Phasor)	// GH#1192
+				if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
 				{
 					if (ay == AY8913_DEVICE_A)
 					{
@@ -395,7 +359,7 @@ void MockingboardCard::AY8913_Write(BYTE subunit, BYTE ay, BYTE value)
 					pMB->isChipSelected[ay] = true;
 					pMB->isAYLatchedAddressValid[ay] = true;
 
-					if (m_isPhasorCard && m_phasorMode == PH_Phasor)	// GH#1192
+					if (m_phasorEnable && m_phasorMode == PH_Phasor)	// GH#1192
 					{
 						if (ay == AY8913_DEVICE_A)
 						{
@@ -554,7 +518,7 @@ UINT MockingboardCard::MB_Update(void)
 		}
 
 		// Echo+ right speaker is also output to left speaker
-		if (m_isPhasorCard && m_phasorMode == PH_EchoPlus)
+		if (m_phasorEnable && m_phasorMode == PH_EchoPlus)
 		{
 			for (UINT j = 0; j < NUM_VOICES_PER_AY8913; j++)
 			{
@@ -603,8 +567,6 @@ void MockingboardCard::Destroy(void)
 
 void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 {
-	SetPhasorMode(PH_Mockingboard);		// + re-init's AY CLK
-
 	for (BYTE subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
 		m_MBSubUnit[subunit].sy6522.Reset(powerCycle);
@@ -613,7 +575,8 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 			AY8910_reset(subunit, ay);
 
 		m_MBSubUnit[subunit].Reset(QueryType());
-		m_MBSubUnit[subunit].ssi263.Reset(powerCycle, m_isPhasorCard);
+		m_MBSubUnit[subunit].ssi263.SetCardMode(PH_Mockingboard);	// Revert to PH_Mockingboard mode
+		m_MBSubUnit[subunit].ssi263.Reset(powerCycle, m_phasorEnable);
 	}
 
 	// Reset state
@@ -624,6 +587,9 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		m_regAccessedFlag = false;
 		m_isActive = false;
 
+		m_phasorMode = PH_Mockingboard;
+		m_phasorClockScaleFactor = 1;
+
 		m_lastMBUpdateCycle = 0;
 
 		for (int id = 0; id < kNumSyncEvents; id++)
@@ -633,8 +599,10 @@ void MockingboardCard::Reset(const bool powerCycle)	// CTRL+RESET or power-cycle
 		}
 
 		// Not this, since no change on a CTRL+RESET or power-cycle:
-//		m_isPhasorCard = false;
+//		m_phasorEnable = false;
 	}
+
+	ReinitializeClock();	// Reset CLK for AY8910s
 }
 
 //-----------------------------------------------------------------------------
@@ -656,11 +624,11 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 	if (!IS_APPLE2 && MemCheckINTCXROM())
 	{
 		_ASSERT(0);	// Card ROM disabled, so IO_Cxxx() returns the internal ROM
-		return ReadByteFromMemory(nAddr);
+		return mem[nAddr];
 	}
 #endif
 
-	if (m_isPhasorCard)
+	if (m_phasorEnable)
 	{
 		int CS = 0;
 		if (m_phasorMode == PH_Mockingboard)
@@ -728,22 +696,22 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 #endif
 
 	// Support 6502/65C02 false-reads of 6522 (GH#52)
-	if ( ((ReadByteFromMemory(PC-2) == 0x91) && GetMainCpu() == CPU_6502) ||	// sta (zp),y - 6502 only (no-PX variant only) (UTAIIe:4-23)
-		 (ReadByteFromMemory(PC-3) == 0x99) ||		// sta abs16,y - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
-		 (ReadByteFromMemory(PC-3) == 0x9D) )		// sta abs16,x - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
+	if ( ((mem[(PC-2)&0xffff] == 0x91) && GetMainCpu() == CPU_6502) ||	// sta (zp),y - 6502 only (no-PX variant only) (UTAIIe:4-23)
+		 (mem[(PC-3)&0xffff] == 0x99) ||	// sta abs16,y - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
+		 (mem[(PC-3)&0xffff] == 0x9D) )		// sta abs16,x - 6502/65C02, but for 65C02 only the no-PX variant that does the false-read (UTAIIe:4-27)
 	{
 		WORD base;
 		WORD addr16;
-		if (ReadByteFromMemory(PC-2) == 0x91)
+		if (mem[(PC-2)&0xffff] == 0x91)
 		{
-			BYTE zp = ReadByteFromMemory(PC-1);
-			base = (ReadByteFromMemory(zp) | (ReadByteFromMemory((zp+1)&0xff)<<8));
+			BYTE zp = mem[(PC-1)&0xffff];
+			base = (mem[zp] | (mem[(zp+1)&0xff]<<8));
 			addr16 = base + regs.y;
 		}
 		else
 		{
-			base = ReadWordFromMemory(PC-2);
-			addr16 = base + ((ReadByteFromMemory(PC-3) == 0x99) ? regs.y : regs.x);
+			base = mem[(PC-2)&0xffff] | (mem[(PC-1)&0xffff]<<8);
+			addr16 = base + ((mem[(PC-3)&0xffff] == 0x99) ? regs.y : regs.x);
 		}
 
 		if (((base ^ addr16) >> 8) == 0)	// Only the no-PX variant does the false read (to the same I/O SELECT page)
@@ -757,7 +725,7 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 		}
 	}
 
-	if (m_isPhasorCard)
+	if (m_phasorEnable)
 	{
 		int CS = 0;
 		if (m_phasorMode == PH_Mockingboard)
@@ -857,22 +825,14 @@ BYTE __stdcall MockingboardCard::PhasorIO(WORD PC, WORD nAddr, BYTE bWrite, BYTE
 
 BYTE MockingboardCard::PhasorIOInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nValue, ULONG nExecutedCycles)
 {
-	if (!m_isPhasorCard)
+	if (!m_phasorEnable)
 		return MemReadFloatingBus(nExecutedCycles);
 
 	UINT bits = (UINT) m_phasorMode;
 	if (nAddr & 8)
 		bits = 0;
 	bits |= (nAddr & 7);
-
-	SetPhasorMode((PHASOR_MODE)bits);
-
-	return MemReadFloatingBus(nExecutedCycles);
-}
-
-void MockingboardCard::SetPhasorMode(PHASOR_MODE newMode)
-{
-	m_phasorMode = newMode;
+	m_phasorMode = (PHASOR_MODE) bits;
 
 	if (m_phasorMode == PH_Mockingboard || m_phasorMode == PH_EchoPlus)
 		m_phasorClockScaleFactor = 1;
@@ -896,6 +856,8 @@ void MockingboardCard::SetPhasorMode(PHASOR_MODE newMode)
 	if (m_phasorMode == PH_EchoPlus && (nAddr & 0xf) == 0)
 		return 0x1f;	// for TMS5220 detection
 #endif
+
+	return MemReadFloatingBus(nExecutedCycles);
 }
 
 //-----------------------------------------------------------------------------
@@ -909,6 +871,15 @@ void MockingboardCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
+
+#ifdef NO_DIRECT_X
+#else // NO_DIRECT_X
+	for (UINT i = 0; i < NUM_SSI263; i++)
+	{
+		if (!m_MBSubUnit[i].ssi263.DSInit())
+			break;
+	}
+#endif // NO_DIRECT_X
 }
 
 //-----------------------------------------------------------------------------
@@ -955,7 +926,7 @@ void MockingboardCard::Update(const ULONG executedCycles)
 // Called by:
 // . CpuExecute() every ~1000 cycles @ 1MHz (or ~3 cycles when MODE_STEPPING)
 // . MB_SyncEventCallback() on a TIMER1/2 underflow
-// . IORead() / IOWrite() (for both normal & full-speed)
+// . MB_Read() / MB_Write() (for both normal & full-speed)
 void MockingboardCard::UpdateCycles(ULONG executedCycles)
 {
 	CpuCalcCycles(executedCycles);
@@ -1027,20 +998,20 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 
 //-----------------------------------------------------------------------------
 
-bool MockingboardCard::IsActiveToPreventFullSpeed(void)
+bool MockingboardCard::IsActive(void)
 {
-	// Full-speed check ignores SSI263::IsPhonemeActive(), because: (GH#1340)
-	// . Once an SSI263 has started playing a phoneme (and the chip isn't powered-down) then it'll repeat it indefinitely.
-	// . Typically a SSI263 is "disabled" by disabling ints & setting phoneme=PAUSE(0x00) and leaving the chip powered-up.
-	// . So if we also checked SSI263::IsPhonemeActive(), then it'd always report the SSI263 as active, and so prohibit full-speed.
-	return m_isActive;
+	bool isSSI263Active = false;
+	for (UINT i = 0; i  <NUM_SSI263; i++)
+		isSSI263Active |= m_MBSubUnit[i].ssi263.IsPhonemeActive();
+
+	return m_isActive || isSSI263Active;
 }
 
 //-----------------------------------------------------------------------------
 
-void MockingboardCard::SetVolume(uint32_t volume, uint32_t volumeMax)
+void MockingboardCard::SetVolume(DWORD volume, DWORD volumeMax)
 {
-	for (UINT i = 0; i < NUM_SSI263; i++)
+	for (UINT i  =0; i < NUM_SSI263; i++)
 		m_MBSubUnit[i].ssi263.SetVolume(volume, volumeMax);
 }
 
@@ -1065,7 +1036,6 @@ void MockingboardCard::GetSnapshotForDebugger(DEBUGGER_MB_CARD* const pMBForDebu
 
 			pMBForDebugger->subUnit[i].nAYCurrentRegister[j] = pMB->nAYCurrentRegister[j];
 			pMBForDebugger->subUnit[i].isAYLatchedAddressValid[j] = pMB->isAYLatchedAddressValid[j];
-			pMBForDebugger->subUnit[i].is6522Bad = pMB->sy6522.IsBad();
 
 			switch (pMB->state[j])
 			{
@@ -1187,11 +1157,8 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE 
 //    Changed at AppleWin 1.30.14
 //11: Added: "Bus Driven by AY"
 //12: Added: SSI263: SC01 phoneme & active
-//    SSI263::m_currentMode changed (added bit5 = enableInts)
-//13: Removed SS_YAML_KEY_SSI263_ACTIVE_PHONEME
-//    Removed SS_YAML_KEY_VOTRAX_PHONEME (as this has been present in the SC01 subunit since v12!)
-//14: Added: SSI263: Type
-const UINT kUNIT_VERSION = 14;
+//    Current Mode changed (added bit5 = enableInts)
+const UINT kUNIT_VERSION = 12;
 
 #define SS_YAML_KEY_MB_UNIT "Unit"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
@@ -1256,6 +1223,8 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, m_MBSubUnit[0].ssi263.GetVotraxPhoneme());	// SC01 only in subunit 0
+
 	for (UINT subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
 		MB_SUBUNIT* pMB = &m_MBSubUnit[subunit];
@@ -1264,7 +1233,9 @@ void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 		pMB->sy6522.SaveSnapshot(yamlSaveHelper);
 		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_A, std::string(""));
-		pMB->ssi263.SaveSnapshot(yamlSaveHelper, subunit);
+		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
+		if (subunit == 0)	// has SC01
+			pMB->ssi263.SC01_SaveSnapshot(yamlSaveHelper);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state[0]);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_AY_CURR_REG, pMB->nAYCurrentRegister[0]);	// save all 8 bits (even though top 4 bits should be 0)
@@ -1289,11 +1260,8 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 	AY8910UpdateSetCycles();
 
-	if (version >= 6 && version <= 12)
-	{
-		bool isVotrax = yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME);
-		m_MBSubUnit[0].ssi263.SetVotraxPhoneme(isVotrax);	// SC01 only in subunit 0
-	}
+	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
+	m_MBSubUnit[0].ssi263.SetVotraxPhoneme(isVotrax);	// SC01 only in subunit 0
 
 	for (UINT subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
@@ -1307,8 +1275,9 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 		pMB->sy6522.LoadSnapshot(yamlLoadHelper, version);
 		UpdateIFRandIRQ(pMB, 0, pMB->sy6522.GetReg(SY6522::rIFR));			// Assert any pending IRQs (GH#677)
 		AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string(""));
-
-		pMB->ssi263.LoadSnapshot(yamlLoadHelper, PH_Mockingboard, version, subunit);
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper, PH_Mockingboard, version);	// Pre: SetVotraxPhoneme()
+		if (subunit == 0)	// has SC01
+			pMB->ssi263.SC01_LoadSnapshot(yamlLoadHelper, version);
 
 		pMB->nAYCurrentRegister[0] = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 
@@ -1351,7 +1320,7 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 	AY8910_InitClock((int)Get6502BaseClock());
 
-	// NB. m_isPhasorCard setup in ctor
+	// NB. m_phasorEnable setup in ctor
 
 	return true;
 }
@@ -1363,6 +1332,7 @@ void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_PHASOR_MODE, m_phasorMode);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_VOTRAX_PHONEME, m_MBSubUnit[0].ssi263.GetVotraxPhoneme());	// SC01 only in subunit 0
 
 	for (UINT subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
@@ -1373,7 +1343,9 @@ void MockingboardCard::Phasor_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		pMB->sy6522.SaveSnapshot(yamlSaveHelper);
 		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
 		AY8910_SaveSnapshot(yamlSaveHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
-		pMB->ssi263.SaveSnapshot(yamlSaveHelper, subunit);
+		pMB->ssi263.SaveSnapshot(yamlSaveHelper);
+		if (subunit == 0)	// has SC01
+			pMB->ssi263.SC01_SaveSnapshot(yamlSaveHelper);
 
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE, pMB->state[0]);
 		yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_MB_UNIT_STATE_B, pMB->state[1]);
@@ -1410,11 +1382,8 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 	UINT nDeviceNum = 0;
 	MB_SUBUNIT* pMB = &m_MBSubUnit[0];
 
-	if (version >= 6 && version <= 12)
-	{
-		bool isVotrax = yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME);
-		m_MBSubUnit[0].ssi263.SetVotraxPhoneme(isVotrax);	// SC01 only in subunit 0
-	}
+	bool isVotrax = (version >= 6) ? yamlLoadHelper.LoadBool(SS_YAML_KEY_VOTRAX_PHONEME) :  false;
+	m_MBSubUnit[0].ssi263.SetVotraxPhoneme(isVotrax);	// SC01 only in subunit 0
 
 	for (UINT subunit = 0; subunit < NUM_SUBUNITS_PER_MB; subunit++)
 	{
@@ -1444,8 +1413,9 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
 			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
 		}
-
-		pMB->ssi263.LoadSnapshot(yamlLoadHelper, m_phasorMode, version, subunit);
+		pMB->ssi263.LoadSnapshot(yamlLoadHelper, m_phasorMode, version);	// Pre: SetVotraxPhoneme()
+		if (subunit == 0)	// has SC01
+			pMB->ssi263.SC01_LoadSnapshot(yamlLoadHelper, version);
 
 		pMB->nAYCurrentRegister[0] = yamlLoadHelper.LoadUint(SS_YAML_KEY_AY_CURR_REG);
 		if (version >= 10)
@@ -1494,7 +1464,7 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 
 	AY8910_InitClock((int)(Get6502BaseClock() * m_phasorClockScaleFactor));
 
-	// NB. m_isPhasorCard setup in ctor
+	// NB. m_phasorEnable setup in ctor
 
 	return true;
 }

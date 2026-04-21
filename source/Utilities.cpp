@@ -55,8 +55,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 // Backwards compatibility with AppleWin <1.24.0
 static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 {
-	uint32_t dwOldJoyType;
-	if (!REGLOAD(uJoyNum==0 ? REGVALUE_OLD_JOYSTICK0_EMU_TYPE1 : REGVALUE_OLD_JOYSTICK1_EMU_TYPE1, &dwOldJoyType))
+	DWORD dwOldJoyType;
+	if (!REGLOAD(TEXT(uJoyNum==0 ? REGVALUE_OLD_JOYSTICK0_EMU_TYPE1 : REGVALUE_OLD_JOYSTICK1_EMU_TYPE1), &dwOldJoyType))
 		return;	// EG. Old AppleWin never installed
 
 	UINT uNewJoyType;
@@ -91,12 +91,12 @@ static void LoadConfigOldJoystick_v1(const UINT uJoyNum)
 // - Registry images may have been deleted from disk, so avoid the MessageBox
 void LoadConfiguration(bool loadImages)
 {
-	uint32_t dwComputerType = 0;
+	DWORD dwComputerType = 0;
 	eApple2Type apple2Type = A2TYPE_APPLE2EENHANCED;
 
-	if (REGLOAD(REGVALUE_APPLE2_TYPE, &dwComputerType))
+	if (REGLOAD(TEXT(REGVALUE_APPLE2_TYPE), &dwComputerType))
 	{
-		const uint32_t dwLoadedComputerType = dwComputerType;
+		const DWORD dwLoadedComputerType = dwComputerType;
 
 		if ( (dwComputerType >= A2TYPE_MAX) ||
 			 (dwComputerType >= A2TYPE_UNDEFINED && dwComputerType < A2TYPE_CLONE) ||
@@ -125,7 +125,7 @@ void LoadConfiguration(bool loadImages)
 
 		apple2Type = (eApple2Type) dwComputerType;
 	}
-	else if (REGLOAD(REGVALUE_OLD_APPLE2_TYPE, &dwComputerType))	// Support older AppleWin registry entries
+	else if (REGLOAD(TEXT(REGVALUE_OLD_APPLE2_TYPE), &dwComputerType))	// Support older AppleWin registry entries
 	{
 		switch (dwComputerType)
 		{
@@ -141,81 +141,102 @@ void LoadConfiguration(bool loadImages)
 
 	//
 
-	uint32_t dwMainCpuType;
-	REGLOAD_DEFAULT(REGVALUE_CPU_TYPE, &dwMainCpuType, CPU_65C02);
+	DWORD dwMainCpuType;
+	REGLOAD_DEFAULT(TEXT(REGVALUE_CPU_TYPE), &dwMainCpuType, CPU_65C02);
 	if (dwMainCpuType != CPU_6502 && dwMainCpuType != CPU_65C02)
 		dwMainCpuType = CPU_65C02;
 	SetMainCpu((eCpuType)dwMainCpuType);
 
 	//
 
-	uint32_t dwJoyType;
-	if (REGLOAD(REGVALUE_JOYSTICK0_EMU_TYPE, &dwJoyType))
+	DWORD dwJoyType;
+	if (REGLOAD(TEXT(REGVALUE_JOYSTICK0_EMU_TYPE), &dwJoyType))
 		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
-	else if (REGLOAD(REGVALUE_OLD_JOYSTICK0_EMU_TYPE2, &dwJoyType))	// GH#434
+	else if (REGLOAD(TEXT(REGVALUE_OLD_JOYSTICK0_EMU_TYPE2), &dwJoyType))	// GH#434
 		JoySetJoyType(JN_JOYSTICK0, dwJoyType);
 	else
 		LoadConfigOldJoystick_v1(JN_JOYSTICK0);
 
-	if (REGLOAD(REGVALUE_JOYSTICK1_EMU_TYPE, &dwJoyType))
+	if (REGLOAD(TEXT(REGVALUE_JOYSTICK1_EMU_TYPE), &dwJoyType))
 		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
-	else if (REGLOAD(REGVALUE_OLD_JOYSTICK1_EMU_TYPE2, &dwJoyType))	// GH#434
+	else if (REGLOAD(TEXT(REGVALUE_OLD_JOYSTICK1_EMU_TYPE2), &dwJoyType))	// GH#434
 		JoySetJoyType(JN_JOYSTICK1, dwJoyType);
 	else
 		LoadConfigOldJoystick_v1(JN_JOYSTICK1);
 
-	uint32_t copyProtectionDongleType;
+	DWORD copyProtectionDongleType;
 	std::string regSection = RegGetConfigSlotSection(GAME_IO_CONNECTOR);
 	if (RegLoadValue(regSection.c_str(), REGVALUE_GAME_IO_TYPE, TRUE, &copyProtectionDongleType))
 		SetCopyProtectionDongleType((DONGLETYPE)copyProtectionDongleType);
 	else
 		SetCopyProtectionDongleType(DT_EMPTY);
 
-	REGLOAD_DEFAULT(REGVALUE_EMULATION_SPEED, &g_dwSpeed, SPEED_NORMAL);
+	DWORD dwSoundType;
+	REGLOAD_DEFAULT(TEXT(REGVALUE_SOUND_EMULATION), &dwSoundType, REG_SOUNDTYPE_WAVE);
+	switch (dwSoundType)
+	{
+	case REG_SOUNDTYPE_NONE:
+	case REG_SOUNDTYPE_DIRECT:	// Not supported from 1.26
+	case REG_SOUNDTYPE_SMART:	// Not supported from 1.26
+	default:
+		soundtype = SOUND_NONE;
+		break;
+	case REG_SOUNDTYPE_WAVE:
+		soundtype = SOUND_WAVE;
+		break;
+	}
+
+	REGLOAD_DEFAULT(TEXT(REGVALUE_EMULATION_SPEED), &g_dwSpeed, SPEED_NORMAL);
 	GetVideo().Config_Load_Video();
 	SetCurrentCLK6502();	// Pre: g_dwSpeed && Config_Load_Video()->SetVideoRefreshRate()
 
 	//
 
-	uint32_t dwTmp = 0;
+	DWORD dwTmp = 0;
 
-	if(REGLOAD(REGVALUE_FS_SHOW_SUBUNIT_STATUS, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_FS_SHOW_SUBUNIT_STATUS), &dwTmp))
 		GetFrame().SetFullScreenShowSubunitStatus(dwTmp ? true : false);
 
-	if (REGLOAD(REGVALUE_SHOW_DISKII_STATUS, &dwTmp))
+	if (REGLOAD(TEXT(REGVALUE_SHOW_DISKII_STATUS), &dwTmp))
 		GetFrame().SetWindowedModeShowDiskiiStatus(dwTmp ? true : false);
 
-	if(REGLOAD(REGVALUE_THE_FREEZES_F8_ROM, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_THE_FREEZES_F8_ROM), &dwTmp))
 		GetPropertySheet().SetTheFreezesF8Rom(dwTmp);
 
-	if(REGLOAD(REGVALUE_SAVE_STATE_ON_EXIT, &dwTmp))
-		SetSaveStateOnExit(dwTmp ? true : false);
+	if(REGLOAD(TEXT(REGVALUE_SPKR_VOLUME), &dwTmp))
+		SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
 
-	if(REGLOAD(REGVALUE_PDL_XTRIM, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_MB_VOLUME), &dwTmp))
+		GetCardMgr().GetMockingboardCardMgr().SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
+
+	if(REGLOAD(TEXT(REGVALUE_SAVE_STATE_ON_EXIT), &dwTmp))
+		g_bSaveStateOnExit = dwTmp ? true : false;
+
+	if(REGLOAD(TEXT(REGVALUE_PDL_XTRIM), &dwTmp))
 		JoySetTrim((short)dwTmp, true);
-	if(REGLOAD(REGVALUE_PDL_YTRIM, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_PDL_YTRIM), &dwTmp))
 		JoySetTrim((short)dwTmp, false);
 
-	if(REGLOAD(REGVALUE_SCROLLLOCK_TOGGLE, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_SCROLLLOCK_TOGGLE), &dwTmp))
 		GetPropertySheet().SetScrollLockToggle(dwTmp);
 
-	if(REGLOAD(REGVALUE_CURSOR_CONTROL, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_CURSOR_CONTROL), &dwTmp))
 		GetPropertySheet().SetJoystickCursorControl(dwTmp);
-	if(REGLOAD(REGVALUE_AUTOFIRE, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_AUTOFIRE), &dwTmp))
 		GetPropertySheet().SetAutofire(dwTmp);
-	if(REGLOAD(REGVALUE_SWAP_BUTTONS_0_AND_1, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_SWAP_BUTTONS_0_AND_1), &dwTmp))
 		GetPropertySheet().SetButtonsSwapState(dwTmp ? true : false);
-	if(REGLOAD(REGVALUE_CENTERING_CONTROL, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_CENTERING_CONTROL), &dwTmp))
 		GetPropertySheet().SetJoystickCenteringControl(dwTmp);
 
-	if(REGLOAD(REGVALUE_MOUSE_CROSSHAIR, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_MOUSE_CROSSHAIR), &dwTmp))
 		GetPropertySheet().SetMouseShowCrosshair(dwTmp);
-	if(REGLOAD(REGVALUE_MOUSE_RESTRICT_TO_WINDOW, &dwTmp))
+	if(REGLOAD(TEXT(REGVALUE_MOUSE_RESTRICT_TO_WINDOW), &dwTmp))
 		GetPropertySheet().SetMouseRestrictToWindow(dwTmp);
 
 	//
 
-	char szFilename[MAX_PATH];
+	TCHAR szFilename[MAX_PATH];
 
 	//
 
@@ -225,74 +246,39 @@ void LoadConfiguration(bool loadImages)
 
 		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
 		{
-			if (slot == SLOT0)
-				SetExpansionMemType((SS_CARDTYPE)dwTmp, false);
-			else
-				GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
+			GetCardMgr().Insert(slot, (SS_CARDTYPE)dwTmp, false);
 		}
-		else	// new install or legacy (AppleWin 1.30.3 or earlier)
+		else	// legacy (AppleWin 1.30.3 or earlier)
 		{
-			// New install:
-			GetCardMgr().Insert(slot, GetCardMgr().QueryDefaultCardForSlot(slot, GetApple2Type()));
-
-			// Legacy:
 			if (slot == SLOT3)
 			{
-				RegLoadString(REG_CONFIG, REGVALUE_UTHERNET_INTERFACE, 1, szFilename, MAX_PATH, "");
+				RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_UTHERNET_INTERFACE), 1, szFilename, MAX_PATH, TEXT(""));
 				// copy it to the new location
 				PCapBackend::SetRegistryInterface(slot, szFilename);
 
-				uint32_t tfeEnabled;
-				REGLOAD_DEFAULT(REGVALUE_UTHERNET_ACTIVE, &tfeEnabled, 0);
+				DWORD tfeEnabled;
+				REGLOAD_DEFAULT(TEXT(REGVALUE_UTHERNET_ACTIVE), &tfeEnabled, 0);
 				GetCardMgr().Insert(SLOT3, tfeEnabled ? CT_Uthernet : CT_Empty);
 			}
-			else if (slot == SLOT4 && REGLOAD(REGVALUE_SLOT4, &dwTmp))
+			else if (slot == SLOT4 && REGLOAD(TEXT(REGVALUE_SLOT4), &dwTmp))
 				GetCardMgr().Insert(SLOT4, (SS_CARDTYPE)dwTmp);
-			else if (slot == SLOT5 && REGLOAD(REGVALUE_SLOT5, &dwTmp))
+			else if (slot == SLOT5 && REGLOAD(TEXT(REGVALUE_SLOT5), &dwTmp))
 				GetCardMgr().Insert(SLOT5, (SS_CARDTYPE)dwTmp);
-			else if (slot == SLOT7 && REGLOAD(REGVALUE_HDD_ENABLED, &dwTmp) && dwTmp == 1)	// GH#1015
+			else if (slot == SLOT7 && REGLOAD(TEXT(REGVALUE_HDD_ENABLED), &dwTmp) && dwTmp == 1)	// GH#1015
 				GetCardMgr().Insert(SLOT7, CT_GenericHDD);
 		}
 	}
 
-	// Aux slot
-
-	if (IsAppleIIe(GetApple2Type()))
-	{
-		std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
-
-		if (RegLoadValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, &dwTmp))
-		{
-			SS_CARDTYPE type = (SS_CARDTYPE)dwTmp;
-			const bool noUpdateRegistry = false;
-			GetCardMgr().InsertAux(type, noUpdateRegistry);
-			SetExpansionMemType(type, noUpdateRegistry);
-
-			RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, &dwTmp, kDefaultExMemoryBanksRealRW3);
-			SetRamWorksMemorySize(dwTmp, noUpdateRegistry);
-		}
-		else	// new install or legacy
-		{
-			const bool noUpdateRegistry = false;
-			GetCardMgr().InsertAux(CT_Extended80Col, noUpdateRegistry);
-		}
-	}
-
-	if (REGLOAD(REGVALUE_MASTER_VOLUME, &dwTmp) ||	// Try MASTER_VOLUME
-		REGLOAD(REGVALUE_SPKR_VOLUME, &dwTmp))		// ...else try older SPKR_VOLUME
-	{
-		SpkrSetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
-		GetCardMgr().GetMockingboardCardMgr().SetVolume(dwTmp, GetPropertySheet().GetVolumeMax());
-	}
+	//
 
 	// Load save-state pathname *before* inserting any harddisk/disk images (for both init & reinit cases)
 	// NB. inserting harddisk/disk can change snapshot pathname
-	RegLoadString(REG_CONFIG, REGVALUE_SAVESTATE_FILENAME, 1, szFilename, MAX_PATH, "");	// Can be pathname or just filename
+	RegLoadString(TEXT(REG_CONFIG), TEXT(REGVALUE_SAVESTATE_FILENAME), 1, szFilename, MAX_PATH, TEXT(""));	// Can be pathname or just filename
 	Snapshot_SetFilename(szFilename);	// If not in Registry than default will be used (ie. g_sCurrentDir + default filename)
 
 	//
 
-	RegLoadString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, 1, szFilename, MAX_PATH, "");
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_HDV_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));
 	if (szFilename[0] == '\0')
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
@@ -309,7 +295,7 @@ void LoadConfiguration(bool loadImages)
 	//
 
 	// Current/Starting Dir is the "root" of where the user keeps their disk images
-	RegLoadString(REG_PREFS, REGVALUE_PREF_START_DIR, 1, szFilename, MAX_PATH, "");
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, szFilename, MAX_PATH, TEXT(""));
 	if (szFilename[0] == '\0')
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
@@ -318,8 +304,8 @@ void LoadConfiguration(bool loadImages)
 		GetCardMgr().GetDisk2CardMgr().LoadLastDiskImage();
 
 	// Do this after populating the slots with Disk II controller(s)
-	uint32_t dwEnhanceDisk;
-	REGLOAD_DEFAULT(REGVALUE_ENHANCE_DISK_SPEED, &dwEnhanceDisk, 1);
+	DWORD dwEnhanceDisk;
+	REGLOAD_DEFAULT(TEXT(REGVALUE_ENHANCE_DISK_SPEED), &dwEnhanceDisk, 1);
 	GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk ? true : false);
 
 	//
@@ -329,10 +315,10 @@ void LoadConfiguration(bool loadImages)
 
 	//
 
-	if (REGLOAD(REGVALUE_WINDOW_SCALE, &dwTmp))
+	if (REGLOAD(TEXT(REGVALUE_WINDOW_SCALE), &dwTmp))
 		GetFrame().SetViewportScale(dwTmp);
 
-	if (REGLOAD(REGVALUE_CONFIRM_REBOOT, &dwTmp))
+	if (REGLOAD(TEXT(REGVALUE_CONFIRM_REBOOT), &dwTmp))
 		GetFrame().g_bConfirmReboot = dwTmp;
 }
 
@@ -511,14 +497,14 @@ void GetAppleWindowTitle()
 		g_pAppTitle += " (S6-13) ";
 
 	if (g_hCustomRomF8 != INVALID_HANDLE_VALUE)
-		g_pAppTitle += " (custom rom)";
+		g_pAppTitle += TEXT(" (custom rom)");
 	else if (GetPropertySheet().GetTheFreezesF8Rom() && IsApple2PlusOrClone(GetApple2Type()))
-		g_pAppTitle += " (The Freeze's non-autostart F8 rom)";
+		g_pAppTitle += TEXT(" (The Freeze's non-autostart F8 rom)");
 
 	switch (g_nAppMode)
 	{
-	case MODE_PAUSED: g_pAppTitle += std::string(" [") + TITLE_PAUSED + "]"; break;
-	case MODE_STEPPING: g_pAppTitle += std::string(" [") + TITLE_STEPPING + "]"; break;
+	case MODE_PAUSED: g_pAppTitle += std::string(TEXT(" [")) + TITLE_PAUSED + TEXT("]"); break;
+	case MODE_STEPPING: g_pAppTitle += std::string(TEXT(" [")) + TITLE_STEPPING + TEXT("]"); break;
 	}
 }
 
@@ -569,9 +555,6 @@ void CtrlReset()
 {
 	if (IsAppleIIeOrAbove(GetApple2Type()))
 	{
-		// NB. RamWorks III manual (v1.41, pg 45):
-		// "The bank select register is initialized to zero on a power-up, but not after a reset."
-
 		// For A][ & A][+, reset doesn't reset the LC switches (UTAII:5-29)
 		// TODO: What about Saturn cards? Presumably the same as the A][ & A][+ slot0 LC?
 		MemResetPaging();

@@ -162,9 +162,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 
-			if (strcmp(lpCmdLine, "empty") == 0)
-				g_cmdLine.bSlotEmpty[SLOT0] = true;
-			else if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)
+			if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)
 				g_cmdLine.uSaturnBanks = Saturn128K::kMaxSaturnBanks;
 			else if (strcmp(lpCmdLine, "saturn64") == 0)
 				g_cmdLine.uSaturnBanks = Saturn128K::kMaxSaturnBanks / 2;
@@ -180,112 +178,63 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				lpCmdLine = GetCurrArg(lpNextArg);
 				lpNextArg = GetNextArg(lpNextArg);
 				if (strcmp(lpCmdLine, "empty") == 0)
-				{
 					g_cmdLine.bSlotEmpty[slot] = true;
-				}
-				else if (strcmp(lpCmdLine, "diskii") == 0)
-				{
+				if (strcmp(lpCmdLine, "diskii") == 0)
 					g_cmdLine.slotInsert[slot] = CT_Disk2;
-				}
-				else if (strcmp(lpCmdLine, "diskii13") == 0)
+				if (strcmp(lpCmdLine, "diskii13") == 0)
 				{
 					g_cmdLine.slotInsert[slot] = CT_Disk2;
 					g_cmdLine.slotInfo[slot].isDiskII13 = true;
 				}
-				else if (strcmp(lpCmdLine, "hdc") == 0)
-				{
+				if (strcmp(lpCmdLine, "hdc") == 0)
 					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
-				}
-				else if (strcmp(lpCmdLine, "hdc-sp") == 0)
+				if (strcmp(lpCmdLine, "hdc-sp") == 0)
 				{
 					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
 					g_cmdLine.slotInfo[slot].useHdcFirmwareMode = HdcSmartPort;
 				}
-				else if (strcmp(lpCmdLine, "hdc-bm2") == 0)
+				if (strcmp(lpCmdLine, "hdc-bm2") == 0)
 				{
 					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
 					g_cmdLine.slotInfo[slot].useHdcFirmwareMode = HdcBlockMode2Devices;
 				}
-				else if (strcmp(lpCmdLine, "hdc-bm4") == 0)
+				if (strcmp(lpCmdLine, "hdc-bm4") == 0)
 				{
 					g_cmdLine.slotInsert[slot] = CT_GenericHDD;
 					g_cmdLine.slotInfo[slot].useHdcFirmwareMode = HdcBlockMode4Devices;
 				}
-				else if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)	// Support Saturn128 card in slot 1-7 too (GH#1279)
-				{
+				if (strcmp(lpCmdLine, "saturn") == 0 || strcmp(lpCmdLine, "saturn128") == 0)	// Support Saturn128 card in slot 1-7 too (GH#1279)
 					g_cmdLine.slotInsert[slot] = CT_Saturn128K;
-				}
-				else if (strcmp(lpCmdLine, "megaaudio") == 0)
+				if (strcmp(lpCmdLine, "megaaudio") == 0)
 				{
 					g_cmdLine.slotInsert[slot] = CT_MegaAudio;
 					g_cmdLine.supportExtraMBCardTypes = true;
 				}
-				else if (strcmp(lpCmdLine, "sdmusic") == 0)
+				if (strcmp(lpCmdLine, "sdmusic") == 0)
 				{
 					g_cmdLine.slotInsert[slot] = CT_SDMusic;
 					g_cmdLine.supportExtraMBCardTypes = true;
 				}
-				else if (strcmp(lpCmdLine, "breakpointcard") == 0)
-				{
-					g_cmdLine.slotInsert[slot] = CT_BreakpointCard;
-				}
-				else if (strcmp(lpCmdLine, "6522a-bad") == 0)
-				{
-					g_cmdLine.slotInfo[slot].useBad6522A = true;
-				}
-				else if (strcmp(lpCmdLine, "6522b-bad") == 0)
-				{
-					g_cmdLine.slotInfo[slot].useBad6522B = true;
-				}
-				else if (strcmp(lpCmdLine, "parallel") == 0)
+				if (strcmp(lpCmdLine, "parallel") == 0)
 				{
 					if (slot == SLOT1)
 						g_cmdLine.slotInsert[slot] = CT_GenericPrinter;
 					else
 						LogFileOutput("Parallel Printer card currently only supported in slot 1\n");
 				}
-				else if (strcmp(lpCmdLine, "ssc") == 0)
+				if (strcmp(lpCmdLine, "ssc") == 0)
 				{
 					if (slot == SLOT2)
 						g_cmdLine.slotInsert[slot] = CT_SSC;
 					else
 						LogFileOutput("SSC currently only supported in slot 2\n");
 				}
-				else if (strcmp(lpCmdLine, "vidhd") == 0)
+				if (strcmp(lpCmdLine, "vidhd") == 0)
 				{
 					if (slot == SLOT3)
 						g_cmdLine.slotInsert[slot] = CT_VidHD;
 					else
 						LogFileOutput("VidHD currently only supported in slot 3\n");
-				}
-				else if (strncmp(lpCmdLine, "socket", 6) == 0 &&
-					(lpCmdLine[6] == '0' || lpCmdLine[6] == '1') &&	// 0=$Cs20(bottom of card), 1=$Cs40(top of card)
-					lpCmdLine[7] == '=')
-				{
-					BYTE socket = lpCmdLine[6] - '0';
-					LPSTR socketType = &lpCmdLine[8];
-					SSI263Type type = SSI263Unknown;
-					if (strcmp(socketType, "empty") == 0)
-						type = SSI263Empty;
-					else if (strcmp(socketType, "ssi263p") == 0)
-						type = SSI263P;
-					else if (strcmp(socketType, "ssi263ap") == 0)
-						type = SSI263AP;
-					g_cmdLine.slotInfo[slot].socketSSI263[socket] = type;
-					if (type == SSI263Unknown)
-						LogFileOutput("Unsupported SSI263 type: %s\n", socketType);
-				}
-				else if (strcmp(lpCmdLine, "sc01") == 0)
-				{
-					g_cmdLine.slotInfo[slot].socketSC01 = SC01;
-				}
-				else if (strcmp(lpCmdLine, "no-sc01") == 0)
-				{
-					g_cmdLine.slotInfo[slot].socketSC01 = SSI263Empty;
-				}
-				else
-				{
-					LogFileOutput("Unsupported slot-%d card: %s\n", slot, lpCmdLine);
 				}
 			}
 			else if (lpCmdLine[3] == 'd' && (lpCmdLine[4] == '1' || lpCmdLine[4] == '2'))	// -s[1..7]d[1|2] <dsk-image>
@@ -328,33 +277,6 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
 			}
 		}
-		else if (strcmp(lpCmdLine, "-aux") == 0)
-		{
-			lpCmdLine = GetCurrArg(lpNextArg);
-			lpNextArg = GetNextArg(lpNextArg);
-			if (strcmp(lpCmdLine, "empty") == 0)
-			{
-				g_cmdLine.auxSlotEmpty = true;
-			}
-			else if (strcmp(lpCmdLine, "std80") == 0)
-			{
-				g_cmdLine.auxSlotInsert = CT_80Col;
-			}
-			else if (strcmp(lpCmdLine, "ext80") == 0)
-			{
-				g_cmdLine.auxSlotInsert = CT_Extended80Col;
-			}
-			else if (strcmp(lpCmdLine, "rw3") == 0)
-			{
-				g_cmdLine.auxSlotInsert = CT_RamWorksIII;
-				if (!g_cmdLine.uRamWorksExPages)
-					g_cmdLine.uRamWorksExPages = kDefaultExMemoryBanksRealRW3;
-			}
-			else
-			{
-				LogFileOutput("Unsupported aux slot card: %s\n", lpCmdLine);
-			}
-		}
 		else if (strcmp(lpCmdLine, "-harddisknumblocks") == 0)		// number of blocks to report for ProDOS
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
@@ -375,10 +297,6 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.szSnapshotName = lpCmdLine;
-		}
-		else if (strcmp(lpCmdLine, "-load-state-ignore-hdc-fw") == 0)	// For testing - Use in combination with -load-state
-		{
-			g_cmdLine.snapshotIgnoreHdcFirmware = true;
 		}
 		else if (strcmp(lpCmdLine, "-f") == 0 || strcmp(lpCmdLine, "-full-screen") == 0)
 		{
@@ -443,16 +361,16 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				g_nMemoryClearType = NUM_MIP - 1;
 		}
 #ifdef RAMWORKS
-		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..256]
+		else if (strcmp(lpCmdLine, "-r") == 0)		// RamWorks size [1..127]
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.uRamWorksExPages = atoi(lpCmdLine);
 			if (g_cmdLine.uRamWorksExPages > kMaxExMemoryBanks)
 				g_cmdLine.uRamWorksExPages = kMaxExMemoryBanks;
-			else if (g_cmdLine.uRamWorksExPages < 1)
-				g_cmdLine.uRamWorksExPages = 1;			// 1x64KB (aux mem)
-			g_cmdLine.auxSlotInsert = CT_RamWorksIII;	// Insert RW3 into aux slot
+			else
+			if (g_cmdLine.uRamWorksExPages < 1)
+				g_cmdLine.uRamWorksExPages = 1;
 		}
 #endif
 		else if (strcmp(lpCmdLine, "-f8rom") == 0)		// Use custom 2K ROM at [$F800..$FFFF]
@@ -488,7 +406,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			{
 				std::string msg = "Failed to load video rom (not found or not exactly 2/4/8/16KiB)\n";
 				LogFileOutput("%s", msg.c_str());
-				GetFrame().FrameMessageBox(msg.c_str(), "AppleWin Error", MB_OK);
+				GetFrame().FrameMessageBox(msg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			}
 			else
 			{
@@ -712,7 +630,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			if (!SNESMAXCard::ParseControllerMappingFile(joyNum, lpCmdLine, errorMsg))
 			{
 				LogFileOutput("%s", errorMsg.c_str());
-				GetFrame().FrameMessageBox(errorMsg.c_str(), "AppleWin Error", MB_OK);
+				GetFrame().FrameMessageBox(errorMsg.c_str(), TEXT("AppleWin Error"), MB_OK);
 			}
 		}
 		else if (strcmp(lpCmdLine, "-wav-speaker") == 0)
@@ -742,53 +660,6 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		else if (strcmp(lpCmdLine, "-hdc-firmware-v2") == 0)
 		{
 			g_cmdLine.useHdcFirmwareV2 = true;
-		}
-		else if (strcmp(lpCmdLine, "-bootsector") == 0)
-		{
-			lpCmdLine = GetCurrArg(lpNextArg);
-			lpNextArg = GetNextArg(lpNextArg);
-
-			char  sPath[ MAX_PATH];
-			DWORD res = GetFullPathName(lpCmdLine, MAX_PATH, sPath, NULL);
-			if (!res)
-			{
-				LogFileOutput( "ERROR: Couldn't get full path for custom boot sector file: %s\n", lpCmdLine );
-			}
-
-			FILE *pFile = fopen( sPath, "rb");
-			if (pFile)
-			{
-				fseek( pFile, 0, SEEK_END );
-				size_t nSize = ftell( pFile );
-				fseek( pFile, 0, SEEK_SET );
-				fclose( pFile );
-
-				if (nSize > 0)
-				{
-					g_cmdLine.sBootSectorFileName = sPath;
-					g_cmdLine.nBootSectorFileSize = nSize;
-				}
-				else
-				{
-					g_cmdLine.nBootSectorFileSize = 0;
-					LogFileOutput( "INFO: Custom Boot Sector size = %zu\n", nSize );
-				}
-			}
-			else
-			{
-				LogFileOutput( "ERROR: Couldn't open custom boot sector file: %s\n", lpCmdLine );
-			}
-		}
-		else if (strcmp(lpCmdLine, "-alt-cpu-emu") == 0)	// debug
-		{
-			g_cmdLine.useAltCpuEmulation = true;
-		}
-		else if (strcmp(lpCmdLine, "-debugger-auto-run") == 0)
-		{
-			lpCmdLine = GetCurrArg(lpNextArg);
-			lpNextArg = GetNextArg(lpNextArg);
-
-			g_cmdLine.debuggerAutoRunScriptFilename = lpCmdLine;
 		}
 		else	// unsupported
 		{

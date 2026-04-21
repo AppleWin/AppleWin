@@ -29,7 +29,6 @@
 	- Southwestern Data Systems' datakey for SpeedStar Applesoft Compiler (Matthew D'Asaro  Dec 2022)
 	- Dynatech Microsoftware / Cortechs Corp's protection key for "CodeWriter"
 	- Robocom Ltd's Interface Module for Robo Graphics 500/1000/1500 & RoboCAD 1/2 (BitStik joystick plugs in on top)
-	- Hayden Book Company, Inc's protection key for "Applesoft Compiler"
 */
 #include "StdAfx.h"
 #include <sstream>
@@ -38,7 +37,7 @@
 #include "Memory.h"
 #include "YamlHelper.h"
 
-static DONGLETYPE copyProtectionDongleType = DT_DEFAULT;
+static DONGLETYPE copyProtectionDongleType = DT_EMPTY;
 
 static const BYTE codewriterInitialLFSR = 0x6B;	// %1101011 (7-bit LFSR)
 static BYTE codewriterLFSR = codewriterInitialLFSR;
@@ -97,9 +96,6 @@ int CopyProtectionDonglePB0(void)
 // Returns the copy protection dongle state of PB1. A return value of -1 means not used by copy protection dongle
 int CopyProtectionDonglePB1(void)
 {
-	if (copyProtectionDongleType == DT_HAYDENCOMPILER)
-		return 0;	// connected to GND
-
 	return -1;
 }
 
@@ -122,15 +118,6 @@ int CopyProtectionDonglePB2(void)
 // Returns the copy protection dongle state of PDL(n). A return value of -1 means not used by copy protection dongle
 int CopyProtectionDonglePDL(UINT pdl)
 {
-	if (copyProtectionDongleType == DT_HAYDENCOMPILER && pdl == 3)
-	{
-		static BYTE haydenValue[4] = {0xFF, 0x96, 0x96, 0x50};	// Derived from reverse-engineered Hayden code - although other than 0xFF, actual values are unknown.
-		UINT haydenDongleMode = ((UINT)MemGetAnnunciator(2) << 1) | (UINT)MemGetAnnunciator(0);
-		return haydenValue[haydenDongleMode];
-	}
-
-	//
-
 	if (copyProtectionDongleType != DT_ROBOCOM500 && copyProtectionDongleType != DT_ROBOCOM1000 && copyProtectionDongleType != DT_ROBOCOM1500)
 		return -1;
 
@@ -175,7 +162,7 @@ int CopyProtectionDonglePDL(UINT pdl)
 // 1: Add SDS SpeedStar dongle
 // 2: Add Cortechs Corp CodeWriter protection key
 //    Add Robocom Ltd - Robo 500/1000/1500 Interface Modules
-// 3: Add Hayden Compiler protection key
+static const UINT kUNIT_VERSION = 2;
 
 static const std::string& GetSnapshotStructName_SDSSpeedStar(void)
 {
@@ -207,12 +194,6 @@ static const std::string& GetSnapshotStructName_Robocom1500(void)
 	return name;
 }
 
-static const std::string& GetSnapshotStructName_HaydenCompiler(void)
-{
-	static const std::string name("Hayden - Applesoft Compiler protection key");
-	return name;
-}
-
 void CopyProtectionDongleSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	if (copyProtectionDongleType == DT_SDSSPEEDSTAR)
@@ -240,18 +221,13 @@ void CopyProtectionDongleSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_Robocom1500());
 		// NB. No state for this dongle
 	}
-	else if (copyProtectionDongleType == DT_HAYDENCOMPILER)
-	{
-		yamlSaveHelper.SaveString(SS_YAML_KEY_DEVICE, GetSnapshotStructName_HaydenCompiler());
-		// NB. No state for this dongle
-	}
 	else
 	{
 		_ASSERT(0);
 	}
 }
 
-void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version, UINT kUNIT_VERSION)
+void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
 	if (version < 1 || version > kUNIT_VERSION)
 	{
@@ -284,10 +260,6 @@ void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 	else if (device == GetSnapshotStructName_Robocom1500())
 	{
 		copyProtectionDongleType = DT_ROBOCOM1500;
-	}
-	else if (device == GetSnapshotStructName_HaydenCompiler())
-	{
-		copyProtectionDongleType = DT_HAYDENCOMPILER;
 	}
 	else
 	{

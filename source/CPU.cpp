@@ -235,7 +235,7 @@ static UINT g_nMin = 0xFFFFFFFF;
 static UINT g_nMax = 0;
 #endif
 
-static __forceinline void DoIrqProfiling(uint32_t uCycles)
+static __forceinline void DoIrqProfiling(DWORD uCycles)
 {
 #ifdef _DEBUG
 	if(regs.ps & AF_INTERRUPT)
@@ -379,24 +379,6 @@ static __forceinline void Fetch(BYTE& iOpcode, ULONG uExecutedCycles)
 	regs.pc++;
 }
 
-static __forceinline void Fetch_alt(BYTE& iOpcode, ULONG uExecutedCycles)
-{
-	const USHORT PC = regs.pc;
-
-#if defined(_DEBUG) && defined(DBG_HDD_ENTRYPOINT)
-	DebugHddEntrypoint(PC);
-#endif
-
-	iOpcode = _READ_ALT(regs.pc);
-
-#ifdef USE_SPEECH_API
-	if ((PC == COUT1 || PC == BASICOUT) && g_Speech.IsEnabled() && !g_bFullSpeed)
-		CaptureCOUT();
-#endif
-
-	regs.pc++;
-}
-
 //#define ENABLE_NMI_SUPPORT	// Not used - so don't enable
 static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
 {
@@ -409,28 +391,14 @@ static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #ifdef _DEBUG
 	g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
-	if (GetIsMemCacheValid())
-	{
-		_PUSH(regs.pc >> 8)
-		_PUSH(regs.pc & 0xFF)
-		EF_TO_AF
-		_PUSH(regs.ps & ~AF_BREAK)
-		regs.ps |= AF_INTERRUPT;
-		if (GetMainCpu() == CPU_65C02)	// GH#1099
-			regs.ps &= ~AF_DECIMAL;
-		regs.pc = *(WORD*)(mem + _6502_NMI_VECTOR);
-	}
-	else
-	{
-		_PUSH_ALT(regs.pc >> 8)
-		_PUSH_ALT(regs.pc & 0xFF)
-		EF_TO_AF
-		_PUSH_ALT(regs.ps & ~AF_BREAK)
-		regs.ps |= AF_INTERRUPT;
-		if (GetMainCpu() == CPU_65C02)	// GH#1099
-			regs.ps &= ~AF_DECIMAL;
-		regs.pc = READ_WORD_ALT(_6502_NMI_VECTOR);
-	}
+	PUSH(regs.pc >> 8)
+	PUSH(regs.pc & 0xFF)
+	EF_TO_AF
+	PUSH(regs.ps & ~AF_BREAK)
+	regs.ps |= AF_INTERRUPT;
+	if (GetMainCpu() == CPU_65C02)	// GH#1099
+		regs.ps &= ~AF_DECIMAL;
+	regs.pc = * (WORD*) (mem+0xFFFA);
 	UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 	CYC(7);
 	g_interruptInLastExecutionBatch = true;
@@ -465,28 +433,14 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 #ifdef _DEBUG
 		g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
-		if (GetIsMemCacheValid())
-		{
-			_PUSH(regs.pc >> 8)
-			_PUSH(regs.pc & 0xFF)
-			EF_TO_AF;
-			_PUSH(regs.ps & ~AF_BREAK)
-			regs.ps |= AF_INTERRUPT;
-			if (GetMainCpu() == CPU_65C02)	// GH#1099
-				regs.ps &= ~AF_DECIMAL;
-			regs.pc = *(WORD*)(mem + _6502_INTERRUPT_VECTOR);
-		}
-		else
-		{
-			_PUSH_ALT(regs.pc >> 8)
-			_PUSH_ALT(regs.pc & 0xFF)
-			EF_TO_AF;
-			_PUSH_ALT(regs.ps & ~AF_BREAK)
-			regs.ps |= AF_INTERRUPT;
-			if (GetMainCpu() == CPU_65C02)	// GH#1099
-				regs.ps &= ~AF_DECIMAL;
-			regs.pc = READ_WORD_ALT(_6502_INTERRUPT_VECTOR);
-		}
+		PUSH(regs.pc >> 8)
+		PUSH(regs.pc & 0xFF)
+		EF_TO_AF
+		PUSH(regs.ps & ~AF_BREAK)
+		regs.ps |= AF_INTERRUPT;
+		if (GetMainCpu() == CPU_65C02)	// GH#1099
+			regs.ps &= ~AF_DECIMAL;
+		regs.pc = * (WORD*) (mem+0xFFFE);
 		UINT uExtraCycles = 0;	// Needed for CYC(a) macro
 		CYC(7);
 #if defined(_DEBUG) && LOG_IRQ_TAKEN_AND_RTI
@@ -508,116 +462,61 @@ static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 
 //===========================================================================
 
+#define READ _READ_WITH_IO_F8xx
+#define WRITE(value) _WRITE_WITH_IO_F8xx(value)
 #define HEATMAP_X(address)
 
-// 6502 & no debugger
-#define READ(addr) _READ_WITH_IO_F8xx(addr)
-#define WRITE(value) _WRITE_WITH_IO_F8xx(value)
-
 #include "CPU/cpu6502.h"  // MOS 6502
+
+#undef READ
+#undef WRITE
 
 //-------
 
-// 6502 & no debugger & alt read/write support
-#define CPU_ALT
-#define READ(addr) _READ_ALT(addr)
-#define WRITE(value) _WRITE_ALT(value)
-
-#define Cpu6502 Cpu6502_altRW
-#define Fetch Fetch_alt
-#include "CPU/cpu6502.h"  // MOS 6502
-#undef Cpu6502
-#undef Fetch
-
-//-------
-
-// 65C02 & no debugger
-#define READ(addr) _READ(addr)
+#define READ _READ
 #define WRITE(value) _WRITE(value)
 
 #include "CPU/cpu65C02.h" // WDC 65C02
 
-//-------
-
-// 65C02 & no debugger & alt read/write support
-#define CPU_ALT
-#define READ(addr) _READ_ALT(addr)
-#define WRITE(value) _WRITE_ALT(value)
-
-#define Cpu65C02 Cpu65C02_altRW
-#define Fetch Fetch_alt
-#include "CPU/cpu65C02.h" // WDC 65C02
-#undef Cpu65C02
-#undef Fetch
-
+#undef READ
+#undef WRITE
 #undef HEATMAP_X
 
 //-----------------
 
-#define HEATMAP_X(address) Heatmap_X(address)
-#include "CPU/cpu_heatmap.inl"
-
-// 6502 & debugger
-#define READ(addr) Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
+#define READ Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte_With_IO_F8xx(addr, value, uExecutedCycles);
+
+#define HEATMAP_X(address) Heatmap_X(address)
+
+#include "CPU/cpu_heatmap.inl"
 
 #define Cpu6502 Cpu6502_debug
 #include "CPU/cpu6502.h"  // MOS 6502
 #undef Cpu6502
 
-//-------
-
-// 6502 & debugger & alt read/write support
-#define CPU_ALT
-#define READ(addr) _READ_ALT(addr)
-#define WRITE(value) _WRITE_ALT(value)
-
-#define Cpu6502 Cpu6502_debug_altRW
-#define Fetch Fetch_alt
-#include "CPU/cpu6502.h"  // MOS 6502
-#undef Cpu6502
-#undef Fetch
+#undef READ
+#undef WRITE
 
 //-------
 
-// 65C02 & debugger
-#define READ(addr) Heatmap_ReadByte(addr, uExecutedCycles)
+#define READ Heatmap_ReadByte(addr, uExecutedCycles)
 #define WRITE(value) Heatmap_WriteByte(addr, value, uExecutedCycles);
 
 #define Cpu65C02 Cpu65C02_debug
 #include "CPU/cpu65C02.h" // WDC 65C02
 #undef Cpu65C02
 
-//-------
-
-// 65C02 & debugger & alt read/write support
-#define CPU_ALT
-#define READ(addr) _READ_ALT(addr)
-#define WRITE(value) _WRITE_ALT(value)
-
-#define Cpu65C02 Cpu65C02_debug_altRW
-#define Fetch Fetch_alt
-#include "CPU/cpu65C02.h" // WDC 65C02
-#undef Cpu65C02
-#undef Fetch
-
+#undef READ
+#undef WRITE
 #undef HEATMAP_X
 
 //===========================================================================
 
-static uint32_t InternalCpuExecute(const uint32_t uTotalCycles, const bool bVideoUpdate)
+static DWORD InternalCpuExecute(const DWORD uTotalCycles, const bool bVideoUpdate)
 {
 	if (g_nAppMode == MODE_RUNNING || g_nAppMode == MODE_BENCHMARK)
 	{
-		if (!GetIsMemCacheValid())
-		{
-			_ASSERT(memshadow[0]);
-			if (GetMainCpu() == CPU_6502)
-				return Cpu6502_altRW(uTotalCycles, bVideoUpdate);		// Apple //e
-			else
-				return Cpu65C02_altRW(uTotalCycles, bVideoUpdate);		// Enhanced Apple //e
-		}
-
 		if (GetMainCpu() == CPU_6502)
 			return Cpu6502(uTotalCycles, bVideoUpdate);		// Apple ][, ][+, //e, Clones
 		else
@@ -626,16 +525,6 @@ static uint32_t InternalCpuExecute(const uint32_t uTotalCycles, const bool bVide
 	else
 	{
 		_ASSERT(g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
-
-		if (!GetIsMemCacheValid())
-		{
-			_ASSERT(memshadow[0]);
-			if (GetMainCpu() == CPU_6502)
-				return Cpu6502_debug_altRW(uTotalCycles, bVideoUpdate);		// Apple //e
-			else
-				return Cpu65C02_debug_altRW(uTotalCycles, bVideoUpdate);	// Enhanced Apple //e
-		}
-
 		if (GetMainCpu() == CPU_6502)
 			return Cpu6502_debug(uTotalCycles, bVideoUpdate);	// Apple ][, ][+, //e, Clones
 		else
@@ -654,7 +543,7 @@ BYTE CpuRead(USHORT addr, ULONG uExecutedCycles)
 {
 	if (g_nAppMode == MODE_RUNNING)
 	{
-		return _READ_WITH_IO_F8xx(addr);	// Superset of _READ
+		return _READ_WITH_IO_F8xx;	// Superset of _READ
 	}
 
 	return Heatmap_ReadByte_With_IO_F8xx(addr, uExecutedCycles);
@@ -718,7 +607,7 @@ ULONG CpuGetCyclesThisVideoFrame(const ULONG nExecutedCycles)
 
 //===========================================================================
 
-uint32_t CpuExecute(const uint32_t uCycles, const bool bVideoUpdate)
+DWORD CpuExecute(const DWORD uCycles, const bool bVideoUpdate)
 {
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeCpu;
@@ -735,7 +624,7 @@ uint32_t CpuExecute(const uint32_t uCycles, const bool bVideoUpdate)
 	// uCycles:
 	//  =0  : Do single step
 	//  >0  : Do multi-opcode emulation
-	const uint32_t uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
+	const DWORD uExecutedCycles = InternalCpuExecute(uCycles, bVideoUpdate);
 
 	// Update 6522s (NB. Do this before updating g_nCumulativeCycles below)
 	// . Ensures that 6522 regs are up-to-date for any potential save-state
@@ -803,10 +692,7 @@ void CpuReset()
 	regs.ps |= AF_INTERRUPT;
 	if (GetMainCpu() == CPU_65C02)	// GH#1099
 		regs.ps &= ~AF_DECIMAL;
-
-	_ASSERT(memshadow[_6502_RESET_VECTOR >> 8] != NULL);
-	regs.pc = ReadWordFromMemory(_6502_RESET_VECTOR);
-
+	regs.pc = *(WORD*)(mem + 0xFFFC);
 	regs.sp = 0x0100 | ((regs.sp - 3) & 0xFF);
 
 	regs.bJammed = 0;
@@ -819,7 +705,7 @@ void CpuReset()
 
 //===========================================================================
 
-void CpuSetupBenchmark()
+void CpuSetupBenchmark ()
 {
 	regs.a  = 0;
 	regs.x  = 0;
@@ -833,19 +719,19 @@ void CpuSetupBenchmark()
 		int opcode = 0;
 		do
 		{
-			WriteByteToMemory(addr++, benchopcode[opcode]);
-			WriteByteToMemory(addr++, benchopcode[opcode]);
+			*(mem+addr++) = benchopcode[opcode];
+			*(mem+addr++) = benchopcode[opcode];
 
 			if (opcode >= SHORTOPCODES)
-				WriteByteToMemory(addr++, 0);
+				*(mem+addr++) = 0;
 
 			if ((++opcode >= BENCHOPCODES) || ((addr & 0x0F) >= 0x0B))
 			{
-				WriteByteToMemory(addr++, 0x4C);
+				*(mem+addr++) = 0x4C;
 				// split into 2 lines to avoid -Wunsequenced and undefined behaviour
 				const BYTE value = (opcode >= BENCHOPCODES) ? 0x00 : ((addr >> 4)+1) << 4;
-				WriteByteToMemory(addr++, value);
-				WriteByteToMemory(addr++, 0x03);
+				*(mem+addr++) = value;
+				*(mem+addr++) = 0x03;
 				while (addr & 0x0F)
 					++addr;
 			}

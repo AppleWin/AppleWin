@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Utilities.h"
 #include "CmdLine.h"
 #include "Debug.h"
-#include "Keyboard.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Mockingboard.h"
@@ -44,6 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Riff.h"
 #include "SaveState.h"
 #include "SerialComms.h"
+#include "SoundCore.h"
 #include "Speaker.h"
 #include "LanguageCard.h"
 #include "CardManager.h"
@@ -51,7 +51,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Speech.h"
 #endif
 #include "Windows/Win32Frame.h"
-#include "Windows/DXSoundBuffer.h"
 #include "RGBMonitor.h"
 #include "NTSC.h"
 
@@ -180,7 +179,7 @@ static void ContinueExecution(void)
 	const bool bWasFullSpeed = g_bFullSpeed;
 	g_bFullSpeed =	 (g_dwSpeed == SPEED_MAX) || 
 					 bScrollLock_FullSpeed ||
-					 (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !GetCardMgr().GetMockingboardCardMgr().IsActiveToPreventFullSpeed()) ||
+					 (GetCardMgr().GetDisk2CardMgr().IsConditionForFullSpeed() && !Spkr_IsActive() && !GetCardMgr().GetMockingboardCardMgr().IsActive()) ||
 					 IsDebugSteppingAtFullSpeed();
 
 	if (g_bFullSpeed)
@@ -220,18 +219,18 @@ static void ContinueExecution(void)
 	const UINT uCyclesToExecuteWithFeedback = (nCyclesWithFeedback >= 0) ? nCyclesWithFeedback
 																		 : 0;
 
-	const uint32_t uCyclesToExecute = (g_nAppMode == MODE_RUNNING)		? uCyclesToExecuteWithFeedback
+	const DWORD uCyclesToExecute = (g_nAppMode == MODE_RUNNING)		? uCyclesToExecuteWithFeedback
 												/* MODE_STEPPING */ : 0;
 
 	const bool bVideoUpdate = !g_bFullSpeed;
-	const uint32_t uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
+	const DWORD uActualCyclesExecuted = CpuExecute(uCyclesToExecute, bVideoUpdate);
 	g_dwCyclesThisFrame += uActualCyclesExecuted;
 
 	GetCardMgr().Update(uActualCyclesExecuted);
 
 	//
 
-	uint32_t uSpkrActualCyclesExecuted = uActualCyclesExecuted;
+	DWORD uSpkrActualCyclesExecuted = uActualCyclesExecuted;
 
 	bool bModeStepping_WaitTimer = false;
 	if (g_nAppMode == MODE_STEPPING && !IsDebugSteppingAtFullSpeed())
@@ -344,16 +343,16 @@ void EnterMessageLoop(void)
 
 static void GetProgramDirectory(void)
 {
-	char programDir[MAX_PATH];
+	TCHAR programDir[MAX_PATH];
 	GetModuleFileName((HINSTANCE)0, programDir, MAX_PATH);
 	programDir[MAX_PATH-1] = 0;
 
 	g_sProgramDir = programDir;
 
-	size_t loop = g_sProgramDir.size();
+	int loop = g_sProgramDir.size();
 	while (loop--)
 	{
-		if ((g_sProgramDir[loop] == PATH_SEPARATOR) || (g_sProgramDir[loop] == ':'))
+		if ((g_sProgramDir[loop] == TEXT(PATH_SEPARATOR)) || (g_sProgramDir[loop] == TEXT(':')))
 		{
 			g_sProgramDir.resize(loop + 1);  // this reduces the size
 			break;
@@ -430,7 +429,7 @@ void RegisterExtensions(void)
 	pValueName = "DiskImage\\shell\\open\\command";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ, command.c_str(), (uint32_t)(command.length() + 1));
+				REG_SZ, command.c_str(), command.length() + 1);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 	pValueName = "DiskImage\\shell\\open\\ddeexec";
@@ -442,14 +441,14 @@ void RegisterExtensions(void)
 	pValueName = "DiskImage\\shell\\open\\ddeexec\\application";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ, "applewin", (uint32_t)(strlen("applewin") + 1));
+				REG_SZ, "applewin", strlen("applewin") + 1);
 //				REG_SZ, szModuleFileName, strlen(szModuleFileName)+1);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 
 	pValueName = "DiskImage\\shell\\open\\ddeexec\\topic";
 	res = RegSetValue(HKEY_CLASSES_ROOT,
 				pValueName,
-				REG_SZ, "system", (uint32_t)(strlen("system") + 1));
+				REG_SZ, "system", strlen("system") + 1);
 	if (res != NOERROR) LogFileOutput("RegSetValue(%s) failed (0x%08X)\n", pValueName, res);
 }
 
@@ -506,7 +505,7 @@ static void ExceptionHandler(const char* pError)
 {
 	GetFrame().FrameMessageBox(
 				pError,
-				"Runtime Exception",
+				TEXT("Runtime Exception"),
 				MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 
 	LogFileOutput("Runtime Exception: %s\n", pError);
@@ -605,7 +604,7 @@ static void GetAppleWinVersion(void)
             VS_FIXEDFILEINFO* pFixedFileInfo;
             UINT pFixedFileInfoLen;
 
-            VerQueryValue(pVerInfoBlock, "\\", (LPVOID*) &pFixedFileInfo, (PUINT) &pFixedFileInfoLen);
+            VerQueryValue(pVerInfoBlock, TEXT("\\"), (LPVOID*) &pFixedFileInfo, (PUINT) &pFixedFileInfoLen);
 
             // Construct version string from fixed file info block
 
@@ -619,7 +618,7 @@ static void GetAppleWinVersion(void)
 		delete [] pVerInfoBlock;
     }
 
-	LogFileOutput("%s\n", GetAppleWinVersionAndBuild().c_str());
+	LogFileOutput("AppleWin version: %s\n",  g_VERSIONSTRING.c_str());
 }
 
 // DO ONE-TIME INITIALIZATION
@@ -673,376 +672,319 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 // DO INITIALIZATION THAT MUST BE REPEATED FOR A RESTART
 static void RepeatInitialization(void)
 {
-	KeybReset();
-	GetVideo().SetVidHD(false);	// Set true later (eg. by LoadConfiguration() or cmd-line) if VidHDCard is instantiated
-	ResetToLogoMode();
+		GetVideo().SetVidHD(false);	// Set true later only if VidHDCard is instantiated
+		ResetToLogoMode();
 
-	// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
-	const bool bShowAboutDlg = CheckOldAppleWinVersion();	// Post: g_OldAppleWinVersion
+		// NB. g_OldAppleWinVersion needed by LoadConfiguration() -> Config_Load_Video()
+		const bool bShowAboutDlg = CheckOldAppleWinVersion();	// Post: g_OldAppleWinVersion
 
-	// Load configuration from Registry (+ will insert cards)
-	{
-		bool loadImages = g_cmdLine.szSnapshotName == NULL;	// don't load floppy/harddisk images if a snapshot is to be loaded later on
-		LoadConfiguration(loadImages);
-		LogFileOutput("Main: LoadConfiguration()\n");
-	}
-
-	if (g_cmdLine.model != A2TYPE_MAX)
-	{
-		SetApple2Type(g_cmdLine.model);
-		GetPropertySheet().ConfigSaveApple2Type(g_cmdLine.model);
-		g_cmdLine.model = A2TYPE_MAX;	// Don't reapply after a restart
-	}
-
-	RGB_SetVideocard(g_cmdLine.rgbCard, g_cmdLine.rgbCardForegroundColor, g_cmdLine.rgbCardBackgroundColor);
-
-	if (g_cmdLine.newVideoType >= 0)
-	{
-		GetVideo().SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
-		g_cmdLine.newVideoType = -1;	// Don't reapply after a restart
-	}
-	GetVideo().SetVideoStyle( (VideoStyle_e) ((GetVideo().GetVideoStyle() | g_cmdLine.newVideoStyleEnableMask) & ~g_cmdLine.newVideoStyleDisableMask) );
-
-	if (g_cmdLine.newVideoRefreshRate != VR_NONE)
-	{
-		GetVideo().SetVideoRefreshRate(g_cmdLine.newVideoRefreshRate);
-		g_cmdLine.newVideoRefreshRate = VR_NONE;	// Don't reapply after a restart
-		SetCurrentCLK6502();
-	}
-
-	UseClockMultiplier(g_cmdLine.clockMultiplier);
-	g_cmdLine.clockMultiplier = 0.0;
-
-	// Apply the memory expansion switches after loading the Apple II machine type
-	if (g_cmdLine.uSaturnBanks)
-	{
-		if (IsApple2PlusOrClone(GetApple2Type()))
+		// Load configuration from Registry (+ will insert cards)
 		{
-			Saturn128K::SetSaturnMemorySizeSlot0(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
-			if (!g_cmdLine.bSlotEmpty[SLOT0])
-				SetExpansionMemType(CT_Saturn128K);
-			dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(SLOT0)).SetSaturnMemorySize(g_cmdLine.uSaturnBanks);
+			bool loadImages = g_cmdLine.szSnapshotName == NULL;	// don't load floppy/harddisk images if a snapshot is to be loaded later on
+			LoadConfiguration(loadImages);
+			LogFileOutput("Main: LoadConfiguration()\n");
 		}
-		g_cmdLine.uSaturnBanks = 0;		// Don't reapply after a restart
-	}
 
-	if (g_cmdLine.bSlot0LanguageCard)
-	{
-		if (!g_cmdLine.bSlotEmpty[SLOT0])
-			SetExpansionMemType(CT_LanguageCard);
-		g_cmdLine.bSlot0LanguageCard = false;	// Don't reapply after a restart
-	}
+		if (g_cmdLine.model != A2TYPE_MAX)
+			SetApple2Type(g_cmdLine.model);
 
-	if (g_cmdLine.bSwapButtons0and1)
-	{
-		GetPropertySheet().SetButtonsSwapState(true);
-		// Reapply after a restart - TODO: grey-out the Config UI for "Swap 0/1" when this cmd line is passed in
-	}
+		RGB_SetVideocard(g_cmdLine.rgbCard, g_cmdLine.rgbCardForegroundColor, g_cmdLine.rgbCardBackgroundColor);
 
-	JoyInitialize();
-	LogFileOutput("Main: JoyInitialize()\n");
-
-	// Init palette color
-	VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
-
-	// Allow the slots to be configured as empty
-	// NB. this state *is* persisted to the Registry/conf.ini (just like '-s7 empty' is)
-	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
-	{
-		if (g_cmdLine.bSlotEmpty[i])
-			GetCardMgr().Remove(i);
-	}
-
-	if (g_cmdLine.supportDCD && GetCardMgr().IsSSCInstalled())
-	{
-		GetCardMgr().GetSSC()->SupportDCD(true);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT1] != CT_Empty && g_cmdLine.slotInsert[SLOT1] == CT_GenericPrinter)	// For now just support Printer card in slot 1
-	{
-		GetCardMgr().Insert(SLOT1, g_cmdLine.slotInsert[SLOT1]);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT2] != CT_Empty && g_cmdLine.slotInsert[SLOT2] == CT_SSC)	// For now just support SSC in slot 2
-	{
-		GetCardMgr().Insert(SLOT2, g_cmdLine.slotInsert[SLOT2]);
-	}
-
-	if (g_cmdLine.enableDumpToRealPrinter && GetCardMgr().IsParallelPrinterCardInstalled())
-	{
-		GetCardMgr().GetParallelPrinterCard()->SetEnableDumpToRealPrinter(true);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT3] != CT_Empty)
-	{
-		// NB. Only support Saturn in slot 3, otherwise there's more Config UI to change
-		if (g_cmdLine.slotInsert[SLOT3] == CT_VidHD || g_cmdLine.slotInsert[SLOT3] == CT_Saturn128K)	// For now just support VidHD and Saturn128 in slot 3)
-			GetCardMgr().Insert(SLOT3, g_cmdLine.slotInsert[SLOT3]);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT4] != CT_Empty)
-	{
-		GetCardMgr().Insert(SLOT4, g_cmdLine.slotInsert[SLOT4]);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT5] != CT_Empty)
-	{
-		if (GetCardMgr().QuerySlot(SLOT5) != g_cmdLine.slotInsert[SLOT5])	// Ignore if already got this card type in slot 5
-			GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT6] == CT_Disk2)	// For now just support Disk2 in slot 6
-	{
-		if (GetCardMgr().QuerySlot(SLOT6) != g_cmdLine.slotInsert[SLOT6])	// Ignore if already got this card type in slot 6
-			GetCardMgr().Insert(SLOT6, g_cmdLine.slotInsert[SLOT6]);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT7] != CT_Empty)
-	{
-		if (GetCardMgr().QuerySlot(SLOT7) != g_cmdLine.slotInsert[SLOT7])	// Ignore if already got this card type in slot 7
-			GetCardMgr().Insert(SLOT7, g_cmdLine.slotInsert[SLOT7]);
-	}
-
-	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
-	{
-		if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
+		if (g_cmdLine.newVideoType >= 0)
 		{
-			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).Set13SectorFirmware(true);
+			GetVideo().SetVideoType( (VideoType_e)g_cmdLine.newVideoType );
+			g_cmdLine.newVideoType = -1;	// Don't reapply after a restart
 		}
-		else if (GetCardMgr().QuerySlot(i) == CT_GenericHDD)
-		{
-			dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetUserNumBlocks(g_cmdLine.uHarddiskNumBlocks);
-			if (g_cmdLine.useHdcFirmwareV1)
-				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV1();
-			if (g_cmdLine.useHdcFirmwareV2)
-				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV2();
-			if (g_cmdLine.slotInfo[i].useHdcFirmwareMode != HdcUndefinedFromCmdLine)
-			{
-				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetHdcFirmwareMode(g_cmdLine.slotInfo[i].useHdcFirmwareMode);
-				g_cmdLine.slotInfo[i].useHdcFirmwareMode = HdcUndefinedFromCmdLine;	// Don't reapply after a restart
-			}
-		}
-		else if (GetCardMgr().GetMockingboardCardMgr().IsMockingboard(i))
-		{
-			if (g_cmdLine.slotInfo[i].useBad6522A)
-				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UseBad6522A();
-			if (g_cmdLine.slotInfo[i].useBad6522B)
-				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).UseBad6522B();
-			for (UINT socket = 0; socket < NUM_SSI263; socket++)
-			{
-				const SSI263Type type = g_cmdLine.slotInfo[i].socketSSI263[socket];
-				if (type != SSI263Unknown)
-					dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).SetSocketSSI263(socket, type);
-			}
-			const SSI263Type type = g_cmdLine.slotInfo[i].socketSC01;
-			if (type != SSI263Unknown)
-				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).SetSocketSC01(type);
-		}
-	}
+		GetVideo().SetVideoStyle( (VideoStyle_e) ((GetVideo().GetVideoStyle() | g_cmdLine.newVideoStyleEnableMask) & ~g_cmdLine.newVideoStyleDisableMask) );
 
-	// Aux slot
+		if (g_cmdLine.newVideoRefreshRate != VR_NONE)
+		{
+			GetVideo().SetVideoRefreshRate(g_cmdLine.newVideoRefreshRate);
+			g_cmdLine.newVideoRefreshRate = VR_NONE;	// Don't reapply after a restart
+			SetCurrentCLK6502();
+		}
 
+		UseClockMultiplier(g_cmdLine.clockMultiplier);
+		g_cmdLine.clockMultiplier = 0.0;
+
+		// Apply the memory expansion switches after loading the Apple II machine type
 #ifdef RAMWORKS
-	if (g_cmdLine.uRamWorksExPages)
-	{
-		if (!g_cmdLine.auxSlotEmpty)
+		if (g_cmdLine.uRamWorksExPages)
 		{
 			SetRamWorksMemorySize(g_cmdLine.uRamWorksExPages);
-			_ASSERT(g_cmdLine.auxSlotInsert == CT_RamWorksIII);	// Implicitly set when using cmd line "-r banks"
+			SetExpansionMemType(CT_RamWorksIII);
+			g_cmdLine.uRamWorksExPages = 0;	// Don't reapply after a restart
 		}
-		g_cmdLine.uRamWorksExPages = 0;	// Don't reapply after a restart
-	}
 #endif
-
-	if (g_cmdLine.auxSlotEmpty)
-	{
-		GetCardMgr().RemoveAux();
-		SetExpansionMemType(CT_Empty);
-	}
-	else if (g_cmdLine.auxSlotInsert != CT_Empty)
-	{
-		if (GetCardMgr().QueryAux() != g_cmdLine.auxSlotInsert)	// Ignore if already got this card type in aux slot, ie. via LoadConfiguration()
+		if (g_cmdLine.uSaturnBanks)
 		{
-			GetCardMgr().InsertAux(g_cmdLine.auxSlotInsert);
-			SetExpansionMemType(g_cmdLine.auxSlotInsert);
+			Saturn128K::SetSaturnMemorySize(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
+			SetExpansionMemType(CT_Saturn128K);
+			g_cmdLine.uSaturnBanks = 0;		// Don't reapply after a restart
 		}
-	}
 
-	// Create window after inserting/removing VidHD card (as it affects width & height)
-	{
-		Win32Frame::GetWin32Frame().SetViewportScale(Win32Frame::GetWin32Frame().GetViewportScale(), true);
+		if (g_cmdLine.bSlot0LanguageCard)
+		{
+			SetExpansionMemType(CT_LanguageCard);
+			g_cmdLine.bSlot0LanguageCard = false;	// Don't reapply after a restart
+		}
 
-		GetFrame().Initialize(true); // g_pFramebufferinfo been created now & COM init'ed
-		LogFileOutput("Main: VideoInitialize()\n");
+		if (g_cmdLine.bSwapButtons0and1)
+		{
+			GetPropertySheet().SetButtonsSwapState(true);
+			// Reapply after a restart - TODO: grey-out the Config UI for "Swap 0/1" when this cmd line is passed in
+		}
 
-		LogFileOutput("Main: FrameCreateWindow() - pre\n");
-		Win32Frame::GetWin32Frame().FrameCreateWindow();	// GetFrame().g_hFrameWindow is now valid
-		LogFileOutput("Main: FrameCreateWindow() - post\n");
-	}
+		JoyInitialize();
+		LogFileOutput("Main: JoyInitialize()\n");
 
-	// Set best W,H resolution after inserting/removing VidHD card
-	if (g_cmdLine.bestFullScreenResolution || g_cmdLine.userSpecifiedWidth || g_cmdLine.userSpecifiedHeight)
-	{
-		bool res = false;
-		UINT bestWidth = 0, bestHeight = 0;
+		// Init palette color
+		VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
-		if (g_cmdLine.bestFullScreenResolution)
-			res = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight);
+		// Allow the 4 hardcoded slots to be configurated as empty
+		// NB. this state *is* persisted to the Registry/conf.ini (just like '-s7 empty' is)
+		// TODO: support bSlotEmpty[] for slots: 0
+		for (UINT i = SLOT1; i < NUM_SLOTS; i++)
+		{
+			if (g_cmdLine.bSlotEmpty[i])
+				GetCardMgr().Remove(i);
+		}
+
+		if (g_cmdLine.supportDCD && GetCardMgr().IsSSCInstalled())
+		{
+			GetCardMgr().GetSSC()->SupportDCD(true);
+		}
+
+		if (g_cmdLine.slotInsert[SLOT1] != CT_Empty && g_cmdLine.slotInsert[SLOT1] == CT_GenericPrinter)	// For now just support Printer card in slot 1
+		{
+			GetCardMgr().Insert(SLOT1, g_cmdLine.slotInsert[SLOT1]);
+		}
+
+		if (g_cmdLine.slotInsert[SLOT2] != CT_Empty && g_cmdLine.slotInsert[SLOT2] == CT_SSC)	// For now just support SSC in slot 2
+		{
+			GetCardMgr().Insert(SLOT2, g_cmdLine.slotInsert[SLOT2]);
+		}
+
+		if (g_cmdLine.enableDumpToRealPrinter && GetCardMgr().IsParallelPrinterCardInstalled())
+		{
+			GetCardMgr().GetParallelPrinterCard()->SetEnableDumpToRealPrinter(true);
+		}
+
+		if (g_cmdLine.slotInsert[SLOT3] != CT_Empty)
+		{
+			// NB. Only support Saturn in slot 3, otherwise there's more Config UI to change
+			if (g_cmdLine.slotInsert[SLOT3] == CT_VidHD || g_cmdLine.slotInsert[SLOT3] == CT_Saturn128K)	// For now just support VidHD and Saturn128 in slot 3)
+				GetCardMgr().Insert(SLOT3, g_cmdLine.slotInsert[SLOT3]);
+		}
+
+		if (g_cmdLine.slotInsert[SLOT4] != CT_Empty)
+		{
+			GetCardMgr().Insert(SLOT4, g_cmdLine.slotInsert[SLOT4]);
+		}
+
+		if (g_cmdLine.slotInsert[SLOT5] != CT_Empty)
+		{
+			if (GetCardMgr().QuerySlot(SLOT5) != g_cmdLine.slotInsert[SLOT5])	// Ignore if already got this card type in slot 5
+				GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
+		}
+
+		if (g_cmdLine.slotInsert[SLOT6] == CT_Disk2)	// For now just support Disk2 in slot 6
+		{
+			if (GetCardMgr().QuerySlot(SLOT6) != g_cmdLine.slotInsert[SLOT6])	// Ignore if already got this card type in slot 6
+				GetCardMgr().Insert(SLOT6, g_cmdLine.slotInsert[SLOT6]);
+		}
+
+		if (g_cmdLine.slotInsert[SLOT7] != CT_Empty)
+		{
+			if (GetCardMgr().QuerySlot(SLOT7) != g_cmdLine.slotInsert[SLOT7])	// Ignore if already got this card type in slot 7
+				GetCardMgr().Insert(SLOT7, g_cmdLine.slotInsert[SLOT7]);
+		}
+
+		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+		{
+			if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
+				dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(i)).SetFirmware13Sector();
+			if (GetCardMgr().QuerySlot(i) == CT_GenericHDD)
+			{
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetUserNumBlocks(g_cmdLine.uHarddiskNumBlocks);
+				if (g_cmdLine.useHdcFirmwareV1)
+					dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV1();
+				if (g_cmdLine.useHdcFirmwareV2)
+					dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).UseHdcFirmwareV2();
+				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(i)).SetHdcFirmwareMode(g_cmdLine.slotInfo[i].useHdcFirmwareMode);
+			}
+		}
+
+		// Create window after inserting/removing VidHD card (as it affects width & height)
+		{
+			Win32Frame::GetWin32Frame().SetViewportScale(Win32Frame::GetWin32Frame().GetViewportScale(), true);
+
+			GetFrame().Initialize(true); // g_pFramebufferinfo been created now & COM init'ed
+			LogFileOutput("Main: VideoInitialize()\n");
+
+			LogFileOutput("Main: FrameCreateWindow() - pre\n");
+			Win32Frame::GetWin32Frame().FrameCreateWindow();	// GetFrame().g_hFrameWindow is now valid
+			LogFileOutput("Main: FrameCreateWindow() - post\n");
+		}
+
+		// Set best W,H resolution after inserting/removing VidHD card
+		if (g_cmdLine.bestFullScreenResolution || g_cmdLine.userSpecifiedWidth || g_cmdLine.userSpecifiedHeight)
+		{
+			bool res = false;
+			UINT bestWidth = 0, bestHeight = 0;
+
+			if (g_cmdLine.bestFullScreenResolution)
+				res = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight);
+			else
+				res = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, g_cmdLine.userSpecifiedWidth, g_cmdLine.userSpecifiedHeight);
+
+			if (res)
+				LogFileOutput("Best resolution for -fs-width/height=x switch(es): Width=%d, Height=%d\n", bestWidth, bestHeight);
+			else
+				LogFileOutput("Failed to set parameter for -fs-width/height=x switch(es)\n");
+
+			if (res)
+				g_fullScreenResolutionChangedByUser = true;
+		}
+
+		// Pre: may need g_hFrameWindow for MessageBox errors
+		// Post: may enable HDD, required for MemInitialize()->MemInitializeIO()
+		{
+			bool temp = false;
+			InsertFloppyDisks(SLOT5, g_cmdLine.szImageName_drive[SLOT5], g_cmdLine.driveConnected[SLOT5], temp);
+			g_cmdLine.szImageName_drive[SLOT5][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT5][DRIVE_2] = NULL;	// Don't insert on a restart
+
+			InsertFloppyDisks(SLOT6, g_cmdLine.szImageName_drive[SLOT6], g_cmdLine.driveConnected[SLOT6], g_cmdLine.bBoot);
+			g_cmdLine.szImageName_drive[SLOT6][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT6][DRIVE_2] = NULL;	// Don't insert on a restart
+
+			InsertHardDisks(SLOT5, g_cmdLine.szImageName_harddisk[SLOT5], temp);
+			for (UINT i = 0; i < NUM_HARDDISKS; i++)
+				g_cmdLine.szImageName_harddisk[SLOT5][i] = NULL;	// Don't insert on a restart
+
+			InsertHardDisks(SLOT7, g_cmdLine.szImageName_harddisk[SLOT7], g_cmdLine.bBoot);
+			for (UINT i = 0; i < NUM_HARDDISKS; i++)
+				g_cmdLine.szImageName_harddisk[SLOT7][i] = NULL;	// Don't insert on a restart
+
+			if (g_cmdLine.bSlotEmpty[SLOT7])
+			{
+				GetCardMgr().Remove(SLOT7);	// Disable HDD controller, and persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
+				Snapshot_UpdatePath();		// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
+			}
+		}
+
+		// Set *after* InsertFloppyDisks() & InsertHardDisks(), which both update g_sCurrentDir
+		if (!g_cmdLine.strCurrentDir.empty())
+			SetCurrentImageDir(g_cmdLine.strCurrentDir);
+
+		if (g_cmdLine.bRemoveNoSlotClock)
+			MemRemoveNoSlotClock();
+
+		if (g_cmdLine.supportExtraMBCardTypes)
+			GetCardMgr().GetMockingboardCardMgr().SetEnableExtraCardTypes(true);
+
+		if (g_cmdLine.noDisk2StepperDefer)
+			GetCardMgr().GetDisk2CardMgr().SetStepperDefer(false);
+
+		// Call DebugInitialize() after SetCurrentImageDir()
+		DebugInitialize();
+		LogFileOutput("Main: DebugInitialize()\n");
+
+		MemInitialize();
+		LogFileOutput("Main: MemInitialize()\n");
+
+		// Show About dialog after creating main window (need g_hFrameWindow)
+		if (bShowAboutDlg)
+		{
+			if (!AboutDlg())
+				g_cmdLine.bShutdown = true;											// Close everything down
+			else
+				RegSaveString(REG_CONFIG, REGVALUE_VERSION, TRUE, g_VERSIONSTRING);	// Only save version after user accepts license
+		}
+
+		if (g_bCapturePrintScreenKey)
+		{
+			RegisterHotKeys();		// needs valid g_hFrameWindow
+			LogFileOutput("Main: RegisterHotKeys()\n");
+		}
+
+		if (g_bHookSystemKey)
+		{
+			if (GetHookFilter().InitHookThread())	// needs valid g_hFrameWindow (for message pump)
+				LogFileOutput("Main: HookFilterForKeyboard()\n");
+		}
+
+		// Need to test if it's safe to call ResetMachineState(). In the meantime, just call Disk2Card's Reset():
+		GetCardMgr().GetDisk2CardMgr().Reset(true);	// Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor
+		LogFileOutput("Main: DiskReset()\n");
+		if (GetCardMgr().QuerySlot(SLOT7) == CT_GenericHDD)
+			GetCardMgr().GetRef(SLOT7).Reset(true);	// GH#515
+		LogFileOutput("Main: HDDReset()\n");
+
+		if (!g_bSysClkOK)
+		{
+			GetFrame().FrameMessageBox("DirectX failed to create SystemClock instance", TEXT("AppleWin Error"), MB_OK);
+			g_cmdLine.bShutdown = true;
+		}
+
+		if (g_bCustomRomF8Failed || g_bCustomRomFailed || (g_hCustomRomF8 != INVALID_HANDLE_VALUE && g_hCustomRom != INVALID_HANDLE_VALUE))
+		{
+			std::string msg = g_bCustomRomF8Failed ? "Failed to load custom F8 rom (not found or not exactly 2KiB)\n"
+							: g_bCustomRomFailed ? "Failed to load custom rom (not found or not exactly 12KiB or 16KiB)\n"
+							: "Unsupported -rom and -f8rom being used at the same time\n";
+
+			LogFileOutput("%s", msg.c_str());
+			GetFrame().FrameMessageBox(msg.c_str(), TEXT("AppleWin Error"), MB_OK);
+			g_cmdLine.bShutdown = true;
+		}
+
+		if (g_cmdLine.szSnapshotName)
+		{
+			std::string strPathname(g_cmdLine.szSnapshotName);
+			int nIdx = strPathname.find_last_of(PATH_SEPARATOR);
+			if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())	// path exists?
+			{
+				const std::string strPath = strPathname.substr(0, nIdx+1);
+				SetCurrentImageDir(strPath);
+			}
+
+			// Override value just loaded from Registry by LoadConfiguration()
+			// . NB. Registry value is not updated with this cmd-line value
+			Snapshot_SetFilename(g_cmdLine.szSnapshotName);
+			Snapshot_LoadState();
+			g_cmdLine.bBoot = true;
+			g_cmdLine.szSnapshotName = NULL;
+		}
 		else
-			res = GetFrame().GetBestDisplayResolutionForFullScreen(bestWidth, bestHeight, g_cmdLine.userSpecifiedWidth, g_cmdLine.userSpecifiedHeight);
+		{
+			Snapshot_Startup();		// Do this after everything has been init'ed
+			LogFileOutput("Main: Snapshot_Startup()\n");
+		}
 
-		if (res)
-			LogFileOutput("Best resolution for -fs-width/height=x switch(es): Width=%d, Height=%d\n", bestWidth, bestHeight);
+		if (g_cmdLine.szScreenshotFilename)
+		{
+			GetFrame().Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
+			g_cmdLine.bShutdown = true;
+		}
+
+		if (g_cmdLine.bShutdown)
+		{
+			PostMessage(GetFrame().g_hFrameWindow, WM_DESTROY, 0, 0);	// Close everything down
+			// NB. If shutting down, then don't post any other messages (GH#286)
+		}
 		else
-			LogFileOutput("Failed to set parameter for -fs-width/height=x switch(es)\n");
-
-		if (res)
-			g_fullScreenResolutionChangedByUser = true;
-	}
-
-	// Pre: may need g_hFrameWindow for MessageBox errors
-	// Post: may enable HDD, required for MemInitialize()->MemInitializeIO()
-	{
-		bool temp = false;
-		InsertFloppyDisks(SLOT5, g_cmdLine.szImageName_drive[SLOT5], g_cmdLine.driveConnected[SLOT5], temp);
-		g_cmdLine.szImageName_drive[SLOT5][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT5][DRIVE_2] = NULL;	// Don't insert on a restart
-
-		InsertFloppyDisks(SLOT6, g_cmdLine.szImageName_drive[SLOT6], g_cmdLine.driveConnected[SLOT6], g_cmdLine.bBoot);
-		g_cmdLine.szImageName_drive[SLOT6][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT6][DRIVE_2] = NULL;	// Don't insert on a restart
-
-		InsertHardDisks(SLOT5, g_cmdLine.szImageName_harddisk[SLOT5], temp);
-		for (UINT i = 0; i < NUM_HARDDISKS; i++)
-			g_cmdLine.szImageName_harddisk[SLOT5][i] = NULL;	// Don't insert on a restart
-
-		InsertHardDisks(SLOT7, g_cmdLine.szImageName_harddisk[SLOT7], g_cmdLine.bBoot);
-		for (UINT i = 0; i < NUM_HARDDISKS; i++)
-			g_cmdLine.szImageName_harddisk[SLOT7][i] = NULL;	// Don't insert on a restart
-
-		if (g_cmdLine.bSlotEmpty[SLOT7])
 		{
-			GetCardMgr().Remove(SLOT7);	// Disable HDD controller, and persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
-			Snapshot_UpdatePath();		// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
+			if (g_cmdLine.setFullScreen > 0)
+			{
+				PostMessage(GetFrame().g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
+				g_cmdLine.setFullScreen = 0;
+			}
+
+			if (g_cmdLine.bBoot)
+			{
+				PostMessage(GetFrame().g_hFrameWindow, WM_USER_BOOT, 0, 0);
+				g_cmdLine.bBoot = false;
+			}
 		}
-	}
-
-	// Set *after* InsertFloppyDisks() & InsertHardDisks(), which both update g_sCurrentDir
-	if (!g_cmdLine.strCurrentDir.empty())
-		SetCurrentImageDir(g_cmdLine.strCurrentDir);
-
-	if (g_cmdLine.bRemoveNoSlotClock)
-		MemRemoveNoSlotClock();
-
-	if (g_cmdLine.supportExtraMBCardTypes)
-		GetCardMgr().GetMockingboardCardMgr().SetEnableExtraCardTypes(true);
-
-	if (g_cmdLine.noDisk2StepperDefer)
-		GetCardMgr().GetDisk2CardMgr().SetStepperDefer(false);
-
-	if (g_cmdLine.useAltCpuEmulation)
-		ForceAltCpuEmulation();
-
-	if (!g_cmdLine.debuggerAutoRunScriptFilename.empty())
-		DebugSetAutoRunScript(g_cmdLine.debuggerAutoRunScriptFilename);
-
-	// Call DebugInitialize() after SetCurrentImageDir()
-	DebugInitialize();
-	LogFileOutput("Main: DebugInitialize()\n");
-
-	MemInitialize();
-	LogFileOutput("Main: MemInitialize()\n");
-
-	// Show About dialog after creating main window (need g_hFrameWindow)
-	if (bShowAboutDlg)
-	{
-		if (!AboutDlg())
-			g_cmdLine.bShutdown = true;											// Close everything down
-		else
-			RegSaveString(REG_CONFIG, REGVALUE_VERSION, TRUE, g_VERSIONSTRING);	// Only save version after user accepts license
-	}
-
-	if (g_bCapturePrintScreenKey)
-	{
-		RegisterHotKeys();		// needs valid g_hFrameWindow
-		LogFileOutput("Main: RegisterHotKeys()\n");
-	}
-
-	if (g_bHookSystemKey)
-	{
-		if (GetHookFilter().InitHookThread())	// needs valid g_hFrameWindow (for message pump)
-			LogFileOutput("Main: HookFilterForKeyboard()\n");
-	}
-
-	// Need to test if it's safe to call ResetMachineState(). In the meantime, just Reset() all cards:
-	// . Switch from a booting A][+ to a non-autostart A][, so need to turn off floppy motor; and GH#515 (for HDCs)
-	GetCardMgr().Reset(true);
-	LogFileOutput("Main: GetCardMgr().Reset()\n");
-
-	if (!g_bSysClkOK)
-	{
-		GetFrame().FrameMessageBox("DirectX failed to create SystemClock instance", "AppleWin Error", MB_OK);
-		g_cmdLine.bShutdown = true;
-	}
-
-	if (g_bCustomRomF8Failed || g_bCustomRomFailed || (g_hCustomRomF8 != INVALID_HANDLE_VALUE && g_hCustomRom != INVALID_HANDLE_VALUE))
-	{
-		std::string msg = g_bCustomRomF8Failed ? "Failed to load custom F8 rom (not found or not exactly 2KiB)\n"
-						: g_bCustomRomFailed ? "Failed to load custom rom (not found or not exactly 12KiB or 16KiB)\n"
-						: "Unsupported -rom and -f8rom being used at the same time\n";
-
-		LogFileOutput("%s", msg.c_str());
-		GetFrame().FrameMessageBox(msg.c_str(), "AppleWin Error", MB_OK);
-		g_cmdLine.bShutdown = true;
-	}
-
-	if (g_cmdLine.szSnapshotName)
-	{
-		std::string strPathname(g_cmdLine.szSnapshotName);
-		size_t nIdx = strPathname.find_last_of(PATH_SEPARATOR);
-		if (nIdx >= 0 && nIdx+1 < (int)strPathname.length())	// path exists?
-		{
-			const std::string strPath = strPathname.substr(0, nIdx+1);
-			SetCurrentImageDir(strPath);
-		}
-
-		// Override value just loaded from Registry by LoadConfiguration()
-		// . NB. Registry value is not updated with this cmd-line value
-		Snapshot_SetFilename(g_cmdLine.szSnapshotName);
-		Snapshot_SetIgnoreHdcFirmware(g_cmdLine.snapshotIgnoreHdcFirmware);
-		Snapshot_LoadState();
-		g_cmdLine.bBoot = true;
-		g_cmdLine.szSnapshotName = NULL;
-	}
-	else
-	{
-		Snapshot_Startup();		// Do this after everything has been init'ed
-		LogFileOutput("Main: Snapshot_Startup()\n");
-	}
-
-	if (g_cmdLine.szScreenshotFilename)
-	{
-		GetFrame().Video_RedrawAndTakeScreenShot(g_cmdLine.szScreenshotFilename);
-		g_cmdLine.bShutdown = true;
-	}
-
-	if (g_cmdLine.bShutdown)
-	{
-		PostMessage(GetFrame().g_hFrameWindow, WM_DESTROY, 0, 0);	// Close everything down
-		// NB. If shutting down, then don't post any other messages (GH#286)
-	}
-	else
-	{
-		if (g_cmdLine.setFullScreen > 0)
-		{
-			PostMessage(GetFrame().g_hFrameWindow, WM_USER_FULLSCREEN, 0, 0);
-			g_cmdLine.setFullScreen = 0;
-		}
-
-		if (g_cmdLine.bBoot)
-		{
-			PostMessage(GetFrame().g_hFrameWindow, WM_USER_BOOT, 0, 0);
-			g_cmdLine.bBoot = false;
-		}
-	}
 }
 
 static void Shutdown(void)

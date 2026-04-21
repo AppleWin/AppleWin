@@ -36,15 +36,14 @@
   Implementation notes:
   . II/II+
     . Mirrors the 80STORE/PAGE2/AUXREAD/AUXWRITE switches to VidHD.
-    . Reuses 'memaux' that's for the //e models with aux card of 64KiB (or more).
+    . Reuses 'memaux' that's for the //e models.
     . AUXWRITE=1: writes occur to both main & memaux.
     . 80STORE=1 && PAGE2=1: same as AUXWRITE=1 (but should be changed to *only* allow writes to aux's TEXT1 & HGR2 areas).
     . Only 6502 (not 65C02) emulation supports this dual write to main & memaux (via the 'memVidHD' pointer):
       - So a II/II+ with a 65C02 won't correctly support VidHD cards.
       - And a //e with a 6502 will incur a slight overhead to test 'memVidHD' pointer (which is always NULL for //e's).
     . VidHD card's save-state includes VidHD's aux mem ($400-$9FFF).
-  . //e with 1KiB 80-Col card or empty aux slot: supported.
-	. Reuses 'memaux' that's for the //e models with aux card of 64KiB (or more).
+  . //e with 1KiB 80-Col card: AppleWin doesn't support this - so currently out of scope.
 */
 
 #include "StdAfx.h"
@@ -101,7 +100,8 @@ void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG 
 
 bool VidHDCard::IsWriteAux(void)
 {
-	return MemIsWriteAux(m_memMode);
+	return (m_memMode & MF_AUXWRITE) ||							// Write to aux: $200-$BFFF
+		((m_memMode & MF_80STORE) && (m_memMode & MF_PAGE2));	// Write to aux: $400-$7FF and $2000-$3FFF
 }
 
 //===========================================================================
@@ -205,13 +205,12 @@ void VidHDCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_BORDER_COLOR, m_BORDERCOLOR);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SHADOW, m_SHADOW);
 
-	if (IsApple2PlusOrClone(GetApple2Type()) || IsIIeWithoutAuxMem())	// Save aux mem for II/II+ or //e without aux mem
+	if (IsApple2PlusOrClone(GetApple2Type()))	// Save aux mem for II/II+
 	{
 		// Save [$400-$9FFF]
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", MemGetSnapshotAuxMemStructName().c_str());
 
-		const UINT bank1 = 1;
-		LPBYTE pMemBase = MemGetBankPtr(bank1);
+		LPBYTE pMemBase = MemGetBankPtr(1, true);
 		yamlSaveHelper.SaveMemory(pMemBase, (SHR_MEMORY_END + 1) - TEXT_PAGE1_BEGIN, TEXT_PAGE1_BEGIN);
 	}
 }
@@ -227,14 +226,13 @@ bool VidHDCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	m_BORDERCOLOR = yamlLoadHelper.LoadUint(SS_YAML_KEY_BORDER_COLOR);
 	m_SHADOW = yamlLoadHelper.LoadUint(SS_YAML_KEY_SHADOW);
 
-	if (IsApple2PlusOrClone(GetApple2Type()) || IsIIeWithoutAuxMem())	// Load aux mem for II/II+ or //e without aux mem
+	if (IsApple2PlusOrClone(GetApple2Type()))	// Load aux mem for II/II+
 	{
 		// Load [$400-$9FFF]
 		if (!yamlLoadHelper.GetSubMap(MemGetSnapshotAuxMemStructName()))
 			throw std::runtime_error("Memory: Missing map name: " + MemGetSnapshotAuxMemStructName());
 
-		const UINT bank1 = 1;
-		LPBYTE pMemBase = MemGetBankPtr(bank1, false);
+		LPBYTE pMemBase = MemGetBankPtr(1, false);
 		yamlLoadHelper.LoadMemory(pMemBase, (SHR_MEMORY_END + 1) - TEXT_PAGE1_BEGIN, TEXT_PAGE1_BEGIN);
 
 		yamlLoadHelper.PopMap();

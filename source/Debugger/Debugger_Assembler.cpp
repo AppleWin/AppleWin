@@ -43,23 +43,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 	AddressingMode_t g_aOpmodes[ NUM_ADDRESSING_MODES ] =
 	{ // Output, but eventually used for Input when Assembler is working.
-		{""        , 1 , "(implied)"     }, // (implied)
-		{""        , 1 , "n/a 1"         }, // INVALID1
-		{""        , 2 , "n/a 2"         }, // INVALID2
-		{""        , 3 , "n/a 3"         }, // INVALID3
-		{"%02X"    , 2 , "Immediate"     }, // AM_M // #$%02X -> %02X
-		{"%04X"    , 3 , "Absolute"      }, // AM_A
-		{"%02X"    , 2 , "Zero Page"     }, // AM_Z
-		{"%04X,X"  , 3 , "Absolute,X"    }, // AM_AX     // %s,X
-		{"%04X,Y"  , 3 , "Absolute,Y"    }, // AM_AY     // %s,Y
-		{"%02X,X"  , 2 , "Zero Page,X"   }, // AM_ZX     // %s,X
-		{"%02X,Y"  , 2 , "Zero Page,Y"   }, // AM_ZY     // %s,Y
-		{"%s"      , 2 , "Relative"      }, // AM_R
-		{"(%02X,X)", 2 , "(Zero Page),X" }, // AM_IZX // ($%02X,X) -> %s,X
-		{"(%04X,X)", 3 , "(Absolute),X"  }, // AM_IAX // ($%04X,X) -> %s,X
-		{"(%02X),Y", 2 , "(Zero Page),Y" }, // AM_NZY // ($%02X),Y
-		{"(%02X)"  , 2 , "(Zero Page)"   }, // AM_NZ  // ($%02X) -> $%02X
-		{"(%04X)"  , 3 , "(Absolute)"    }  // AM_NA  // (%04X) -> %s
+		{TEXT("")        , 1 , "(implied)"     }, // (implied)
+		{TEXT("")        , 1 , "n/a 1"         }, // INVALID1
+		{TEXT("")        , 2 , "n/a 2"         }, // INVALID2
+		{TEXT("")        , 3 , "n/a 3"         }, // INVALID3
+		{TEXT("%02X")    , 2 , "Immediate"     }, // AM_M // #$%02X -> %02X
+		{TEXT("%04X")    , 3 , "Absolute"      }, // AM_A
+		{TEXT("%02X")    , 2 , "Zero Page"     }, // AM_Z
+		{TEXT("%04X,X")  , 3 , "Absolute,X"    }, // AM_AX     // %s,X
+		{TEXT("%04X,Y")  , 3 , "Absolute,Y"    }, // AM_AY     // %s,Y
+		{TEXT("%02X,X")  , 2 , "Zero Page,X"   }, // AM_ZX     // %s,X
+		{TEXT("%02X,Y")  , 2 , "Zero Page,Y"   }, // AM_ZY     // %s,Y
+		{TEXT("%s")      , 2 , "Relative"      }, // AM_R
+		{TEXT("(%02X,X)"), 2 , "(Zero Page),X" }, // AM_IZX // ($%02X,X) -> %s,X
+		{TEXT("(%04X,X)"), 3 , "(Absolute),X"  }, // AM_IAX // ($%04X,X) -> %s,X
+		{TEXT("(%02X),Y"), 2 , "(Zero Page),Y" }, // AM_NZY // ($%02X),Y
+		{TEXT("(%02X)")  , 2 , "(Zero Page)"   }, // AM_NZ  // ($%02X) -> $%02X
+		{TEXT("(%04X)")  , 3 , "(Absolute)"    }  // AM_NA  // (%04X) -> %s
 	};
 
 
@@ -168,7 +168,7 @@ const Opcodes_t g_aOpcodes65C02[ NUM_OPCODES ] =
 };
 
 const Opcodes_t g_aOpcodes6502[ NUM_OPCODES ] =
-{
+{ // Should match Cpu.cpp InternalCpuExecute() switch (*(mem+regs.pc++)) !!
 
 /*
 	Based on: http://axis.llx.com/~nparker/a2/opcodes.html
@@ -477,8 +477,8 @@ WORD _6502_GetStackReturnAddress ()
 WORD _6502_PeekStackReturnAddress (WORD & nStack)
 {
 	WORD   nAddress;
-	       nAddress  =  ReadByteFromMemory(_6502_STACK_BEGIN + (nStack & 0xFF)); nStack++;
-	       nAddress += (ReadByteFromMemory(_6502_STACK_BEGIN + (nStack & 0xFF)) << 8);
+	       nAddress  = ((unsigned) *(LPBYTE)(mem + 0x100 + (nStack & 0xFF))     ); nStack++;
+	       nAddress += ((unsigned) *(LPBYTE)(mem + 0x100 + (nStack & 0xFF)) << 8);
 	       nAddress++;
 	return nAddress;
 }
@@ -534,7 +534,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 	}
 #endif
 
-	int iOpcode_ = ReadByteFromMemory(nBaseAddress);
+	int iOpcode_ = *(mem + nBaseAddress);
 		iOpmode_ = g_aOpcodes[ iOpcode_ ].nAddressMode;
 		nOpbyte_ = g_aOpmodes[ iOpmode_ ].m_nBytes;
 
@@ -553,7 +553,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 		if ( pData_ )
 			*pData_ = pData;
 
-		const uint32_t nEndAddress = pData->nEndAddress;
+		const DWORD nEndAddress = pData->nEndAddress;
 		const int   nDisplayLen = nEndAddress - nBaseAddress + 1; // *inclusive* KEEP IN SYNC: _CmdDefineByteRange() CmdDisasmDataList() _6502_GetOpmodeOpbyte() FormatNopcodeBytes()
 		nSlack = nDisplayLen;
 
@@ -571,7 +571,7 @@ int  _6502_GetOpmodeOpbyte ( const int nBaseAddress, int & iOpmode_, int & nOpby
 			case NOP_WORD_2: nOpbyte_ = 4; iOpmode_ = AM_M; break;
 			case NOP_WORD_4: nOpbyte_ = 8; iOpmode_ = AM_M; break;
 			case NOP_ADDRESS:nOpbyte_ = 2; iOpmode_ = AM_A; // BUGFIX: 2.6.2.33 Define Address should be shown as Absolute mode, not Indirect Absolute mode. DA BASIC.FPTR D000:D080 // was showing as "da (END-1)" now shows as "da END-1"
-				pData->nTargetAddress = ReadWordFromMemory(nBaseAddress);
+				pData->nTargetAddress = *(LPWORD)(mem+nBaseAddress);
 				break;
 			case NOP_STRING_APPLE:
 				iOpmode_ = AM_DATA;
@@ -644,9 +644,9 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 	if (pTargetBytes_)
 		*pTargetBytes_  = 0;	
 
-	BYTE nOpcode = ReadByteFromMemory(nAddress);
-	BYTE nTarget8 = ReadByteFromMemory(nAddress + 1);
-	WORD nTarget16 = (ReadByteFromMemory(nAddress + 2) << 8) | nTarget8;
+	BYTE nOpcode   = mem[nAddress];
+	BYTE nTarget8  = mem[(nAddress+1)&0xFFFF];
+	WORD nTarget16 = (mem[(nAddress+2)&0xFFFF]<<8) | nTarget8;
 
 	int eMode = g_aOpcodes[ nOpcode ].nAddressMode;
 
@@ -670,7 +670,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 
 					*pTargetPartial_  = _6502_STACK_BEGIN + ((sp+1) & 0xFF);
 					*pTargetPartial2_ = _6502_STACK_BEGIN + ((sp+2) & 0xFF);
-					nTarget16 = ReadByteFromMemory(*pTargetPartial_) + (ReadByteFromMemory(*pTargetPartial2_) << 8);
+					nTarget16 = mem[*pTargetPartial_] + (mem[*pTargetPartial2_]<<8);
 
 					if (nOpcode == OPCODE_RTS)
 						++nTarget16;
@@ -682,7 +682,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 					//*pTargetPartial3_ = _6502_STACK_BEGIN + ((regs.sp-2) & 0xFF);	// TODO: PHP
 					//*pTargetPartial4_ = _6502_BRK_VECTOR + 0;	// TODO
 					//*pTargetPartial5_ = _6502_BRK_VECTOR + 1;	// TODO
-					nTarget16 = ReadWordFromMemory(_6502_INTERRUPT_VECTOR);
+					nTarget16 = *(LPWORD)(mem + _6502_BRK_VECTOR);
 				}
 				else	// PHn/PLn
 				{
@@ -720,7 +720,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 			*pTargetPartial_    = nTarget16;
 			*pTargetPartial2_   = nTarget16+1;
 			if (bIncludeNextOpcodeAddress)
-				*pTargetPointer_ = ReadWordFromMemory(nTarget16);
+				*pTargetPointer_ = *(LPWORD)(mem + nTarget16);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
@@ -746,7 +746,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 			if (GetMainCpu() == CPU_6502 && (nTarget16 & 0xff) == 0xff)
 				*pTargetPartial2_ = nTarget16 & 0xff00;
 			if (bIncludeNextOpcodeAddress)
-				*pTargetPointer_ = ReadByteFromMemory(*pTargetPartial_) | (ReadByteFromMemory(*pTargetPartial2_) << 8);
+				*pTargetPointer_ = mem[*pTargetPartial_] | (mem[*pTargetPartial2_] << 8);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
@@ -754,21 +754,21 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 		case AM_IZX: // Indexed (Zeropage Indirect, X)
 			nTarget8 = (nTarget8 + regs.x) & 0xFF;
 			*pTargetPartial_    = nTarget8;
-			*pTargetPointer_    = ReadWordFromMemory(nTarget8);
+			*pTargetPointer_    = *(LPWORD)(mem + nTarget8);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
 
 		case AM_NZY: // Indirect (Zeropage) Indexed, Y
 			*pTargetPartial_    = nTarget8;
-			*pTargetPointer_    = ((ReadWordFromMemory(nTarget8)) + regs.y) & _6502_MEM_END;
+			*pTargetPointer_    = ((*(LPWORD)(mem + nTarget8)) + regs.y) & _6502_MEM_END; // Bugfix: 
 			if (pTargetBytes_)
 				*pTargetBytes_ = 1;
 			break;
 
 		case AM_NZ: // Indirect (Zeropage)
 			*pTargetPartial_    = nTarget8;
-			*pTargetPointer_    = ReadWordFromMemory(nTarget8);
+			*pTargetPointer_    = *(LPWORD)(mem + nTarget8);
 			if (pTargetBytes_)
 				*pTargetBytes_ = 2;
 			break;
@@ -782,7 +782,7 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 				if (nTarget8 <= _6502_BRANCH_POS)
 					*pTargetPointer_ += nTarget8; // +
 				else
-					*pTargetPointer_ -= (256 - nTarget8); // -  Two's complement
+					*pTargetPointer_ -= nTarget8; // -
 
 				*pTargetPointer_ &= _6502_MEM_END;
 
@@ -822,26 +822,12 @@ bool _6502_GetTargets (WORD nAddress, int *pTargetPartial_, int *pTargetPartial2
 //===========================================================================
 bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 {
-	      int              iOpcode;
-	      int              iOpmode;
-	      AddressingMode_e eOpmode;
-	      int              nOpbytes;
-	const DisasmData_t    *pDisasmData = NULL;
-	iOpcode = _6502_GetOpmodeOpbyte( nAddress, iOpmode, nOpbytes, &pDisasmData );
-	eOpmode = (AddressingMode_e) iOpmode;
-	if (eOpmode == AM_DATA)
-	{
-		// We have pure data, such as a string, that has no target address
-		// TODO: UI: We should flash the cursor line red to signal the user that we can't follow a nonexistent target address.
-		return false;
-	}
-	else
-	if (pDisasmData && nOpbytes)
-	{
-		// User marked bytes up as custom data
-		nTarget_ = pDisasmData->nTargetAddress;
-		return true;
-	}
+	int iOpcode;
+	int iOpmode;
+	int nOpbytes;
+	iOpcode = _6502_GetOpmodeOpbyte( nAddress, iOpmode, nOpbytes );
+
+	// Composite string that has the target nAddress
 
 	if ((iOpmode != AM_IMPLIED) &&
 		(iOpmode != AM_1) &&
@@ -868,38 +854,6 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 			return true;
 		}
 	}
-	else
-	if (iOpcode == OPCODE_RTS)
-	{
-		int nStackAddr  = regs.sp + 1;
-		int nReturnAddr = ReadWordFromMemory( nStackAddr );
-
-		// Handle stack wrap around for edge cases of fetching 16-bit return address when SP == 0x1FE or 0x1FF
-		//    $100: 61
-		//    $101: FA
-		//         :
-		//    $1FD: FD
-		//    $1FE: FE
-		//    $1FF: FF
-		//    $200: 00
-		// Repro
-		//   100:61 FA
-		//   1FD:FD FE FF 00
-		//   R PC FBFC
-		//   R S FD   ; FFFF sans overflow
-		//   R S FE   ; 6200 with overflow
-		//   R S FF   ; FA62 with overflow
-		if (nStackAddr >= (_6502_STACK_END - 1))
-		{
-			int RetLo = ReadByteFromMemory( ((nStackAddr + 0) & _6502_STACK_END) | _6502_STACK_BEGIN );
-			int RetHi = ReadByteFromMemory( ((nStackAddr + 1) & _6502_STACK_END) | _6502_STACK_BEGIN );
-			nReturnAddr = (RetHi << 8) | RetLo;
-		}
-
-		nTarget_ = ++nReturnAddr & _6502_MEM_END; // /!\ NOTE: 6502 increments return address when popping from stack
-		return true;
-	}
-
 	return false;
 }
 
@@ -945,9 +899,9 @@ bool _6502_IsOpcodeValid ( int iOpcode )
 
 
 //===========================================================================
-Hash_t AssemblerHashMnemonic ( const char * pMnemonic )
+Hash_t AssemblerHashMnemonic ( const TCHAR * pMnemonic )
 {
-	const char *pText = pMnemonic;
+	const TCHAR *pText = pMnemonic;
 	Hash_t nMnemonicHash = 0;
 	int iHighBits;
 
@@ -990,7 +944,7 @@ void AssemblerHashOpcodes ()
 
 	for ( iOpcode = 0; iOpcode < NUM_OPCODES; iOpcode++ )
 	{
-		const char *pMnemonic = g_aOpcodes65C02[ iOpcode ].sMnemonic;
+		const TCHAR *pMnemonic = g_aOpcodes65C02[ iOpcode ].sMnemonic;
 		nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 		g_aOpcodesHash[ iOpcode ] = nMnemonicHash;
 #if DEBUG_ASSEMBLER
@@ -1011,8 +965,8 @@ void AssemblerHashDirectives ()
 	for ( iOpcode = 0; iOpcode < NUM_ASM_M_DIRECTIVES; iOpcode++ )
 	{
 		int iNopcode = FIRST_M_DIRECTIVE + iOpcode;
-//.		const char *pMnemonic = g_aAssemblerDirectivesMerlin[ iOpcode ].m_pMnemonic;
-		const char *pMnemonic = g_aAssemblerDirectives[ iNopcode ].m_pMnemonic;
+//.		const TCHAR *pMnemonic = g_aAssemblerDirectivesMerlin[ iOpcode ].m_pMnemonic;
+		const TCHAR *pMnemonic = g_aAssemblerDirectives[ iNopcode ].m_pMnemonic;
 		nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 		g_aAssemblerDirectives[ iNopcode ].m_nHash = nMnemonicHash;
 	}
@@ -1083,11 +1037,14 @@ int AssemblerPokeAddress( const int Opcode, const int nOpmode, const WORD nBaseA
 	// if (nOpbytes != nBytes)
 	//	ConsoleDisplayError( " ERROR: Input Opcode bytes differs from actual!" );
 
+	*(memdirty + (nBaseAddress >> 8)) |= 1;
+//	*(mem + nBaseAddress) = (BYTE) nOpcode;
+
 	if (nOpbytes > 1)
-		WriteByteToMemory(nBaseAddress + 1, (BYTE)(nTargetOffset >> 0));
+		*(mem + nBaseAddress + 1) = (BYTE)(nTargetOffset >> 0);
 
 	if (nOpbytes > 2)
-		WriteByteToMemory(nBaseAddress + 2, (BYTE)(nTargetOffset >> 8));
+		*(mem + nBaseAddress + 2) = (BYTE)(nTargetOffset >> 8);
 
 	return nOpbytes;
 }
@@ -1099,7 +1056,7 @@ bool AssemblerPokeOpcodeAddress( const WORD nBaseAddress )
 	int nTargetValue = m_nAsmTargetValue;
 
 	int iOpcode;
-	const size_t nOpcodes = m_vAsmOpcodes.size();
+	int nOpcodes = m_vAsmOpcodes.size();
 
 	for ( iOpcode = 0; iOpcode < nOpcodes; iOpcode++ )
 	{
@@ -1108,12 +1065,12 @@ bool AssemblerPokeOpcodeAddress( const WORD nBaseAddress )
 
 		if (nOpmode == iAddressMode)
 		{
-			WriteByteToMemory(nBaseAddress, (BYTE)nOpcode);
+			*(mem + nBaseAddress) = (BYTE) nOpcode;
 			int nOpbytes = AssemblerPokeAddress( nOpcode, nOpmode, nBaseAddress, nTargetValue );
 
 			if (m_bDelayedTargetsDirty)
 			{			
-				size_t nDelayedTargets = m_vDelayedTargets.size();
+				int nDelayedTargets = m_vDelayedTargets.size();
 				DelayedTarget_t *pTarget = & m_vDelayedTargets.at( nDelayedTargets - 1 );
 
 				pTarget->m_nOpcode = nOpcode;
@@ -1181,12 +1138,12 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 			if (eNextState != AS_GET_MNEMONIC_PARM)
 			{
-				ConsoleBufferPush( " Syntax Error: '#'"  );
+				ConsoleBufferPush( TEXT( " Syntax Error: '#'" ) );
 				return false;
 			}
 			if (TestFlag( AF_HaveHash ))
 			{
-				ConsoleBufferPush( " Syntax Error: Extra '#'"  ); // No thanks, we already have one
+				ConsoleBufferPush( TEXT( " Syntax Error: Extra '#'" ) ); // No thanks, we already have one
 				return false;
 			}
 			SetFlag( AF_HaveHash );
@@ -1200,7 +1157,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 			if (TestFlag( AF_HaveDollar ))
 			{
-				ConsoleBufferPush( " Syntax Error: Extra '$'" ); // No thanks, we already have one
+				ConsoleBufferPush( TEXT( " Syntax Error: Extra '$'" ) ); // No thanks, we already have one
 				return false;
 			}
 
@@ -1219,7 +1176,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 			if (TestFlag( AF_HaveLeftParen ))
 			{
-				ConsoleBufferPush( " Syntax Error: Extra '('" ); // No thanks, we already have one
+				ConsoleBufferPush( TEXT( " Syntax Error: Extra '('" ) ); // No thanks, we already have one
 				return false;
 			}
 			SetFlag( AF_HaveLeftParen );
@@ -1232,7 +1189,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 			if (TestFlag( AF_HaveRightParen ))
 			{
-				ConsoleBufferPush( " Syntax Error: Extra ')'" ); // No thanks, we already have one
+				ConsoleBufferPush( TEXT( " Syntax Error: Extra ')'" ) ); // No thanks, we already have one
 				return false;
 			}
 			SetFlag( AF_HaveRightParen );
@@ -1245,7 +1202,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 			if (TestFlag( AF_HaveComma ))
 			{
-				ConsoleBufferPush( " Syntax Error: Extra ','"  ); // No thanks, we already have one
+				ConsoleBufferPush( TEXT( " Syntax Error: Extra ','" ) ); // No thanks, we already have one
 				return false;
 			}
 			SetFlag( AF_HaveComma );
@@ -1261,7 +1218,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 		{
 		}
 		else
-		if (iToken == TOKEN_COMMENT_EOL) // comment
+		if (iToken == TOKEN_SEMI) // comment
 		{
 			break;
 		}
@@ -1337,7 +1294,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 					{
 						if (! TestFlag( AF_HaveComma ))
 						{
-							ConsoleBufferPush( " Syntax Error: Missing ','"  );
+							ConsoleBufferPush( TEXT( " Syntax Error: Missing ','" ) );
 							return false;
 						}
 						SetFlag( AF_HaveRegisterX );
@@ -1346,7 +1303,7 @@ bool AssemblerGetArgs( int iArg, int nArgs, WORD nBaseAddress )
 					{
 						if (! (TestFlag( AF_HaveComma )))
 						{
-							ConsoleBufferPush( " Syntax Error: Missing ','"  );
+							ConsoleBufferPush( TEXT( " Syntax Error: Missing ','" ) );
 							return false;
 						}
 						SetFlag( AF_HaveRegisterY );
@@ -1371,13 +1328,13 @@ bool AssemblerUpdateAddressingMode()
 
 	if ((TestFlag( AF_HaveLeftParen )) && (! TestFlag( AF_HaveRightParen )))
 	{
-		ConsoleBufferPush( " Syntax Error: Missing ')'" );
+		ConsoleBufferPush( TEXT( " Syntax Error: Missing ')'" ) );
 		return false;
 	}
 
 	if ((! TestFlag( AF_HaveLeftParen )) && (  TestFlag( AF_HaveRightParen )))
 	{
-		ConsoleBufferPush( " Syntax Error: Missing '('" );
+		ConsoleBufferPush( TEXT( " Syntax Error: Missing '('" ) );
 		return false;
 	}
 
@@ -1385,7 +1342,7 @@ bool AssemblerUpdateAddressingMode()
 	{
 		if ((! TestFlag( AF_HaveRegisterX )) && (! TestFlag( AF_HaveRegisterY )))
 		{
-			ConsoleBufferPush( " Syntax Error: Index 'X' or 'Y'"  );
+			ConsoleBufferPush( TEXT( " Syntax Error: Index 'X' or 'Y'" ) );
 			return false;
 		}
 	}
@@ -1465,7 +1422,7 @@ bool AssemblerUpdateAddressingMode()
 //===========================================================================
 int AssemblerDelayedTargetsSize()
 {
-	int nSize = (int) m_vDelayedTargets.size();
+	int nSize = m_vDelayedTargets.size();
 	return nSize;
 }
 
@@ -1550,7 +1507,7 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 
 	m_nAsmBaseAddress = nAddress;
 
-	char *pMnemonic = g_aArgs[ iArg ].sArg;
+	TCHAR *pMnemonic = g_aArgs[ iArg ].sArg;
 	Hash_t nMnemonicHash = AssemblerHashMnemonic( pMnemonic );
 
 #if DEBUG_ASSEMBLER
@@ -1574,12 +1531,12 @@ bool Assemble( int iArg, int nArgs, WORD nAddress )
 		}
 	}
 
-	const size_t nOpcodes = m_vAsmOpcodes.size();
+	int nOpcodes = m_vAsmOpcodes.size();
 	if (! nOpcodes)
 	{
 		// Check for assembler directive
 
-		ConsoleBufferPush( " Syntax Error: Invalid mnemonic" );
+		ConsoleBufferPush( TEXT(" Syntax Error: Invalid mnemonic") );
 		return false;
 	}
 	else

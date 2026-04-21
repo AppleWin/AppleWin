@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "DiskDefs.h"
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 
 #define RAND_THRESHOLD(num, den) ((RAND_MAX * num) / den)
 
@@ -96,6 +96,5 @@ BYTE ImageGetOptimalBitTiming(ImageInfo* const pImageInfo);
 UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase, const bool limit=true);
 UINT ImageGetMaxNibblesPerTrack(ImageInfo* const pImageInfo);
 bool ImageIsBootSectorFormatSector13(ImageInfo* const pImageInfo);
-bool ImageIsZeroTracksValidForThisType(ImageInfo* const pImageInfo);
 
 void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName);

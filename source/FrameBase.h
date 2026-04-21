@@ -2,10 +2,7 @@
 
 #include "Video.h"
 
-const BOOL kConfirmReboot_Default = TRUE;
-
 class NetworkBackend;
-class SoundBuffer;
 
 class FrameBase
 {
@@ -30,7 +27,6 @@ public:
 	virtual void FrameUpdateApple2Type() = 0;
 	virtual void FrameSetCursorPosByMousePos() = 0;
 
-	virtual bool GetFullScreenShowSubunitStatus() = 0;
 	virtual void SetFullScreenShowSubunitStatus(bool bShow) = 0;
 	virtual void SetWindowedModeShowDiskiiStatus(bool bShow) = 0;
 	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth=0, UINT userSpecifiedHeight=0) = 0;
@@ -46,33 +42,30 @@ public:
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) = 0;
 
 	// this function merges LoadBitmap and GetBitmapBits from windows.h
-	virtual void GetBitmap(WORD id, LONG cb, LPVOID lpvBits) = 0;
+	virtual void GetBitmap(LPCSTR lpBitmapName, LONG cb, LPVOID lpvBits) = 0;
 
 	// create the network backed for Uthernet 1 and 2
 	// useful to use libslirp in Linux
 	virtual std::shared_ptr<NetworkBackend> CreateNetworkBackend(const std::string & interfaceName) = 0;
-
-	// create an object to write sound output to
-	virtual std::shared_ptr<SoundBuffer> CreateSoundBuffer(uint32_t dwBufferSize, uint32_t nSampleRate, int nChannels, const char* pszVoiceName) = 0;
 
 	// FindResource, MAKEINTRESOURCE, SizeofResource, LoadResource, LockResource
 	// Return pointer to resource if size is correct.
 	// NULL if resource is invalid or size check fails
 	// The pointer is only valid until the next call to GetResource
 	// (in Windows, the pointer is valid forever, but it would be very restrictive to force this on other FrameBase implementations)
-	virtual BYTE* GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize) = 0;
+	virtual BYTE* GetResource(WORD id, LPCSTR lpType, DWORD expectedSize) = 0;
 
 	virtual void Restart() = 0;
 
 	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
 	void VideoRedrawScreen(void);
-	void VideoRedrawScreenDuringFullSpeed(uint32_t dwCyclesThisFrame, bool bInit = false);
-	void VideoRedrawScreenAfterFullSpeed(uint32_t dwCyclesThisFrame);
+	void VideoRedrawScreenDuringFullSpeed(DWORD dwCyclesThisFrame, bool bInit = false);
+	void VideoRedrawScreenAfterFullSpeed(DWORD dwCyclesThisFrame);
 	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
 
 	virtual std::string Video_GetScreenShotFolder() const = 0;
 	void Video_TakeScreenShot(const Video::VideoScreenShot_e ScreenShotType);
-	void Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotType, const char* pScreenShotFileName);
+	void Video_SaveScreenShot(const Video::VideoScreenShot_e ScreenShotType, const TCHAR* pScreenShotFileName);
 	void SetDisplayPrintScreenFileName(bool state) { g_bDisplayPrintScreenFileName = state; }
 	void Video_ResetScreenshotCounter(const std::string& pDiskImageFileName);
 
@@ -81,11 +74,11 @@ public:
 
 private:
 	std::string Util_MakeScreenShotFileName() const;
-	bool Util_TestScreenShotFileName(const char* pFileName);
+	bool Util_TestScreenShotFileName(const TCHAR* pFileName);
 
 	bool g_bShowPrintScreenWarningDialog;
 
-	uint32_t dwFullSpeedStartTime;
+	DWORD dwFullSpeedStartTime;
 	bool g_bDisplayPrintScreenFileName;
 
 	int g_nLastScreenShot;

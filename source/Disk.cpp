@@ -60,27 +60,21 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	Card(CT_Disk2, slot),
 	m_syncEvent(slot, 0, SyncEventCallback)	// use slot# as "unique" id for Disk2InterfaceCards
 {
-	if (m_slot == SLOT0)
+	if (m_slot != 5 && m_slot != 6)	// fixme
 		ThrowErrorInvalidSlot();
 
 	ResetSwitches();
 
 	m_floppyLatch = 0;
 	m_saveDiskImage = true;	// Save the DiskImage name to Registry
-	m_saveDiskImageToRegistry = true;
 	m_diskLastCycle = 0;
 	m_diskLastReadLatchCycle = 0;
-	m_enhanceDisk = kEnhanceDiskAccessSpeed_Default;
-	m_is13SectorFirmware = false;	// depends on m_force13SectorFirmware & woz image metadata
+	m_enhanceDisk = true;
+	m_is13SectorFirmware = false;
+	m_force13SectorFirmware = false;
 	m_deferredStepperEvent = false;
 	m_deferredStepperAddress = 0;
 	m_deferredStepperCumulativeCycles = 0;
-
-	uint32_t tmp;
-	std::string regSection = RegGetConfigSlotSection(m_slot);
-	const uint32_t kForce13SectorFirmware_Default = 0;
-	RegLoadValue(regSection.c_str(), REGVALUE_DISKII_13_SECTOR_FIRMWARE, TRUE, &tmp, kForce13SectorFirmware_Default);
-	m_force13SectorFirmware = tmp ? true : false;
 
 	ResetLogicStateSequencer();
 
@@ -208,7 +202,7 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 	char pathname[MAX_PATH];
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, "") && (pathname[0] != 0))
+	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, TEXT("")) && (pathname[0] != 0))
 	{
 		m_saveDiskImage = false;
 		ImageError_e error = InsertDisk(drive, pathname, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
@@ -228,7 +222,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 {
 	_ASSERT(drive == DRIVE_1 || drive == DRIVE_2);
 
-	if (!m_saveDiskImage || !m_saveDiskImageToRegistry)
+	if (!m_saveDiskImage)
 		return;
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
@@ -311,9 +305,6 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 	if (ImagePhaseToTrack(pFloppy->m_imagehandle, pDrive->m_phasePrecise, false) >= ImageGetNumTracks(pFloppy->m_imagehandle))
 	{
-		if (ImageIsZeroTracksValidForThisType(pFloppy->m_imagehandle))
-			return;
-
 		_ASSERT(0);	// What can cause this? Add a comment to replace this assert.
 		// Boot with DOS 3.3 Master in D1
 		// Create a blank disk in D2
@@ -423,7 +414,6 @@ void Disk2InterfaceCard::EjectDiskInternal(const int drive)
 	pFloppy->m_imagename.clear();
 	pFloppy->m_fullname.clear();
 	pFloppy->m_strFilenameInZip = "";
-	pFloppy->m_bWriteProtected = false;	// GH#1433
 }
 
 void Disk2InterfaceCard::EjectDisk(const int drive)
@@ -504,16 +494,9 @@ void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, 
 	BOOL newState = address & 1;
 	bool stateChanged = (newState != m_floppyMotorOn);
 
-	// "2. [...] (DRIVES OFF forces the control flip-flops to clear.)" (UTAIIe page 9-12)
-	// - so m_magnetStates = 0.
-	// "5. Causes the ENABLE1' or the ENABLE2' signal to go low depending on which drive is selected by the drive1/drive2 switch."
-	// - so m_currDrive not affected.
-	// TODO: what about m_seqFunc.function?
+	// "2. [...] (DRIVES OFF forces the control flipflops to clear.)" (UTAIIe page 9-12)
 	if (newState == FALSE)
-	{
 		m_magnetStates = 0;		// GH#926, GH#1315
-		ControlStepperLogging(address, g_nCumulativeCycles);
-	}
 
 	if (stateChanged)
 	{
@@ -768,7 +751,7 @@ void Disk2InterfaceCard::GetFilenameAndPathForSaveState(std::string& filename, s
 		filename = GetBaseName(i);
 		std::string pathname = DiskGetFullPathName(i);
 
-		size_t idx = pathname.find_last_of(PATH_SEPARATOR);
+		int idx = pathname.find_last_of(PATH_SEPARATOR);
 		if (idx >= 0 && idx+1 < (int)pathname.length())	// path exists?
 		{
 			path = pathname.substr(0, idx+1);
@@ -835,9 +818,6 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, const std::string& 
 	// Reset the disk's attributes, but preserve the drive's attributes (GH#138/Platoon, GH#640)
 	// . Changing the disk (in the drive) doesn't affect the drive's attributes.
 	pFloppy->clear();
-
-	if (pathname.empty())
-		return eIMAGE_ERROR_NONE;
 
 	const DWORD dwAttributes = GetFileAttributes(pathname.c_str());
 	if (dwAttributes == INVALID_FILE_ATTRIBUTES)
@@ -1796,7 +1776,7 @@ void Disk2InterfaceCard::DumpTrackWOZ(FloppyDisk floppy)	// pass a copy of m_flo
 
 void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 {
-	// RESET' forces all switches off (UTAIIe Table 9.1)
+	// RESET forces all switches off (UTAIIe Table 9.1)
 	ResetSwitches();
 
 	m_formatTrack.Reset();
@@ -1831,63 +1811,56 @@ void Disk2InterfaceCard::ResetSwitches(void)
 
 //===========================================================================
 
-bool Disk2InterfaceCard::UserSelectNewDiskImageOnly(const int drive, LPCSTR pszFilename, std::string& openFilename, DWORD flags)
+bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilename/*=""*/)
 {
 	if (!IsDriveConnected(drive))
 	{
-		GetFrame().FrameMessageBox("Drive not connected!", "Insert disk", MB_ICONEXCLAMATION | MB_SETFOREGROUND | MB_OK);
+		GetFrame().FrameMessageBox("Drive not connected!", "Insert disk", MB_ICONEXCLAMATION|MB_SETFOREGROUND|MB_OK);
 		return false;
 	}
 
-	char directory[MAX_PATH];
-	char filename[MAX_PATH];
+	TCHAR directory[MAX_PATH];
+	TCHAR filename[MAX_PATH];
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 
-	RegLoadString(REG_PREFS, REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH, "");
+	RegLoadString(TEXT(REG_PREFS), TEXT(REGVALUE_PREF_START_DIR), 1, directory, MAX_PATH, TEXT(""));
 	std::string title = StrFormat("Select Disk Image For Drive %d", drive + 1);
 
 	OPENFILENAME ofn;
 	memset(&ofn, 0, sizeof(OPENFILENAME));
-	ofn.lStructSize = sizeof(OPENFILENAME);
-	ofn.hwndOwner = GetFrame().g_hFrameWindow;
-	ofn.hInstance = GetFrame().g_hInstance;
-	ofn.lpstrFilter = "All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie;*.apl\0"
-		"Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.woz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie\0"
-		"All Files\0*.*\0";
-	ofn.lpstrFile = filename;
-	ofn.nMaxFile = MAX_PATH;
+	ofn.lStructSize     = sizeof(OPENFILENAME);
+	ofn.hwndOwner       = GetFrame().g_hFrameWindow;
+	ofn.hInstance       = GetFrame().g_hInstance;
+	ofn.lpstrFilter     = TEXT("All Images\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie;*.apl\0")
+						  TEXT("Disk Images (*.bin,*.do,*.dsk,*.nib,*.po,*.gz,*.woz,*.zip,*.2mg,*.2img,*.iie)\0*.bin;*.do;*.dsk;*.nib;*.po;*.gz;*.woz;*.zip;*.2mg;*.2img;*.iie\0")
+						  TEXT("All Files\0*.*\0");
+	ofn.lpstrFile       = filename;
+	ofn.nMaxFile        = MAX_PATH;
 	ofn.lpstrInitialDir = directory;
-	ofn.Flags = OFN_PATHMUSTEXIST;
-	ofn.lpstrTitle = title.c_str();
+	ofn.Flags           = OFN_PATHMUSTEXIST;
+	ofn.lpstrTitle      = title.c_str();
 
-	if (!GetOpenFileName(&ofn))
-		return false;
+	bool bRes = false;
 
-	flags = ofn.Flags;
-	openFilename = filename;
-	if (!ofn.nFileExtension || !filename[ofn.nFileExtension])
-		openFilename += ".dsk";
-
-	return true;
-}
-
-bool Disk2InterfaceCard::UserSelectNewDiskImage(const int drive, LPCSTR pszFilename/*=""*/)
-{
-	std::string openFilename;
-	DWORD flags = 0;
-
-	if (!UserSelectNewDiskImageOnly(drive, pszFilename, openFilename, flags))
-		return false;
-
-	ImageError_e Error = InsertDisk(drive, openFilename, flags & OFN_READONLY, IMAGE_CREATE);
-	if (Error != eIMAGE_ERROR_NONE)
+	if (GetOpenFileName(&ofn))
 	{
-		NotifyInvalidImage(drive, openFilename, Error);
-		return false;
+		std::string openFilename = filename;
+		if ((!ofn.nFileExtension) || !filename[ofn.nFileExtension])
+			openFilename += TEXT(".dsk");
+
+		ImageError_e Error = InsertDisk(drive, openFilename, ofn.Flags & OFN_READONLY, IMAGE_CREATE);
+		if (Error == eIMAGE_ERROR_NONE)
+		{
+			bRes = true;
+		}
+		else
+		{
+			NotifyInvalidImage(drive, openFilename, Error);
+		}
 	}
 
-	return true;
+	return bRes;
 }
 
 //===========================================================================
@@ -1992,13 +1965,6 @@ void Disk2InterfaceCard::Update(const ULONG cycles)
 				GetFrame().FrameDrawDiskStatus();
 			}
 		}
-
-		if (!m_floppyMotorOn && !pDrive->m_spinning)
-		{
-			// Motor off and not spinning: so write back any dirty track (GH#1444)
-			// . this also supports the power-cycle case (where m_floppyMotorOn & m_spinning are instantaneously 0)
-			FlushCurrentTrack(loop);
-		}
 	}
 }
 
@@ -2057,19 +2023,6 @@ bool Disk2InterfaceCard::DriveSwap(void)
 }
 
 //===========================================================================
-
-bool Disk2InterfaceCard::Get13SectorFirmware()
-{
-	return m_force13SectorFirmware;
-}
-
-void Disk2InterfaceCard::Set13SectorFirmware(const bool is13Sector)
-{
-	m_force13SectorFirmware = is13Sector;
-
-	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_DISKII_13_SECTOR_FIRMWARE, TRUE, is13Sector ? 1 : 0);
-}
 
 bool Disk2InterfaceCard::GetFirmware(WORD lpNameId, BYTE* pDst)
 {
@@ -2257,8 +2210,9 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 6: Added: Drive Connected & Motor On Cycle
 // 7: Deprecated SS_YAML_KEY_LSS_RESET_SEQUENCER, SS_YAML_KEY_DISK_ACCESSED
 // 8: Added: deferred stepper: event, address & cycle
-// 9: Added: absolute path
-static const UINT kUNIT_VERSION = 9;
+static const UINT kUNIT_VERSION = 8;
+
+#define SS_YAML_VALUE_CARD_DISK2 "Disk]["
 
 #define SS_YAML_KEY_PHASES "Phases"
 #define SS_YAML_KEY_CURRENT_DRIVE "Current Drive"
@@ -2288,7 +2242,6 @@ static const UINT kUNIT_VERSION = 9;
 
 #define SS_YAML_KEY_FLOPPY "Floppy"
 #define SS_YAML_KEY_FILENAME "Filename"
-#define SS_YAML_KEY_ABSOLUTE_PATH "Absolute Path"
 #define SS_YAML_KEY_BYTE "Byte"
 #define SS_YAML_KEY_NIBBLES "Nibbles"
 #define SS_YAML_KEY_BIT_OFFSET "Bit Offset"
@@ -2301,15 +2254,9 @@ static const UINT kUNIT_VERSION = 9;
 #define SS_YAML_KEY_TRACK_IMAGE_DIRTY "Track Image Dirty"
 #define SS_YAML_KEY_TRACK_IMAGE "Track Image"
 
-const std::string& Disk2InterfaceCard::GetSnapshotCardNameOld(void)
-{
-	static const std::string name("Disk][");
-	return name;
-}
-
 const std::string& Disk2InterfaceCard::GetSnapshotCardName(void)
 {
-	static const std::string name("Disk II");
+	static const std::string name(SS_YAML_VALUE_CARD_DISK2);
 	return name;
 }
 
@@ -2317,7 +2264,6 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 {
 	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_FLOPPY);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, m_floppyDrive[unit].m_disk.m_fullname);
-	yamlSaveHelper.SaveString(SS_YAML_KEY_ABSOLUTE_PATH, ImageGetPathname(m_floppyDrive[unit].m_disk.m_imagehandle));
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_BYTE, m_floppyDrive[unit].m_disk.m_byte);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_NIBBLES, m_floppyDrive[unit].m_disk.m_nibbles);
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_BIT_OFFSET, m_floppyDrive[unit].m_disk.m_bitOffset);	// v4
@@ -2375,26 +2321,14 @@ void Disk2InterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT unit, UINT version, std::vector<BYTE>& track)
 {
-	const std::string simpleFilename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
-	const std::string absolutePath = version >= 9 ? yamlLoadHelper.LoadString(SS_YAML_KEY_ABSOLUTE_PATH) : "";
-
-	std::string filename = simpleFilename;
+	std::string filename = yamlLoadHelper.LoadString(SS_YAML_KEY_FILENAME);
 	bool bImageError = filename.empty();
 
 	if (!bImageError)
 	{
 		DWORD dwAttributes = GetFileAttributes(filename.c_str());
-		if (dwAttributes == INVALID_FILE_ATTRIBUTES && !absolutePath.empty())
-		{
-			// try the absolute path if present
-			filename = absolutePath;
-			dwAttributes = GetFileAttributes(filename.c_str());
-		}
-
 		if (dwAttributes == INVALID_FILE_ATTRIBUTES)
 		{
-			// ignore absolute name when opening the file dialog
-			filename = simpleFilename;
 			// Get user to browse for file
 			UserSelectNewDiskImage(unit, filename.c_str());
 
@@ -2512,7 +2446,7 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 	if (!bImageError)
 	{
 		if ((m_floppyDrive[unit].m_disk.m_trackimage == NULL) && m_floppyDrive[unit].m_disk.m_nibbles)
-			AllocTrack(unit, (UINT)track.size());
+			AllocTrack(unit, track.size());
 
 		if (m_floppyDrive[unit].m_disk.m_trackimage == NULL)
 			bImageError = true;

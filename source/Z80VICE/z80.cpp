@@ -6385,7 +6385,14 @@ BYTE z80_RDMEM(WORD Addr)
 
 		case 0xE:
 			addr = (WORD)Addr - 0x2000;
-			return IORead[(addr>>4) & 0xFF]( regs.pc, addr, 0, 0, ConvertZ80TStatesTo6502Cycles(maincpu_clk) ); // Maps to 6502 I/O address range: $C000..CFFF
+		    if ((addr & 0xF000) == 0xC000)
+			{
+				return IORead[(addr>>4) & 0xFF]( regs.pc, addr, 0, 0, ConvertZ80TStatesTo6502Cycles(maincpu_clk) );
+			}
+			else
+			{
+				return *(mem+addr);
+			}
 		break;
 
 		case 0xF:
@@ -6429,6 +6436,8 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 
 //===========================================================================
 
+#define SS_YAML_VALUE_CARD_Z80 "Z80"
+
 #define SS_YAML_KEY_REGA "A"
 #define SS_YAML_KEY_REGB "B"
 #define SS_YAML_KEY_REGC "C"
@@ -6456,16 +6465,10 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 #define SS_YAML_KEY_REGL2 "L'"
 #define SS_YAML_KEY_ACTIVE "Active"
 
-const std::string& Z80_GetSnapshotCardNameOld(void)
-{
-	static const std::string name("Z80");
-	return name;
-}
-
 const std::string& Z80_GetSnapshotCardName(void)
 {
-    static const std::string name("Z80 SoftCard");
-    return name;
+	static const std::string name(SS_YAML_VALUE_CARD_Z80);
+	return name;
 }
 
 void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
@@ -6521,7 +6524,7 @@ void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 
 bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version)
 {
-	if (uSlot == SLOT0)
+	if (uSlot != 4 && uSlot != 5)	// fixme
 		Card::ThrowErrorInvalidSlot(CT_Z80, uSlot);
 
 	if (version != 1)

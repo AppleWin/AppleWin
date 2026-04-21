@@ -5,7 +5,7 @@
 #include "Disk.h"
 #include "Common.h"
 #include "Card.h"
-#include "MockingboardDefs.h"
+
 
 struct CmdLine
 {
@@ -14,18 +14,11 @@ struct CmdLine
 		SlotInfo()
 		{
 			isDiskII13 = false;
-			useHdcFirmwareMode = HdcUndefinedFromCmdLine;
-			useBad6522A = false;
-			useBad6522B = false;
-			socketSSI263[0] = socketSSI263[1] = socketSC01 = SSI263Unknown;
+			useHdcFirmwareMode = HdcDefault;
 		}
 
 		bool isDiskII13;
 		HdcMode useHdcFirmwareMode;
-		bool useBad6522A;
-		bool useBad6522B;
-		SSI263Type socketSSI263[NUM_SSI263];
-		SSI263Type socketSC01;
 	};
 
 	CmdLine()
@@ -46,7 +39,6 @@ struct CmdLine
 		useHdcFirmwareV1 = false;
 		useHdcFirmwareV2 = false;
 		szSnapshotName = NULL;
-		snapshotIgnoreHdcFirmware = false;
 		szScreenshotFilename = NULL;
 		uHarddiskNumBlocks = 0;
 		uRamWorksExPages = 0;
@@ -63,12 +55,8 @@ struct CmdLine
 		bestFullScreenResolution = false;
 		userSpecifiedWidth = 0;
 		userSpecifiedHeight = 0;
-		auxSlotEmpty = false;
-		auxSlotInsert = CT_Empty;
-		sBootSectorFileName = "";
-		nBootSectorFileSize = 0;
 
-		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+		for (UINT i = 0; i < NUM_SLOTS; i++)
 		{
 			bSlotEmpty[i] = false;
 			slotInsert[i] = CT_Empty;
@@ -96,7 +84,6 @@ struct CmdLine
 	bool noDisk2StepperDefer;	// debug
 	bool useHdcFirmwareV1;	// debug
 	bool useHdcFirmwareV2;
-	bool useAltCpuEmulation;	// debug
 	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	SlotInfo slotInfo[NUM_SLOTS];
 	LPCSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
@@ -104,7 +91,6 @@ struct CmdLine
 	LPCSTR szImageName_harddisk[NUM_SLOTS][NUM_HARDDISKS];
 	UINT uHarddiskNumBlocks;
 	LPSTR szSnapshotName;
-	bool snapshotIgnoreHdcFirmware;
 	LPSTR szScreenshotFilename;
 	UINT uRamWorksExPages;
 	UINT uSaturnBanks;
@@ -123,11 +109,6 @@ struct CmdLine
 	UINT userSpecifiedHeight;
 	std::string wavFileSpeaker;
 	std::string wavFileMockingboard;
-	bool auxSlotEmpty;
-	SS_CARDTYPE auxSlotInsert;
-	std::string sBootSectorFileName;
-	size_t nBootSectorFileSize;
-	std::string debuggerAutoRunScriptFilename;
 };
 
 bool ProcessCmdLine(LPSTR lpCmdLine);
