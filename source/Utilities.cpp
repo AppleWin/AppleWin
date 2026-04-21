@@ -370,18 +370,18 @@ static void SetCurrentDir(const std::string & pathname)
 
 static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
-	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
+	Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 
 	if (szFileName[0] == '\0')
 	{
-		disk2Card.EjectDisk(nDrive);
+		card.EjectDisk(nDrive);
 		return true;
 	}
 
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	ImageError_e Error = disk2Card.InsertDisk(nDrive, strPathName, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+	ImageError_e Error = card.InsertDisk(nDrive, strPathName, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 	bool res = (Error == eIMAGE_ERROR_NONE);
 	if (res)
 		SetCurrentDir(strPathName);
@@ -390,20 +390,18 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 
 static bool DoHardDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
-	_ASSERT(GetCardMgr().QuerySlot(slot) == CT_GenericHDD);
-	if (GetCardMgr().QuerySlot(slot) != CT_GenericHDD)
-		return false;
+	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
 
 	if (szFileName[0] == '\0')
 	{
-		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Unplug(nDrive);
+		card.Unplug(nDrive);
 		return true;
 	}
 
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	BOOL bRes = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Insert(nDrive, strPathName);
+	BOOL bRes = card.Insert(nDrive, strPathName);
 	bool res = (bRes == TRUE);
 	if (res)
 		SetCurrentDir(strPathName);
@@ -412,7 +410,11 @@ static bool DoHardDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileNam
 
 void InsertFloppyDisks(const UINT slot, LPCSTR szImageName_drive[NUM_DRIVES], bool driveConnected[NUM_DRIVES], bool& bBoot)
 {
-	_ASSERT(slot == 5 || slot == 6);
+	if (GetCardMgr().QuerySlot(slot) != CT_Disk2)
+	{
+		LogFileOutput("Init: S%d: No Disk II interface\n", slot);
+		return;
+	}
 
 	bool bRes = true;
 
@@ -444,8 +446,6 @@ void InsertFloppyDisks(const UINT slot, LPCSTR szImageName_drive[NUM_DRIVES], bo
 
 void InsertHardDisks(const UINT slot, LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 {
-	_ASSERT(slot == 5 || slot == 7);
-
 	// If no HDDs then just return (and don't insert an HDC into this slot)
 	bool res = true;
 	for (UINT i = 0; i < NUM_HARDDISKS; i++)

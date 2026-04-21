@@ -746,7 +746,7 @@ static void RepeatInitialization(void)
 	VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
 	// Allow the slots to be configured as empty
-	// NB. this state *is* persisted to the Registry/conf.ini (just like '-s7 empty' is)
+	// NB. this state *is* persisted to the Registry/conf.ini
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
 		if (g_cmdLine.bSlotEmpty[i])
@@ -838,6 +838,9 @@ static void RepeatInitialization(void)
 			if (type != SSI263Unknown)
 				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).SetSocketSC01(type);
 		}
+
+		g_cmdLine.bSlotEmpty[i] = false;	// Don't reapply after a restart
+		g_cmdLine.slotInsert[i] = CT_Empty;	// Don't reapply after a restart
 	}
 
 	// Aux slot
@@ -867,6 +870,9 @@ static void RepeatInitialization(void)
 			SetExpansionMemType(g_cmdLine.auxSlotInsert);
 		}
 	}
+
+	g_cmdLine.auxSlotEmpty = false;		// Don't reapply after a restart
+	g_cmdLine.auxSlotInsert = CT_Empty;	// Don't reapply after a restart
 
 	// Create window after inserting/removing VidHD card (as it affects width & height)
 	{
@@ -918,11 +924,7 @@ static void RepeatInitialization(void)
 		for (UINT i = 0; i < NUM_HARDDISKS; i++)
 			g_cmdLine.szImageName_harddisk[SLOT7][i] = NULL;	// Don't insert on a restart
 
-		if (g_cmdLine.bSlotEmpty[SLOT7])
-		{
-			GetCardMgr().Remove(SLOT7);	// Disable HDD controller, and persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
-			Snapshot_UpdatePath();		// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
-		}
+		Snapshot_UpdatePath();	// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
 	}
 
 	// Set *after* InsertFloppyDisks() & InsertHardDisks(), which both update g_sCurrentDir
