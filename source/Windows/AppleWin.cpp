@@ -770,7 +770,7 @@ static void RepeatInitialization(void)
 		GetCardMgr().GetParallelPrinterCard()->SetEnableDumpToRealPrinter(true);
 	}
 
-	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	for (UINT i = SLOT1; i < NUM_SLOTS; i++)
 	{
 		if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
 		{
@@ -870,25 +870,19 @@ static void RepeatInitialization(void)
 	}
 
 	// Pre: may need g_hFrameWindow for MessageBox errors
-	// Post: may enable HDD, required for MemInitialize()->MemInitializeIO()
+	// Post: may enable HDC card, required for MemInitialize()->MemInitializeIO(); and may enable DiskII card
+	for (UINT i = SLOT1; i < NUM_SLOTS; i++)
 	{
 		bool temp = false;
-		InsertFloppyDisks(SLOT5, g_cmdLine.szImageName_drive[SLOT5], g_cmdLine.driveConnected[SLOT5], temp);
-		g_cmdLine.szImageName_drive[SLOT5][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT5][DRIVE_2] = NULL;	// Don't insert on a restart
+		InsertFloppyDisks(i, g_cmdLine.szImageName_drive[i], g_cmdLine.driveConnected[i], temp);
+		g_cmdLine.szImageName_drive[i][DRIVE_1] = g_cmdLine.szImageName_drive[i][DRIVE_2] = NULL;	// Don't insert on a restart
 
-		InsertFloppyDisks(SLOT6, g_cmdLine.szImageName_drive[SLOT6], g_cmdLine.driveConnected[SLOT6], g_cmdLine.bBoot);
-		g_cmdLine.szImageName_drive[SLOT6][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT6][DRIVE_2] = NULL;	// Don't insert on a restart
-
-		InsertHardDisks(SLOT5, g_cmdLine.szImageName_harddisk[SLOT5], temp);
-		for (UINT i = 0; i < NUM_HARDDISKS; i++)
-			g_cmdLine.szImageName_harddisk[SLOT5][i] = NULL;	// Don't insert on a restart
-
-		InsertHardDisks(SLOT7, g_cmdLine.szImageName_harddisk[SLOT7], g_cmdLine.bBoot);
-		for (UINT i = 0; i < NUM_HARDDISKS; i++)
-			g_cmdLine.szImageName_harddisk[SLOT7][i] = NULL;	// Don't insert on a restart
-
-		Snapshot_UpdatePath();	// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
+		InsertHardDisks(i, g_cmdLine.szImageName_harddisk[i], temp);
+		for (UINT j = HARDDISK_1; j < NUM_HARDDISKS; j++)
+			g_cmdLine.szImageName_harddisk[i][j] = NULL;	// Don't insert on a restart
 	}
+
+	Snapshot_UpdatePath();	// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
 
 	// Set *after* InsertFloppyDisks() & InsertHardDisks(), which both update g_sCurrentDir
 	if (!g_cmdLine.strCurrentDir.empty())
