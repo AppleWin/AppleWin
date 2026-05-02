@@ -714,23 +714,18 @@ static void RepeatInitialization(void)
 	g_cmdLine.clockMultiplier = 0.0;
 
 	// Apply the memory expansion switches after loading the Apple II machine type
-	if (g_cmdLine.uSaturnBanks)
+	if (IsApple2PlusOrClone(GetApple2Type()))
 	{
-		if (IsApple2PlusOrClone(GetApple2Type()))
+		if (g_cmdLine.slotInfo[SLOT0].card == CT_Saturn128K)
 		{
 			Saturn128K::SetSaturnMemorySizeSlot0(g_cmdLine.uSaturnBanks);	// Set number of banks before constructing Saturn card
-			if (!g_cmdLine.bSlotEmpty[SLOT0])
-				SetExpansionMemType(CT_Saturn128K);
+			SetExpansionMemType(CT_Saturn128K);
 			dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(SLOT0)).SetSaturnMemorySize(g_cmdLine.uSaturnBanks);
 		}
-		g_cmdLine.uSaturnBanks = 0;		// Don't reapply after a restart
-	}
-
-	if (g_cmdLine.bSlot0LanguageCard)
-	{
-		if (!g_cmdLine.bSlotEmpty[SLOT0])
+		else if (g_cmdLine.slotInfo[SLOT0].card == CT_LanguageCard)
+		{
 			SetExpansionMemType(CT_LanguageCard);
-		g_cmdLine.bSlot0LanguageCard = false;	// Don't reapply after a restart
+		}
 	}
 
 	if (g_cmdLine.bSwapButtons0and1)
@@ -746,11 +741,23 @@ static void RepeatInitialization(void)
 	VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 
 	// Allow the slots to be configured as empty
-	// NB. this state *is* persisted to the Registry/conf.ini (just like '-s7 empty' is)
+	// . remove all first, so that single-instance cards can can switch slots
+	// NB. this state is persisted to the Registry/conf.ini
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
-		if (g_cmdLine.bSlotEmpty[i])
+		if (g_cmdLine.slotInfo[i].card == CT_Empty)
 			GetCardMgr().Remove(i);
+	}
+
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (g_cmdLine.slotInfo[i].card != CT_Empty && g_cmdLine.slotInfo[i].card != CT_Undefined)
+		{
+			if (GetCardMgr().QuerySlot(i) != g_cmdLine.slotInfo[i].card)
+				GetCardMgr().Insert(i, g_cmdLine.slotInfo[i].card);
+		}
+
+		g_cmdLine.slotInfo[i].card = CT_Undefined;	// Don't reapply after a restart
 	}
 
 	if (g_cmdLine.supportDCD && GetCardMgr().IsSSCInstalled())
@@ -758,52 +765,12 @@ static void RepeatInitialization(void)
 		GetCardMgr().GetSSC()->SupportDCD(true);
 	}
 
-	if (g_cmdLine.slotInsert[SLOT1] != CT_Empty && g_cmdLine.slotInsert[SLOT1] == CT_GenericPrinter)	// For now just support Printer card in slot 1
-	{
-		GetCardMgr().Insert(SLOT1, g_cmdLine.slotInsert[SLOT1]);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT2] != CT_Empty && g_cmdLine.slotInsert[SLOT2] == CT_SSC)	// For now just support SSC in slot 2
-	{
-		GetCardMgr().Insert(SLOT2, g_cmdLine.slotInsert[SLOT2]);
-	}
-
 	if (g_cmdLine.enableDumpToRealPrinter && GetCardMgr().IsParallelPrinterCardInstalled())
 	{
 		GetCardMgr().GetParallelPrinterCard()->SetEnableDumpToRealPrinter(true);
 	}
 
-	if (g_cmdLine.slotInsert[SLOT3] != CT_Empty)
-	{
-		// NB. Only support Saturn in slot 3, otherwise there's more Config UI to change
-		if (g_cmdLine.slotInsert[SLOT3] == CT_VidHD || g_cmdLine.slotInsert[SLOT3] == CT_Saturn128K)	// For now just support VidHD and Saturn128 in slot 3)
-			GetCardMgr().Insert(SLOT3, g_cmdLine.slotInsert[SLOT3]);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT4] != CT_Empty)
-	{
-		GetCardMgr().Insert(SLOT4, g_cmdLine.slotInsert[SLOT4]);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT5] != CT_Empty)
-	{
-		if (GetCardMgr().QuerySlot(SLOT5) != g_cmdLine.slotInsert[SLOT5])	// Ignore if already got this card type in slot 5
-			GetCardMgr().Insert(SLOT5, g_cmdLine.slotInsert[SLOT5]);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT6] == CT_Disk2)	// For now just support Disk2 in slot 6
-	{
-		if (GetCardMgr().QuerySlot(SLOT6) != g_cmdLine.slotInsert[SLOT6])	// Ignore if already got this card type in slot 6
-			GetCardMgr().Insert(SLOT6, g_cmdLine.slotInsert[SLOT6]);
-	}
-
-	if (g_cmdLine.slotInsert[SLOT7] != CT_Empty)
-	{
-		if (GetCardMgr().QuerySlot(SLOT7) != g_cmdLine.slotInsert[SLOT7])	// Ignore if already got this card type in slot 7
-			GetCardMgr().Insert(SLOT7, g_cmdLine.slotInsert[SLOT7]);
-	}
-
-	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	for (UINT i = SLOT1; i < NUM_SLOTS; i++)
 	{
 		if (GetCardMgr().QuerySlot(i) == CT_Disk2 && g_cmdLine.slotInfo[i].isDiskII13)
 		{
@@ -842,30 +809,32 @@ static void RepeatInitialization(void)
 
 	// Aux slot
 
-#ifdef RAMWORKS
-	if (g_cmdLine.uRamWorksExPages)
+	if (g_cmdLine.auxSlotCard != CT_Undefined)
 	{
-		if (!g_cmdLine.auxSlotEmpty)
+		if (g_cmdLine.auxSlotCard == CT_Empty)
 		{
-			SetRamWorksMemorySize(g_cmdLine.uRamWorksExPages);
-			_ASSERT(g_cmdLine.auxSlotInsert == CT_RamWorksIII);	// Implicitly set when using cmd line "-r banks"
+			GetCardMgr().RemoveAux();
+			SetExpansionMemType(CT_Empty);
 		}
-		g_cmdLine.uRamWorksExPages = 0;	// Don't reapply after a restart
-	}
-#endif
+		else
+		{
+			if (GetCardMgr().QueryAux() != g_cmdLine.auxSlotCard)	// Ignore if already got this card type in aux slot, ie. via LoadConfiguration()
+			{
+				GetCardMgr().InsertAux(g_cmdLine.auxSlotCard);
+				SetExpansionMemType(g_cmdLine.auxSlotCard);
+			}
 
-	if (g_cmdLine.auxSlotEmpty)
-	{
-		GetCardMgr().RemoveAux();
-		SetExpansionMemType(CT_Empty);
-	}
-	else if (g_cmdLine.auxSlotInsert != CT_Empty)
-	{
-		if (GetCardMgr().QueryAux() != g_cmdLine.auxSlotInsert)	// Ignore if already got this card type in aux slot, ie. via LoadConfiguration()
-		{
-			GetCardMgr().InsertAux(g_cmdLine.auxSlotInsert);
-			SetExpansionMemType(g_cmdLine.auxSlotInsert);
+#ifdef RAMWORKS
+			if (g_cmdLine.uRamWorksExPages)
+			{
+				_ASSERT(g_cmdLine.auxSlotCard == CT_RamWorksIII);	// Implicitly set when using cmd line "-r banks"
+				SetRamWorksMemorySize(g_cmdLine.uRamWorksExPages);
+				g_cmdLine.uRamWorksExPages = 0;	// Don't reapply after a restart
+			}
+#endif
 		}
+
+		g_cmdLine.auxSlotCard = CT_Undefined;	// Don't reapply after a restart
 	}
 
 	// Create window after inserting/removing VidHD card (as it affects width & height)
@@ -901,29 +870,19 @@ static void RepeatInitialization(void)
 	}
 
 	// Pre: may need g_hFrameWindow for MessageBox errors
-	// Post: may enable HDD, required for MemInitialize()->MemInitializeIO()
+	// Post: may enable HDC card, required for MemInitialize()->MemInitializeIO(); and may enable DiskII card
+	for (UINT i = SLOT1; i < NUM_SLOTS; i++)
 	{
 		bool temp = false;
-		InsertFloppyDisks(SLOT5, g_cmdLine.szImageName_drive[SLOT5], g_cmdLine.driveConnected[SLOT5], temp);
-		g_cmdLine.szImageName_drive[SLOT5][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT5][DRIVE_2] = NULL;	// Don't insert on a restart
+		InsertFloppyDisks(i, g_cmdLine.szImageName_drive[i], g_cmdLine.driveConnected[i], temp);
+		g_cmdLine.szImageName_drive[i][DRIVE_1] = g_cmdLine.szImageName_drive[i][DRIVE_2] = NULL;	// Don't insert on a restart
 
-		InsertFloppyDisks(SLOT6, g_cmdLine.szImageName_drive[SLOT6], g_cmdLine.driveConnected[SLOT6], g_cmdLine.bBoot);
-		g_cmdLine.szImageName_drive[SLOT6][DRIVE_1] = g_cmdLine.szImageName_drive[SLOT6][DRIVE_2] = NULL;	// Don't insert on a restart
-
-		InsertHardDisks(SLOT5, g_cmdLine.szImageName_harddisk[SLOT5], temp);
-		for (UINT i = 0; i < NUM_HARDDISKS; i++)
-			g_cmdLine.szImageName_harddisk[SLOT5][i] = NULL;	// Don't insert on a restart
-
-		InsertHardDisks(SLOT7, g_cmdLine.szImageName_harddisk[SLOT7], g_cmdLine.bBoot);
-		for (UINT i = 0; i < NUM_HARDDISKS; i++)
-			g_cmdLine.szImageName_harddisk[SLOT7][i] = NULL;	// Don't insert on a restart
-
-		if (g_cmdLine.bSlotEmpty[SLOT7])
-		{
-			GetCardMgr().Remove(SLOT7);	// Disable HDD controller, and persist this to Registry/conf.ini (consistent with other '-sn empty' cmds)
-			Snapshot_UpdatePath();		// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
-		}
+		InsertHardDisks(i, g_cmdLine.szImageName_harddisk[i], temp);
+		for (UINT j = HARDDISK_1; j < NUM_HARDDISKS; j++)
+			g_cmdLine.szImageName_harddisk[i][j] = NULL;	// Don't insert on a restart
 	}
+
+	Snapshot_UpdatePath();	// If save-state's filename is a harddisk, and the floppy is in the same path, then the filename won't be updated
 
 	// Set *after* InsertFloppyDisks() & InsertHardDisks(), which both update g_sCurrentDir
 	if (!g_cmdLine.strCurrentDir.empty())

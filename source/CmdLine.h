@@ -13,6 +13,7 @@ struct CmdLine
 	{
 		SlotInfo()
 		{
+			card = CT_Undefined;
 			isDiskII13 = false;
 			useHdcFirmwareMode = HdcUndefinedFromCmdLine;
 			useBad6522A = false;
@@ -20,6 +21,7 @@ struct CmdLine
 			socketSSI263[0] = socketSSI263[1] = socketSC01 = SSI263Unknown;
 		}
 
+		SS_CARDTYPE card;
 		bool isDiskII13;
 		HdcMode useHdcFirmwareMode;
 		bool useBad6522A;
@@ -33,7 +35,6 @@ struct CmdLine
 		bShutdown = false;
 		setFullScreen = -1;
 		bBoot = false;
-		bSlot0LanguageCard = false;
 		bSlot7EmptyOnExit = false;
 		bSwapButtons0and1 = false;
 		bRemoveNoSlotClock = false;
@@ -63,15 +64,12 @@ struct CmdLine
 		bestFullScreenResolution = false;
 		userSpecifiedWidth = 0;
 		userSpecifiedHeight = 0;
-		auxSlotEmpty = false;
-		auxSlotInsert = CT_Empty;
+		auxSlotCard = CT_Undefined;
 		sBootSectorFileName = "";
 		nBootSectorFileSize = 0;
 
 		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 		{
-			bSlotEmpty[i] = false;
-			slotInsert[i] = CT_Empty;
 			szImageName_drive[i][DRIVE_1] = NULL;
 			szImageName_drive[i][DRIVE_2] = NULL;
 			driveConnected[i][DRIVE_1] = true;
@@ -84,8 +82,6 @@ struct CmdLine
 	bool bShutdown;
 	int setFullScreen;	// tristate: -1 (no cmd line specified), 0="-no-full-screen", 1="-full-screen"
 	bool bBoot;
-	bool bSlot0LanguageCard;
-	bool bSlotEmpty[NUM_SLOTS];
 	bool bSlot7EmptyOnExit;
 	bool bSwapButtons0and1;
 	bool bRemoveNoSlotClock;
@@ -97,7 +93,6 @@ struct CmdLine
 	bool useHdcFirmwareV1;	// debug
 	bool useHdcFirmwareV2;
 	bool useAltCpuEmulation;	// debug
-	SS_CARDTYPE slotInsert[NUM_SLOTS];
 	SlotInfo slotInfo[NUM_SLOTS];
 	LPCSTR szImageName_drive[NUM_SLOTS][NUM_DRIVES];
 	bool driveConnected[NUM_SLOTS][NUM_DRIVES];
@@ -123,8 +118,7 @@ struct CmdLine
 	UINT userSpecifiedHeight;
 	std::string wavFileSpeaker;
 	std::string wavFileMockingboard;
-	bool auxSlotEmpty;
-	SS_CARDTYPE auxSlotInsert;
+	SS_CARDTYPE auxSlotCard;
 	std::string sBootSectorFileName;
 	size_t nBootSectorFileSize;
 	std::string debuggerAutoRunScriptFilename;

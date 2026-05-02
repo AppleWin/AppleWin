@@ -370,18 +370,18 @@ static void SetCurrentDir(const std::string & pathname)
 
 static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
-	Disk2InterfaceCard& disk2Card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
+	Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 
 	if (szFileName[0] == '\0')
 	{
-		disk2Card.EjectDisk(nDrive);
+		card.EjectDisk(nDrive);
 		return true;
 	}
 
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	ImageError_e Error = disk2Card.InsertDisk(nDrive, strPathName, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
+	ImageError_e Error = card.InsertDisk(nDrive, strPathName, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
 	bool res = (Error == eIMAGE_ERROR_NONE);
 	if (res)
 		SetCurrentDir(strPathName);
@@ -390,20 +390,18 @@ static bool DoDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 
 static bool DoHardDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileName)
 {
-	_ASSERT(GetCardMgr().QuerySlot(slot) == CT_GenericHDD);
-	if (GetCardMgr().QuerySlot(slot) != CT_GenericHDD)
-		return false;
+	HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
 
 	if (szFileName[0] == '\0')
 	{
-		dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Unplug(nDrive);
+		card.Unplug(nDrive);
 		return true;
 	}
 
 	std::string strPathName = GetFullPath(szFileName);
 	if (strPathName.empty()) return false;
 
-	BOOL bRes = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).Insert(nDrive, strPathName);
+	BOOL bRes = card.Insert(nDrive, strPathName);
 	bool res = (bRes == TRUE);
 	if (res)
 		SetCurrentDir(strPathName);
@@ -412,40 +410,42 @@ static bool DoHardDiskInsert(const UINT slot, const int nDrive, LPCSTR szFileNam
 
 void InsertFloppyDisks(const UINT slot, LPCSTR szImageName_drive[NUM_DRIVES], bool driveConnected[NUM_DRIVES], bool& bBoot)
 {
-	_ASSERT(slot == 5 || slot == 6);
+	// If no FDDs then just return (and don't insert an FDC into this slot)
+	bool res = true;
+	for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
+		res &= szImageName_drive[i] == NULL;
+	if (res)
+		return;
 
-	bool bRes = true;
+	if (GetCardMgr().QuerySlot(slot) != CT_Disk2)
+		GetCardMgr().Insert(slot, CT_Disk2);	// Enable the Floppy drive controller card
 
-	if (!driveConnected[DRIVE_1])
+	res = true;
+	for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
 	{
-		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).UnplugDrive(DRIVE_1);
-	}
-	else if (szImageName_drive[DRIVE_1])
-	{
-		bRes = DoDiskInsert(slot, DRIVE_1, szImageName_drive[DRIVE_1]);
-		LogFileOutput("Init: S%d, DoDiskInsert(D1), res=%d\n", slot, bRes);
-		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);	// floppy activity LEDs and floppy buttons
-		bBoot = true;
+		if (!driveConnected[i])
+		{
+			dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).UnplugDrive(i);
+		}
+		else if (szImageName_drive[i])
+		{
+			res = DoDiskInsert(slot, i, szImageName_drive[i]);
+			LogFileOutput("Init: S%d, DoDiskInsert(D%d), res=%d\n", slot, i+1, res);
+
+			if (i == DRIVE_1)
+			{
+				GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);	// floppy activity LEDs and floppy buttons
+				bBoot = true;
+			}
+		}
 	}
 
-	if (!driveConnected[DRIVE_2])
-	{
-		dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).UnplugDrive(DRIVE_2);
-	}
-	else if (szImageName_drive[DRIVE_2])
-	{
-		bRes &= DoDiskInsert(slot, DRIVE_2, szImageName_drive[DRIVE_2]);
-		LogFileOutput("Init: S%d, DoDiskInsert(D2), res=%d\n", slot, bRes);
-	}
-
-	if (!bRes)
+	if (!res)
 		GetFrame().FrameMessageBox("Failed to insert floppy disk(s) - see log file", "Warning", MB_ICONASTERISK | MB_OK);
 }
 
 void InsertHardDisks(const UINT slot, LPCSTR szImageName_harddisk[NUM_HARDDISKS], bool& bBoot)
 {
-	_ASSERT(slot == 5 || slot == 7);
-
 	// If no HDDs then just return (and don't insert an HDC into this slot)
 	bool res = true;
 	for (UINT i = 0; i < NUM_HARDDISKS; i++)
@@ -457,7 +457,7 @@ void InsertHardDisks(const UINT slot, LPCSTR szImageName_harddisk[NUM_HARDDISKS]
 		GetCardMgr().Insert(slot, CT_GenericHDD);	// Enable the Harddisk controller card
 
 	res = true;
-	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 	{
 		if (szImageName_harddisk[i])
 		{

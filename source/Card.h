@@ -30,7 +30,8 @@ enum SS_CARDTYPE
 	CT_MegaAudio,		// Soundcard
 	CT_SDMusic,			// Soundcard
 	CT_BreakpointCard,
-	CT_NUM_CARDS
+	CT_NUM_CARDS,
+	CT_Undefined = -1	// NB. Only for cmd line struct
 };
 
 enum SLOTS { SLOT0=0, SLOT1, SLOT2, SLOT3, SLOT4, SLOT5, SLOT6, SLOT7, NUM_SLOTS, SLOT_AUX, GAME_IO_CONNECTOR };
