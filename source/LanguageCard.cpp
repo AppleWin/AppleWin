@@ -103,6 +103,7 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
 	LanguageCardUnit* pLC = (LanguageCardUnit*) MemGetSlotParameters(uSlot);
 	_ASSERT(uSlot == SLOT0);
+	LogOutput("S%d: %04X (PC=%04X)\n", uSlot, uAddr, PC);
 
 	UINT memmode = pLC->GetLCMemMode();
 	UINT lastmemmode = memmode;
@@ -376,6 +377,7 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 */
 	UINT uSlot = ((uAddr & 0xff) >> 4) - 8;
 	Saturn128K* pLC = (Saturn128K*) MemGetSlotParameters(uSlot);
+	LogOutput("S%d: %04X (PC=%04X)\n", uSlot, uAddr, PC);
 
 	_ASSERT(pLC->m_uSaturnTotalBanks);
 	if (!pLC->m_uSaturnTotalBanks)
@@ -421,10 +423,14 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 		pLC->SetLastRamWrite(uAddr & 1);		// Saturn differs from Apple's 16K LC: any access (LC is read-only)
 		pLC->SetLCMemMode(memmode);
 
-		bBankChanged = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC() != uSlot;
-		if (bBankChanged)
+		const BYTE addrL = uAddr & 0xf;
+		if (addrL == 0 || addrL == 3 || addrL == 8 || addrL == 0xB)	// RAM read
 		{
-			::SetMemMainLanguageCard(pLC->m_aSaturnBanks[pLC->m_uSaturnActiveBank], uSlot);
+			bBankChanged = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC() != uSlot;
+			if (bBankChanged)
+			{
+				::SetMemMainLanguageCard(pLC->m_aSaturnBanks[pLC->m_uSaturnActiveBank], uSlot);
+			}
 		}
 	}
 
