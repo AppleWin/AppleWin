@@ -289,36 +289,21 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					LogFileOutput("Unsupported slot-%d card: %s\n", slot, lpCmdLine);
 				}
 			}
-			else if (lpCmdLine[3] == 'd' && (lpCmdLine[4] == '1' || lpCmdLine[4] == '2'))	// -s[1..7]d[1|2] <dsk-image>
-			{
-				const UINT drive = lpCmdLine[4] == '1' ? DRIVE_1 : DRIVE_2;
-
-				if (slot != SLOT5 && slot != SLOT6)
-				{
-					LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
-				}
-				else
-				{
-					lpCmdLine = GetCurrArg(lpNextArg);
-					lpNextArg = GetNextArg(lpNextArg);
-					g_cmdLine.szImageName_drive[slot][drive] = lpCmdLine;
-				}
-			}
-			else if (lpCmdLine[3] == 'h' && (lpCmdLine[4] >= '1' || lpCmdLine[4] <= '8'))	// -s[1..7]h[1|2|...|8] <dsk-image>
+			else if (lpCmdLine[3] == 'd' && (lpCmdLine[4] >= '1' && lpCmdLine[4] <= '2'))	// -s[1..7]d[1|2] <dsk-image>
 			{
 				const UINT drive = lpCmdLine[4] - '1';
-				bool badDrive = drive >= NUM_HARDDISKS;
 
-				if (badDrive)
-				{
-					LogFileOutput("Unsupported arg: %s\n", lpCmdLine);
-				}
-				else
-				{
-					lpCmdLine = GetCurrArg(lpNextArg);
-					lpNextArg = GetNextArg(lpNextArg);
-					g_cmdLine.szImageName_harddisk[slot][drive] = lpCmdLine;
-				}
+				lpCmdLine = GetCurrArg(lpNextArg);
+				lpNextArg = GetNextArg(lpNextArg);
+				g_cmdLine.szImageName_drive[slot][drive] = lpCmdLine;
+			}
+			else if (lpCmdLine[3] == 'h' && (lpCmdLine[4] >= '1' && lpCmdLine[4] <= '8'))	// -s[1..7]h[1|2|...|8] <dsk-image>
+			{
+				const UINT drive = lpCmdLine[4] - '1';
+
+				lpCmdLine = GetCurrArg(lpNextArg);
+				lpNextArg = GetNextArg(lpNextArg);
+				g_cmdLine.szImageName_harddisk[slot][drive] = lpCmdLine;
 			}
 			else if (strcmp(lpCmdLine, "-s7-empty-on-exit") == 0)
 			{
