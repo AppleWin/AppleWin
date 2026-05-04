@@ -23,11 +23,12 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) { } // A no-op for //e - called from CardManager::SaveSnapshot()
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) { _ASSERT(0); return false; } // Not used for //e
 
+	virtual void SetMainMemLanguageCardMemory();
+
 	BOOL GetLastRamWrite(void) { return m_uLastRamWrite; }
 	void SetLastRamWrite(BOOL count) { m_uLastRamWrite = count; }
 	UINT GetLCMemMode(void) { return m_memMode; }
 	void SetLCMemMode(UINT memMode) { m_memMode = memMode; }
-	void SetGlobalLCMemMode(void);
 	SS_CARDTYPE GetMemoryType(void) { return QueryType(); }
 	bool IsOpcodeRMWabs(WORD addr);
 
@@ -88,6 +89,8 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
+	virtual void SetMainMemLanguageCardMemory();
+
 	void SetMemMainLanguageCard(void);
 	uint8_t ReadByteFromBank(uint8_t bank, uint16_t phyAddr);
 	uint8_t GetSaturnMemorySize();
@@ -135,6 +138,7 @@ public:
 	LanguageCardUnit* GetLanguageCard(void) { return m_pLanguageCard; }
 	bool SetLanguageCard(SS_CARDTYPE type);
 
+	void SetMemMode(const uint8_t slot);
 	void SetMemModeFromSnapshot(void);
 
 	uint8_t ReadByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr);
