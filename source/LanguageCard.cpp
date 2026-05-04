@@ -610,6 +610,14 @@ void LanguageCardManager::Reset(const bool powerCycle /*=false*/)
 		::SetMemMode(LanguageCardUnit::kMemModeInitialState);
 }
 
+// Set the global memmode.
+//
+// Support for GH#1495:
+// . slot 0 LC     set to: RAM write enabled, ROM read
+// . slot 4 Saturn set to: RAM write protect, ROM read [*] (effectively disables the card)
+// . no further LC switches are accessed, and DOS is copied to LC
+// Since all LC/Saturns could be written to simultaneously, then we need to support the writes to slot 0 LC.
+// [*] NB. Saturn has no ROM, so when set to "ROM read", then the bus isn't driven.
 void LanguageCardManager::SetMemMode(const uint8_t slot)
 {
 	bool isAnyLCWithWritableHighRam = false;
