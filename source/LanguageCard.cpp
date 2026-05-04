@@ -676,7 +676,7 @@ void LanguageCardManager::SetMemModeFromSnapshot(void)
 	{
 		// TODO: check this is still correct for GH#1495 issue
 		LanguageCardUnit& card = dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(m_lastSlotToSetMainMemLCFromSnapshot));
-		SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (card.GetLCMemMode() & MF_LANGCARD_MASK));
+		::SetMemMode((GetMemMode() & ~MF_LANGCARD_MASK) | (card.GetLCMemMode() & MF_LANGCARD_MASK));
 	}
 }
 

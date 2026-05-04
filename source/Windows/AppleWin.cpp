@@ -874,10 +874,10 @@ static void RepeatInitialization(void)
 	for (UINT i = SLOT1; i < NUM_SLOTS; i++)
 	{
 		bool temp = false;
-		InsertFloppyDisks(i, g_cmdLine.szImageName_drive[i], g_cmdLine.driveConnected[i], temp);
+		InsertFloppyDisks(i, g_cmdLine.szImageName_drive[i], g_cmdLine.driveConnected[i], i == SLOT6 ? g_cmdLine.bBoot : temp);
 		g_cmdLine.szImageName_drive[i][DRIVE_1] = g_cmdLine.szImageName_drive[i][DRIVE_2] = NULL;	// Don't insert on a restart
 
-		InsertHardDisks(i, g_cmdLine.szImageName_harddisk[i], temp);
+		InsertHardDisks(i, g_cmdLine.szImageName_harddisk[i], i == SLOT7 ? g_cmdLine.bBoot : temp);
 		for (UINT j = HARDDISK_1; j < NUM_HARDDISKS; j++)
 			g_cmdLine.szImageName_harddisk[i][j] = NULL;	// Don't insert on a restart
 	}
