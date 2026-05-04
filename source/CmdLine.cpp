@@ -91,6 +91,18 @@ static LPSTR GetNextArg(LPSTR lpCmdLine)
 
 //---------------------------------------------------------------------------
 
+bool CardInstanceExists(SS_CARDTYPE cardType)
+{
+	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
+	{
+		if (g_cmdLine.slotInfo[i].card == cardType)
+			return true;
+	}
+	return false;
+}
+
+//---------------------------------------------------------------------------
+
 bool ProcessCmdLine(LPSTR lpCmdLine)
 {
 	const std::string strCmdLine(lpCmdLine);		// Keep a copy for log ouput
@@ -249,15 +261,18 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				}
 				else if (strcmp(lpCmdLine, "parallel") == 0)
 				{
-					g_cmdLine.slotInfo[slot].card = CT_GenericPrinter;
+					if (!CardInstanceExists(CT_GenericPrinter))
+						g_cmdLine.slotInfo[slot].card = CT_GenericPrinter;
 				}
 				else if (strcmp(lpCmdLine, "ssc") == 0)
 				{
-					g_cmdLine.slotInfo[slot].card = CT_SSC;
+					if (!CardInstanceExists(CT_SSC))
+						g_cmdLine.slotInfo[slot].card = CT_SSC;
 				}
 				else if (strcmp(lpCmdLine, "vidhd") == 0)
 				{
-					g_cmdLine.slotInfo[slot].card = CT_VidHD;
+					if (!CardInstanceExists(CT_VidHD))
+						g_cmdLine.slotInfo[slot].card = CT_VidHD;
 				}
 				else if (strncmp(lpCmdLine, "socket", 6) == 0 &&
 					(lpCmdLine[6] == '0' || lpCmdLine[6] == '1') &&	// 0=$Cs20(bottom of MB-C card), 1=$Cs40(top of MB-C card)
