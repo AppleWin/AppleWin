@@ -621,12 +621,12 @@ void LanguageCardManager::SetMemMode(const uint8_t slot)
 		if (GetCardMgr().QuerySlot(i) == CT_LanguageCard || GetCardMgr().QuerySlot(i) == CT_LanguageCardIIe || GetCardMgr().QuerySlot(i) == CT_Saturn128K)
 		{
 			uint32_t lcMemMode = dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(i)).GetLCMemMode();
-			if (lcMemMode & MF_WRITERAM)	// RAM writable (don't care which if readable: ROM or RAM)
+			if (lcMemMode & MF_WRITERAM)	// RAM writable (don't care if it's ROM or RAM that's readable)
 			{
 				isAnyLCWithWritableHighRam = true;
 				slotWithWritableHighRam = i;
 
-				// Favour the LC/Saturn that just changed (don't support writing to multi-LCs!)
+				// Favour the last accessed RAM card (as don't support writing to multiple RAM cards!)
 				if (slotWithWritableHighRam == slot)
 					break;
 			}
