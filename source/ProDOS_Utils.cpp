@@ -504,6 +504,53 @@ namespace
 	}
 
 	//=======Util_ProDOS_CopyBitsyBoot====================================================================
+	bool Util_ProDOS_CopyNoSlotClock( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, FrameBase *pFrame )
+	{
+		const size_t   nFileSize = 0x600; // SAPLING, 4 data blocks
+		const uint8_t *pFileData = (uint8_t *) pFrame->GetResource(IDR_FILE_NOSLOTCLOCK_PRODOS, "FIRMWARE", nFileSize);
+		_ASSERT(pFileData);
+
+		// Acc dnb??iwr /NO.SLOT.CLOCK   Blocks Size    Type    Aux   Kind  iNode Dir   Ver Min  Create    Time    Modified  Time
+		// --- -------- ---------------- ------ ------- ------- ----- ----- ----- ----- --- ---  --------- ------  --------- ------
+		// $E3 dnb---wr  NS.CLOCK.SYSTEM      4 $000600 SYS $FF $2000 sap 2 @004C @0002 0.8 v00  28-APR-91 11:18p  28-APR-91 11:18p
+		int bAccess = 0
+			| ACCESS_D
+			| ACCESS_N
+			| ACCESS_B
+			| ACCESS_W
+			| ACCESS_R
+			;
+
+		const uint16_t nDateCreate = ProDOS_PackDate( 91, 4, 28 ); // YYMMDD, NOTE: Jan starts at 1, not 0.
+		const uint16_t nDateModify = ProDOS_PackDate( 91, 4, 28 ); // YYMMDD
+		const uint16_t nTimeCreate = ProDOS_PackTime( 23, 18 );
+		const uint16_t nTimeModify = ProDOS_PackTime( 23, 18 );
+
+		ProDOS_FileHeader_t meta;
+		memset( &meta, 0, sizeof(ProDOS_FileHeader_t) );
+
+		const char    *pName = "NS.CLOCK.SYSTEM";
+		meta.kind      = PRODOS_KIND_SAPL;
+		strcpy( meta.name, pName );
+		meta.len       = strlen( pName ) & 0xF;
+		meta.type      = 0xFF; // SYS
+		//  .inode     = TBD
+		//  .blocks    = TBD
+		meta.size      = nFileSize;
+		meta.date      = nDateCreate;
+		meta.time      = nTimeCreate;
+		meta.cur_ver   = 0x08;
+		meta.min_ver   = 0x00;
+		meta.access    = bAccess;
+		meta.aux       = 0x2000;
+		meta.mod_date  = nDateModify;
+		meta.mod_time  = nTimeModify;
+		//  .dir_block = TBD;
+
+		return Util_ProDOS_AddFile( pDiskBytes, nDiskSize, pVolumeName, pFileData, nFileSize, meta );
+	}
+
+	//===========================================================================
 	bool Util_ProDOS_CopyBitsyBoot( uint8_t *pDiskBytes, const size_t nDiskSize, const char *pVolumeName, FrameBase *pFrame )
 	{
 		const size_t   nFileSize = 0x16D; // < 512 bytes -> SEED, only 1 data block
@@ -756,7 +803,8 @@ namespace
 // public functions
 
 void New_DOSProDOS_Disk( const char * pTitle, const std::string & pathname, const size_t nDiskSize,
-	const bool bIsDOS33, const bool bNewDiskCopyBitsyBoot, const bool bNewDiskCopyBitsyBye, const bool bNewDiskCopyBASIC, const bool bNewDiskCopyProDOS,
+	const bool bIsDOS33,
+	const bool bNewDiskCopyNoSlotClock, const bool bNewDiskCopyBitsyBoot, const bool bNewDiskCopyBitsyBye, const bool bNewDiskCopyBASIC, const bool bNewDiskCopyProDOS,
 	FrameBase *pFrame )
 {
 	FILE *hFile = fopen( pathname.c_str(), "wb");
@@ -798,10 +846,11 @@ void New_DOSProDOS_Disk( const char * pTitle, const std::string & pathname, cons
 			Util_ProDOS_ForwardSectorInterleave( pDiskBytes.data(), nDiskSize, eSectorOrder );
 			Util_ProDOS_FormatFileSystem       ( pDiskBytes.data(), nDiskSize, pVolumeName  );
 			memcpy(pDiskBytes.data(), pBootSectorsData, nBootSectorsSize);
-			if (bNewDiskCopyBitsyBoot) Util_ProDOS_CopyBitsyBoot( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
-			if (bNewDiskCopyBitsyBye)  Util_ProDOS_CopyBitsyBye ( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
-			if (bNewDiskCopyBASIC)     Util_ProDOS_CopyBASIC    ( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
-			if (bNewDiskCopyProDOS)    Util_ProDOS_CopyDOS      ( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
+			if (bNewDiskCopyNoSlotClock) Util_ProDOS_CopyNoSlotClock( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
+			if (bNewDiskCopyBitsyBoot)   Util_ProDOS_CopyBitsyBoot  ( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
+			if (bNewDiskCopyBitsyBye)    Util_ProDOS_CopyBitsyBye   ( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
+			if (bNewDiskCopyBASIC)       Util_ProDOS_CopyBASIC      ( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
+			if (bNewDiskCopyProDOS)      Util_ProDOS_CopyDOS        ( pDiskBytes.data(), nDiskSize, pVolumeName, pFrame );
 			Util_ProDOS_ReverseSectorInterleave( pDiskBytes.data(), nDiskSize, eSectorOrder );
 		}
 

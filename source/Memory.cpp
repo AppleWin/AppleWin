@@ -473,6 +473,7 @@ bool GetIsMemCacheValid(void)
 
 uint8_t ReadByteFromMemory(uint16_t addr)
 {
+        _ASSERT(mem);
 	if (GetIsMemCacheValid())
 		return mem[addr];
 
