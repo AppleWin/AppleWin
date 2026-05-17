@@ -219,7 +219,7 @@ void LoadConfiguration(bool loadImages)
 
 	//
 
-	for (UINT slot = SLOT0; slot <= SLOT7; slot++)
+	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
 	{
 		std::string regSection = RegGetConfigSlotSection(slot);
 
@@ -299,15 +299,20 @@ void LoadConfiguration(bool loadImages)
 		GetCurrentDirectory(sizeof(szFilename), szFilename);
 	SetCurrentImageDir(szFilename);
 
-	for (UINT slot = SLOT1; slot <= SLOT7; slot++)
+	if (loadImages)
 	{
-		if (loadImages && GetCardMgr().QuerySlot(slot) == CT_GenericHDD)
+		for (UINT slot = SLOT1; slot < NUM_SLOTS; slot++)
 		{
-			for (UINT i = 0; i < NUM_HARDDISKS; i++)
-				dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).LoadLastDiskImage(i);
+			if (GetCardMgr().QuerySlot(slot) == CT_GenericHDD)
+			{
+				HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
+				for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
+				{
+					card.LoadLastDiskImage(i);
+				}
+			}
 		}
 	}
-
 	//
 
 	// Current/Starting Dir is the "root" of where the user keeps their disk images
@@ -450,7 +455,7 @@ void InsertHardDisks(const UINT slot, LPCSTR szImageName_harddisk[NUM_HARDDISKS]
 {
 	// If no HDDs then just return (and don't insert an HDC into this slot)
 	bool res = true;
-	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 		res &= szImageName_harddisk[i] == NULL;
 	if (res)
 		return;

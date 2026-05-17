@@ -1252,7 +1252,7 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 		const UINT saturnActiveBank = GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetActiveBank();
 		const int saturnBank = pBP->addrPrefix.nSlot != AddressPrefix_t::kSlotInvalid && pBP->addrPrefix.nBank != AddressPrefix_t::kBankInvalid ? pBP->addrPrefix.nBank : AddressPrefix_t::kBankInvalid;
 
-		if (GetMemMode() & MF_HIGHRAM)
+		if (GetMemMode() & MF_HIGHRAM)	// RAM readable (RAM either writable or protected)
 		{
 			if (bNoRamworksOrSaturnBank
 				|| (saturnBank < 0 && pBP->addrPrefix.nBank == 0x00 && !(GetMemMode() & MF_ALTZP))
@@ -1272,13 +1272,20 @@ bool _CheckBreakpointValueWithPrefix(Breakpoint_t* pBP, int nVal)
 				}
 			}
 		}
-		else // ROM switched in
+		else // ROM readable (RAM either writable or protected)
 		{
-			if (!bNoRamworksOrSaturnBank
-				|| (pBP->addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid))
-				bStatus = false;
-			else
+			if (isWrite && GetMemMode() & MF_WRITERAM)	// RAM writable
+			{
 				bStatus = true;
+			}
+			else // RAM protected
+			{
+				if (!bNoRamworksOrSaturnBank
+					|| (pBP->addrPrefix.nLangCard != AddressPrefix_t::kLangCardInvalid))
+					bStatus = false;
+				else
+					bStatus = true;
+			}
 		}
 	}
 	else

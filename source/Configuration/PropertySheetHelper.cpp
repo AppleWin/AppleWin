@@ -521,7 +521,21 @@ bool CPropertySheetHelper::HardwareConfigChanged(HWND hWnd)
 			strMsgMain += ". RamWorks III memory size changed\n";
 
 		if (memcmp(m_ConfigOld.m_SaturnMemorySize, m_ConfigNew.m_SaturnMemorySize, sizeof(m_ConfigOld.m_SaturnMemorySize)) != 0)
-			strMsgMain += ". Saturn memory size has changed\n";
+		{
+			for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
+			{
+				if (CONFIG_CHANGED(m_Slot[slot]))
+					continue;
+
+				if (CONFIG_CHANGED(m_SaturnMemorySize[slot]))
+				{
+					strMsgMain += ". Slot ";
+					strMsgMain += '0' + slot;
+					strMsgMain += ": ";
+					strMsgMain += "Saturn memory size has changed\n";
+				}
+			}
+		}
 
 		if (memcmp(m_ConfigOld.m_Mockingboard, m_ConfigNew.m_Mockingboard, sizeof(m_ConfigOld.m_Mockingboard)) != 0)
 			strMsgMain += ". Mockingboard/Phasor config has changed\n";

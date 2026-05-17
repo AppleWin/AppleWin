@@ -287,7 +287,7 @@ void Disk2InterfaceCard::CheckSpinning(const bool stateChanged, const ULONG uExe
 
 bool Disk2InterfaceCard::IsDriveValid(const int drive)
 {
-	return (drive >= 0 && drive < NUM_DRIVES);
+	return (drive >= DRIVE_1 && drive < NUM_DRIVES);
 }
 
 //===========================================================================
@@ -2584,7 +2584,7 @@ bool Disk2InterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 	}
 
 	// Eject all disks first in case Drive-2 contains disk to be inserted into Drive-1
-	for (UINT i=0; i<NUM_DRIVES; i++)
+	for (UINT i=DRIVE_1; i<NUM_DRIVES; i++)
 	{
 		EjectDisk(i);	// Remove any disk & update Registry to reflect empty drive
 		m_floppyDrive[i].clear();

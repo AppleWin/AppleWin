@@ -310,7 +310,8 @@ Saturn128K::Saturn128K(UINT slot, UINT banks)
 	m_uSaturnActiveBank = 0;
 	m_uSaturnTotalBanks = banks;	// /banks/ (from cmd line) overrides banks from Registry
 
-	SetSaturnMemorySizeSlot0(0);	// reset (eg. if there's a VM restart, due to user changing # banks)
+	if (slot == SLOT0)
+		SetSaturnMemorySizeSlot0(0);	// reset (eg. if there's a VM restart, due to user changing # banks)
 
 	if (banks == 0)
 	{

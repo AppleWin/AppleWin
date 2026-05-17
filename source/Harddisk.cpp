@@ -191,13 +191,13 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 
 HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
 {
-	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 		CleanupDriveInternal(i);
 }
 
 void HarddiskInterfaceCard::Reset(const bool powerCycle)
 {
-	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 		m_hardDiskDrive[i].m_error = 0;
 
 	m_fifoIdx = 0;
@@ -384,7 +384,7 @@ void HarddiskInterfaceCard::GetFilenameAndPathForSaveState(std::string& filename
 	filename = "";
 	path = "";
 
-	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 	{
 		if (!m_hardDiskDrive[i].m_imageloaded)
 			continue;
@@ -408,7 +408,7 @@ void HarddiskInterfaceCard::GetFilenameAndPathForSaveState(std::string& filename
 
 void HarddiskInterfaceCard::Destroy(void)
 {
-	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 	{
 		m_saveDiskImage = false;
 		CleanupDrive(i);
@@ -1330,7 +1330,7 @@ void HarddiskInterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveMemory(MemGetCxRomPeripheral() + m_slot * APPLE_SLOT_SIZE, APPLE_SLOT_SIZE);
 	}
 
-	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 	{
 		if (m_hardDiskDrive[i].m_imageloaded)
 			SaveSnapshotHDDUnit(yamlSaveHelper, i);
@@ -1462,14 +1462,14 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 	}
 
 	// Unplug all HDDs first in case eg. HDD-2 is to be plugged in as HDD-1
-	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 	{
 		Unplug(i);
 		m_hardDiskDrive[i].clear();
 	}
 
 	bool userSelectedImageFolder = false;
-	for (UINT i = 0; i < NUM_HARDDISKS; i++)
+	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 		userSelectedImageFolder |= LoadSnapshotHDDUnit(yamlLoadHelper, i, version);
 
 	if (!userSelectedImageFolder)

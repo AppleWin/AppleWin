@@ -132,7 +132,7 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		}
 		else
 		{
-			m_slot[slot] = new Saturn128K(slot, Saturn128K::kMaxSaturnBanks);
+			m_slot[slot] = new Saturn128K(slot, 0);
 		}
 		break;
 	case CT_BreakpointCard:

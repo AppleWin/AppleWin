@@ -144,17 +144,23 @@ void CConfigNeedingRestart::Reload()
 		}
 		else if (m_Slot[slot] == CT_Disk2)
 		{
-			m_diskII13SectorFirmware[slot] = dynamic_cast<Disk2InterfaceCard&>(cardManager.GetRef(slot)).Get13SectorFirmware();
+			Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(cardManager.GetRef(slot));
+			m_diskII13SectorFirmware[slot] = card.Get13SectorFirmware();
 
 			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
-				m_slotInfoForFDC[slot].pathname[i] = dynamic_cast<Disk2InterfaceCard&>(cardManager.GetRef(slot)).DiskGetFullPathName(i);
+			{
+				m_slotInfoForFDC[slot].pathname[i] = card.DiskGetFullPathName(i);
+			}
 		}
 		else if (m_Slot[slot] == CT_GenericHDD)
 		{
-			m_hdcFirmware[slot] = dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(slot)).GetHdcFirmwareMode();
+			HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(slot));
+			m_hdcFirmware[slot] = card.GetHdcFirmwareMode();
 
 			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
-				m_slotInfoForHDC[slot].pathname[i] = dynamic_cast<HarddiskInterfaceCard&>(cardManager.GetRef(slot)).HarddiskGetFullPathName(i);
+			{
+				m_slotInfoForHDC[slot].pathname[i] = card.HarddiskGetFullPathName(i);
+			}
 		}
 		else if (m_Slot[slot] == CT_Saturn128K)
 		{
@@ -162,9 +168,10 @@ void CConfigNeedingRestart::Reload()
 		}
 		else if (m_Slot[slot] == CT_MockingboardC || m_Slot[slot] == CT_Phasor)
 		{
-			m_Mockingboard[slot].ssi263A = dynamic_cast<MockingboardCard&>(cardManager.GetRef(slot)).GetSocketSSI263(0);
-			m_Mockingboard[slot].ssi263B = dynamic_cast<MockingboardCard&>(cardManager.GetRef(slot)).GetSocketSSI263(1);
-			m_Mockingboard[slot].sc01 = dynamic_cast<MockingboardCard&>(cardManager.GetRef(slot)).GetSocketSC01();
+			MockingboardCard& card = dynamic_cast<MockingboardCard&>(cardManager.GetRef(slot));
+			m_Mockingboard[slot].ssi263A = card.GetSocketSSI263(0);
+			m_Mockingboard[slot].ssi263B = card.GetSocketSSI263(1);
+			m_Mockingboard[slot].sc01 = card.GetSocketSC01();
 		}
 		else if (m_Slot[slot] == CT_Empty)
 		{

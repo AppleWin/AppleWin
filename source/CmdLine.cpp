@@ -91,7 +91,7 @@ static LPSTR GetNextArg(LPSTR lpCmdLine)
 
 //---------------------------------------------------------------------------
 
-bool CardInstanceExists(SS_CARDTYPE cardType)
+static bool CardInstanceExists(SS_CARDTYPE cardType)
 {
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{

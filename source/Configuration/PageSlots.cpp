@@ -404,7 +404,7 @@ void CPageSlots::ApplyConfigAfterClose()
 		HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
 		for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 		{
-			std::string pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[slot].pathname[i];
+			const std::string& pathname = m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[slot].pathname[i];
 
 			if (card.HarddiskGetFullPathName(i) == pathname)
 				continue;
@@ -565,9 +565,10 @@ bool CPageSlots::CheckFloppyPathnameInUse(const std::string& pathname, BYTE& inU
 	{
 		if (GetCardMgr().QuerySlot(slot) == CT_Disk2)
 		{
+			Disk2InterfaceCard& card = dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot));
 			for (UINT i = DRIVE_1; i < NUM_DRIVES; i++)
 			{
-				if (dynamic_cast<Disk2InterfaceCard&>(GetCardMgr().GetRef(slot)).DiskGetFullPathName(i) == pathname)
+				if (card.DiskGetFullPathName(i) == pathname)
 				{
 					inUseSlot = slot;
 					inUseDrive = i;
@@ -815,9 +816,10 @@ bool CPageSlots::CheckHDDPathnameInUse(const std::string& pathname, BYTE& inUseS
 	{
 		if (GetCardMgr().QuerySlot(slot) == CT_GenericHDD)
 		{
+			HarddiskInterfaceCard& card = dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot));
 			for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 			{
-				if (dynamic_cast<HarddiskInterfaceCard&>(GetCardMgr().GetRef(slot)).HarddiskGetFullPathName(i) == pathname)
+				if (card.HarddiskGetFullPathName(i) == pathname)
 				{
 					inUseSlot = slot;
 					inUseDrive = i;

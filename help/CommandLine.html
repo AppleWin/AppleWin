@@ -18,7 +18,7 @@
 		This is guaranteed to be processed after all the image loading switches (eg. -d1, -h1, etc).<br>
 		Use this switch if you have a mix of (eg) -d1 and -h1 loading images from different folders, and you want to guarantee the current dir.<br><br>
 		-d1 &lt;pathname&gt;<br>
-		Start with a floppy disk in slot 6 drive-1 (and auto power-on the Apple II).<br>
+		Start with a floppy disk in slot 6 drive-1 (and auto power-on the Apple II). NB. Disk II controller card in slot 6 gets enabled, and this has priority over '-s6 empty'.<br>
 		NB. -s6d1 has the meaning same as -d1.<br><br>
 		-d2 &lt;pathname&gt;<br>
 		Start with a floppy disk in slot 6 drive-2.<br>
@@ -28,7 +28,7 @@
 		-s5d2 &lt;pathname&gt;<br>
 		Start with a floppy disk in slot 5 drive-2 (must be used with '-s5 diskii' or '-s5 diskii13').<br><br>
 		-h1 &lt;pathname&gt;<br>
-		Start with hard disk 1 plugged in (and auto power-on the Apple II). NB. Hard disk controller card in slot 7 gets enabled.<br><br>
+		Start with hard disk 1 plugged in (and auto power-on the Apple II). NB. Hard disk controller card in slot 7 gets enabled, and this has priority over '-s7 empty'.<br><br>
 		-h2 &lt;pathname&gt;<br>
 		Start with hard disk 2 plugged in. NB. Hard disk controller card in slot 7 gets enabled.<br><br>
 		-s5h1 &lt;pathname&gt;<br>
@@ -60,9 +60,8 @@
 		Insert an Apple 16K Language Card into slot 0 in the original Apple II and use the F8 auto-start ROM.<br>
 		NB. The Apple II Plus already defaults to having a Language Card, so this switch is not required.<br><br>
 		-s&lt;N&gt; empty<br>
-		Remove any card from slot N (N=1-7).<br>
-		NB. '-s7 empty' is useful to allow a floppy disk to boot from slot 6, drive 1. Use in combination with -d1.<br>
-		NB. '-s6 empty' persists this state to the Registry and there's currently no GUI option to re-insert a Disk II controller card into slot 6. So you must use '-s6 diskii' to re-enable the card in slot 6.<br><br>
+		Remove any card from slot N (N=0-7).<br>
+		NB. '-s7 empty' is useful to allow a floppy disk to auto-boot from slot 6, drive 1. Use in combination with -d1.<br><br>
 		-s1 parallel<br>
 		Insert a parallel printer card into slot 1.<br><br>
 		-s2 ssc<br>

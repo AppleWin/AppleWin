@@ -2703,7 +2703,7 @@ void _DrawSoftSwitchLanguageCardBank( RECT & rect, const int iBankDisplay, int b
 
 	rect.right = rect.left + dx80;
 
-	// 0 = RAM
+	// 0 = ROM
 	// 1 = Bank 1
 	// 2 = Bank 2
 	bool bBankWritable = (GetMemMode() & MF_WRITERAM) ? 1 : 0;
