@@ -199,6 +199,19 @@ bool LanguageCardUnit::IsOpcodeRMWabs(WORD addr)
 	return false;
 }
 
+uint8_t LanguageCardUnit::ReadByte(uint16_t phyAddr)
+{
+	if (phyAddr < 0xC000)
+		return 0;
+
+	// LC1-4K:      physical addr [$C000-CFFF] - $C000 -> [$0000-0FFF]
+	// LC2-4K & 8K: physical addr [$D000-FFFF] - $C000 -> [$1000-3FFF]
+	if (QueryType() == CT_LanguageCardIIe)
+		return *MemGetMainPtrWithLC(phyAddr);
+	else
+		return m_pMemory[phyAddr - 0xC000];
+}
+
 //-------------------------------------
 
 LanguageCardSlot0 * LanguageCardSlot0::create(UINT slot)
@@ -710,7 +723,7 @@ bool LanguageCardManager::SetLanguageCard(SS_CARDTYPE type)
 	return true;
 }
 
-uint8_t LanguageCardManager::ReadByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr)
+uint8_t LanguageCardManager::ReadByte(uint8_t slot, uint8_t bank, uint16_t phyAddr)
 {
 	if (slot > SLOT7)
 	{
@@ -718,11 +731,17 @@ uint8_t LanguageCardManager::ReadByteFromSaturn(uint8_t slot, uint8_t bank, uint
 		return 0;
 	}
 
-	if (GetCardMgr().QuerySlot(slot) != CT_Saturn128K)
+	if (GetCardMgr().QuerySlot(slot) == CT_LanguageCard || GetCardMgr().QuerySlot(slot) == CT_LanguageCardIIe)
 	{
-		_ASSERT(0);
-		return 0;
+		_ASSERT(slot == SLOT0);
+		_ASSERT(bank == 0);
+		return dynamic_cast<LanguageCardUnit&>(GetCardMgr().GetRef(slot)).ReadByte(phyAddr);
+	}
+	else if (GetCardMgr().QuerySlot(slot) == CT_Saturn128K)
+	{
+		return dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).ReadByteFromBank(bank, phyAddr);
 	}
 
-	return dynamic_cast<Saturn128K&>(GetCardMgr().GetRef(slot)).ReadByteFromBank(bank, phyAddr);
+	_ASSERT(0);
+	return 0;
 }
