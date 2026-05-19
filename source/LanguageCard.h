@@ -31,6 +31,7 @@ public:
 	void SetLCMemMode(UINT memMode) { m_memMode = memMode; }
 	SS_CARDTYPE GetMemoryType(void) { return QueryType(); }
 	bool IsOpcodeRMWabs(WORD addr);
+	uint8_t ReadByte(uint16_t phyAddr);
 
 	static BYTE __stdcall IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 
@@ -141,7 +142,7 @@ public:
 	void SetMemMode(const uint8_t slot);
 	void SetMemModeFromSnapshot(void);
 
-	uint8_t ReadByteFromSaturn(uint8_t slot, uint8_t bank, uint16_t phyAddr);
+	uint8_t ReadByte(uint8_t slot, uint8_t bank, uint16_t phyAddr);
 
 private:
 	LanguageCardUnit* m_pLanguageCard;

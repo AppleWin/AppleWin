@@ -2167,7 +2167,7 @@ static BYTE ReadByteFromMemoryWithPrefix(const WORD iAddress, AddressPrefix_t& a
 			else
 				nData = ReadByteFromMemory(iAddress);
 		}
-		else // Saturn
+		else // Saturn (or slot 0 LC)
 		{
 			if (iAddress < 0xD000)
 			{
@@ -2184,7 +2184,7 @@ static BYTE ReadByteFromMemoryWithPrefix(const WORD iAddress, AddressPrefix_t& a
 				if (addrPrefix.nLangCard == 1 && iAddress >= 0xD000 && iAddress <= 0xDFFF)
 					physicalAddrOffset = iAddress - 0x1000;
 
-				nData = GetCardMgr().GetLanguageCardMgr().ReadByteFromSaturn(addrPrefix.nSlot, nBank, physicalAddrOffset);
+				nData = GetCardMgr().GetLanguageCardMgr().ReadByte(addrPrefix.nSlot, nBank, physicalAddrOffset);
 			}
 		}
 	}
