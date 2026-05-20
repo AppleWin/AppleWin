@@ -84,7 +84,7 @@ BYTE    MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles);
 BYTE    MemReadFloatingBusFromNTSC(void);
 void    MemReset ();
 void    MemResetPaging ();
-void    MemUpdatePaging(BOOL initialize);
+void    MemUpdatePaging(bool initialize);
 LPVOID	MemGetSlotParameters (UINT uSlot);
 void	MemAnnunciatorReset(void);
 bool    MemGetAnnunciator(UINT annunciator);

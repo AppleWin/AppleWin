@@ -34,36 +34,36 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 namespace _ini {
 	//===========================================================================
-	BOOL RegLoadString(LPCTSTR section, LPCTSTR key, BOOL /*peruser*/, LPTSTR buffer, uint32_t chars)
+	bool RegLoadString(LPCTSTR section, LPCTSTR key, bool /*peruser*/, LPTSTR buffer, uint32_t chars)
 	{
 		uint32_t n = GetPrivateProfileString(section, key, NULL, buffer, chars, g_sConfigFile.c_str());
 		return n > 0;
 	}
 
 	//===========================================================================
-	void RegSaveString(LPCTSTR section, LPCTSTR key, BOOL /*peruser*/, const std::string& buffer)
+	void RegSaveString(LPCTSTR section, LPCTSTR key, bool /*peruser*/, const std::string& buffer)
 	{
-		BOOL updated = WritePrivateProfileString(section, key, buffer.c_str(), g_sConfigFile.c_str());
+		bool updated = !!WritePrivateProfileString(section, key, buffer.c_str(), g_sConfigFile.c_str());
 		_ASSERT(updated || GetLastError() == 0);
 	}
 
 	//===========================================================================
-	void RegDeleteString(LPCTSTR section, BOOL /*peruser*/)
+	void RegDeleteString(LPCTSTR section, bool /*peruser*/)
 	{
-		BOOL updated = WritePrivateProfileString(section, NULL, NULL, g_sConfigFile.c_str());
+	    bool updated = !!WritePrivateProfileString(section, NULL, NULL, g_sConfigFile.c_str());
 		_ASSERT(updated || GetLastError() == 0);
 	}
 }
 
 //===========================================================================
-BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, uint32_t chars)
+bool RegLoadString (LPCTSTR section, LPCTSTR key, bool peruser, LPTSTR buffer, uint32_t chars)
 {
 	if (!g_sConfigFile.empty())
 		return _ini::RegLoadString(section, key, peruser, buffer, chars);
 
 	std::string fullkeyname = std::string("Software\\AppleWin\\CurrentVersion\\") + section;
 
-	BOOL success = FALSE;
+	bool success = false;
 	HKEY keyhandle;
 	LSTATUS status = RegOpenKeyEx(
 		(peruser ? HKEY_CURRENT_USER : HKEY_LOCAL_MACHINE),
@@ -77,7 +77,7 @@ BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, u
 		DWORD size = chars;
 		status = RegQueryValueEx(keyhandle, key, NULL, &type, (LPBYTE)buffer, &size);
 		if (status == 0 && size != 0)
-			success = TRUE;
+			success = true;
 	}
 
 	RegCloseKey(keyhandle);
@@ -86,36 +86,36 @@ BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, u
 }
 
 //===========================================================================
-BOOL RegLoadString (LPCTSTR section, LPCTSTR key, BOOL peruser, LPTSTR buffer, uint32_t chars, LPCTSTR defaultValue)
+bool RegLoadString (LPCTSTR section, LPCTSTR key, bool peruser, LPTSTR buffer, uint32_t chars, LPCTSTR defaultValue)
 {
-	BOOL success = RegLoadString(section, key, peruser, buffer, chars);
+	bool success = RegLoadString(section, key, peruser, buffer, chars);
 	if (!success)
 		StringCbCopy(buffer, chars, defaultValue);
 	return success;
 }
 
 //===========================================================================
-BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t* value) {
+bool RegLoadValue (LPCTSTR section, LPCTSTR key, bool peruser, uint32_t* value) {
 	char buffer[32];
 	if (!RegLoadString(section, key, peruser, buffer, 32))
 	{
-		return FALSE;
+		return false;
 	}
 
 	*value = (uint32_t)atoi(buffer);
-	return TRUE;
+	return true;
 }
 
 //===========================================================================
-BOOL RegLoadValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t* value, uint32_t defaultValue) {
-	BOOL success = RegLoadValue(section, key, peruser, value);
+bool RegLoadValue (LPCTSTR section, LPCTSTR key, bool peruser, uint32_t* value, uint32_t defaultValue) {
+	bool success = RegLoadValue(section, key, peruser, value);
 	if (!success)
 		*value = defaultValue;
 	return success;
 }
 
 //===========================================================================
-void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::string & buffer) {
+void RegSaveString (LPCTSTR section, LPCTSTR key, bool peruser, const std::string & buffer) {
 	if (!g_sConfigFile.empty())
 		return _ini::RegSaveString(section, key, peruser, buffer);
 
@@ -147,12 +147,6 @@ void RegSaveString (LPCTSTR section, LPCTSTR key, BOOL peruser, const std::strin
 }
 
 //===========================================================================
-void RegSaveValue (LPCTSTR section, LPCTSTR key, BOOL peruser, uint32_t value) {
-	std::string strValue = StrFormat("%d", value);
-	RegSaveString(section, key, peruser, strValue.c_str());
-}
-
-//===========================================================================
 static inline std::string RegGetSlotSection(UINT slot)
 {
 	if (slot == GAME_IO_CONNECTOR)
@@ -170,7 +164,7 @@ std::string RegGetConfigSlotSection(UINT slot)
 
 void RegDeleteConfigSlotSection(UINT slot)
 {
-	BOOL peruser = TRUE;
+	constexpr bool peruser = true;
 
 	if (!g_sConfigFile.empty())
 	{
@@ -207,7 +201,7 @@ void RegSetConfigSlotNewCardType(UINT slot, SS_CARDTYPE type)
 	std::string regSection;
 	regSection = RegGetConfigSlotSection(slot);
 
-	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, type);
+	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, true, type);
 }
 
 void RegSetConfigGameIOConnectorNewDongleType(UINT slot, DONGLETYPE type)
@@ -221,5 +215,5 @@ void RegSetConfigGameIOConnectorNewDongleType(UINT slot, DONGLETYPE type)
 	std::string regSection;
 	regSection = RegGetConfigSlotSection(slot);
 
-	RegSaveValue(regSection.c_str(), REGVALUE_GAME_IO_TYPE, TRUE, type);
+	RegSaveValue(regSection.c_str(), REGVALUE_GAME_IO_TYPE, true, type);
 }

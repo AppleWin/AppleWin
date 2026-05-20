@@ -79,7 +79,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	uint32_t tmp;
 	std::string regSection = RegGetConfigSlotSection(m_slot);
 	const uint32_t kForce13SectorFirmware_Default = 0;
-	RegLoadValue(regSection.c_str(), REGVALUE_DISKII_13_SECTOR_FIRMWARE, TRUE, &tmp, kForce13SectorFirmware_Default);
+	RegLoadValue(regSection.c_str(), REGVALUE_DISKII_13_SECTOR_FIRMWARE, true, &tmp, kForce13SectorFirmware_Default);
 	m_force13SectorFirmware = tmp ? true : false;
 
 	ResetLogicStateSequencer();
@@ -208,7 +208,7 @@ void Disk2InterfaceCard::LoadLastDiskImage(const int drive)
 	char pathname[MAX_PATH];
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, "") && (pathname[0] != 0))
+	if (RegLoadString(regSection.c_str(), regKey.c_str(), true, pathname, MAX_PATH, "") && (pathname[0] != 0))
 	{
 		m_saveDiskImage = false;
 		ImageError_e error = InsertDisk(drive, pathname, IMAGE_USE_FILES_WRITE_PROTECT_STATUS, IMAGE_DONT_CREATE);
@@ -232,7 +232,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 		return;
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_Disk2);
+	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, true, CT_Disk2);
 
 	const std::string regKey = (drive == DRIVE_1)
 		? REGVALUE_LAST_DISK_1
@@ -240,7 +240,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 
 	const std::string& pathName = DiskGetFullPathName(drive);
 
-	RegSaveString(regSection.c_str(), regKey.c_str(), TRUE, pathName);
+	RegSaveString(regSection.c_str(), regKey.c_str(), true, pathName);
 
 	//
 
@@ -253,7 +253,7 @@ void Disk2InterfaceCard::SaveLastDiskImage(const int drive)
 	if (slash != std::string::npos)
 	{
 		const std::string dirName = pathName.substr(0, slash + 1);
-		RegSaveString(REG_PREFS, REGVALUE_PREF_START_DIR, 1, dirName);
+		RegSaveString(REG_PREFS, REGVALUE_PREF_START_DIR, true, dirName);
 	}
 }
 
@@ -1844,7 +1844,7 @@ bool Disk2InterfaceCard::UserSelectNewDiskImageOnly(const int drive, LPCSTR pszF
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 
-	RegLoadString(REG_PREFS, REGVALUE_PREF_START_DIR, 1, directory, MAX_PATH, "");
+	RegLoadString(REG_PREFS, REGVALUE_PREF_START_DIR, true, directory, MAX_PATH, "");
 	std::string title = StrFormat("Select Disk Image For Drive %d", drive + 1);
 
 	OPENFILENAME ofn;
@@ -2068,7 +2068,7 @@ void Disk2InterfaceCard::Set13SectorFirmware(const bool is13Sector)
 	m_force13SectorFirmware = is13Sector;
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_DISKII_13_SECTOR_FIRMWARE, TRUE, is13Sector ? 1 : 0);
+	RegSaveValue(regSection.c_str(), REGVALUE_DISKII_13_SECTOR_FIRMWARE, true, is13Sector);
 }
 
 bool Disk2InterfaceCard::GetFirmware(WORD lpNameId, BYTE* pDst)

@@ -194,7 +194,7 @@ void CConfigNeedingRestart::Reload()
 	m_uSaveLoadStateMsg = 0;
 	m_saveStateOnExit = GetSaveStateOnExit();
 	char ciderPressPathname[MAX_PATH];
-	RegLoadString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, ciderPressPathname, MAX_PATH, "");
+	RegLoadString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, true, ciderPressPathname, MAX_PATH, "");
 	m_ciderPressPathname = ciderPressPathname;
 	m_enableTheFreezesF8Rom = GetPropertySheet().GetTheFreezesF8Rom();
 	m_gameIOConnectorType = GetCopyProtectionDongleType();

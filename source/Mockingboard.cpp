@@ -102,16 +102,16 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 		uint32_t type;
 		std::string regSection = RegGetConfigSlotSection(m_slot);
 		if (i == 0)
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, TRUE, &type, kSSI263A_Default);
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, true, &type, kSSI263A_Default);
 		else
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, TRUE, &type, kSSI263B_Default);	// socket-1 for main SSI263
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, true, &type, kSSI263B_Default);	// socket-1 for main SSI263
 		m_MBSubUnit[i].ssi263.SetType(SSI263Type(type));
 
 		if (i == 0)
 		{
 			uint32_t hasSC01;
 			std::string regSection = RegGetConfigSlotSection(m_slot);
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, TRUE, &hasSC01, kSC01_Default == SC01 ? TRUE : FALSE);
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, true, &hasSC01, kSC01_Default == SC01 ? TRUE : FALSE);
 			m_MBSubUnit[i].ssi263.SetSC01(hasSC01 ? SC01 : SSI263Empty);
 		}
 	}
@@ -136,9 +136,9 @@ void MockingboardCard::SetSocketSSI263(BYTE socket, SSI263Type type)
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
 	if (socket == 0)
-		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, TRUE, type);
+		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET0, true, type);
 	else
-		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, TRUE, type);
+		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SSI263_SOCKET1, true, type);
 }
 
 void MockingboardCard::SetSocketSC01(SSI263Type type)
@@ -146,7 +146,7 @@ void MockingboardCard::SetSocketSC01(SSI263Type type)
 	m_MBSubUnit[0].ssi263.SetSC01(type);
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, TRUE, type == SC01 ? TRUE : FALSE);
+	RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, true, type == SC01);
 }
 
 //---------------------------------------------------------------------------
@@ -786,9 +786,9 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 		if (m_phasorMode == PH_Mockingboard || m_phasorMode == PH_Phasor)	// No SSI263 for Echo+
 		{
 			// Confirmed that Phasor has no extra logic to map SSI263 (it's the same as Mockingboard's)
-			bool CS_SSI263_A = nAddr & 0x40;					// SSI263 at $Cn4x-Cn7x, $CnCx-CnFx
+			bool CS_SSI263_A = !!(nAddr & 0x40);					// SSI263 at $Cn4x-Cn7x, $CnCx-CnFx
 
-			bool CS_SSI263_B = nAddr & 0x20;					// SSI263 at $Cn2x-Cn3x, $Cn6x-Cn7x, $CnAx-CnBx, $CnEx-CnFx
+			bool CS_SSI263_B = !!(nAddr & 0x20);					// SSI263 at $Cn2x-Cn3x, $Cn6x-Cn7x, $CnAx-CnBx, $CnEx-CnFx
 
 			// NB. Mockingboard mode: writes to $Cn4x/SSI263 also get written to 1st 6522 (have confirmed on real Phasor h/w)
 			if (CS_SSI263_A)	// Primary SSI263
