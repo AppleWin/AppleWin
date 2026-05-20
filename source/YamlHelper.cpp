@@ -521,6 +521,23 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 			throw std::runtime_error("Unable to convert to UTF-8: " + std::string(value));
 	}
 
+	// A string in quotes needs double-backslashes, otherwise backslash treated as an escape-character (GH#1499)
+	if (std::string(m_pMbStr).find("\\") != std::string::npos)
+	{
+		std::string str(m_pMbStr);
+		size_t pos = 0;
+		while ((pos = str.find("\\", pos)) != std::string::npos)
+		{
+			str = str.replace(pos, 1, "\\\\");
+			pos += 2;
+		}
+		const size_t size = str.size() + 1;
+		delete[] m_pMbStr;
+		m_pMbStr = new char[size];
+		strncpy_s(m_pMbStr, size, str.c_str(), _TRUNCATE);
+		m_mbStrSize = (int)size;
+	}
+
 	if (std::string(m_pMbStr).find("#") == std::string::npos)
 		Save("%s: %s\n", key, m_pMbStr);
 	else
