@@ -17,12 +17,13 @@ Note: AppleWin-x64.exe is full release.
     - Some cards have an extra configuration page to support specific card configuration.
 	- Add a 'Reset to Default' to just reset the slots to their default card or empty state.
   - Add a 'Reset all to Default' on the main configuration page.
+  - Add 'No-Slot clock' checkbox to the "Advanced" configuration page.
   - Remove the "Sound" and "Disk" configuration pages.
   - Update AppleWin.chm help doc.
     - [PR #1478] Help: Fix scroll lock's link to configuration help. [@xotmatrix]
 - [Change #1449] Rename references of Apple II+ to Apple II Plus (and related).
+- [Change #1467] Update to zlib-1.3.2. [@kiyolee]
 - [Change] Mockingboard/Phasor: default to SSI263AP in socket-1 and socket-0 empty.
-- [Change] Update to zlib-1.3.2. [@kiyolee]
 - [Bug #1382] Debugger: follow target uses wrong address for DA.
 - [Bug #1425] AppleWin very slow to start due to CSuperSerialCard::ScanCOMPorts().
 - [Bug #1433] Disk II: read write-protect to detect presence of disk in drive.
