@@ -34,17 +34,17 @@ extern struct z80_regs_s z80_regs;
 //struct interrupt_cpu_status_s;
 //struct alarm_context_s;
 
-extern void z80_reset(void);
+extern void z80_reset();
 //extern void z80_mainloop(struct interrupt_cpu_status_s *cpu_int_status,
 //                         struct alarm_context_s *cpu_alarm_context);
 DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles);
-//extern void z80_trigger_dma(void);
+//extern void z80_trigger_dma();
 
 BYTE z80_RDMEM(WORD Addr);
 void z80_WRMEM(WORD Addr, BYTE Value);
 
-const std::string& Z80_GetSnapshotCardNameOld(void);
-const std::string& Z80_GetSnapshotCardName(void);
+const std::string& Z80_GetSnapshotCardNameOld();
+const std::string& Z80_GetSnapshotCardName();
 void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);
 bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT version);
 

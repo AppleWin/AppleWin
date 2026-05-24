@@ -50,7 +50,7 @@ bool MockingboardCardManager::IsMockingboardExtraCardType(UINT slot)
 	return type == CT_MegaAudio || type == CT_SDMusic;
 }
 
-void MockingboardCardManager::ReinitializeClock(void)
+void MockingboardCardManager::ReinitializeClock()
 {
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
@@ -59,7 +59,7 @@ void MockingboardCardManager::ReinitializeClock(void)
 	}
 }
 
-void MockingboardCardManager::InitializeForLoadingSnapshot(void)
+void MockingboardCardManager::InitializeForLoadingSnapshot()
 {
 	if (g_bDisableDirectSound || g_bDisableDirectSoundMockingboard)
 		return;
@@ -96,7 +96,7 @@ void MockingboardCardManager::MuteControl(bool mute)
 	}
 }
 
-void MockingboardCardManager::SetCumulativeCycles(void)
+void MockingboardCardManager::SetCumulativeCycles()
 {
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
@@ -115,7 +115,7 @@ void MockingboardCardManager::UpdateCycles(ULONG executedCycles)
 }
 
 // Called from class SY6522
-void MockingboardCardManager::UpdateIRQ(void)
+void MockingboardCardManager::UpdateIRQ()
 {
 	bool irq = false;
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
@@ -130,7 +130,7 @@ void MockingboardCardManager::UpdateIRQ(void)
 		CpuIrqDeassert(IS_6522);
 }
 
-bool MockingboardCardManager::IsActiveToPreventFullSpeed(void)
+bool MockingboardCardManager::IsActiveToPreventFullSpeed()
 {
 	if (!m_mockingboardVoice.bActive)
 		return false;
@@ -145,7 +145,7 @@ bool MockingboardCardManager::IsActiveToPreventFullSpeed(void)
 	return false;
 }
 
-uint32_t MockingboardCardManager::GetVolume(void)
+uint32_t MockingboardCardManager::GetVolume()
 {
 	return m_userVolume;
 }
@@ -167,7 +167,7 @@ void MockingboardCardManager::SetVolume(uint32_t volume, uint32_t volumeMax)
 	}
 }
 
-bool MockingboardCardManager::GetEnableExtraCardTypes(void)
+bool MockingboardCardManager::GetEnableExtraCardTypes()
 {
 	// Scan slots for any extra card types
 	// . eg. maybe started a new AppleWin (with empty cmd line), but with Registry's slot 4 = CT_MegaAudio
@@ -182,7 +182,7 @@ bool MockingboardCardManager::GetEnableExtraCardTypes(void)
 }
 
 #ifdef _DEBUG
-void MockingboardCardManager::CheckCumulativeCycles(void)
+void MockingboardCardManager::CheckCumulativeCycles()
 {
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 	{
@@ -202,7 +202,7 @@ void MockingboardCardManager::Get6522IrqDescription(std::string& desc)
 #endif
 
 // Called by CardManager::Destroy()
-void MockingboardCardManager::Destroy(void)
+void MockingboardCardManager::Destroy()
 {
 	// NB. All cards (including any Mockingboard cards) have just been destroyed by CardManager
 
@@ -247,7 +247,7 @@ void MockingboardCardManager::Update(const ULONG executedCycles)
 // Called by:
 // . MB_SyncEventCallback() on a TIMER1 (not TIMER2) underflow - when IsAnyTimer1Active() == true
 // . Update()                                                  - when IsAnyTimer1Active() == false
-void MockingboardCardManager::UpdateSoundBuffer(void)
+void MockingboardCardManager::UpdateSoundBuffer()
 {
 #ifdef LOG_PERF_TIMINGS
 	extern UINT64 g_timeMB_NoTimer;
@@ -281,7 +281,7 @@ void MockingboardCardManager::UpdateSoundBuffer(void)
 		MixAllAndCopyToRingBuffer(numSamples);
 }
 
-bool MockingboardCardManager::Init(void)
+bool MockingboardCardManager::Init()
 {
 	if (!DSAvailable())
 		return false;
@@ -305,7 +305,7 @@ bool MockingboardCardManager::Init(void)
 	return true;
 }
 
-UINT MockingboardCardManager::GenerateAllSoundData(void)
+UINT MockingboardCardManager::GenerateAllSoundData()
 {
 	UINT nNumSamples = 0;
 

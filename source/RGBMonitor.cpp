@@ -419,7 +419,7 @@ BYTE MixColors(BYTE c1, BYTE c2)
 #undef COMBINATION
 }
 
-static void CreateColorMixMap(void)
+static void CreateColorMixMap()
 {
 	const int FROM_NEIGHBOUR = 0x00;
 	const int MIX_THRESHOLD = HGR_BLUE; // (skip) bottom 2 HGR colors
@@ -1164,7 +1164,7 @@ void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint
 
 static LPBYTE g_pSourcePixels = NULL;
 
-static void V_CreateDIBSections(void)
+static void V_CreateDIBSections()
 {
 	if (!g_pSourcePixels)	// NB. Will be non-zero after a VM restart (GH#809)
 		g_pSourcePixels = new BYTE[SRCOFFS_TOTAL * MAX_SOURCE_Y];
@@ -1248,39 +1248,39 @@ void RGB_SetVideoMode(WORD address)
 	g_rgbPrevAN3Addr = address;
 }
 
-bool RGB_Is140Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 2
+bool RGB_Is140Mode()	// Extended 80-Column Text/AppleColor Card's Mode 2
 {
 	// Feline falls back to this mode instead of 160
 	return g_rgbMode == 0 || (g_RGBVideocard == RGB_Videocard_e::LeChatMauve_Feline && g_rgbMode == 1);
 }
 
-bool RGB_Is160Mode(void)	// Extended 80-Column Text/AppleColor Card: N/A
+bool RGB_Is160Mode()	// Extended 80-Column Text/AppleColor Card: N/A
 {
 	// Unsupported by Feline
 	return g_rgbMode == 1 && (g_RGBVideocard != RGB_Videocard_e::LeChatMauve_Feline);
 }
 
-bool RGB_IsMixMode(void)	// Extended 80-Column Text/AppleColor Card's Mode 3
+bool RGB_IsMixMode()	// Extended 80-Column Text/AppleColor Card's Mode 3
 {
 	return g_rgbMode == 2;
 }
 
-bool RGB_Is560Mode(void)	// Extended 80-Column Text/AppleColor Card's Mode 1
+bool RGB_Is560Mode()	// Extended 80-Column Text/AppleColor Card's Mode 1
 {
 	return g_rgbMode == 3;
 }
 
-bool RGB_IsMixModeInvertBit7(void)
+bool RGB_IsMixModeInvertBit7()
 {
 	return RGB_IsMixMode() && g_rgbInvertBit7;
 }
 
-bool RGB_IsMacLCCardDLGR(void)
+bool RGB_IsMacLCCardDLGR()
 {
 	return g_rgbMacLCCardDLGR;
 }
 
-void RGB_ResetState(void)
+void RGB_ResetState()
 {
 	g_rgbFlags = 0;
 	g_rgbMode = 0;
@@ -1337,7 +1337,7 @@ void RGB_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT cardVersion)
 	yamlLoadHelper.PopMap();
 }
 
-RGB_Videocard_e RGB_GetVideocard(void)
+RGB_Videocard_e RGB_GetVideocard()
 {
 	return g_RGBVideocard;
 }

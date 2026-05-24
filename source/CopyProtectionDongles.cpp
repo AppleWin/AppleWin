@@ -59,7 +59,7 @@ void SetCopyProtectionDongleType(DONGLETYPE type)
 	copyProtectionDongleType = type;
 }
 
-DONGLETYPE GetCopyProtectionDongleType(void)
+DONGLETYPE GetCopyProtectionDongleType()
 {
 	return copyProtectionDongleType;
 }
@@ -83,19 +83,19 @@ void DongleControl(WORD address)
 
 // This protection dongle consists of a NAND gate connected with AN1 and AN2 on the inputs
 // PB2 on the output, and AN0 connected to power it.
-static bool SdsSpeedStar(void)
+static bool SdsSpeedStar()
 {
 	return !MemGetAnnunciator(0) || !(MemGetAnnunciator(1) && MemGetAnnunciator(2));
 }
 
 // Returns the copy protection dongle state of PB0. A return value of -1 means not used by copy protection dongle
-int CopyProtectionDonglePB0(void)
+int CopyProtectionDonglePB0()
 {
 	return -1;
 }
 
 // Returns the copy protection dongle state of PB1. A return value of -1 means not used by copy protection dongle
-int CopyProtectionDonglePB1(void)
+int CopyProtectionDonglePB1()
 {
 	if (copyProtectionDongleType == DT_HAYDENCOMPILER)
 		return 0;	// connected to GND
@@ -104,7 +104,7 @@ int CopyProtectionDonglePB1(void)
 }
 
 // Returns the copy protection dongle state of PB2. A return value of -1 means not used by copy protection dongle
-int CopyProtectionDonglePB2(void)
+int CopyProtectionDonglePB2()
 {
 	switch (copyProtectionDongleType)
 	{
@@ -177,37 +177,37 @@ int CopyProtectionDonglePDL(UINT pdl)
 //    Add Robocom Ltd - Robo 500/1000/1500 Interface Modules
 // 3: Add Hayden Compiler protection key
 
-static const std::string& GetSnapshotStructName_SDSSpeedStar(void)
+static const std::string& GetSnapshotStructName_SDSSpeedStar()
 {
 	static const std::string name("SDS SpeedStar dongle");
 	return name;
 }
 
-static const std::string& GetSnapshotStructName_CodeWriter(void)
+static const std::string& GetSnapshotStructName_CodeWriter()
 {
 	static const std::string name("Cortechs Corp - CodeWriter protection key");
 	return name;
 }
 
-static const std::string& GetSnapshotStructName_Robocom500(void)
+static const std::string& GetSnapshotStructName_Robocom500()
 {
 	static const std::string name("Robocom Ltd - Robo 500 Interface Module");
 	return name;
 }
 
-static const std::string& GetSnapshotStructName_Robocom1000(void)
+static const std::string& GetSnapshotStructName_Robocom1000()
 {
 	static const std::string name("Robocom Ltd - Robo 1000 Interface Module");
 	return name;
 }
 
-static const std::string& GetSnapshotStructName_Robocom1500(void)
+static const std::string& GetSnapshotStructName_Robocom1500()
 {
 	static const std::string name("Robocom Ltd - Robo 1500 Interface Module");
 	return name;
 }
 
-static const std::string& GetSnapshotStructName_HaydenCompiler(void)
+static const std::string& GetSnapshotStructName_HaydenCompiler()
 {
 	static const std::string name("Hayden - Applesoft Compiler protection key");
 	return name;

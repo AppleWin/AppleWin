@@ -187,7 +187,7 @@ void CNoSlotClock::PopulateClockRegister()
 #define SS_YAML_KEY_COMPARISON_REGISTER_MASK "Comparison Register Mask"
 #define SS_YAML_KEY_COMPARISON_REGISTER "Comparison Register"
 
-const std::string& CNoSlotClock::GetSnapshotStructName(void)
+const std::string& CNoSlotClock::GetSnapshotStructName()
 {
 	static const std::string name("No Slot Clock");
 	return name;

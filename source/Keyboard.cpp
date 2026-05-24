@@ -401,7 +401,7 @@ void KeybAnyKeyDown(UINT message, WPARAM wparam, bool bIsExtended)
 	}
 }
 
-static bool IsAKD(void)
+static bool IsAKD()
 {
 	uint64_t* p = &g_AKDFlags[0][0];
 
@@ -414,7 +414,7 @@ static bool IsAKD(void)
 
 //===========================================================================
 
-BYTE KeybReadData (void)
+BYTE KeybReadData()
 {
 	LogFileTimeUntilFirstKeyRead();
 
@@ -427,14 +427,14 @@ BYTE KeybReadData (void)
 
 //===========================================================================
 
-BYTE KeybClearStrobe(void)
+BYTE KeybClearStrobe()
 {
 	keywaiting = 0;
 
 	return ClipboardReadOrPeek(true);
 }
 
-BYTE KeybReadFlag (void)
+BYTE KeybReadFlag()
 {
 	_ASSERT(!IS_APPLE2);	// And also not Pravets machines?
 
@@ -448,7 +448,7 @@ BYTE KeybReadFlag (void)
 }
 
 //===========================================================================
-void KeybToggleCapsLock ()
+void KeybToggleCapsLock()
 {
 	if (!IS_APPLE2)
 	{
@@ -462,7 +462,7 @@ void KeybToggleCapsLock ()
 #define SS_YAML_KEY_LASTKEY "Last Key"
 #define SS_YAML_KEY_KEYWAITING "Key Waiting"
 
-static const std::string& KeybGetSnapshotStructName(void)
+static const std::string& KeybGetSnapshotStructName()
 {
 	static const std::string name("Keyboard");
 	return name;

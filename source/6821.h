@@ -61,7 +61,7 @@ public:
 		m_stOutB.func = NULL;
 	};
 
-	~C6821() {};
+	~C6821() {}
 
 	// AppleWin:TC
 	void SetPA(BYTE byData) { m_byIA = byData; }

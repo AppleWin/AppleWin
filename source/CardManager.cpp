@@ -251,7 +251,7 @@ void CardManager::RemoveAuxInternal()
 	m_aux = NULL;
 }
 
-void CardManager::RemoveAux(void)
+void CardManager::RemoveAux()
 {
 	InsertAux(CT_Empty);
 }

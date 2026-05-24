@@ -97,12 +97,12 @@ static void    Spkr_DSUninit();
 
 static bool g_bSpkrOutputToRiff = false;
 
-void Spkr_OutputToRiff(void)
+void Spkr_OutputToRiff()
 {
 	g_bSpkrOutputToRiff = true;
 }
 
-UINT Spkr_GetNumChannels(void)
+UINT Spkr_GetNumChannels()
 {
 	return g_nSPKR_NumChannels;
 }
@@ -158,7 +158,7 @@ static void DisplayBenchmarkResults()
 
 static UINT g_uDCFilterState = 0;
 
-inline void ResetDCFilter(void)
+inline void ResetDCFilter()
 {
 	// reset the attenuator with an additional 250ms of full gain
 	// (10000 samples) before it starts attenuating
@@ -905,7 +905,7 @@ static void Spkr_DSUninit()
 
 #define SS_YAML_KEY_LASTCYCLE "Last Cycle"
 
-static const std::string& SpkrGetSnapshotStructName(void)
+static const std::string& SpkrGetSnapshotStructName()
 {
 	static const std::string name("Speaker");
 	return name;

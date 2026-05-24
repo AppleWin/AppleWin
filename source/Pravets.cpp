@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "Keyboard.h"
 
-Pravets::Pravets(void)
+Pravets::Pravets()
 {
 	// Pravets 8A
 	g_CapsLockAllowed = false;
@@ -43,7 +43,7 @@ Pravets::Pravets(void)
 	P8Shift = false;
 }
 
-void Pravets::Reset(void)
+void Pravets::Reset()
 {
 	if (GetApple2Type() == A2TYPE_PRAVETS8A)
 	{

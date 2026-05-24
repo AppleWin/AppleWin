@@ -111,7 +111,7 @@ static int rstereopos, rchan1pos, rchan2pos, rchan3pos;
 double AY8913::m_fCurrentCLK_AY8910 = 0.0;
 
 
-void AY8913::init(void)
+void AY8913::init()
 {
 	// Init the statics that were in sound_ay_overlay()
 	rng = 1;
@@ -119,7 +119,7 @@ void AY8913::init(void)
 	env_first = 1; env_rev = 0; env_counter = 15;
 }
 
-AY8913::AY8913(void)
+AY8913::AY8913()
 {
 	memset(sound_ay_registers, 0, sizeof(sound_ay_registers));
 	init();
@@ -127,7 +127,7 @@ AY8913::AY8913(void)
 };
 
 
-void AY8913::sound_ay_init( void )
+void AY8913::sound_ay_init()
 {
 	/* AY output doesn't match the claimed levels; these levels are based
 	* on the measurements posted to comp.sys.sinclair in Dec 2001 by
@@ -320,7 +320,7 @@ void AY8913::sound_init( const char *device )
 
 #if 0
 void
-sound_pause( void )
+sound_pause()
 {
   if( sound_enabled )
     sound_end();
@@ -328,7 +328,7 @@ sound_pause( void )
 
 
 void
-sound_unpause( void )
+sound_unpause()
 {
 /* No sound if fastloading in progress */
   if( settings_current.fastload && tape_is_playing() )
@@ -339,7 +339,7 @@ sound_unpause( void )
 #endif
 
 
-void AY8913::sound_end( void )
+void AY8913::sound_end()
 {
 #if 0
   if( sound_enabled ) {
@@ -471,7 +471,7 @@ sound_write_buf_pstereo( libspectrum_signed_word * out, int c )
 #define HZ_COMMON_DENOMINATOR 50
 #include "Log.h"
 
-void AY8913::sound_ay_overlay( void )
+void AY8913::sound_ay_overlay()
 {
   int tone_level[3];
   int mixer, envshape;
@@ -792,7 +792,7 @@ void AY8913::sound_ay_write( int reg, int val, libspectrum_dword now )
 /* no need to call this initially, but should be called
  * on reset otherwise.
  */
-void AY8913::sound_ay_reset( void )
+void AY8913::sound_ay_reset()
 {
   int f;
 
@@ -836,7 +836,7 @@ void AY8913::sound_ay_reset( void )
 
 #ifdef HAVE_SAMPLERATE
 static void
-sound_resample( void )
+sound_resample()
 {
   int error;
   SRC_DATA data;
@@ -873,7 +873,7 @@ sound_resample( void )
 }
 #endif /* #ifdef HAVE_SAMPLERATE */
 
-void AY8913::sound_frame( void )
+void AY8913::sound_frame()
 {
 #if 0
   libspectrum_signed_word *ptr, *tptr;

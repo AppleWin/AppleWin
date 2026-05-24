@@ -9,13 +9,13 @@ public:
 	{}
 	~SynchronousEventManager(){}
 
-	SyncEvent* GetHead(void) { return m_syncEventHead; }
+	SyncEvent* GetHead() { return m_syncEventHead; }
 	void SetHead(SyncEvent* head) { m_syncEventHead = head; }
 
 	void Insert(SyncEvent* pNewEvent);
 	bool Remove(int id);
 	void Update(int cycles, ULONG uExecutedCycles);
-	void Reset(void) { m_syncEventHead = NULL; }
+	void Reset() { m_syncEventHead = NULL; }
 
 private:
 	SyncEvent* m_syncEventHead;

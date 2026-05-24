@@ -20,12 +20,12 @@ public:
 
 		GetVideo().SetVidHD(true);
 	}
-	virtual ~VidHDCard(void)
+	virtual ~VidHDCard()
 	{
 		GetVideo().SetVidHD(false);
 	}
 
-	virtual void Destroy(void) {}
+	virtual void Destroy() {}
 	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG nExecutedCycles) {}
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
@@ -34,13 +34,13 @@ public:
 
 	void VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
-	bool IsSHR(void) { return (m_NEWVIDEO & 0xC0) == 0xC0; }	// 11000000 = Enable SHR(b7) | Linearize SHR video memory(b6)
-	bool IsDHGRBlackAndWhite(void) { return (m_NEWVIDEO & (1 << 5)) ? true : false; }
-	bool IsWriteAux(void);
+	bool IsSHR() { return (m_NEWVIDEO & 0xC0) == 0xC0; }	// 11000000 = Enable SHR(b7) | Linearize SHR video memory(b6)
+	bool IsDHGRBlackAndWhite() { return (m_NEWVIDEO & (1 << 5)) ? true : false; }
+	bool IsWriteAux();
 
 	static void UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t addrPalette, bgra_t* pVideoAddress, uint32_t a);
 
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName();
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 

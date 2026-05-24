@@ -115,12 +115,12 @@ void Win32Frame::SetAltEnterToggleFullScreen(bool mode)
 //   - Optional: Draw status area to frame DC
 //
 
-UINT Win32Frame::Get3DBorderWidth(void)
+UINT Win32Frame::Get3DBorderWidth()
 {
 	return IsFullScreen() ? 0 : VIEWPORTX;
 }
 
-UINT Win32Frame::Get3DBorderHeight(void)
+UINT Win32Frame::Get3DBorderHeight()
 {
 	return IsFullScreen() ? 0 : VIEWPORTY;
 }
@@ -179,7 +179,7 @@ void Win32Frame::RevealCursor()
 // . WM_MOUSEMOVE event
 // . Switch from full-screen to normal (windowed) mode
 // . AppleWin's main window is activated/deactivated
-void Win32Frame::FullScreenRevealCursor(void)
+void Win32Frame::FullScreenRevealCursor()
 {
 	if (!g_bIsFullScreen)
 		return;
@@ -202,7 +202,7 @@ void Win32Frame::FullScreenRevealCursor(void)
                                                 LR_LOADMAP3DCOLORS |   \
                                                 LR_LOADTRANSPARENT);
 
-void Win32Frame::CreateGdiObjects(void)
+void Win32Frame::CreateGdiObjects()
 {
 	memset(buttonbitmap, 0, BUTTONS*sizeof(HBITMAP));
 
@@ -267,7 +267,7 @@ void Win32Frame::CreateGdiObjects(void)
 }
 
 //===========================================================================
-void Win32Frame::DeleteGdiObjects(void)
+void Win32Frame::DeleteGdiObjects()
 {
 	for (int loop = 0; loop < BUTTONS; loop++)
 		_ASSERT(DeleteObject(buttonbitmap[loop]));
@@ -533,12 +533,12 @@ void Win32Frame::DrawFrameWindow (bool bPaintingWindow/*=false*/)
 
 //===========================================================================
 
-bool Win32Frame::IsFullScreen(void)
+bool Win32Frame::IsFullScreen()
 {
 	return g_bIsFullScreen;
 }
 
-bool Win32Frame::GetFullScreenShowSubunitStatus(void)
+bool Win32Frame::GetFullScreenShowSubunitStatus()
 {
 	return g_bFullScreen_ShowSubunitStatus;
 }
@@ -548,7 +548,7 @@ void Win32Frame::SetFullScreenShowSubunitStatus(bool bShow)
 	g_bFullScreen_ShowSubunitStatus = bShow;
 }
 
-bool Win32Frame::GetWindowedModeShowDiskiiStatus(void)
+bool Win32Frame::GetWindowedModeShowDiskiiStatus()
 {
 	return m_showDiskiiStatus;
 }
@@ -560,7 +560,7 @@ void Win32Frame::SetWindowedModeShowDiskiiStatus(bool bShow)
 	SetSlotUIOffsets();
 }
 
-void Win32Frame::SetSlotUIOffsets(void)
+void Win32Frame::SetSlotUIOffsets()
 {
 	if (m_showDiskiiStatus)
 	{
@@ -2723,17 +2723,17 @@ void Win32Frame::RelayEvent (UINT message, WPARAM wparam, LPARAM lparam) {
 
 //===========================================================================
 
-int Win32Frame::GetFullScreenOffsetX(void)
+int Win32Frame::GetFullScreenOffsetX()
 {
 	return g_win_fullscreen_offsetx;
 }
 
-int Win32Frame::GetFullScreenOffsetY(void)
+int Win32Frame::GetFullScreenOffsetY()
 {
 	return g_win_fullscreen_offsety;
 }
 
-void Win32Frame::SetFullScreenMode(void)
+void Win32Frame::SetFullScreenMode()
 {
 #ifdef NO_DIRECT_X
 
@@ -2808,7 +2808,7 @@ void Win32Frame::SetFullScreenMode(void)
 }
 
 //===========================================================================
-void Win32Frame::SetNormalMode(void)
+void Win32Frame::SetNormalMode()
 {
 	if (m_changedDisplaySettings)
 	{
@@ -2874,7 +2874,7 @@ void Win32Frame::SetUsingCursor (BOOL bNewValue)
 	}
 }
 
-int Win32Frame::GetViewportScale(void)
+int Win32Frame::GetViewportScale()
 {
 	return g_nViewportScale;
 }
@@ -2904,7 +2904,7 @@ void Win32Frame::SetFullScreenViewportScale(int nNewXScale, int nNewYScale)
 	buttony = BUTTONY;
 }
 
-void Win32Frame::SetupTooltipControls(void)
+void Win32Frame::SetupTooltipControls()
 {
 	TOOLINFO toolinfo;
 	toolinfo.cbSize = sizeof(toolinfo);
@@ -2979,7 +2979,7 @@ void Win32Frame::GetWidthHeight(int& nWidth, int& nHeight)
 }
 
 // Window frame's border size has changed (eg. VidHD added/removed)
-void Win32Frame::ResizeWindow(void)
+void Win32Frame::ResizeWindow()
 {
 	FrameResizeWindow(GetViewportScale());
 }
@@ -3032,7 +3032,7 @@ void Win32Frame::FrameResizeWindow(int nNewScale)
 
 //===========================================================================
 
-void Win32Frame::FrameCreateWindow(void)
+void Win32Frame::FrameCreateWindow()
 {
 	int nWidth, nHeight;
 
@@ -3360,7 +3360,7 @@ void Win32Frame::GetViewportCXCY(int& nViewportCX, int& nViewportCY)
 }
 
 // Call all funcs with dependency on g_Apple2Type
-void Win32Frame::FrameUpdateApple2Type(void)
+void Win32Frame::FrameUpdateApple2Type()
 {
 	DeleteGdiObjects();
 	CreateGdiObjects();

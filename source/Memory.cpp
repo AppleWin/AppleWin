@@ -273,7 +273,7 @@ static FILE * g_hMemTempFile = NULL;
 #endif
 
 BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYTE value, ULONG nCycles);
-static void FreeMemImage(void);
+static void FreeMemImage();
 static bool g_isMemCacheValid = true;	// flag for is 'mem' valid - set in UpdatePaging() and valid for regular (not alternate) CPU emulation
 static bool g_forceAltCpuEmulation = false;	// set by cmd line
 
@@ -295,7 +295,7 @@ const UINT MaxRomPages = 4;		// For Copam Base64A
 const UINT Base64ARomSize = MaxRomPages * Apple2RomSize;
 
 // Called from MemLoadSnapshot()
-static void ResetDefaultMachineMemTypes(void)
+static void ResetDefaultMachineMemTypes()
 {
 	g_MemTypeAppleII = CT_Empty;
 	g_MemTypeAppleIIPlus = CT_LanguageCard;
@@ -303,7 +303,7 @@ static void ResetDefaultMachineMemTypes(void)
 }
 
 // Called from MemLoadSnapshot()
-static void SetExpansionMemTypeDefault(void)
+static void SetExpansionMemTypeDefault()
 {
 	SS_CARDTYPE defaultType = IsApple2Original(GetApple2Type()) ? g_MemTypeAppleII
 		: IsApple2PlusOrClone(GetApple2Type()) ? g_MemTypeAppleIIPlus
@@ -371,7 +371,7 @@ void SetExpansionMemType(const SS_CARDTYPE type, bool updateRegistry/*=true*/)
 	GetCardMgr().InsertAux(newSlotAuxCard, updateRegistry);
 }
 
-void CreateLanguageCard(void)
+void CreateLanguageCard()
 {
 	SS_CARDTYPE slot0CardType = GetCardMgr().QuerySlot(SLOT0);
 	if (IsApple2PlusOrClone(GetApple2Type()))
@@ -396,7 +396,7 @@ void CreateLanguageCard(void)
 	}
 }
 
-SS_CARDTYPE GetCurrentExpansionMemType(void)
+SS_CARDTYPE GetCurrentExpansionMemType()
 {
 	if (IsApple2PlusOrClone(GetApple2Type()))
 		return GetCardMgr().QuerySlot(SLOT0);
@@ -423,20 +423,20 @@ void SetRamWorksMemorySize(UINT banks, bool updateRegistry/*=true*/)
 		SetRegistryAuxNumberOfBanks();
 }
 
-void SetRegistryAuxNumberOfBanks(void)
+void SetRegistryAuxNumberOfBanks()
 {
 	std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
 	RegSaveValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, true, g_uMaxExBanks);
 }
 
-UINT GetRamWorksActiveBank(void)
+UINT GetRamWorksActiveBank()
 {
 	return g_uActiveBank;
 }
 
 //
 
-static BOOL GetLastRamWrite(void)
+static BOOL GetLastRamWrite()
 {
 	if (GetCardMgr().GetLanguageCardMgr().GetLanguageCard())
 		return GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetLastRamWrite();
@@ -461,12 +461,12 @@ void SetMemMainLanguageCard(LPBYTE ptr, UINT slot, bool bMemMain /*=false*/)
 	GetCardMgr().GetLanguageCardMgr().SetLastSlotToSetMainMemLC(slot);
 }
 
-LPBYTE GetCxRomPeripheral(void)
+LPBYTE GetCxRomPeripheral()
 {
 	return pCxRomPeripheral;	// Can be NULL if at MODE_LOGO
 }
 
-bool GetIsMemCacheValid(void)
+bool GetIsMemCacheValid()
 {
 	return g_isMemCacheValid;
 }
@@ -528,7 +528,7 @@ void CopyBytesFromMemoryPage(uint8_t* pDst, uint16_t srcAddr, size_t size)
 }
 
 // //e aux slot is empty & ALTZP=1
-bool IsZeroPageFloatingBus(void)
+bool IsZeroPageFloatingBus()
 {
 	if (GetIsMemCacheValid())
 		return false;
@@ -536,7 +536,7 @@ bool IsZeroPageFloatingBus(void)
 	return memreadPageType[0x0000 >> 8] == MEM_FloatingBus;
 }
 
-void ForceAltCpuEmulation(void)
+void ForceAltCpuEmulation()
 {
 	g_forceAltCpuEmulation = true;
 }
@@ -1194,7 +1194,7 @@ LPVOID MemGetSlotParameters(UINT uSlot)
 }
 
 // From UTAIIe:5-28: Since INTCXROM==1 then state of SLOTC3ROM is not important
-static void IoHandlerCardsOut(void)
+static void IoHandlerCardsOut()
 {
 	_ASSERT( SW_INTCXROM );
 
@@ -1209,7 +1209,7 @@ static void IoHandlerCardsOut(void)
 }
 
 // From UTAIIe:5-28: If INTCXROM==0 && SLOTC3ROM==0 Then $C300-C3FF is internal ROM
-static void IoHandlerSlot3CardOut(void)
+static void IoHandlerSlot3CardOut()
 {
 	_ASSERT(!SW_INTCXROM && !SW_SLOTC3ROM);
 
@@ -1220,7 +1220,7 @@ static void IoHandlerSlot3CardOut(void)
 	}
 }
 
-static void IoHandlerCardsIn(void)
+static void IoHandlerCardsIn()
 {
 	_ASSERT( !SW_INTCXROM );
 
@@ -1251,7 +1251,7 @@ static bool IsCardInSlot(UINT slot)
 
 //===========================================================================
 
-uint32_t GetMemMode(void)
+uint32_t GetMemMode()
 {
 	return g_memmode;
 }
@@ -1482,7 +1482,7 @@ static void UpdatePaging(const UPDATEPAGING updateType)
 }
 
 // For Cpu6502_altRW() & Cpu65C02_altRW()
-static void UpdatePagingForAltRW(void)
+static void UpdatePagingForAltRW()
 {
 	UINT page;
 
@@ -1758,7 +1758,7 @@ LPBYTE MemGetMainPtr(const WORD offset)
 
 //===========================================================================
 
-static void BackMainImage(void)
+static void BackMainImage()
 {
 	if (!g_isMemCacheValid)
 		return;
@@ -1847,7 +1847,7 @@ bool MemIsAddrCodeMemory(const USHORT addr)
 
 //===========================================================================
 
-static void FreeMemImage(void)
+static void FreeMemImage()
 {
 #ifdef _WIN32
 	if (g_hMemImage)
@@ -1878,7 +1878,7 @@ static void FreeMemImage(void)
 #endif
 }
 
-static LPBYTE AllocMemImage(void)
+static LPBYTE AllocMemImage()
 {
 #ifdef _WIN32
 	LPBYTE baseAddr = NULL;
@@ -2044,7 +2044,7 @@ void MemInitialize()
 	MemReset();
 }
 
-void MemInitializeROM(void)
+void MemInitializeROM()
 {
 	// READ THE APPLE FIRMWARE ROMS INTO THE ROM IMAGE
 	UINT ROM_SIZE = 0;
@@ -2117,7 +2117,7 @@ void MemInitializeROM(void)
 	memcpy(memrom, pData, ROM_SIZE);			// ROM at $D000...$FFFF, one or several pages
 }
 
-void MemInitializeCustomF8ROM(void)
+void MemInitializeCustomF8ROM()
 {
 	const UINT F8RomSize = 0x800;
 	const UINT F8RomOffset = Apple2RomSize-F8RomSize;
@@ -2170,7 +2170,7 @@ void MemInitializeCustomF8ROM(void)
 	}
 }
 
-void MemInitializeCustomROM(void)
+void MemInitializeCustomROM()
 {
 	if (g_hCustomRom == INVALID_HANDLE_VALUE)
 		return;
@@ -2218,7 +2218,7 @@ void MemInitializeCustomROM(void)
 //
 // Since called by LoadState(), then this must not init any cards
 // - it should only init the card I/O hooks
-void MemInitializeIO(void)
+void MemInitializeIO()
 {
 	InitIoHandlers();
 
@@ -2227,7 +2227,7 @@ void MemInitializeIO(void)
 
 // Called by:
 // . Snapshot_LoadState_v2()
-void MemInitializeFromSnapshot(void)
+void MemInitializeFromSnapshot()
 {
 	MemInitializeROM();
 	MemInitializeCustomROM();
@@ -2481,7 +2481,7 @@ BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
 	return (r & ~0x80) | (highbit ? 0x80 : 0);
 }
 
-BYTE MemReadFloatingBusFromNTSC(void)
+BYTE MemReadFloatingBusFromNTSC()
 {
 	// fullspeed=false: to avoid NTSC_VideoGetScannerAddress() calling NTSC_VideoClockResync()
 	// NB. g_bFullSpeed only true when doing NTSC_VideoRedrawWholeScreen()
@@ -2649,7 +2649,7 @@ bool MemIsWriteAux(uint32_t memMode)
 
 //===========================================================================
 
-bool IsIIeWithoutAuxMem(void)
+bool IsIIeWithoutAuxMem()
 {
 	return IsAppleIIe(GetApple2Type()) &&
 		(GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col);
@@ -2697,7 +2697,7 @@ bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 
 //===========================================================================
 
-void MemAnnunciatorReset(void)
+void MemAnnunciatorReset()
 {
 	for (UINT i=0; i<kNumAnnunciators; i++)
 		g_Annunciator[i] = 0;
@@ -2716,19 +2716,19 @@ bool MemGetAnnunciator(UINT annunciator)
 
 //===========================================================================
 
-bool MemHasNoSlotClock(void)
+bool MemHasNoSlotClock()
 {
 	return g_NoSlotClock != NULL;
 }
 
-void MemInsertNoSlotClock(void)
+void MemInsertNoSlotClock()
 {
 	if (!MemHasNoSlotClock())
 		g_NoSlotClock = new CNoSlotClock;
 	g_NoSlotClock->Reset();
 }
 
-void MemRemoveNoSlotClock(void)
+void MemRemoveNoSlotClock()
 {
 	delete g_NoSlotClock;
 	g_NoSlotClock = NULL;
@@ -2789,25 +2789,25 @@ const std::string& MemGetSnapshotCardNameRamWorksIII()
 	return name;
 }
 
-static const std::string& MemGetSnapshotStructName(void)
+static const std::string& MemGetSnapshotStructName()
 {
 	static const std::string name("Memory");
 	return name;
 }
 
-const std::string& MemGetSnapshotUnitAuxSlotName(void)
+const std::string& MemGetSnapshotUnitAuxSlotName()
 {
 	static const std::string name("Auxiliary Slot");
 	return name;
 }
 
-static const std::string& MemGetSnapshotMainMemStructName(void)
+static const std::string& MemGetSnapshotMainMemStructName()
 {
 	static const std::string name("Main Memory");
 	return name;
 }
 
-static const std::string& MemGetSnapshotAuxMemStructName(void)
+static const std::string& MemGetSnapshotAuxMemStructName()
 {
 	static const std::string name("Auxiliary Memory Bank");
 	return name;

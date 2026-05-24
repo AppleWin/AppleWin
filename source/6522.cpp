@@ -62,14 +62,14 @@ void SY6522::Reset(const bool powerCycle)
 
 //---------------------------------------------------------------------------
 
-void SY6522::StartTimer1(void)
+void SY6522::StartTimer1()
 {
 	m_timer1Active = true;
 }
 
 // The assumption was that timer1 was only active if IER.TIMER1=1
 // . Not true, since IFR can be polled (with IER.TIMER1=0)
-void SY6522::StartTimer1_LoadStateV1(void)
+void SY6522::StartTimer1_LoadStateV1()
 {
 	if ((m_regs.IER & IxR_TIMER1) == 0x00)
 		return;
@@ -77,19 +77,19 @@ void SY6522::StartTimer1_LoadStateV1(void)
 	m_timer1Active = true;
 }
 
-void SY6522::StopTimer1(void)
+void SY6522::StopTimer1()
 {
 	m_timer1Active = false;
 }
 
 //-----------------------------------------------------------------------------
 
-void SY6522::StartTimer2(void)
+void SY6522::StartTimer2()
 {
 	m_timer2Active = true;
 }
 
-void SY6522::StopTimer2(void)
+void SY6522::StopTimer2()
 {
 	m_timer2Active = false;
 }

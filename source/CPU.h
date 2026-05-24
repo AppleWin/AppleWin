@@ -28,20 +28,20 @@ enum {
 extern regsrec    regs;
 extern unsigned __int64 g_nCumulativeCycles;
 
-void    CpuDestroy ();
+void    CpuDestroy();
 void    CpuCalcCycles(ULONG nExecutedCycles);
 uint32_t   CpuExecute(const uint32_t uCycles, const bool bVideoUpdate);
 ULONG   CpuGetCyclesThisVideoFrame(ULONG nExecutedCycles);
-void    CpuCreateCriticalSection(void);
-void    CpuInitialize(void);
-void    CpuSetupBenchmark ();
+void    CpuCreateCriticalSection();
+void    CpuInitialize();
+void    CpuSetupBenchmark();
 void	CpuIrqReset();
 void	CpuIrqAssert(eIRQSRC Device);
 void	CpuIrqDeassert(eIRQSRC Device);
 void	CpuNmiReset();
 void	CpuNmiAssert(eIRQSRC Device);
 void	CpuNmiDeassert(eIRQSRC Device);
-void    CpuReset ();
+void    CpuReset();
 void    CpuSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    CpuLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 
@@ -50,15 +50,15 @@ void	CpuWrite(USHORT addr, BYTE value, ULONG uExecutedCycles);
 
 enum eCpuType {CPU_UNKNOWN=0, CPU_6502=1, CPU_65C02, CPU_Z80};	// Don't change! Persisted to Registry
 
-eCpuType GetMainCpu(void);
+eCpuType GetMainCpu();
 void     SetMainCpu(eCpuType cpu);
 eCpuType ProbeMainCpuDefault(eApple2Type apple2Type);
 void     SetMainCpuDefault(eApple2Type apple2Type);
-eCpuType GetActiveCpu(void);
+eCpuType GetActiveCpu();
 void     SetActiveCpu(eCpuType cpu);
 
-bool IsIrqAsserted(void);
-bool Is6502InterruptEnabled(void);
-void ResetCyclesExecutedForDebugger(void);
-bool IsInterruptInLastExecution(void);
-void SetIrqOnLastOpcodeCycle(void);
+bool IsIrqAsserted();
+bool Is6502InterruptEnabled();
+void ResetCyclesExecutedForDebugger();
+bool IsInterruptInLastExecution();
+void SetIrqOnLastOpcodeCycle();

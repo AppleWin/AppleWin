@@ -16,9 +16,9 @@ public:
 
 		ResetDefaultOptions();
 	}
-	virtual ~ParallelPrinterCard(void) {}
+	virtual ~ParallelPrinterCard() {}
 
-	virtual void Destroy(void);
+	virtual void Destroy();
 	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG nExecutedCycles);
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
@@ -26,7 +26,7 @@ public:
 	static BYTE __stdcall IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName();
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
@@ -45,19 +45,19 @@ public:
 		return !operator==(other);
 	}
 
-	const std::string& GetFilename(void);
+	const std::string& GetFilename();
 	void SetFilename(const std::string& prtFilename);
-	UINT GetIdleLimit(void) { return m_printerIdleLimit; }
+	UINT GetIdleLimit() { return m_printerIdleLimit; }
 	void SetIdleLimit(UINT value) { m_printerIdleLimit = value; }
-	bool GetDumpToPrinter(void) { return m_bDumpToPrinter; }
+	bool GetDumpToPrinter() { return m_bDumpToPrinter; }
 	void SetDumpToPrinter(bool value) { m_bDumpToPrinter = value; }
-	bool GetConvertEncoding(void) { return m_bConvertEncoding; }
+	bool GetConvertEncoding() { return m_bConvertEncoding; }
 	void SetConvertEncoding(bool value) { m_bConvertEncoding = value; }
-	bool GetFilterUnprintable(void) { return m_bFilterUnprintable; }
+	bool GetFilterUnprintable() { return m_bFilterUnprintable; }
 	void SetFilterUnprintable(bool value) { m_bFilterUnprintable = value; }
-	bool GetPrinterAppend(void) { return m_bPrinterAppend; }
+	bool GetPrinterAppend() { return m_bPrinterAppend; }
 	void SetPrinterAppend(bool value) { m_bPrinterAppend = value; }
-	bool GetEnableDumpToRealPrinter(void) { return m_bEnableDumpToRealPrinter; }
+	bool GetEnableDumpToRealPrinter() { return m_bEnableDumpToRealPrinter; }
 	void SetEnableDumpToRealPrinter(bool value) { m_bEnableDumpToRealPrinter = value; }	// Set by cmd-line only
 
 	void ResetDefaultOptions()
@@ -70,12 +70,12 @@ public:
 		m_bEnableDumpToRealPrinter = false;
 	}
 
-	void GetRegistryConfig(void);
-	void SetRegistryConfig(void);
+	void GetRegistryConfig();
+	void SetRegistryConfig();
 
 private:
-	bool CheckPrint(void);
-	void ClosePrint(void);
+	bool CheckPrint();
+	void ClosePrint();
 
 	uint32_t m_inactivity;
 	FILE* m_file;

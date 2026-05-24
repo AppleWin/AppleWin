@@ -9,9 +9,9 @@ public:
 		Card(CT_Z80, slot)
 	{
 	}
-	virtual ~Z80Card(void) {}
+	virtual ~Z80Card() {}
 
-	virtual void Destroy(void) {}
+	virtual void Destroy() {}
 	virtual void Reset(const bool powerCycle) {}
 	virtual void Update(const ULONG nExecutedCycles) {}
 
@@ -19,8 +19,8 @@ public:
 
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
-	static const std::string& GetSnapshotCardNameOld(void);
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardNameOld();
+	static const std::string& GetSnapshotCardName();
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 };

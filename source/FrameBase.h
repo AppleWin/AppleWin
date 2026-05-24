@@ -21,7 +21,7 @@ public:
 	bool       g_bFreshReset;
 
 	virtual void Initialize(bool resetVideoState) = 0;
-	virtual void Destroy(void) = 0;
+	virtual void Destroy() = 0;
 
 	virtual void FrameDrawDiskLEDS() = 0;
 	virtual void FrameDrawDiskStatus() = 0;
@@ -39,8 +39,8 @@ public:
 
 	virtual void SetLoadedSaveStateFlag(const bool bFlag) = 0;
 
-	virtual void VideoPresentScreen(void) = 0;
-	virtual void ResizeWindow(void) = 0;
+	virtual void VideoPresentScreen() = 0;
+	virtual void ResizeWindow() = 0;
 
 	// this function has the same interface as MessageBox in windows.h
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) = 0;
@@ -65,7 +65,7 @@ public:
 	virtual void Restart() = 0;
 
 	void VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
-	void VideoRedrawScreen(void);
+	void VideoRedrawScreen();
 	void VideoRedrawScreenDuringFullSpeed(uint32_t dwCyclesThisFrame, bool bInit = false);
 	void VideoRedrawScreenAfterFullSpeed(uint32_t dwCyclesThisFrame);
 	void Video_RedrawAndTakeScreenShot(const char* pScreenshotFilename);
@@ -76,7 +76,7 @@ public:
 	void SetDisplayPrintScreenFileName(bool state) { g_bDisplayPrintScreenFileName = state; }
 	void Video_ResetScreenshotCounter(const std::string& pDiskImageFileName);
 
-	bool GetShowPrintScreenWarningDialog(void) { return g_bShowPrintScreenWarningDialog; }
+	bool GetShowPrintScreenWarningDialog() { return g_bShowPrintScreenWarningDialog; }
 	void SetShowPrintScreenWarningDialog(bool state) { g_bShowPrintScreenWarningDialog = state; }
 
 private:

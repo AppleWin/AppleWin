@@ -15,7 +15,7 @@ public:
 
 		ResetState(true);
 	}
-	~SSI263(void)
+	~SSI263()
 	{
 		delete [] m_pPhonemeData00;
 	}
@@ -80,20 +80,20 @@ public:
 	SSI263Type GetSC01() { return m_hasSC01 ? SC01 : SSI263Empty; }
 	void SetSC01(SSI263Type type) { m_hasSC01 = (type == SC01); }
 
-	void DSUninit(void);
+	void DSUninit();
 
 	void Reset(const bool powerCycle, const bool isPhasorCard);
 
 	BYTE Read(ULONG nExecutedCycles);
 	void Write(BYTE nReg, BYTE nValue);
 
-	void Mute(void);
-	void Unmute(void);
+	void Mute();
+	void Unmute();
 	void SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax);
 
 	void PeriodicUpdate(UINT executedCycles);
-	void Update(void);
-	void SetSpeechIRQ(void);
+	void Update();
+	void SetSpeechIRQ();
 
 	void Votrax_Write(BYTE nValue);
 	void SetVotraxPhoneme(bool value) { m_isVotraxPhoneme = value; }
@@ -102,25 +102,25 @@ public:
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit);
 
 private:
-	bool IsPhonemeActive(void)
+	bool IsPhonemeActive()
 	{
 		// If SSI263.CONTROL=1 then "m_currentActivePhoneme >= 0" is still true
 		// Also valid regardless of m_isVotraxPhoneme state
 		return m_currentActivePhoneme >= 0;
 	}
 	void Play(unsigned int nPhoneme);
-	void Stop(void);
-	void UpdateIRQ(void);
-	void RepeatPhoneme(void);
-	void UpdateAccurateLength(void);
-	void SetDeviceModeAndInts(void);
+	void Stop();
+	void UpdateIRQ();
+	void RepeatPhoneme();
+	void UpdateAccurateLength();
+	void SetDeviceModeAndInts();
 
-	UINT64 GetLastCumulativeCycles(void);
+	UINT64 GetLastCumulativeCycles();
 	void UpdateIFR(BYTE nDevice, BYTE clr_mask, BYTE set_mask);
 	BYTE GetPCR(BYTE nDevice);
 
-	bool Init(void);
-	bool DSInit(void);
+	bool Init();
+	bool DSInit();
 
 	void SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	void SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);

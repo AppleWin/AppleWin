@@ -5,20 +5,20 @@
 #ifdef USE_SPEECH_API
 #include <sapi.h>
 
-CSpeech::~CSpeech(void)
+CSpeech::~CSpeech()
 {
 	// Don't do this: causes crash on app exit!
 	//if (m_cpVoice)
 	//	m_cpVoice->Release();
 }
 
-bool CSpeech::Init(void)
+bool CSpeech::Init()
 {
 	HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_INPROC, IID_ISpVoice, (LPVOID*)&m_cpVoice);
 	return hr == S_OK;
 }
 
-void CSpeech::Reset(void)
+void CSpeech::Reset()
 {
 	if (!m_cpVoice)
 		return;

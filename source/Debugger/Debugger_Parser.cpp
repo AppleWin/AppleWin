@@ -401,7 +401,7 @@ bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ )
 
 
 //===========================================================================
-void ArgsRawParse ( void )
+void ArgsRawParse ()
 {
 	const int BASE = 16; // hex
 	char *pSrc  = NULL;

@@ -227,7 +227,7 @@ static void _SetupColorRamp(const int iPrimary, int & iColor_)
 
 
 //===========================================================================
-void ConfigColorsReset (void)
+void ConfigColorsReset ()
 {
 	//	int iColor = 1; // black only has one level, skip it, since black levels same as white levels
 	//	for (int iPrimary = 1; iPrimary < 8; iPrimary++ )

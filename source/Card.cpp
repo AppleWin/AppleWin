@@ -119,7 +119,7 @@ const std::string& Card::GetCardNameEmpty()
 	return name;
 }
 
-std::string Card::GetCardName(void)
+std::string Card::GetCardName()
 {
 	return GetCardName(m_type);
 }

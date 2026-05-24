@@ -49,11 +49,11 @@ const UINT kMaxSmartPortUnits = NUM_HARDDISKS;
 class HardDiskDrive
 {
 public:
-	HardDiskDrive(void)
+	HardDiskDrive()
 	{
 		clear();
 	}
-	~HardDiskDrive(void) {}
+	~HardDiskDrive() {}
 
 	void clear()
 	{
@@ -95,13 +95,13 @@ class HarddiskInterfaceCard : public Card
 {
 public:
 	HarddiskInterfaceCard(UINT slot);
-	virtual ~HarddiskInterfaceCard(void);
+	virtual ~HarddiskInterfaceCard();
 
 	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG nExecutedCycles) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
-	virtual void Destroy(void);
+	virtual void Destroy();
 	const std::string& GetFullName(const int iDrive);
 	const std::string& HarddiskGetFullPathName(const int iDrive);
 	void GetFilenameAndPathForSaveState(std::string& filename, std::string& path);
@@ -111,18 +111,18 @@ public:
 	void NotifyInvalidImage(const std::string& szImageFilename);
 	void LoadLastDiskImage(const int drive);
 	void SetUserNumBlocks(UINT numBlocks) { m_userNumBlocks = numBlocks; }
-	void UseHdcFirmwareV1(void) { m_useHdcFirmwareV1 = true; }
-	void UseHdcFirmwareV2(void) { m_useHdcFirmwareV2 = true; }
+	void UseHdcFirmwareV1() { m_useHdcFirmwareV1 = true; }
+	void UseHdcFirmwareV2() { m_useHdcFirmwareV2 = true; }
 	HdcMode GetHdcFirmwareMode();
 	void SetHdcFirmwareMode(HdcMode hdcMode);
 
 	void GetLightStatus(Disk_Status_e* pDisk1Status);
-	bool ImageSwap(void);
+	bool ImageSwap();
 
 	void ForbidSaveDiskImageToRegistry() { m_saveDiskImageToRegistry = false; }
 
-	static const std::string& GetSnapshotCardNameOld(void);
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardNameOld();
+	static const std::string& GetSnapshotCardName();
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
@@ -136,10 +136,10 @@ private:
 	const std::string& DiskGetBaseName(const int iDrive);
 	bool SelectImage(const int drive, LPCSTR pszFilename);
 	void UpdateLightStatus(HardDiskDrive* pHDD);
-	void FixupUnitNum(void);
-	BYTE GetNumConnectedDevices(void);
-	BYTE GetProDOSBlockDeviceUnit(void);
-	HardDiskDrive* GetUnit(void);
+	void FixupUnitNum();
+	BYTE GetNumConnectedDevices();
+	BYTE GetProDOSBlockDeviceUnit();
+	HardDiskDrive* GetUnit();
 	BYTE CmdExecute(HardDiskDrive* pHDD, const ULONG nExecutedCycles);
 	BYTE CmdStatus(HardDiskDrive* pHDD);
 	void SetIdString(std::vector<BYTE>& status, const std::string& idStr);

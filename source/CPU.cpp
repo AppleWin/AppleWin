@@ -145,7 +145,7 @@ static bool g_irqOnLastOpcodeCycle = false;
 static eCpuType g_MainCPU = CPU_65C02;
 static eCpuType g_ActiveCPU = CPU_65C02;
 
-eCpuType GetMainCpu(void)
+eCpuType GetMainCpu()
 {
 	return g_MainCPU;
 }
@@ -175,7 +175,7 @@ void SetMainCpuDefault(eApple2Type apple2Type)
 	SetMainCpu( ProbeMainCpuDefault(apple2Type) );
 }
 
-eCpuType GetActiveCpu(void)
+eCpuType GetActiveCpu()
 {
 	return g_ActiveCPU;
 }
@@ -185,27 +185,27 @@ void SetActiveCpu(eCpuType cpu)
 	g_ActiveCPU = cpu;
 }
 
-bool IsIrqAsserted(void)
+bool IsIrqAsserted()
 {
 	return g_bmIRQ ? true : false;
 }
 
-bool Is6502InterruptEnabled(void)
+bool Is6502InterruptEnabled()
 {
 	return !(regs.ps & AF_INTERRUPT);
 }
 
-void ResetCyclesExecutedForDebugger(void)
+void ResetCyclesExecutedForDebugger()
 {
 	g_nCyclesExecuted = 0;
 }
 
-bool IsInterruptInLastExecution(void)
+bool IsInterruptInLastExecution()
 {
 	return g_interruptInLastExecutionBatch;
 }
 
-void SetIrqOnLastOpcodeCycle(void)
+void SetIrqOnLastOpcodeCycle()
 {
 	if (!(regs.ps & AF_INTERRUPT))
 		g_irqOnLastOpcodeCycle = true;
@@ -280,7 +280,7 @@ char g_OutputBuffer[OUTPUT_BUFFER_SIZE+1+1];	// +1 for EOL, +1 for NULL
 UINT OutputBufferIdx = 0;
 bool bEscMode = false;
 
-void CaptureCOUT(void)
+void CaptureCOUT()
 {
 	const char ch = regs.a & 0x7f;
 
@@ -753,7 +753,7 @@ uint32_t CpuExecute(const uint32_t uCycles, const bool bVideoUpdate)
 // Called by:
 // . CpuInitialize()
 // . SY6522.Reset()
-void CpuCreateCriticalSection(void)
+void CpuCreateCriticalSection()
 {
 	if (!g_bCritSectionValid)
 	{
@@ -766,7 +766,7 @@ void CpuCreateCriticalSection(void)
 
 // Called from RepeatInitialization():
 // . MemInitialize() -> MemReset()
-void CpuInitialize(void)
+void CpuInitialize()
 {
 	regs.a = regs.x = regs.y = 0xFF;
 	regs.sp = 0x01FF;
@@ -923,7 +923,7 @@ void CpuNmiDeassert(eIRQSRC Device)
 #define SS_YAML_VALUE_6502 "6502"
 #define SS_YAML_VALUE_65C02 "65C02"
 
-static const std::string& CpuGetSnapshotStructName(void)
+static const std::string& CpuGetSnapshotStructName()
 {
 	static const std::string name("CPU");
 	return name;

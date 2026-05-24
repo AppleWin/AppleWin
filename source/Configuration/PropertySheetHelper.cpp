@@ -439,7 +439,7 @@ void CPropertySheetHelper::ApplyNewConfigFromSnapshot()
 }
 
 // Called when PSPs are created
-void CPropertySheetHelper::SaveCurrentConfig(void)
+void CPropertySheetHelper::SaveCurrentConfig()
 {
 	m_ConfigOld.Reload();
 	m_ConfigNew = m_ConfigOld;	// Setup ConfigNew
