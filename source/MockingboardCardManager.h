@@ -7,7 +7,7 @@
 class MockingboardCardManager
 {
 public:
-	MockingboardCardManager(void)
+	MockingboardCardManager()
 	{
 		m_numSamplesError = 0;
 		m_byteOffset = (uint32_t)-1;
@@ -19,39 +19,39 @@ public:
 		// NB. Cmd line has already been processed
 		LogFileOutput("MBCardMgr::ctor() g_bDisableDirectSound=%d, g_bDisableDirectSoundMockingboard=%d\n", g_bDisableDirectSound, g_bDisableDirectSoundMockingboard);
 	}
-	~MockingboardCardManager(void)
+	~MockingboardCardManager()
 	{}
 
 	bool IsMockingboard(UINT slot);
-	void ReinitializeClock(void);
-	void InitializeForLoadingSnapshot(void);
+	void ReinitializeClock();
+	void InitializeForLoadingSnapshot();
 	void MuteControl(bool mute);
-	void SetCumulativeCycles(void);
+	void SetCumulativeCycles();
 	void UpdateCycles(ULONG executedCycles);
-	void UpdateIRQ(void);
-	bool IsActiveToPreventFullSpeed(void);
-	uint32_t GetVolume(void);
+	void UpdateIRQ();
+	bool IsActiveToPreventFullSpeed();
+	uint32_t GetVolume();
 	void SetVolume(uint32_t volume, uint32_t volumeMax);
-	void OutputToRiff(void) { m_outputToRiff = true; }
+	void OutputToRiff() { m_outputToRiff = true; }
 	void SetEnableExtraCardTypes(bool enable) { m_enableExtraCardTypes = enable; }
-	bool GetEnableExtraCardTypes(void);
+	bool GetEnableExtraCardTypes();
 
-	void Destroy(void);
+	void Destroy();
 	void Reset(const bool powerCycle)
 	{
 		m_cyclesThisAudioFrame = 0;
 	}
 	void Update(const ULONG executedCycles);
-	void UpdateSoundBuffer(void);
+	void UpdateSoundBuffer();
 
 #ifdef _DEBUG
-	void CheckCumulativeCycles(void);
+	void CheckCumulativeCycles();
 	void Get6522IrqDescription(std::string& desc);
 #endif
 
 private:
-	bool Init(void);
-	UINT GenerateAllSoundData(void);
+	bool Init();
+	UINT GenerateAllSoundData();
 	void MixAllAndCopyToRingBuffer(UINT nNumSamples);
 	bool IsMockingboardExtraCardType(UINT slot);
 

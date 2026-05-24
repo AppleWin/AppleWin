@@ -440,13 +440,13 @@ public:
 		return m_Instance;
 	}
 
-	void Reset(void)
+	void Reset()
 	{
 		m_bIsVideoModeValid = false;
 		m_uVideoMode = 0;
 	}
 
-	bool IsSet(void)
+	bool IsSet()
 	{
 		return m_bIsVideoModeValid;
 	}
@@ -1556,7 +1556,7 @@ int CheckBreakpointsVideo ()
 }
 
 //===========================================================================
-static int CheckBreakpointsDmaToOrFromIOMemory (void)
+static int CheckBreakpointsDmaToOrFromIOMemory ()
 {
 	int res = g_DebugBreakOnDMAIO.isToOrFromMemory;
 	g_DebugBreakOnDMAIO.isToOrFromMemory = 0;
@@ -8872,7 +8872,7 @@ bool ProfileSave ()
 }
 
 
-static void InitDisasm (void)
+static void InitDisasm ()
 {
 	g_nDisasmCurAddress = regs.pc;
 	DisasmCalcTopBotAddress();
@@ -9010,7 +9010,7 @@ static void CheckBreakOpcode ( int iOpcode )
 		g_bDebugBreakpointHit |= BP_HIT_OPCODE;
 }
 
-static void UpdateLBR (void)
+static void UpdateLBR ()
 {
 	const BYTE nOpcode = ReadByteFromMemory(regs.pc);
 
@@ -9247,7 +9247,7 @@ void DebugContinueStepping (const bool bCallerWillUpdateDisplay/*=false*/)
 }
 
 //===========================================================================
-void DebugStopStepping (void)
+void DebugStopStepping ()
 {
 	_ASSERT(g_nAppMode == MODE_STEPPING);
 
@@ -9479,7 +9479,7 @@ void DebugInitialize ()
 }
 
 //===========================================================================
-void DebugReset (void)
+void DebugReset ()
 {
 	g_videoScannerDisplayInfo.Reset();
 	g_LBR = LBR_UNDEFINED;
@@ -10173,7 +10173,7 @@ void DebuggerCursorNext ()
 
 
 //===========================================================================
-bool IsDebugSteppingAtFullSpeed (void)
+bool IsDebugSteppingAtFullSpeed ()
 {
 	return (g_nAppMode == MODE_STEPPING) && g_bDebugFullSpeed;
 }

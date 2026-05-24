@@ -325,7 +325,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	static real initFilterLuma0    (real z);
 	static real initFilterLuma1    (real z);
 	static real initFilterSignal(real z);
-	static void initPixelDoubleMasks(void);
+	static void initPixelDoubleMasks();
 	static void updateMonochromeTables( uint16_t r, uint16_t g, uint16_t b );
 
 	static void updatePixelBnWColorTVSingleScanline( uint16_t compositeSignal );
@@ -578,7 +578,7 @@ inline void updateFramebufferMonitorDoubleScanline( uint16_t signal, bgra_t *pTa
 #endif
 
 //===========================================================================
-inline bool GetColorBurst( void )
+inline bool GetColorBurst()
 {
 	return g_nColorBurstPixels >= 2;
 }
@@ -812,7 +812,7 @@ inline void updateVideoScannerAddress()
 #define CLEAR_COLOUR_SIDE 0x00FF0000	// red
 #endif
 
-static void ClearOverscanVideoArea(void)
+static void ClearOverscanVideoArea()
 {
 	if (g_pFuncUpdateGraphicsScreen == updateScreenSHR)
 		return;
@@ -916,7 +916,7 @@ INLINE uint16_t getVideoScannerAddressSHR()
 // Build the 4 phase chroma lookup table
 // The YI'Q' colors are hard-coded
 //===========================================================================
-static void initChromaPhaseTables (void)
+static void initChromaPhaseTables ()
 {
 	int phase,s,t,n;
 	real z,y0,y1,c,i,q;
@@ -1162,7 +1162,7 @@ static real initFilterSignal (real z)
 }
 
 //===========================================================================
-static void initPixelDoubleMasks (void)
+static void initPixelDoubleMasks ()
 {
 	/*
 		Convert 7-bit monochrome luminance to 14-bit double pixel luminance
@@ -1966,7 +1966,7 @@ void NTSC_GetVideoVertHorzForDebugger(uint16_t& vert, uint16_t& horz)
 	horz = g_nVideoClockHorz;
 }
 
-uint16_t NTSC_GetVideoVertForDebugger(void)
+uint16_t NTSC_GetVideoVertForDebugger()
 {
 	uint16_t vert, horz;
 	NTSC_GetVideoVertHorzForDebugger(vert, horz);
@@ -2230,7 +2230,7 @@ void NTSC_SetVideoMode( uint32_t uVideoModeFlags, bool bDelay/*=false*/ )
 
 //===========================================================================
 
-void NTSC_SetVideoStyle(void)
+void NTSC_SetVideoStyle()
 {
 	const bool half = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
 	const VideoRefreshRate_e refresh = GetVideo().GetVideoRefreshRate();
@@ -2326,10 +2326,10 @@ _mono:
 }
 
 //===========================================================================
-static void GenerateVideoTables( void );
+static void GenerateVideoTables();
 static void GenerateBaseColors(baseColors_t pBaseNtscColors);
 
-void NTSC_Destroy(void)
+void NTSC_Destroy()
 {
 	// After a VM restart, this will point to an old FrameBuffer
 	// - if it's now unmapped then this can cause a crash in NTSC_SetVideoMode()!
@@ -2536,7 +2536,7 @@ void NTSC_VideoUpdateCycles( UINT cycles6502 )
 }
 
 //===========================================================================
-void NTSC_VideoRedrawWholeScreen( void )
+void NTSC_VideoRedrawWholeScreen()
 {
 #ifdef _DEBUG
 	const uint16_t currVideoClockVert = g_nVideoClockVert;
@@ -2594,7 +2594,7 @@ static bool CheckVideoTables2( eApple2Type type, uint32_t mode )
 	return true;
 }
 
-static void CheckVideoTables( void )
+static void CheckVideoTables()
 {
 	CheckVideoTables2(A2TYPE_APPLE2PLUS, VF_HIRES);
 	CheckVideoTables2(A2TYPE_APPLE2PLUS, VF_TEXT);
@@ -2602,12 +2602,12 @@ static void CheckVideoTables( void )
 	CheckVideoTables2(A2TYPE_APPLE2E,    VF_TEXT);
 }
 
-static bool IsNTSC(void)
+static bool IsNTSC()
 {
 	return g_videoScannerMaxVert == VIDEO_SCANNER_MAX_VERT;
 }
 
-static void GenerateVideoTables( void )
+static void GenerateVideoTables()
 {
 	eApple2Type currentApple2Type = GetApple2Type();
 	uint32_t currentVideoMode = GetVideo().GetVideoMode();
@@ -2740,17 +2740,17 @@ void NTSC_SetRefreshRate(VideoRefreshRate_e rate)
 	GenerateVideoTables();
 }
 
-UINT NTSC_GetCyclesPerFrame(void)
+UINT NTSC_GetCyclesPerFrame()
 {
 	return g_videoScanner6502Cycles;
 }
 
-UINT NTSC_GetCyclesPerLine(void)
+UINT NTSC_GetCyclesPerLine()
 {
 	return VIDEO_SCANNER_MAX_HORZ;
 }
 
-UINT NTSC_GetVideoLines(void)
+UINT NTSC_GetVideoLines()
 {
 	return (GetVideo().GetVideoRefreshRate() == VR_50HZ) ? VIDEO_SCANNER_MAX_VERT_PAL : VIDEO_SCANNER_MAX_VERT;
 }
@@ -2773,13 +2773,13 @@ UINT NTSC_GetCyclesUntilVBlank(int cycles)
 		(cyclesPerFrames - cycleCurrentPos + cycleVBl);
 }
 
-bool NTSC_GetVblBar(void)
+bool NTSC_GetVblBar()
 {
 	const UINT visibleScanLines = ((g_uNewVideoModeFlags & VF_SHR) == 0) ? VIDEO_SCANNER_Y_DISPLAY : VIDEO_SCANNER_Y_DISPLAY_IIGS;
 	return g_nVideoClockVert < visibleScanLines;
 }
 
-bool NTSC_IsVisible(void)
+bool NTSC_IsVisible()
 {
 	return NTSC_GetVblBar() && (g_nVideoClockHorz >= VIDEO_SCANNER_HORZ_START);
 }

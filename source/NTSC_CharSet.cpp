@@ -155,7 +155,7 @@ static void userVideoRom4K(csbits_t csbits, const BYTE* pVideoRom)
 	}
 }
 
-static void userVideoRomForIIe(void)
+static void userVideoRomForIIe()
 {
 	const BYTE* pVideoRom;
 	UINT size = GetVideo().GetVideoRom(pVideoRom);	// 2K or 4K or 8K
@@ -234,7 +234,7 @@ static void userVideoRom2K(csbits_t csbits, const BYTE* pVideoRom, const eApple2
 	}
 }
 
-static void userVideoRomForIIPlus(void)
+static void userVideoRomForIIPlus()
 {
 	const BYTE* pVideoRom;
 	UINT size = GetVideo().GetVideoRom(pVideoRom);	// 2K or 4K or 8K
@@ -246,7 +246,7 @@ static void userVideoRomForIIPlus(void)
 
 //-------------------------------------
 
-static void VideoRomForIIandIIPlus(void)
+static void VideoRomForIIandIIPlus()
 {
 	BYTE* pVideoRom = GetFrame().GetResource(IDR_APPLE2_VIDEO_ROM, "ROM", Video::kVideoRomSize2K);
 	if (pVideoRom == NULL)
@@ -255,7 +255,7 @@ static void VideoRomForIIandIIPlus(void)
 	userVideoRom2K(&csbits_a2[0], pVideoRom);
 }
 
-static void VideoRomForIIJPlus(void)
+static void VideoRomForIIJPlus()
 {
 	BYTE* pVideoRom = GetFrame().GetResource(IDR_APPLE2_JPLUS_VIDEO_ROM, "ROM", Video::kVideoRomSize2K);
 	if (pVideoRom == NULL)
@@ -265,7 +265,7 @@ static void VideoRomForIIJPlus(void)
 	userVideoRom2K(&csbits_a2j[1], pVideoRom, A2TYPE_APPLE2JPLUS, 1);
 }
 
-static void VideoRomForBase64A(void)
+static void VideoRomForBase64A()
 {
 	BYTE* pVideoRom = GetFrame().GetResource(IDR_BASE64A_VIDEO_ROM, "ROM", Video::kVideoRomSize4K);
 	if (pVideoRom == NULL)
@@ -275,7 +275,7 @@ static void VideoRomForBase64A(void)
 	userVideoRom2K(&csbits_base64a[1], pVideoRom + Video::kVideoRomSize2K, A2TYPE_BASE64A, 0);
 }
 
-static void VideoRomForIIeEnhanced(void)
+static void VideoRomForIIeEnhanced()
 {
 	BYTE* pVideoRom = GetFrame().GetResource(IDR_APPLE2E_ENHANCED_VIDEO_ROM, "ROM", Video::kVideoRomSize4K);
 	if (pVideoRom == NULL)
@@ -286,7 +286,7 @@ static void VideoRomForIIeEnhanced(void)
 
 //-------------------------------------
 
-void make_csbits(void)
+void make_csbits()
 {
 	get_csbits(&csbits_pravets82[0],  IDB_CHARSET82, 0);	// Pravets 82
 	get_csbits(&csbits_pravets8M[0],  IDB_CHARSET8M, 0);	// Pravets 8M
@@ -310,7 +310,7 @@ void make_csbits(void)
 	userVideoRomForIIPlus();
 }
 
-csbits_t Get2e_csbits(void)
+csbits_t Get2e_csbits()
 {
 	const csbits_t videoRom4K = (GetApple2Type() == A2TYPE_APPLE2E) ? csbits_2e : csbits_enhanced2e;
 

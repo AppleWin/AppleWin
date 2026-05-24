@@ -52,11 +52,11 @@
 
 	//
 
-	extern HDC GetDebuggerMemDC(void);
-	extern void ReleaseDebuggerMemDC(void);
-	extern void StretchBltMemToFrameDC(void);
-	extern HDC GetConsoleFontDC(void);
-	extern void ReleaseConsoleFontDC(void);
+	extern HDC GetDebuggerMemDC();
+	extern void ReleaseDebuggerMemDC();
+	extern void StretchBltMemToFrameDC();
+	extern HDC GetConsoleFontDC();
+	extern void ReleaseConsoleFontDC();
 
 	enum DebugVirtualTextScreen_e
 	{
@@ -71,9 +71,9 @@
 	class VideoScannerDisplayInfo
 	{
 	public:
-		VideoScannerDisplayInfo(void) : isDecimal(false), isHorzReal(false), cycleMode(rel),
-										lastCumulativeCycles(0), savedCumulativeCycles(0), cycleDelta(0) {}
-		void Reset(void) { lastCumulativeCycles = savedCumulativeCycles = g_nCumulativeCycles; cycleDelta = 0; }
+		VideoScannerDisplayInfo() : isDecimal(false), isHorzReal(false), cycleMode(rel),
+									lastCumulativeCycles(0), savedCumulativeCycles(0), cycleDelta(0) {}
+		void Reset() { lastCumulativeCycles = savedCumulativeCycles = g_nCumulativeCycles; cycleDelta = 0; }
 
 		bool isDecimal;
 		bool isHorzReal;

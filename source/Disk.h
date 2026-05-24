@@ -137,16 +137,16 @@ class Disk2InterfaceCard : public Card
 {
 public:
 	Disk2InterfaceCard(UINT slot);
-	virtual ~Disk2InterfaceCard(void);
+	virtual ~Disk2InterfaceCard();
 
 	virtual void Reset(const bool powerCycle);
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Update(const ULONG nExecutedCycles);
 
-	virtual void Destroy(void);		// No, doesn't "destroy" the disk image. Called by CardManager::Destroy()
+	virtual void Destroy();		// No, doesn't "destroy" the disk image. Called by CardManager::Destroy()
 
-	void Boot(void);
+	void Boot();
 	void FlushCurrentTrack(const int drive);
 
 	const std::string & GetFullDiskFilename(const int drive);
@@ -160,32 +160,32 @@ public:
 	void EjectDisk(const int drive);
 	void UnplugDrive(const int drive);
 
-	bool IsConditionForFullSpeed(void);
+	bool IsConditionForFullSpeed();
 	void NotifyInvalidImage(const int drive, const std::string & szImageFilename, const ImageError_e Error);
 
-	UINT GetCurrentBitOffset(void);
-	UINT GetCurrentFirmware(void) { return m_is13SectorFirmware ? 13 : 16; }
-	double GetCurrentExtraCycles(void);
-	float GetCurrentPhase(void);
-	int GetCurrentDrive(void);
-	BYTE GetCurrentShiftReg(void);
-	int GetCurrentTrack(void);
+	UINT GetCurrentBitOffset();
+	UINT GetCurrentFirmware() { return m_is13SectorFirmware ? 13 : 16; }
+	double GetCurrentExtraCycles();
+	float GetCurrentPhase();
+	int GetCurrentDrive();
+	BYTE GetCurrentShiftReg();
+	int GetCurrentTrack();
 
 	float GetPhase(const int drive);
 	int GetTrack(const int drive);
 	static std::string FormatIntFracString(float phase, bool hex);
-	std::string GetCurrentTrackString(void);
-	std::string GetCurrentPhaseString(void);
+	std::string GetCurrentTrackString();
+	std::string GetCurrentPhaseString();
 	LPCTSTR GetCurrentState(Disk_Status_e& eDiskState_);
 	bool UserSelectNewDiskImageOnly(const int drive, LPCSTR pszFilename, std::string& openFilename, DWORD flags);
 	bool UserSelectNewDiskImage(const int drive, LPCSTR pszFilename="");
-	bool DriveSwap(void);
+	bool DriveSwap();
 	bool IsDriveConnected(int drive) { return m_floppyDrive[drive].m_isConnected; }
 	bool Get13SectorFirmware();
 	void Set13SectorFirmware(const bool is13Sector);
 
-	static const std::string& GetSnapshotCardNameOld(void);
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardNameOld();
+	static const std::string& GetSnapshotCardName();
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
@@ -197,7 +197,7 @@ public:
 	bool IsDriveEmpty(const int drive);
 	bool IsWozImageInDrive(const int drive);
 
-	bool GetEnhanceDisk(void);
+	bool GetEnhanceDisk();
 	void SetEnhanceDisk(bool bEnhanceDisk);
 
 	void ForbidSaveDiskImageToRegistry() { m_saveDiskImageToRegistry = false; }
@@ -206,7 +206,7 @@ public:
 	static BYTE __stdcall IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG nExecutedCycles);
 
 private:
-	void ResetSwitches(void);
+	void ResetSwitches();
 	void CheckSpinning(const bool stateChanged, const ULONG uExecutedCycles);
 	Disk_Status_e GetDriveLightStatus(const int drive);
 	bool IsDriveValid(const int drive);
@@ -214,7 +214,7 @@ private:
 	void AllocTrack(const int drive, const UINT minSize=NIBBLES_PER_TRACK);
 	void ReadTrack(const int drive, ULONG uExecutedCycles);
 	void WriteTrack(const int drive);
-	void ResetLogicStateSequencer(void);
+	void ResetLogicStateSequencer();
 	UINT GetBitCellDelta(const ULONG uExecutedCycles);
 	void UpdateBitStreamPosition(FloppyDisk& floppy, const ULONG bitCellDelta);
 	void UpdateBitStreamOffsets(FloppyDisk& floppy);
@@ -228,9 +228,9 @@ private:
 	bool GetFirmware(WORD lpNameId, BYTE* pDst);
 	void InitFirmware(LPBYTE pCxRomPeripheral);
 	void UpdateLatchForEmptyDrive(FloppyDrive* pDrive);
-	void InsertSyncEvent(void);
+	void InsertSyncEvent();
 	static int SyncEventCallback(int id, int cycles, ULONG uExecutedCycles);
-	void ControlStepperDeferred(void);
+	void ControlStepperDeferred();
 	void ControlStepperLogging(WORD address, unsigned __int64 cumulativeCycles);
 
 	void PreJitterCheck(int phase, BYTE latch);

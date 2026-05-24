@@ -123,7 +123,7 @@ class Uthernet1 : public Card
 public:
 	Uthernet1(UINT slot);
 
-	virtual void Destroy(void) {}
+	virtual void Destroy() {}
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG nExecutedCycles);
@@ -133,7 +133,7 @@ public:
 	BYTE tfe_read(WORD ioaddress);
 	void tfe_store(WORD ioaddress, BYTE byte);
 
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName();
 
 private:
 
@@ -144,7 +144,7 @@ private:
 	void tfe_sideeffects_read_pp(WORD ppaddress);
 	void tfe_proceed_rx_buffer(int oddaddress);
 
-	WORD tfe_receive(void);
+	WORD tfe_receive();
 	int tfe_should_accept(unsigned char *buffer, int length, int *phashed, int *phash_index,
                           int *pcorrect_mac, int *pbroadcast, int *pmulticast);
 
@@ -165,8 +165,8 @@ private:
 	void tfe_debug_output_general( const char *what, WORD (Uthernet1::*getFunc)(int), int count );
 	WORD tfe_debug_output_io_getFunc( int i );
 	WORD tfe_debug_output_pp_getFunc( int i );
-	void tfe_debug_output_io( void );
-	void tfe_debug_output_pp( void );
+	void tfe_debug_output_io();
+	void tfe_debug_output_pp();
 #endif
 
 	/* status which received packages to accept

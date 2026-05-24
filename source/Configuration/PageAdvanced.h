@@ -20,8 +20,8 @@ public:
 
 	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
-	UINT GetTheFreezesF8Rom(void){ return m_uTheFreezesF8Rom; }
-	void SetTheFreezesF8Rom(UINT uValue){ m_uTheFreezesF8Rom = uValue; }
+	UINT GetTheFreezesF8Rom() { return m_uTheFreezesF8Rom; }
+	void SetTheFreezesF8Rom(UINT uValue) { m_uTheFreezesF8Rom = uValue; }
 
 	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
 	virtual void ResetToDefault();			// IPropertySheetPage
@@ -35,7 +35,7 @@ protected:
 private:
 	void InitOptions(HWND hWnd);
 	eApple2Type GetCloneType(uint32_t NewMenuItem);
-	int GetCloneMenuItem(void);
+	int GetCloneMenuItem();
 	void InitFreezeDlgButton(HWND hWnd);
 	void InitCloneDropdownMenu(HWND hWnd);
 	void InitGameIOConnectorDropdownMenu(HWND hWnd);

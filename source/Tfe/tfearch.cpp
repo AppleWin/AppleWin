@@ -69,7 +69,7 @@ typedef int (*pcap_datalink_t)(pcap_t *);
 typedef int (*pcap_findalldevs_t)(pcap_if_t **, char *);
 typedef void (*pcap_freealldevs_t)(pcap_if_t *);
 typedef int (*pcap_sendpacket_t)(pcap_t *p, u_char *buf, int size);
-typedef const char *(*pcap_lib_version_t)(void);
+typedef const char *(*pcap_lib_version_t)();
 typedef char* (*pcap_geterr_t)(pcap_t* p);
 
 static pcap_open_live_t   p_pcap_open_live;
@@ -86,7 +86,7 @@ static pcap_geterr_t p_pcap_geterr;
 static HINSTANCE pcap_library = NULL;
 
 static
-void TfePcapFreeLibrary(void)
+void TfePcapFreeLibrary()
 {
     if (pcap_library) {
         if (!FreeLibrary(pcap_library)) {
@@ -117,7 +117,7 @@ void TfePcapFreeLibrary(void)
     } 
 
 static
-BOOL TfePcapLoadLibrary(void)
+BOOL TfePcapLoadLibrary()
 {
     if (pcap_library)
     {
@@ -180,7 +180,7 @@ BOOL TfePcapLoadLibrary(void)
 #define p_pcap_lib_version pcap_lib_version
 #define p_pcap_geterr pcap_geterr
 
-static BOOL TfePcapLoadLibrary(void)
+static BOOL TfePcapLoadLibrary()
 {
     static bool loaded = false;
     if (!loaded)
@@ -229,7 +229,7 @@ void debug_output( const char *text, const BYTE *what, int count )
 #endif // #ifdef TFE_DEBUG_PKTDUMP
 
 static
-void TfePcapCloseAdapter(void) 
+void TfePcapCloseAdapter() 
 {
     if (TfePcapAlldevs) {
         (*p_pcap_freealldevs)(TfePcapAlldevs);
@@ -257,7 +257,7 @@ void TfePcapCloseAdapter(void)
  TfeEnumAdapter() only fails if there is no more adpater; in this case, 
    *ppname and *ppdescription are not altered.
 */
-int tfe_arch_enumadapter_open(void)
+int tfe_arch_enumadapter_open()
 {
     if (!TfePcapLoadLibrary()) {
         return 0;
@@ -296,7 +296,7 @@ int tfe_arch_enumadapter(std::string & name, std::string & description)
     return 1;
 }
 
-int tfe_arch_enumadapter_close(void)
+int tfe_arch_enumadapter_close()
 {
     if (TfePcapAlldevs) {
         (*p_pcap_freealldevs)(TfePcapAlldevs);
@@ -401,7 +401,7 @@ void tfe_arch_set_hashfilter(const uint32_t hash_mask[2])
 
 
 /*
-void tfe_arch_receive_remove_committed_frame(void)
+void tfe_arch_receive_remove_committed_frame()
 {
 #ifdef TFE_DEBUG_ARCH
     if(g_fh) fprintf( g_fh, "tfe_arch_receive_remove_committed_frame().\n" );

@@ -21,10 +21,10 @@ public:
 
 	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
-	UINT GetScrollLockToggle(void) { return m_uScrollLockToggle; }
+	UINT GetScrollLockToggle() { return m_uScrollLockToggle; }
 	void SetScrollLockToggle(UINT uValue) { m_uScrollLockToggle = uValue; }
 
-	uint32_t GetVolumeMax(void) { return VOLUME_MAX; }
+	uint32_t GetVolumeMax() { return VOLUME_MAX; }
 
 	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
 	virtual void ResetToDefault();			// IPropertySheetPage

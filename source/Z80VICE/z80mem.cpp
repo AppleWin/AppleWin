@@ -80,7 +80,7 @@ read_func_ptr_t io_read_tab[0x101];
 //    { NULL }
 //};
 //
-//int z80mem_resources_init(void)
+//int z80mem_resources_init()
 //{
 //    return resources_register_int(resources_int);
 //}
@@ -90,7 +90,7 @@ read_func_ptr_t io_read_tab[0x101];
 //    { NULL }
 //};
 //
-//int z80mem_cmdline_options_init(void)
+//int z80mem_cmdline_options_init()
 //{
 //    return cmdline_register_options(cmdline_options);
 //}
@@ -141,7 +141,7 @@ static void store_unconnected_io(WORD addr, BYTE value)
 //    log_message(z80mem_log, "Store to unconnected IO %04x %02x", addr, value);	// [AppleWin-TC]
 }
 
-void z80mem_initialize(void)
+void z80mem_initialize()
 {
 	int i, j;
 
@@ -431,7 +431,7 @@ void z80mem_update_config(int config)
 */
 }
 
-int z80mem_load(void)
+int z80mem_load()
 {
 //  if (z80mem_log == LOG_ERR)			// [AppleWin-TC]
 //      z80mem_log = log_open("Z80MEM");

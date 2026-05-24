@@ -77,7 +77,7 @@ const uint32_t SAMPLE_RATE_SSI263 = 22050;
 static int ssiRegs[5]={-1,-1,-1,-1,-1};
 static int totalDuration_ms = 0;
 
-void SSI_Output(void)
+void SSI_Output()
 {
 	int ssi0 = ssiRegs[SSI_DURPHON];
 	int ssi2 = ssiRegs[SSI_RATEINF];
@@ -103,7 +103,7 @@ void SSI_Output(void)
 
 //-----------------------------------------------------------------------------
 
-UINT64 SSI263::GetLastCumulativeCycles(void)
+UINT64 SSI263::GetLastCumulativeCycles()
 {
 	return dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(m_slot)).GetLastCumulativeCycles();
 }
@@ -229,7 +229,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 	}
 }
 
-void SSI263::SetDeviceModeAndInts(void)
+void SSI263::SetDeviceModeAndInts()
 {
 	if ((m_durationPhoneme & DURATION_MODE_MASK) != MODE_IRQ_DISABLED)
 	{
@@ -396,7 +396,7 @@ void SSI263::Play(unsigned int nPhoneme)
 	m_lastUpdateCycle = GetLastCumulativeCycles();
 }
 
-void SSI263::Stop(void)
+void SSI263::Stop()
 {
 	if (SSI263SingleVoice.lpDSBvoice && SSI263SingleVoice.bActive)
 		DSVoiceStop(&SSI263SingleVoice);
@@ -423,7 +423,7 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 
 // Called by:
 // . PeriodicUpdate()
-void SSI263::Update(void)
+void SSI263::Update()
 {
 	if (!IsPhonemeActive())
 		return;
@@ -740,7 +740,7 @@ void SSI263::Update(void)
 // Called by:
 // . Update()
 // . LoadSnapshot()
-void SSI263::RepeatPhoneme(void)
+void SSI263::RepeatPhoneme()
 {
 	if (m_phonemeLeadoutLength != 0)
 		return;
@@ -766,7 +766,7 @@ void SSI263::RepeatPhoneme(void)
 
 // The primary way for phonemes to generate IRQ is via the ring-buffer in Update(),
 // but when single-stepping (eg. timing-sensitive SSI263 detection code), then this secondary method is used.
-void SSI263::UpdateAccurateLength(void)
+void SSI263::UpdateAccurateLength()
 {
 	if (!m_phonemeAccurateLengthRemaining)
 		return;
@@ -795,7 +795,7 @@ void SSI263::UpdateAccurateLength(void)
 // . Update() when m_phonemeLengthRemaining -> 0
 // . UpdateAccurateLength() when m_phonemeAccurateLengthRemaining -> 0
 // . LoadSnapshot()
-void SSI263::UpdateIRQ(void)
+void SSI263::UpdateIRQ()
 {
 	m_phonemeLengthRemaining = m_phonemeAccurateLengthRemaining = 0;	// Prevent an IRQ from the other source
 
@@ -819,7 +819,7 @@ void SSI263::UpdateIRQ(void)
 //-----------------------------------------------------------------------------
 
 // Pre: m_isVotraxPhoneme, m_cardMode, m_device
-void SSI263::SetSpeechIRQ(void)
+void SSI263::SetSpeechIRQ()
 {
 	if (!m_isVotraxPhoneme && (m_ctrlArtAmp & CONTROL_MASK) == 0)
 	{
@@ -887,8 +887,8 @@ void SSI263::SetCardMode(PHASOR_MODE mode)
 
 //-----------------------------------------------------------------------------
 
-// Cf. void MockingboardCardManager::UpdateSoundBuffer(void)
-bool SSI263::DSInit(void)
+// Cf. void MockingboardCardManager::UpdateSoundBuffer()
+bool SSI263::DSInit()
 {
 	if (!SSI263SingleVoice.lpDSBvoice)
 	{
@@ -910,8 +910,8 @@ bool SSI263::DSInit(void)
 	return true;
 }
 
-// Cf. bool MockingboardCardManager::Init(void)
-bool SSI263::Init(void)
+// Cf. bool MockingboardCardManager::Init()
+bool SSI263::Init()
 {
 	if (!DSAvailable())
 		return false;
@@ -935,7 +935,7 @@ bool SSI263::Init(void)
 	return true;
 }
 
-void SSI263::DSUninit(void)
+void SSI263::DSUninit()
 {
 	Stop();
 	DSReleaseSoundBuffer(&SSI263SingleVoice);
@@ -972,7 +972,7 @@ void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 
 //-----------------------------------------------------------------------------
 
-void SSI263::Mute(void)
+void SSI263::Mute()
 {
 	if (SSI263SingleVoice.bActive && !SSI263SingleVoice.bMute)
 	{
@@ -981,7 +981,7 @@ void SSI263::Mute(void)
 	}
 }
 
-void SSI263::Unmute(void)
+void SSI263::Unmute()
 {
 	if (SSI263SingleVoice.bActive && SSI263SingleVoice.bMute)
 	{

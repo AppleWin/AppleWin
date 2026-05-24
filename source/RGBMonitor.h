@@ -31,20 +31,20 @@ void VideoInitializeOriginal(baseColors_t pBaseNtscColors);
 void VideoSwitchVideocardPalette(RGB_Videocard_e videocard, VideoType_e type);
 
 void RGB_SetVideoMode(WORD address);
-bool RGB_Is140Mode(void);
-bool RGB_Is160Mode(void);
-bool RGB_IsMixMode(void);
-bool RGB_Is560Mode(void);
-bool RGB_IsMixModeInvertBit7(void);
-bool RGB_IsMacLCCardDLGR(void);
-void RGB_ResetState(void);
+bool RGB_Is140Mode();
+bool RGB_Is160Mode();
+bool RGB_IsMixMode();
+bool RGB_Is560Mode();
+bool RGB_IsMixModeInvertBit7();
+bool RGB_IsMacLCCardDLGR();
+void RGB_ResetState();
 void RGB_SetInvertBit7(bool state);
 void RGB_SetMacLCCardDLGR(bool state);
 
 void RGB_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void RGB_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT cardVersion);
 
-RGB_Videocard_e RGB_GetVideocard(void);
+RGB_Videocard_e RGB_GetVideocard();
 void RGB_SetVideocard(RGB_Videocard_e videocard, int text_foreground = -1, int text_background = -1);
 void RGB_SetRegularTextFG(int color);
 void RGB_SetRegularTextBG(int color);

@@ -12,24 +12,24 @@ public:
 	// in modern C++ this could be a 2nd constructor
 	static LanguageCardUnit * create(UINT slot);
 
-	virtual ~LanguageCardUnit(void);
+	virtual ~LanguageCardUnit();
 
-	virtual void Destroy(void) {}
+	virtual void Destroy() {}
 	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG nExecutedCycles) {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
-	virtual UINT GetActiveBank(void) { return 0; }	// Always 0 as only 1x 16K bank
+	virtual UINT GetActiveBank() { return 0; }	// Always 0 as only 1x 16K bank
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) { } // A no-op for //e - called from CardManager::SaveSnapshot()
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) { _ASSERT(0); return false; } // Not used for //e
 
 	virtual void SetMainMemLanguageCardMemory();
 
-	BOOL GetLastRamWrite(void) { return m_uLastRamWrite; }
+	BOOL GetLastRamWrite() { return m_uLastRamWrite; }
 	void SetLastRamWrite(BOOL count) { m_uLastRamWrite = count; }
-	UINT GetLCMemMode(void) { return m_memMode; }
+	UINT GetLCMemMode() { return m_memMode; }
 	void SetLCMemMode(UINT memMode) { m_memMode = memMode; }
-	SS_CARDTYPE GetMemoryType(void) { return QueryType(); }
+	SS_CARDTYPE GetMemoryType() { return QueryType(); }
 	bool IsOpcodeRMWabs(WORD addr);
 	uint8_t ReadByte(uint16_t phyAddr);
 
@@ -58,13 +58,13 @@ public:
 	// in modern C++ this could be a 2nd constructor
 	static LanguageCardSlot0 * create(UINT slot);
 
-	virtual ~LanguageCardSlot0(void);
+	virtual ~LanguageCardSlot0();
 
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	static const UINT kMemBankSize = 16*1024;
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName();
 
 protected:
 	LanguageCardSlot0(SS_CARDTYPE type, UINT slot);
@@ -72,7 +72,7 @@ protected:
 	void LoadLCState(class YamlLoadHelper& yamlLoadHelper);
 
 private:
-	const std::string& GetSnapshotMemStructName(void);
+	const std::string& GetSnapshotMemStructName();
 };
 
 //
@@ -83,16 +83,16 @@ class Saturn128K : public LanguageCardSlot0
 {
 public:
 	Saturn128K(UINT slot, UINT banks);
-	virtual ~Saturn128K(void);
+	virtual ~Saturn128K();
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
-	virtual UINT GetActiveBank(void);
+	virtual UINT GetActiveBank();
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 	virtual void SetMainMemLanguageCardMemory();
 
-	void SetMemMainLanguageCard(void);
+	void SetMemMainLanguageCard();
 	uint8_t ReadByteFromBank(uint8_t bank, uint16_t phyAddr);
 	uint8_t GetSaturnMemorySize();
 	void SetSaturnMemorySize(uint8_t banks);
@@ -104,10 +104,10 @@ public:
 
 	// "The boards consist of 16K banks of memory (4 banks for the 64K board, 8 banks for the 128K), accessed one at a time" - Ref: "64K/128K RAM BOARD", Saturn Systems, Ch.1 Introduction(pg-5)
 	static const UINT kMaxSaturnBanks = 8;		// 8 * 16K = 128K
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName();
 
 private:
-	const std::string& GetSnapshotMemStructName(void);
+	const std::string& GetSnapshotMemStructName();
 
 	static UINT g_uSaturnBanksFromCmdLine;
 
@@ -123,24 +123,24 @@ private:
 class LanguageCardManager
 {
 public:
-	LanguageCardManager(void) :
+	LanguageCardManager() :
 		m_pLanguageCard(NULL),
 		m_lastSlotToSetMainMemLC(SLOT0),
 		m_lastSlotToSetMainMemLCFromSnapshot(SLOT0)
 	{}
-	~LanguageCardManager(void) {}
+	~LanguageCardManager() {}
 
 	void Reset(const bool powerCycle = false);
 
-	UINT GetLastSlotToSetMainMemLC(void) { return m_lastSlotToSetMainMemLC;	}
+	UINT GetLastSlotToSetMainMemLC() { return m_lastSlotToSetMainMemLC;	}
 	void SetLastSlotToSetMainMemLC(UINT slot) { m_lastSlotToSetMainMemLC = slot; }
 	void SetLastSlotToSetMainMemLCFromSnapshot(UINT slot) { m_lastSlotToSetMainMemLCFromSnapshot = slot; }
 
-	LanguageCardUnit* GetLanguageCard(void) { return m_pLanguageCard; }
+	LanguageCardUnit* GetLanguageCard() { return m_pLanguageCard; }
 	bool SetLanguageCard(SS_CARDTYPE type);
 
 	void SetMemMode(const uint8_t slot);
-	void SetMemModeFromSnapshot(void);
+	void SetMemModeFromSnapshot();
 
 	uint8_t ReadByte(uint8_t slot, uint8_t bank, uint16_t phyAddr);
 

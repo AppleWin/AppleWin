@@ -5,9 +5,9 @@ void SingleStep(bool bReinit);
 //===========================================
 
 // Win32
-bool GetLoadedSaveStateFlag(void);
-bool GetHookAltTab(void);
-bool GetHookAltGrControl(void);
-bool GetFullScreenResolutionChangedByUser(void);
+bool GetLoadedSaveStateFlag();
+bool GetHookAltTab();
+bool GetHookAltGrControl();
+bool GetFullScreenResolutionChangedByUser();
 
 extern bool g_bRestartFullScreen;

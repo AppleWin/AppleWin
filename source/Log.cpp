@@ -59,7 +59,7 @@ inline std::string GetTimeStamp()
 	return std::string(ct, 24);
 }
 
-void LogInit(void)
+void LogInit()
 {
 	if (g_fh)
 		return;
@@ -76,7 +76,7 @@ void LogInit(void)
 	fprintf(g_fh, "*** Logging started: %s\n", GetTimeStamp().c_str());
 }
 
-void LogDone(void)
+void LogDone()
 {
 	if (!g_fh)
 		return;

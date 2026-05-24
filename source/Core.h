@@ -5,26 +5,26 @@
 #include "StrFormat.h"
 #include "Log.h"
 
-void LogFileTimeUntilFirstKeyReadReset(void);
-void LogFileTimeUntilFirstKeyRead(void);
+void LogFileTimeUntilFirstKeyReadReset();
+void LogFileTimeUntilFirstKeyRead();
 
-extern const UINT16* GetOldAppleWinVersion(void);
+extern const UINT16* GetOldAppleWinVersion();
 extern UINT16 g_AppleWinVersion[4];
 extern std::string g_VERSIONSTRING;	// Constructed in WinMain()
 
 void SetAppleWinVersion(UINT16 major, UINT16 minor, UINT16 fix, UINT16 fix_minor);
-bool CheckOldAppleWinVersion(void);
-std::string GetAppleWinVersionAndBuild(void);
-UINT GetCompilationTarget(void);
+bool CheckOldAppleWinVersion();
+std::string GetAppleWinVersionAndBuild();
+UINT GetCompilationTarget();
 
 extern std::string g_pAppTitle;
 
 extern eApple2Type g_Apple2Type;
-eApple2Type GetApple2Type(void);
+eApple2Type GetApple2Type();
 void SetApple2Type(eApple2Type type);
 
-double Get6502BaseClock(void);
-void SetCurrentCLK6502(void);
+double Get6502BaseClock();
+void SetCurrentCLK6502();
 
 // set g_dwSpeed =
 // | clockMultiplier == 0  => unchanged
@@ -55,7 +55,7 @@ extern uint32_t   g_dwCyclesThisFrame;
 
 extern int        g_nMemoryClearType;					// Cmd line switch: use specific MIP (Memory Initialization Pattern)
 
-extern class CardManager& GetCardMgr(void);
+extern class CardManager& GetCardMgr();
 extern class SynchronousEventManager g_SynchronousEventMgr;
 
 extern HANDLE	g_hCustomRomF8;			// INVALID_HANDLE_VALUE if no custom F8 rom
@@ -73,7 +73,7 @@ extern bool       g_bDisableDirectInput;				// Cmd line switch: don't init DI (s
 extern bool       g_bDisableDirectSound;				// Cmd line switch: don't init DS (so no MB/Speaker support)
 extern bool       g_bDisableDirectSoundMockingboard;	// Cmd line switch: don't init MB support
 
-class Pravets& GetPravets(void);
+class Pravets& GetPravets();
 
 //#define LOG_PERF_TIMINGS
 #ifdef LOG_PERF_TIMINGS

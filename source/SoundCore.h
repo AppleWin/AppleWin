@@ -20,7 +20,7 @@ struct VOICE
 	bool bRecentlyActive;	// (Speaker only) false after 0.2s of speaker inactivity
 	std::string name;
 
-	VOICE(void)
+	VOICE()
 	{
 		bActive = false;
 		bMute = false;
@@ -32,7 +32,7 @@ struct VOICE
 		name = "";
 	}
 
-	~VOICE(void);
+	~VOICE();
 };
 
 typedef VOICE* PVOICE;

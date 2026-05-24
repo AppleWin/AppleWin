@@ -93,7 +93,7 @@ void SAMCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 static const UINT kUNIT_VERSION = 1;
 
-const std::string& SAMCard::GetSnapshotCardName(void)
+const std::string& SAMCard::GetSnapshotCardName()
 {
 	static const std::string name("SAM");
 	return name;

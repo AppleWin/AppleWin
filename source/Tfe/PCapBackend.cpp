@@ -88,7 +88,7 @@ const std::string & PCapBackend::getInterfaceName()
     return m_interfaceName;
 }
 
-int PCapBackend::tfe_enumadapter_open(void)
+int PCapBackend::tfe_enumadapter_open()
 {
     return tfe_arch_enumadapter_open();
 }
@@ -98,12 +98,12 @@ int PCapBackend::tfe_enumadapter(std::string & name, std::string & description)
     return tfe_arch_enumadapter(name, description);
 }
 
-int PCapBackend::tfe_enumadapter_close(void)
+int PCapBackend::tfe_enumadapter_close()
 {
     return tfe_arch_enumadapter_close();
 }
 
-const char * PCapBackend::tfe_lib_version(void)
+const char * PCapBackend::tfe_lib_version()
 {
     return tfe_arch_lib_version();
 }

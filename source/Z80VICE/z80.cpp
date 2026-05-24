@@ -95,13 +95,13 @@ static int z80_bank_limit;
 
 
 #if 0	// [AppleWin-TC] Not used
-void z80_trigger_dma(void)
+void z80_trigger_dma()
 {
     dma_request = 1;
 }
 #endif
 
-void z80_reset(void)
+void z80_reset()
 {
     z80_reg_pc = 0;
     z80_regs.reg_pc = 0;
@@ -419,7 +419,7 @@ static const BYTE SZP[256] = {
 
 z80_regs_t z80_regs;
 
-static void import_registers(void)
+static void import_registers()
 {
     reg_a = z80_regs.reg_af >> 8;
     reg_f = z80_regs.reg_af & 0xff;
@@ -447,7 +447,7 @@ static void import_registers(void)
     reg_l2 = z80_regs.reg_hl2 & 0xff;
 }
 
-static void export_registers(void)
+static void export_registers()
 {
     z80_regs.reg_af = (reg_a << 8) | reg_f;
     z80_regs.reg_bc = (reg_b << 8) | reg_c;
@@ -6456,13 +6456,13 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 #define SS_YAML_KEY_REGL2 "L'"
 #define SS_YAML_KEY_ACTIVE "Active"
 
-const std::string& Z80_GetSnapshotCardNameOld(void)
+const std::string& Z80_GetSnapshotCardNameOld()
 {
 	static const std::string name("Z80");
 	return name;
 }
 
-const std::string& Z80_GetSnapshotCardName(void)
+const std::string& Z80_GetSnapshotCardName()
 {
     static const std::string name("Z80 SoftCard");
     return name;

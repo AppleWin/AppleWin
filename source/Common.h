@@ -247,12 +247,12 @@ inline bool IsAppleIIc(eApple2Type type)			// Apple //c
 }
 
 extern eApple2Type g_Apple2Type;
-inline bool IsEnhancedIIE(void)
+inline bool IsEnhancedIIE()
 {
 	return ( (g_Apple2Type == A2TYPE_APPLE2EENHANCED) || (g_Apple2Type == A2TYPE_TK30002E) );
 }
 
-inline bool IsEnhancedIIEorIIC(void)
+inline bool IsEnhancedIIEorIIC()
 {
 	return ( (g_Apple2Type == A2TYPE_APPLE2EENHANCED) || (g_Apple2Type == A2TYPE_TK30002E) || IS_APPLE2C() );
 }

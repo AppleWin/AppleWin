@@ -56,8 +56,8 @@ struct ImageInfo
 class CImageBase
 {
 public:
-	CImageBase(void);
-	virtual ~CImageBase(void);
+	CImageBase();
+	virtual ~CImageBase();
 
 	virtual bool Boot(ImageInfo* pImageInfo) { return false; }
 	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt) = 0;
@@ -66,14 +66,14 @@ public:
 	virtual void Write(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int nNibbles) { }
 	virtual bool Write(ImageInfo* pImageInfo, UINT nBlock, LPBYTE pBlockBuffer) { return false; }
 
-	virtual bool AllowBoot(void) { return false; }		// Only:    APL and PRG
-	virtual bool AllowRW(void) { return true; }			// All but: APL and PRG
-	virtual bool AllowCreate(void) { return false; }	// WE CREATE ONLY DOS ORDER (DO) OR 6656-NIBBLE (NIB) FORMAT FILES
-	virtual UINT GetImageSizeForCreate(void) { _ASSERT(0); return (UINT)-1; }
+	virtual bool AllowBoot() { return false; }		// Only:    APL and PRG
+	virtual bool AllowRW() { return true; }			// All but: APL and PRG
+	virtual bool AllowCreate() { return false; }	// WE CREATE ONLY DOS ORDER (DO) OR 6656-NIBBLE (NIB) FORMAT FILES
+	virtual UINT GetImageSizeForCreate() { _ASSERT(0); return (UINT)-1; }
 
-	virtual eImageType GetType(void) = 0;
-	virtual const char* GetCreateExtensions(void) = 0;
-	virtual const char* GetRejectExtensions(void) = 0;
+	virtual eImageType GetType() = 0;
+	virtual const char* GetCreateExtensions() = 0;
+	virtual const char* GetRejectExtensions() = 0;
 
 	bool WriteImageHeader(ImageInfo* pImageInfo, LPBYTE pHdr, const UINT hdrSize);
 	void SetVolumeNumber(const BYTE uVolumeNumber) { m_uVolumeNumber = uVolumeNumber; }
@@ -115,19 +115,19 @@ class CHdrHelper
 {
 public:
 	virtual eDetectResult DetectHdr(LPBYTE& pImage, uint32_t& dwImageSize, uint32_t& dwOffset) = 0;
-	virtual UINT GetMaxHdrSize(void) = 0;
+	virtual UINT GetMaxHdrSize() = 0;
 protected:
-	CHdrHelper(void) {}
-	virtual ~CHdrHelper(void) {}
+	CHdrHelper() {}
+	virtual ~CHdrHelper() {}
 };
 
 class CMacBinaryHelper : public CHdrHelper
 {
 public:
-	CMacBinaryHelper(void) {}
-	virtual ~CMacBinaryHelper(void) {}
+	CMacBinaryHelper() {}
+	virtual ~CMacBinaryHelper() {}
 	virtual eDetectResult DetectHdr(LPBYTE& pImage, uint32_t& dwImageSize, uint32_t& dwOffset);
-	virtual UINT GetMaxHdrSize(void) { return uMacBinHdrSize; }
+	virtual UINT GetMaxHdrSize() { return uMacBinHdrSize; }
 
 private:
 	static const UINT uMacBinHdrSize = 128;
@@ -146,13 +146,13 @@ class C2IMGHelper : public CHdrHelper
 {
 public:
 	C2IMGHelper(const bool bIsFloppy) : m_bIsFloppy(bIsFloppy) {}
-	virtual ~C2IMGHelper(void) {}
+	virtual ~C2IMGHelper() {}
 	virtual eDetectResult DetectHdr(LPBYTE& pImage, uint32_t& dwImageSize, uint32_t& dwOffset);
-	virtual UINT GetMaxHdrSize(void) { return sizeof(Header2IMG); }
-	BYTE GetVolumeNumber(void);
-	bool IsLocked(void);
-	bool IsImageFormatDOS33(void) { return m_Hdr.ImageFormat == e2IMGFormatDOS33; }
-	bool IsImageFormatProDOS(void) { return m_Hdr.ImageFormat == e2IMGFormatProDOS; }
+	virtual UINT GetMaxHdrSize() { return sizeof(Header2IMG); }
+	BYTE GetVolumeNumber();
+	bool IsLocked();
+	bool IsImageFormatDOS33() { return m_Hdr.ImageFormat == e2IMGFormatDOS33; }
+	bool IsImageFormatProDOS() { return m_Hdr.ImageFormat == e2IMGFormatProDOS; }
 
 private:
 	static const UINT32 FormatID_2IMG = 'GMI2';			// '2IMG'
@@ -205,15 +205,15 @@ public:
 	CWOZHelper() :
 		m_pInfo(NULL)
 	{}
-	virtual ~CWOZHelper(void) {}
+	virtual ~CWOZHelper() {}
 	virtual eDetectResult DetectHdr(LPBYTE& pImage, uint32_t& dwImageSize, uint32_t& dwOffset) { _ASSERT(0); return eMismatch; }
-	virtual UINT GetMaxHdrSize(void) { return sizeof(WOZHeader); }
+	virtual UINT GetMaxHdrSize() { return sizeof(WOZHeader); }
 	eDetectResult ProcessChunks(ImageInfo* pImageInfo, uint32_t& dwOffset);
-	bool IsWriteProtected(void) { return m_pInfo->v1.writeProtected == 1; }
-	BYTE GetOptimalBitTiming(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
-	UINT GetMaxNibblesPerTrack(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
-	BYTE GetBootSectorFormat(void) { return (m_pInfo->v1.version >= 2) ? m_pInfo->bootSectorFormat : bootUnknown; }
-	void InvalidateInfo(void) { m_pInfo = NULL; }
+	bool IsWriteProtected() { return m_pInfo->v1.writeProtected == 1; }
+	BYTE GetOptimalBitTiming() { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
+	UINT GetMaxNibblesPerTrack() { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
+	BYTE GetBootSectorFormat() { return (m_pInfo->v1.version >= 2) ? m_pInfo->bootSectorFormat : bootUnknown; }
+	void InvalidateInfo() { m_pInfo = NULL; }
 	BYTE* CreateEmptyDisk(uint32_t& size);
 #if _DEBUG
 	BYTE* CreateEmptyDiskv1(uint32_t& size);
@@ -370,7 +370,7 @@ public:
 		m_WOZHelper()
 	{
 	}
-	virtual ~CImageHelperBase(void)
+	virtual ~CImageHelperBase()
 	{
 		for (UINT i=0; i<m_vecImageTypes.size(); i++)
 			delete m_vecImageTypes[i];
@@ -382,7 +382,7 @@ public:
 
 	virtual CImageBase* Detect(LPBYTE pImage, uint32_t dwSize, const char* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo) = 0;
 	virtual CImageBase* GetImageForCreation(const char* pszExt, uint32_t* pCreateImageSize) = 0;
-	virtual UINT GetMaxImageSize(void) = 0;
+	virtual UINT GetMaxImageSize() = 0;
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer) = 0;
 
 protected:
@@ -393,7 +393,7 @@ protected:
 	void GetCharLowerExt2(char* pszExt, LPCTSTR pszImageFilename, const UINT uExtSize);
 	void SetImageInfo(ImageInfo* pImageInfo, FileType_e fileType, uint32_t dwOffset, CImageBase* pImageType, uint32_t dwSize);
 
-	UINT GetNumImages(void) { return (UINT) m_vecImageTypes.size(); };
+	UINT GetNumImages() { return (UINT) m_vecImageTypes.size(); };
 	CImageBase* GetImage(UINT uIndex) { _ASSERT(uIndex<GetNumImages()); return m_vecImageTypes[uIndex]; }
 	CImageBase* GetImage(eImageType Type)
 	{
@@ -422,12 +422,12 @@ protected:
 class CDiskImageHelper : public CImageHelperBase
 {
 public:
-	CDiskImageHelper(void);
-	virtual ~CDiskImageHelper(void) {}
+	CDiskImageHelper();
+	virtual ~CDiskImageHelper() {}
 
 	virtual CImageBase* Detect(LPBYTE pImage, uint32_t dwSize, const char* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo);
 	virtual CImageBase* GetImageForCreation(const char* pszExt, uint32_t* pCreateImageSize);
-	virtual UINT GetMaxImageSize(void);
+	virtual UINT GetMaxImageSize();
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer);
 
 	UINT GetNumTracksInImage(CImageBase* pImageType) { return pImageType->m_uNumTracksInImage; }
@@ -445,11 +445,11 @@ private:
 class CHardDiskImageHelper : public CImageHelperBase
 {
 public:
-	CHardDiskImageHelper(void);
-	virtual ~CHardDiskImageHelper(void) {}
+	CHardDiskImageHelper();
+	virtual ~CHardDiskImageHelper() {}
 
 	virtual CImageBase* Detect(LPBYTE pImage, uint32_t dwSize, const char* pszExt, uint32_t& dwOffset, ImageInfo* pImageInfo);
 	virtual CImageBase* GetImageForCreation(const char* pszExt, uint32_t* pCreateImageSize);
-	virtual UINT GetMaxImageSize(void);
+	virtual UINT GetMaxImageSize();
 	virtual UINT GetMinDetectSize(const UINT uImageSize, bool* pTempDetectBuffer);
 };

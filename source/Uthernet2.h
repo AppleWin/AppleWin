@@ -69,7 +69,7 @@ public:
     Uthernet2(UINT slot);
     virtual ~Uthernet2();
 
-	virtual void Destroy(void) {}
+	virtual void Destroy() {}
     virtual void InitializeIO(LPBYTE pCxRomPeripheral);
     virtual void Reset(const bool powerCycle);
     virtual void Update(const ULONG nExecutedCycles);

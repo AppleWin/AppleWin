@@ -710,7 +710,7 @@ BYTE __stdcall CSuperSerialCard::CommReceive(WORD, WORD, BYTE, BYTE, ULONG)
 
 //===========================================================================
 
-void CSuperSerialCard::TransmitDone(void)
+void CSuperSerialCard::TransmitDone()
 {
 	if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
@@ -1395,7 +1395,7 @@ void CSuperSerialCard::SetSerialPortName(const char* pSerialPortName)
 	}
 }
 
-void CSuperSerialCard::SetRegistrySerialPortName(void)
+void CSuperSerialCard::SetRegistrySerialPortName()
 {
 	std::string regSection = RegGetConfigSlotSection(m_slot);
 	RegSaveString(regSection.c_str(), REGVALUE_SERIAL_PORT_NAME, true, GetSerialPortName());
@@ -1429,7 +1429,7 @@ static const UINT kUNIT_VERSION = 2;
 #define SS_YAML_KEY_SERIALPORTNAME "Serial Port Name"
 #define SS_YAML_KEY_SUPPORT_DCD "Support DCD"
 
-const std::string& CSuperSerialCard::GetSnapshotCardName(void)
+const std::string& CSuperSerialCard::GetSnapshotCardName()
 {
 	static const std::string name("Super Serial Card");
 	return name;

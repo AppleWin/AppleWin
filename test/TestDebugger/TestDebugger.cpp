@@ -31,7 +31,7 @@ regsrec regs;
 
 static eCpuType g_MainCPU = CPU_65C02;
 
-eCpuType GetMainCpu(void)
+eCpuType GetMainCpu()
 {
 	return g_MainCPU;
 }
@@ -79,12 +79,12 @@ bool FindAddressFromSymbol ( const char* pSymbol, WORD * pAddress_, int * iTable
 
 //-------------------------------------
 
-void init(void)
+void init()
 {
 	mem = (LPBYTE)VirtualAlloc(NULL,128*1024,MEM_COMMIT,PAGE_READWRITE);	// alloc >64K to test wrap-around at 64K boundary
 }
 
-void reset(void)
+void reset()
 {
 	regs.a  = 0;
 	regs.x  = 0;
@@ -160,7 +160,7 @@ int GH445_test_abs(BYTE op)
 	return 0;
 }
 
-int GH445_test_jsr(void)
+int GH445_test_jsr()
 {
 	bool bRes;
 	int TargetAddr[3];
@@ -187,7 +187,7 @@ int GH445_test_jsr(void)
 	return 0;
 }
 
-int GH445_test_brk(void)
+int GH445_test_brk()
 {
 	bool bRes;
 	int TargetAddr[3];
@@ -292,7 +292,7 @@ int GH445_test_jmp(BYTE op)
 }
 
 // bIgnoreBranch == true (default)
-int GH445_test_Bcc(void)
+int GH445_test_Bcc()
 {
 	bool bRes;
 	int TargetAddr[3];
@@ -432,7 +432,7 @@ int GH445_test_sub(bool bIs65C02)
 	return 0;
 }
 
-int GH445_test(void)
+int GH445_test()
 {
 	int res;
 
@@ -471,7 +471,7 @@ int GH451_test_abs(BYTE op)
 	return 0;
 }
 
-int GH451_test_jsr(void)
+int GH451_test_jsr()
 {
 	bool bRes;
 	int TargetAddr[3];
@@ -494,7 +494,7 @@ int GH451_test_jsr(void)
 	return 0;
 }
 
-int GH451_test_brk(void)
+int GH451_test_brk()
 {
 	bool bRes;
 	int TargetAddr[3];
@@ -592,7 +592,7 @@ int GH451_test_jmp(BYTE op)
 }
 
 // bIgnoreBranch == true
-int GH451_test_Bcc(void)
+int GH451_test_Bcc()
 {
 	bool bRes;
 	int TargetAddr[3];
@@ -693,7 +693,7 @@ int GH451_test_sub(bool bIs65C02)
 
 // debugger command 'bpm[r|w] addr16': JSR abs should not trigger a breakpoint at addr16
 // . similarly for all other control flow opcodes (eg. Bcc, BRK, JMP, RTI, RTS)
-int GH451_test(void)
+int GH451_test()
 {
 	int res;
 
