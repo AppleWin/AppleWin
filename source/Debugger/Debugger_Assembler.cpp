@@ -869,9 +869,11 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 		}
 	}
 	else
-	if (iOpcode == OPCODE_RTS)
+	if (iOpcode == OPCODE_RTS || iOpcode == OPCODE_RTI)
 	{
 		int nStackAddr  = regs.sp + 1;
+		if (iOpcode == OPCODE_RTI)
+			++nStackAddr;	// skip the saved 'P' flags
 		int nReturnAddr = ReadWordFromMemory( nStackAddr );
 
 		// Handle stack wrap around for edge cases of fetching 16-bit return address when SP == 0x1FE or 0x1FF
@@ -896,7 +898,10 @@ bool _6502_GetTargetAddress ( const WORD & nAddress, WORD & nTarget_ )
 			nReturnAddr = (RetHi << 8) | RetLo;
 		}
 
-		nTarget_ = ++nReturnAddr & _6502_MEM_END; // /!\ NOTE: 6502 increments return address when popping from stack
+		if (iOpcode == OPCODE_RTS)
+			nTarget_ = ++nReturnAddr & _6502_MEM_END; // /!\ NOTE: 6502 increments return address when popping from stack
+		else
+			nTarget_ = nReturnAddr;	// NOTE: no increment for RTI opcode
 		return true;
 	}
 

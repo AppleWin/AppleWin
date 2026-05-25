@@ -62,10 +62,10 @@
 		<p><br>
 			<br>
 		</p>
-		<p>Press Right Arrow to locate the current 6502 instruction.&nbsp; If you Page 
+		<p>Press Tab to locate the current 6502 instruction.&nbsp; If you Page 
 			Down, you can see that Branch Indicators are displayed on the right side of the 
 			disassembly window, designated by ‘<font face="Webdings, serif">5</font>’ or ‘<font face="Webdings, serif">6</font>’.&nbsp;</p>
-		<p>Press Right Arrow to again locate the current instruction.&nbsp; You will also 
+		<p>Press Tab to again locate the current instruction.&nbsp; You will also 
 			notice immediate instructions have a character single quoted, after them, such 
 			as ‘<font face="Courier, monospace">I’</font> at $<b>FA75</b>.</p>
 		<p>Pressing Space, will Trace (into) an instruction. &nbsp; Sometimes you trace 
@@ -179,7 +179,33 @@
 										</p>
 									</td>
 									<td width="65%">
-										<p><i>Jump cursor to return address on stack.</i></p>
+										<p><i>Set cursor to return address on stack.</i></p>
+									</td>
+								</tr>
+								<tr>
+									<td width="10%">
+										<p><font face="Wingdings">à</font>
+										</p>
+									</td>
+									<td width="25%">
+										<p>Right Arrow
+										</p>
+									</td>
+									<td width="65%">
+										<p><i>Set cursor to the current instruction's target address (or nothing if opcode is implied or immediate mode).</i></p>
+									</td>
+								</tr>
+								<tr>
+									<td width="10%">
+										<p>
+										</p>
+									</td>
+									<td width="25%">
+										<p>Tab
+										</p>
+									</td>
+									<td width="65%">
+										<p><i>Set cursor to the current instruction.</i></p>
 									</td>
 								</tr>
 							</tbody>
