@@ -1017,15 +1017,8 @@ INT_PTR CPageSlots::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, L
 	case WM_COMMAND:
 		switch (LOWORD(wparam))
 		{
-		case IDC_SERIALPORT:
-			if (HIWORD(wparam) == CBN_SELCHANGE)
-			{
-				const UINT serialPortItem = (UINT)SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
-				m_PropertySheetHelper.GetConfigNew().m_serialPortItem = serialPortItem;
-			}
-			break;
-
 		case IDOK:
+			DlgSSCOK(hWnd);
 			EndDialog(hWnd, 0);
 			break;
 
@@ -1061,6 +1054,12 @@ INT_PTR CPageSlots::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, L
 	}
 
 	return TRUE;
+}
+
+void CPageSlots::DlgSSCOK(HWND hWnd)
+{
+	const UINT serialPortItem = (UINT)SendDlgItemMessage(hWnd, IDC_SERIALPORT, CB_GETCURSEL, 0, 0);
+	m_PropertySheetHelper.GetConfigNew().m_serialPortItem = serialPortItem;
 }
 
 void CPageSlots::ConfigResetSSC(UINT slot)
