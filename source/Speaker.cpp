@@ -60,13 +60,13 @@ static const uint32_t g_dwDSSpkrBufferSize = MAX_SAMPLES * sizeof(short) * g_nSP
 
 //-------------------------------------
 
-static short*	g_pSpeakerBuffer = NULL;
+static short*	g_pSpeakerBuffer = NULL;  // Interleaved frames; each frame containes g_nSPKR_NumChannels samples.
 
 // Globals (SOUND_WAVE)
 const short		SPKR_DATA_INIT = (short)0x8000;
 
 short		g_nSpeakerData	= SPKR_DATA_INIT;
-static UINT		g_nBufferIdx	= 0;		// Sample index
+static UINT		g_nBufferIdx	= 0;		// Frame index (ie. not sample index, as each frame contains g_nSPKR_NumChannels samples)
 
 static short*	g_pRemainderBuffer = NULL;
 static UINT		g_nRemainderBufferSize;		// Setup in SpkrInitialize()
@@ -452,7 +452,7 @@ void SpkrUpdate(uint32_t totalcycles)
 		nSamplesUsed = Spkr_SubmitWaveBuffer(g_pSpeakerBuffer, g_nBufferIdx);
 
 	_ASSERT(nSamplesUsed <= g_nBufferIdx);
-	memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], (g_nBufferIdx - nSamplesUsed) * sizeof(short) * g_nSPKR_NumChannels);
+	memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed * g_nSPKR_NumChannels], (g_nBufferIdx - nSamplesUsed) * sizeof(short) * g_nSPKR_NumChannels);
 	g_nBufferIdx -= nSamplesUsed;
 }
 
@@ -465,7 +465,7 @@ void SpkrUpdate_Timer()
 	nSamplesUsed = Spkr_SubmitWaveBuffer_FullSpeed(g_pSpeakerBuffer, g_nBufferIdx);
 
 	_ASSERT(nSamplesUsed <=	g_nBufferIdx);
-	memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed], (g_nBufferIdx - nSamplesUsed) * sizeof(short) * g_nSPKR_NumChannels);
+	memmove(g_pSpeakerBuffer, &g_pSpeakerBuffer[nSamplesUsed * g_nSPKR_NumChannels], (g_nBufferIdx - nSamplesUsed) * sizeof(short) * g_nSPKR_NumChannels);
 	g_nBufferIdx -=	nSamplesUsed;
 }
 
@@ -747,11 +747,11 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 	UINT nBytesFree = g_dwDSSpkrBufferSize - nBytesRemaining;	// Calc free buffer space
 	ULONG nNumSamplesToUse = nNumSamples;
 
-	if(nNumSamplesToUse * sizeof(short) > nBytesFree)
-		nNumSamplesToUse = nBytesFree / sizeof(short);
+	if(nNumSamplesToUse * sizeof(short) * g_nSPKR_NumChannels > nBytesFree)
+		nNumSamplesToUse = nBytesFree / (sizeof(short) * g_nSPKR_NumChannels);
 
 	if(bBufferError)
-		pSpeakerBuffer = &pSpeakerBuffer[nNumSamples - nNumSamplesToUse];
+		pSpeakerBuffer = &pSpeakerBuffer[(nNumSamples - nNumSamplesToUse) * g_nSPKR_NumChannels];
 
 	//
 
