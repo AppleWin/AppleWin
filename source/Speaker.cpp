@@ -518,25 +518,7 @@ static ULONG Spkr_SubmitWaveBuffer_FullSpeed(short* pSpeakerBuffer, ULONG nNumSa
 	else
 	{
 		// Check that our offset isn't between Play & Write positions
-
-		if(dwCurrentWriteCursor > dwCurrentPlayCursor)
-		{
-			// |-----PxxxxxW-----|
-			if((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
-			{
-				//LogOutput("[Submit_FS] PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
-				dwByteOffset = dwCurrentWriteCursor;
-			}
-		}
-		else
-		{
-			// |xxW----------Pxxx|
-			if((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
-			{
-				//LogOutput("[Submit_FS] PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
-				dwByteOffset = dwCurrentWriteCursor;
-			}
-		}
+		SoundCore_ValidateAndAlignWriteOffset(dwByteOffset, dwCurrentPlayCursor, dwCurrentWriteCursor);
 	}
 
 	// Calc bytes remaining to be played
@@ -690,34 +672,14 @@ static ULONG Spkr_SubmitWaveBuffer(short* pSpeakerBuffer, ULONG nNumSamples)
 	else
 	{
 		// Check that our offset isn't between Play & Write positions
-
-		if(dwCurrentWriteCursor > dwCurrentPlayCursor)
+		if (SoundCore_ValidateAndAlignWriteOffset(dwByteOffset, dwCurrentPlayCursor, dwCurrentWriteCursor))
 		{
-			// |-----PxxxxxW-----|
-			if((dwByteOffset > dwCurrentPlayCursor) && (dwByteOffset < dwCurrentWriteCursor))
-			{
-				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				//LogOutput("%010.3f: [Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
-				//LogFileOutput("%010.3f: [Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+			//double fTicksSecs = (double)GetTickCount() / 1000.0;
+			//LogOutput("%010.3f: [Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+			//LogFileOutput("%010.3f: [Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
 
-				dwByteOffset = dwCurrentWriteCursor;
-				nNumSamplesError = 0;
-				bBufferError = true;
-			}
-		}
-		else
-		{
-			// |xxW----------Pxxx|
-			if((dwByteOffset > dwCurrentPlayCursor) || (dwByteOffset < dwCurrentWriteCursor))
-			{
-				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				//LogOutput("%010.3f: [Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
-				//LogFileOutput("%010.3f: [Submit]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor-dwCurrentPlayCursor, dwByteOffset, nNumSamples);
-
-				dwByteOffset = dwCurrentWriteCursor;
-				nNumSamplesError = 0;
-				bBufferError = true;
-			}
+			nNumSamplesError = 0;
+			bBufferError = true;
 		}
 	}
 

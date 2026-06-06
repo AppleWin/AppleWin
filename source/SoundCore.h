@@ -60,6 +60,13 @@ void SoundCore_SetErrorMax(const int nErrorMax);
 
 void SoundCore_StopTimer();
 
+// Returns true if the write offset was in the unsafe zone and had to be aligned to the write cursor.
+// Returns false if the write offset was already in a safe zone and did not need alignment.
+bool SoundCore_ValidateAndAlignWriteOffset(
+    uint32_t& rByteOffset,
+    DWORD dwCurrentPlayCursor,
+    DWORD dwCurrentWriteCursor);
+
 LONG NewVolume(uint32_t dwVolume, uint32_t dwVolumeMax);
 
 void SysClk_WaitTimer();
