@@ -204,8 +204,7 @@ namespace ra2
 
         if (harddiskCard)
         {
-            const BOOL bRes = harddiskCard->Insert(HARDDISK_1, path);
-            const bool ok = bRes == TRUE;
+            const bool ok = harddiskCard->Insert(HARDDISK_1, path);
             if (ok)
             {
                 storeCurrentDiskFolder(path);

@@ -81,7 +81,7 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
                 "the CPU benchmark.  Would you like to gather more information?",
                 "Benchmarks", MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES)
         {
-            BOOL error = 0;
+            bool error = 0;
             WORD lastpc = 0x300;
             int loop = 0;
             while ((loop < 10000) && !error)
@@ -89,7 +89,9 @@ void VideoBenchmark(std::function<void()> redraw, std::function<void()> refresh)
                 CpuSetupBenchmark();
                 CpuExecute(loop, true);
                 if ((regs.pc < 0x300) || (regs.pc > 0x400))
-                    error = 1;
+                {
+                    error = true;
+                }
                 else
                 {
                     lastpc = regs.pc;
