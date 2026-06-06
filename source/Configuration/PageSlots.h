@@ -77,6 +77,7 @@ private:
 
 	void DlgDisk2OK(HWND hWnd);
 	void DlgHarddiskOK(HWND hWnd);
+	void DlgSSCOK(HWND hWnd);
 	void DlgPrinterOK(HWND hWnd);
 	void DlgMouseCardOK(HWND hWnd);
 	void DlgSaturnOK(HWND hWnd);
