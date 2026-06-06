@@ -4824,7 +4824,7 @@ Update_t CmdMemoryLoad (int nArgs)
 
 			memcpy(pMemBankBase + nAddressStart, pMemory.get() + nAddressStart, nAddressLen);
 
-			MemUpdatePaging(true);
+			MemUpdatePaging(PagingFullInitialize);
 		}
 		else
 		{

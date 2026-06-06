@@ -1300,41 +1300,41 @@ void SetMemMode(uint32_t uNewMemMode)
 
 //===========================================================================
 
-static void ResetPaging(bool initialize);
-static void UpdatePaging(bool initialize);
+static void ResetPaging(const UPDATEPAGING updateType);
+static void UpdatePaging(const UPDATEPAGING updateType);
 
 // Call by:
 // . CtrlReset() Soft-reset (Ctrl+Reset) for //e
 void MemResetPaging()
 {
-	ResetPaging(false /*Initialize*/);
+	ResetPaging(PagingUpdateOnly);
 }
 
 // Call by:
-// . MemResetPaging() -> ResetPaging(false)
-// . MemReset()       -> ResetPaging(true)
-static void ResetPaging(bool initialize)
+// . MemResetPaging() -> ResetPaging(PagingUpdateOnly)
+// . MemReset()       -> ResetPaging(PagingFullInitialize)
+static void ResetPaging(const UPDATEPAGING updateType)
 {
-	GetCardMgr().GetLanguageCardMgr().Reset(initialize);
-	UpdatePaging(initialize);
+	GetCardMgr().GetLanguageCardMgr().Reset(updateType == PagingFullInitialize ? true : false);
+	UpdatePaging(updateType);
 }
 
 //===========================================================================
 
 static void UpdatePagingForAltRW();
 
-void MemUpdatePaging(bool initialize)
+void MemUpdatePaging(const UPDATEPAGING updateType)
 {
-	UpdatePaging(initialize);
+	UpdatePaging(updateType);
 }
 
-static void UpdatePaging(bool initialize)
+static void UpdatePaging(const UPDATEPAGING updateType)
 {
-	if (initialize)
+	if (updateType == PagingFullInitialize)
 	{
 		// Importantly from:
 		// . MemReset() -> ResetPaging(true)
-		// . MemInitializeFromSnapshot() -> MemUpdatePaging(true);
+		// . MemInitializeFromSnapshot() -> MemUpdatePaging(PagingFullInitialize);
 		g_isMemCacheValid = !(IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col));
 		if (g_forceAltCpuEmulation)
 			g_isMemCacheValid = false;
@@ -1344,12 +1344,12 @@ static void UpdatePaging(bool initialize)
 
 	// SAVE THE CURRENT PAGING SHADOW TABLE
 	LPBYTE oldshadow[256];
-	if (!initialize)
+	if (updateType == PagingUpdateOnly)
 		memcpy(oldshadow,memshadow,256*sizeof(LPBYTE));
 
 	// UPDATE THE PAGING TABLES BASED ON THE NEW PAGING SWITCH VALUES
 	UINT loop;
-	if (initialize)
+	if (updateType == PagingFullInitialize)
 	{
 		for (loop = 0x00; loop < 0xC0; loop++)
 			memwrite[loop] = mem+(loop << 8);
@@ -1462,9 +1462,9 @@ static void UpdatePaging(bool initialize)
 
 		for (UINT page = _6502_ZERO_PAGE; page < _6502_NUM_PAGES; page++)
 		{
-			if (initialize || (oldshadow[page] != memshadow[page]))
+			if (updateType == PagingFullInitialize || oldshadow[page] != memshadow[page])
 			{
-				if (!initialize &&
+				if (updateType == PagingUpdateOnly &&
 					((*(memdirty+page) & 1) || (page <= _6502_STACK_PAGE)))
 				{
 					*(memdirty+page) &= ~1;
@@ -2256,13 +2256,13 @@ void MemInitializeFromSnapshot(void)
 		_ASSERT(g_eExpansionRomType == eExpRomPeripheral);
 
 		memcpy(pCxRomPeripheral + 0x800, g_SlotInfo[uSlot].expansionRom, FIRMWARE_EXPANSION_SIZE);
-		// NB. Copied to /mem/ by UpdatePaging(true)
+		// NB. Copied to /mem/ by UpdatePaging(PagingFullInitialize)
 	}
 
 	GetCardMgr().GetLanguageCardMgr().SetMemModeFromSnapshot();
 
 	// Finally setup the paging tables
-	MemUpdatePaging(true);
+	UpdatePaging(PagingFullInitialize);
 
 	//
 	// VidHD
@@ -2439,7 +2439,7 @@ void MemReset()
 	mem = memimage;
 
 	// INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
-	ResetPaging(true /*Initialize*/);		// init g_memmode
+	ResetPaging(PagingFullInitialize);		// init g_memmode
 	MemAnnunciatorReset();
 
 	// INITIALIZE & RESET THE CPU
@@ -2556,7 +2556,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 				{
 					g_uActiveBank = value;
 					memaux = RWpages[g_uActiveBank];
-					UpdatePaging(false /*Initialize*/);
+					UpdatePaging(PagingUpdateOnly);
 				}
 				break;
 #endif
@@ -2626,7 +2626,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 			}
 		}
 
-		UpdatePaging(false /*Initialize*/);
+		UpdatePaging(PagingUpdateOnly);
 	}
 
 	// Replicate 80STORE, PAGE2 and HIRES to video sub-system
@@ -2705,7 +2705,7 @@ void MemAnnunciatorReset(void)
 	if (IsCopamBase64A(GetApple2Type()))
 	{
 		SetMemMode(g_memmode & ~(MF_ALTROM0|MF_ALTROM1));
-		UpdatePaging(false /*Initialize*/);
+		UpdatePaging(PagingUpdateOnly);
 	}
 }
 
@@ -3101,7 +3101,7 @@ static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, cons
 	GetCardMgr().InsertAux(cardType);
 
 	memaux = RWpages[g_uActiveBank];
-	// NB. MemUpdatePaging(true) called at end of Snapshot_LoadState_v2()
+	// NB. MemUpdatePaging(PagingFullInitialize) called at end of Snapshot_LoadState_v2()
 
 	return cardType;
 }

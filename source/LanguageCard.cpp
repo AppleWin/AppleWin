@@ -308,7 +308,7 @@ bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versio
 
 	yamlLoadHelper.PopMap();
 
-	// NB. MemUpdatePaging(true) called at end of Snapshot_LoadState_v2()
+	// NB. MemUpdatePaging(PagingFullInitialize) called at end of Snapshot_LoadState_v2()
 
 	return true;
 }
@@ -542,7 +542,7 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	// NB. MemInitializeFromSnapshot() called at end of Snapshot_LoadState_v2():
 	// . SetMemMainLanguageCard() for the slot/card that last set the 16KB LC bank
-	// . MemUpdatePaging(true)
+	// . MemUpdatePaging(PagingFullInitialize)
 
 	return true;
 }
@@ -671,7 +671,7 @@ void LanguageCardManager::SetMemMode(const uint8_t slot)
 			card.SetMainMemLanguageCardMemory();
 	}
 
-	MemUpdatePaging(false /*Initialize*/);
+	MemUpdatePaging(PagingUpdateOnly);
 }
 
 void LanguageCardManager::SetMemModeFromSnapshot(void)
