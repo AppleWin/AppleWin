@@ -307,7 +307,7 @@ void CPageConfig::ApplyConfigAfterClose()
 {
 	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
 
-	const BOOL bNewConfirmReboot = m_PropertySheetHelper.GetConfigNew().m_confirmReboot ? 1 : 0;
+	const bool bNewConfirmReboot = m_PropertySheetHelper.GetConfigNew().m_confirmReboot;
 	if (win32Frame.g_bConfirmReboot != bNewConfirmReboot)
 	{
 		REGSAVE(REGVALUE_CONFIRM_REBOOT, bNewConfirmReboot);
@@ -372,7 +372,7 @@ void CPageConfig::ApplyConfigAfterClose()
 	const bool bNewFSSubunitStatus = m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus;
 	if (win32Frame.GetFullScreenShowSubunitStatus() != bNewFSSubunitStatus)
 	{
-		REGSAVE(REGVALUE_FS_SHOW_SUBUNIT_STATUS, bNewFSSubunitStatus ? 1 : 0);
+		REGSAVE(REGVALUE_FS_SHOW_SUBUNIT_STATUS, bNewFSSubunitStatus);
 		win32Frame.SetFullScreenShowSubunitStatus(bNewFSSubunitStatus);
 
 		if (win32Frame.IsFullScreen())
@@ -385,7 +385,7 @@ void CPageConfig::ApplyConfigAfterClose()
 	if (GetCardMgr().GetDisk2CardMgr().GetEnhanceDisk() != bNewEnhanceDisk)
 	{
 		GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(bNewEnhanceDisk);
-		REGSAVE(REGVALUE_ENHANCE_DISK_SPEED, bNewEnhanceDisk ? 1 : 0);
+		REGSAVE(REGVALUE_ENHANCE_DISK_SPEED, bNewEnhanceDisk);
 	}
 
 	const UINT newScrollLockToggle = m_PropertySheetHelper.GetConfigNew().m_scrollLockToggle;

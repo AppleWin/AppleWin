@@ -2,7 +2,7 @@
 
 #include "Video.h"
 
-const BOOL kConfirmReboot_Default = TRUE;
+constexpr bool kConfirmReboot_Default = true;
 
 class NetworkBackend;
 class SoundBuffer;
@@ -16,8 +16,8 @@ public:
 
 	HINSTANCE  g_hInstance;
 	HWND       g_hFrameWindow;
-	BOOL       g_bConfirmReboot; // saved PageConfig REGSAVE
-	BOOL       g_bMultiMon;
+	bool       g_bConfirmReboot; // saved PageConfig REGSAVE
+	bool       g_bMultiMon;
 	bool       g_bFreshReset;
 
 	virtual void Initialize(bool resetVideoState) = 0;

@@ -170,7 +170,7 @@ void ParallelPrinterCard::SetFilename(const std::string& prtFilename)
 	else  //No registry entry is available
 	{
 		m_szPrintFilename = g_sProgramDir + DEFAULT_PRINT_FILENAME;
-		RegSaveString(REG_CONFIG, REGVALUE_PRINTER_FILENAME, 1, m_szPrintFilename);
+		RegSaveString(REG_CONFIG, REGVALUE_PRINTER_FILENAME, true, m_szPrintFilename);
 	}
 }
 
@@ -183,34 +183,34 @@ void ParallelPrinterCard::GetRegistryConfig(void)
 	uint32_t dwTmp;
 	char szFilename[MAX_PATH];
 
-	if (RegLoadValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, TRUE, &dwTmp))
+	if (RegLoadValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, true, &dwTmp))
 		SetDumpToPrinter(dwTmp ? true : false);
 
-	if (RegLoadValue(regSection.c_str(), REGVALUE_CONVERT_ENCODING, TRUE, &dwTmp))
+	if (RegLoadValue(regSection.c_str(), REGVALUE_CONVERT_ENCODING, true, &dwTmp))
 		SetConvertEncoding(dwTmp ? true : false);
 
-	if (RegLoadValue(regSection.c_str(), REGVALUE_FILTER_UNPRINTABLE, TRUE, &dwTmp))
+	if (RegLoadValue(regSection.c_str(), REGVALUE_FILTER_UNPRINTABLE, true, &dwTmp))
 		SetFilterUnprintable(dwTmp ? true : false);
 
-	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, TRUE, &dwTmp))
+	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, true, &dwTmp))
 		SetPrinterAppend(dwTmp ? true : false);
 
-	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, 1, szFilename, MAX_PATH, ""))
+	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, true, szFilename, MAX_PATH, ""))
 		SetFilename(szFilename);
 
-	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_IDLE_LIMIT, TRUE, &dwTmp))
+	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_IDLE_LIMIT, true, &dwTmp))
 		SetIdleLimit(dwTmp);
 }
 
 void ParallelPrinterCard::SetRegistryConfig(void)
 {
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, TRUE, GetDumpToPrinter() ? 1 : 0);
-	RegSaveValue(regSection.c_str(), REGVALUE_CONVERT_ENCODING, TRUE, GetConvertEncoding() ? 1 : 0);
-	RegSaveValue(regSection.c_str(), REGVALUE_FILTER_UNPRINTABLE, TRUE, GetFilterUnprintable() ? 1 : 0);
-	RegSaveValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, TRUE, GetPrinterAppend() ? 1 : 0);
-	RegSaveString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, TRUE, GetFilename());
-	RegSaveValue(regSection.c_str(), REGVALUE_PRINTER_IDLE_LIMIT, TRUE, GetIdleLimit());
+	RegSaveValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, true, GetDumpToPrinter());
+	RegSaveValue(regSection.c_str(), REGVALUE_CONVERT_ENCODING, true, GetConvertEncoding());
+	RegSaveValue(regSection.c_str(), REGVALUE_FILTER_UNPRINTABLE, true, GetFilterUnprintable());
+	RegSaveValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, true, GetPrinterAppend());
+	RegSaveString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, true, GetFilename());
+	RegSaveValue(regSection.c_str(), REGVALUE_PRINTER_IDLE_LIMIT, true, GetIdleLimit());
 }
 
 //===========================================================================

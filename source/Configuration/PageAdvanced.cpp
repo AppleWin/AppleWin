@@ -219,10 +219,10 @@ void CPageAdvanced::ApplyConfigAfterClose()
 		m_PropertySheetHelper.SaveStateUpdate();
 	}
 
-	RegSaveString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, 1, m_PropertySheetHelper.GetConfigNew().m_ciderPressPathname.c_str());
+	RegSaveString(REG_CONFIG, REGVALUE_CIDERPRESSLOC, true, m_PropertySheetHelper.GetConfigNew().m_ciderPressPathname);
 
 	SetSaveStateOnExit(m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit);
-	REGSAVE(REGVALUE_SAVE_STATE_ON_EXIT, m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit ? 1 : 0);
+	REGSAVE(REGVALUE_SAVE_STATE_ON_EXIT, m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit);
 
 	// Save the copy protection dongle type
 	SetCopyProtectionDongleType(m_PropertySheetHelper.GetConfigNew().m_gameIOConnectorType);
