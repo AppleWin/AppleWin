@@ -248,7 +248,7 @@ static LPBYTE	pCxRomPeripheral	= NULL;
 static LPBYTE g_pMemMainLanguageCard = NULL;
 
 static uint32_t   g_memmode = LanguageCardUnit::kMemModeInitialState;
-static BOOL    modechanging = 0;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
+static bool    modechanging = false;				// An Optimisation: means delay calling UpdatePaging() for 1 instruction
 
 static UINT    memrompages = 1;
 
@@ -426,7 +426,7 @@ void SetRamWorksMemorySize(UINT banks, bool updateRegistry/*=true*/)
 void SetRegistryAuxNumberOfBanks(void)
 {
 	std::string regSection = RegGetConfigSlotSection(SLOT_AUX);
-	RegSaveValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, TRUE, g_uMaxExBanks);
+	RegSaveValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, true, g_uMaxExBanks);
 }
 
 UINT GetRamWorksActiveBank(void)
@@ -1300,56 +1300,56 @@ void SetMemMode(uint32_t uNewMemMode)
 
 //===========================================================================
 
-static void ResetPaging(BOOL initialize);
-static void UpdatePaging(BOOL initialize);
+static void ResetPaging(const UPDATEPAGING updateType);
+static void UpdatePaging(const UPDATEPAGING updateType);
 
 // Call by:
 // . CtrlReset() Soft-reset (Ctrl+Reset) for //e
 void MemResetPaging()
 {
-	ResetPaging(FALSE);	// Initialize=0
+	ResetPaging(PagingUpdateOnly);
 }
 
 // Call by:
-// . MemResetPaging() -> ResetPaging(FALSE)
-// . MemReset()       -> ResetPaging(TRUE)
-static void ResetPaging(BOOL initialize)
+// . MemResetPaging() -> ResetPaging(PagingUpdateOnly)
+// . MemReset()       -> ResetPaging(PagingFullInitialize)
+static void ResetPaging(const UPDATEPAGING updateType)
 {
-	GetCardMgr().GetLanguageCardMgr().Reset(initialize);
-	UpdatePaging(initialize);
+	GetCardMgr().GetLanguageCardMgr().Reset(updateType == PagingFullInitialize ? true : false);
+	UpdatePaging(updateType);
 }
 
 //===========================================================================
 
-static void UpdatePagingForAltRW(void);
+static void UpdatePagingForAltRW();
 
-void MemUpdatePaging(BOOL initialize)
+void MemUpdatePaging(const UPDATEPAGING updateType)
 {
-	UpdatePaging(initialize);
+	UpdatePaging(updateType);
 }
 
-static void UpdatePaging(BOOL initialize)
+static void UpdatePaging(const UPDATEPAGING updateType)
 {
-	if (initialize)
+	if (updateType == PagingFullInitialize)
 	{
 		// Importantly from:
-		// . MemReset() -> ResetPaging(TRUE)
-		// . MemInitializeFromSnapshot() -> MemUpdatePaging(TRUE);
+		// . MemReset() -> ResetPaging(true)
+		// . MemInitializeFromSnapshot() -> MemUpdatePaging(PagingFullInitialize);
 		g_isMemCacheValid = !(IsAppleIIe(GetApple2Type()) && (GetCardMgr().QueryAux() == CT_Empty || GetCardMgr().QueryAux() == CT_80Col));
 		if (g_forceAltCpuEmulation)
 			g_isMemCacheValid = false;
 	}
 
-	modechanging = 0;
+	modechanging = false;
 
 	// SAVE THE CURRENT PAGING SHADOW TABLE
 	LPBYTE oldshadow[256];
-	if (!initialize)
+	if (updateType == PagingUpdateOnly)
 		memcpy(oldshadow,memshadow,256*sizeof(LPBYTE));
 
 	// UPDATE THE PAGING TABLES BASED ON THE NEW PAGING SWITCH VALUES
 	UINT loop;
-	if (initialize)
+	if (updateType == PagingFullInitialize)
 	{
 		for (loop = 0x00; loop < 0xC0; loop++)
 			memwrite[loop] = mem+(loop << 8);
@@ -1462,9 +1462,9 @@ static void UpdatePaging(BOOL initialize)
 
 		for (UINT page = _6502_ZERO_PAGE; page < _6502_NUM_PAGES; page++)
 		{
-			if (initialize || (oldshadow[page] != memshadow[page]))
+			if (updateType == PagingFullInitialize || oldshadow[page] != memshadow[page])
 			{
-				if (!initialize &&
+				if (updateType == PagingUpdateOnly &&
 					((*(memdirty+page) & 1) || (page <= _6502_STACK_PAGE)))
 				{
 					*(memdirty+page) &= ~1;
@@ -2256,13 +2256,13 @@ void MemInitializeFromSnapshot(void)
 		_ASSERT(g_eExpansionRomType == eExpRomPeripheral);
 
 		memcpy(pCxRomPeripheral + 0x800, g_SlotInfo[uSlot].expansionRom, FIRMWARE_EXPANSION_SIZE);
-		// NB. Copied to /mem/ by UpdatePaging(TRUE)
+		// NB. Copied to /mem/ by UpdatePaging(PagingFullInitialize)
 	}
 
 	GetCardMgr().GetLanguageCardMgr().SetMemModeFromSnapshot();
 
 	// Finally setup the paging tables
-	MemUpdatePaging(TRUE);
+	UpdatePaging(PagingFullInitialize);
 
 	//
 	// VidHD
@@ -2439,7 +2439,7 @@ void MemReset()
 	mem = memimage;
 
 	// INITIALIZE PAGING, FILLING IN THE 64K MEMORY IMAGE
-	ResetPaging(TRUE);		// Initialize=1, init g_memmode
+	ResetPaging(PagingFullInitialize);		// init g_memmode
 	MemAnnunciatorReset();
 
 	// INITIALIZE & RESET THE CPU
@@ -2556,7 +2556,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 				{
 					g_uActiveBank = value;
 					memaux = RWpages[g_uActiveBank];
-					UpdatePaging(FALSE);	// Initialize=FALSE
+					UpdatePaging(PagingUpdateOnly);
 				}
 				break;
 #endif
@@ -2626,7 +2626,7 @@ BYTE __stdcall MemSetPaging(WORD programcounter, WORD address, BYTE write, BYTE 
 			}
 		}
 
-		UpdatePaging(0);	// Initialize=0
+		UpdatePaging(PagingUpdateOnly);
 	}
 
 	// Replicate 80STORE, PAGE2 and HIRES to video sub-system
@@ -2677,7 +2677,7 @@ bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 		if ((address >= 4) && (address <= 5) &&									// Now:  RAMWRTOFF or RAMWRTON
 			((ReadUINT24FromMemory(programcounter) & 0x00FFFEFF) == 0x00C0028D))		// Next: STA $C002(RAMRDOFF) or STA $C003(RAMRDON)
 		{
-				modechanging = 1;
+				modechanging = true;
 				return true;
 		}
 
@@ -2687,7 +2687,7 @@ bool MemOptimizeForModeChanging(WORD programcounter, WORD address)
 			(((ReadUINT24FromMemory(programcounter) & 0x00FFFEFF) == 0x00C0048D) ||		// Next: STA $C004(RAMWRTOFF) or STA $C005(RAMWRTON)
 			 ((ReadUINT24FromMemory(programcounter) & 0x00FFFEFF) == 0x00C0028D)))		//    or STA $C002(RAMRDOFF)  or STA $C003(RAMRDON)
 		{
-				modechanging = 1;
+				modechanging = true;
 				return true;
 		}
 	}
@@ -2705,7 +2705,7 @@ void MemAnnunciatorReset(void)
 	if (IsCopamBase64A(GetApple2Type()))
 	{
 		SetMemMode(g_memmode & ~(MF_ALTROM0|MF_ALTROM1));
-		UpdatePaging(FALSE);	// Initialize=FALSE
+		UpdatePaging(PagingUpdateOnly);
 	}
 }
 
@@ -3101,7 +3101,7 @@ static SS_CARDTYPE MemLoadSnapshotAuxCommon(YamlLoadHelper& yamlLoadHelper, cons
 	GetCardMgr().InsertAux(cardType);
 
 	memaux = RWpages[g_uActiveBank];
-	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
+	// NB. MemUpdatePaging(PagingFullInitialize) called at end of Snapshot_LoadState_v2()
 
 	return cardType;
 }

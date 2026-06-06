@@ -1063,8 +1063,8 @@ LRESULT Win32Frame::WndProc(
         SetNormalMode();
       if (!IsIconic(window))
         GetWindowRect(window,&framerect);
-      RegSaveValue(REG_PREFS, REGVALUE_PREF_WINDOW_X_POS, 1, framerect.left);
-      RegSaveValue(REG_PREFS, REGVALUE_PREF_WINDOW_Y_POS, 1, framerect.top);
+      RegSaveValue(REG_PREFS, REGVALUE_PREF_WINDOW_X_POS, true, framerect.left);
+      RegSaveValue(REG_PREFS, REGVALUE_PREF_WINDOW_Y_POS, true, framerect.top);
       FrameReleaseDC();
       SetUsingCursor(FALSE);
       if (helpquit) {
@@ -2166,7 +2166,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	RegLoadString(
 		"Configuration",
 		REGVALUE_CIDERPRESSLOC,
-		1,
+		true,
 		PathToCiderPress,
 		MAX_PATH,
 		"C:\\Program Files\\faddenSoft\\CiderPress\\CiderPress.exe");
@@ -2179,10 +2179,10 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 	const char REG_KEY_DISK_PREFRENCES[] = "Preferences"; // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
 
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BASIC     , TRUE, &bNewDiskCopyBASIC     );
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BOOT, TRUE, &bNewDiskCopyBitsyBoot );
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BYE , TRUE, &bNewDiskCopyBitsyBye  );
-	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_PRODOS_SYS, TRUE, &bNewDiskCopyProDOS    );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BASIC     , true, &bNewDiskCopyBASIC     );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BOOT, true, &bNewDiskCopyBitsyBoot );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_BITSY_BYE , true, &bNewDiskCopyBitsyBye  );
+	RegLoadValue( REG_KEY_DISK_PREFRENCES, REGVALUE_PREF_NEW_DISK_COPY_PRODOS_SYS, true, &bNewDiskCopyProDOS    );
 
 	class UtilPopup_Toggle
 	{
@@ -2196,7 +2196,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 				RegSaveValue(
 					"Preferences", // NOTE: Keep in sync with REG_KEY_DISK_PREFRENCES and UtilPopup_Toggle
 					pKey,
-					TRUE,
+					true,
 					*pVal
 				);
 			}
@@ -2443,7 +2443,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 			if (nRes)
 			{
-				New_DOSProDOS_Disk(pTitle, pathname, nDiskSize, bIsDOS33, bNewDiskCopyBitsyBoot, bNewDiskCopyBitsyBye, bNewDiskCopyBASIC, bNewDiskCopyProDOS, this);
+				New_DOSProDOS_Disk(pTitle, pathname, nDiskSize, bIsDOS33, !!bNewDiskCopyBitsyBoot, !!bNewDiskCopyBitsyBye, !!bNewDiskCopyBASIC, !!bNewDiskCopyProDOS, this);
 			}
 		}
 	}
@@ -3067,7 +3067,7 @@ void Win32Frame::FrameCreateWindow(void)
 	{
 		const int nXScreen = GetSystemMetrics(SM_CXSCREEN) - nWidth;
 
-		if (RegLoadValue(REG_PREFS, REGVALUE_PREF_WINDOW_X_POS, 1, (uint32_t*)&nXPos))
+		if (RegLoadValue(REG_PREFS, REGVALUE_PREF_WINDOW_X_POS, true, (uint32_t*)&nXPos))
 		{
 			if ((nXPos > nXScreen) && !g_bMultiMon)
 				nXPos = -1;	// Not fully visible, so default to centre position
@@ -3082,7 +3082,7 @@ void Win32Frame::FrameCreateWindow(void)
 	{
 		const int nYScreen = GetSystemMetrics(SM_CYSCREEN) - nHeight;
 
-		if (RegLoadValue(REG_PREFS, REGVALUE_PREF_WINDOW_Y_POS, 1, (uint32_t*)&nYPos))
+		if (RegLoadValue(REG_PREFS, REGVALUE_PREF_WINDOW_Y_POS, true, (uint32_t*)&nYPos))
 		{
 			if ((nYPos > nYScreen) && !g_bMultiMon)
 				nYPos = -1;	// Not fully visible, so default to centre position

@@ -148,7 +148,7 @@ void CPropertySheetHelper::SetSlot(UINT slot, SS_CARDTYPE newCardType)
 std::string CPropertySheetHelper::BrowseToFile(HWND hWindow, const char* pszTitle, const char* REGVALUE, const char* FILEMASKS)
 {
 	char szFilename[MAX_PATH];
-	RegLoadString(REG_CONFIG, REGVALUE, 1, szFilename, MAX_PATH, "");
+	RegLoadString(REG_CONFIG, REGVALUE, true, szFilename, MAX_PATH, "");
 	std::string pathname = szFilename;
 
 	OPENFILENAME ofn;
@@ -179,7 +179,7 @@ void CPropertySheetHelper::SaveStateUpdate()
 	if (m_bSSNewFilename)
 	{
 		Snapshot_SetFilename(m_szSSNewFilename, m_szSSNewDirectory);
-		RegSaveString(REG_CONFIG, REGVALUE_SAVESTATE_FILENAME, 1, Snapshot_GetPathname());
+		RegSaveString(REG_CONFIG, REGVALUE_SAVESTATE_FILENAME, true, Snapshot_GetPathname());
 	}
 }
 
@@ -400,7 +400,7 @@ void CPropertySheetHelper::ApplyNewConfigForRestart()
 		REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, m_ConfigNew.m_enableTheFreezesF8Rom);
 
 	if (CONFIG_CHANGED(m_NoSlotClock))
-		REGSAVE(REGVALUE_NO_SLOT_CLOCK, m_ConfigNew.m_NoSlotClock ? 1 : 0);
+		REGSAVE(REGVALUE_NO_SLOT_CLOCK, m_ConfigNew.m_NoSlotClock);
 }
 
 // Called from Snapshot_LoadState_v2()
@@ -435,7 +435,7 @@ void CPropertySheetHelper::ApplyNewConfigFromSnapshot()
 	SetRamWorksMemorySize(config.m_RamWorksMemorySize);
 	REGSAVE(REGVALUE_VIDEO_REFRESH_RATE, config.m_videoRefreshRate);
 	//REGSAVE(REGVALUE_THE_FREEZES_F8_ROM, config.m_bEnableTheFreezesF8Rom);	// Not currently in save-state
-	REGSAVE(REGVALUE_NO_SLOT_CLOCK, config.m_NoSlotClock ? 1 : 0);
+	REGSAVE(REGVALUE_NO_SLOT_CLOCK, config.m_NoSlotClock);
 }
 
 // Called when PSPs are created

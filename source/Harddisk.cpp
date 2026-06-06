@@ -185,7 +185,7 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 
 	uint32_t tmp;
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegLoadValue(regSection.c_str(), REGVALUE_HDC_FIRMWARE, TRUE, &tmp, HdcDefault);
+	RegLoadValue(regSection.c_str(), REGVALUE_HDC_FIRMWARE, true, &tmp, HdcDefault);
 	m_useHdcFirmwareMode = (HdcMode)tmp;
 }
 
@@ -215,7 +215,7 @@ void HarddiskInterfaceCard::SetHdcFirmwareMode(HdcMode hdcMode)
 	m_useHdcFirmwareMode = hdcMode;
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_HDC_FIRMWARE, TRUE, (UINT)m_useHdcFirmwareMode);
+	RegSaveValue(regSection.c_str(), REGVALUE_HDC_FIRMWARE, true, m_useHdcFirmwareMode);
 }
 
 void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
@@ -316,7 +316,7 @@ void HarddiskInterfaceCard::LoadLastDiskImage(const int drive)
 	char pathname[MAX_PATH];
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	if (RegLoadString(regSection.c_str(), regKey.c_str(), TRUE, pathname, MAX_PATH, "") && (pathname[0] != 0))
+	if (RegLoadString(regSection.c_str(), regKey.c_str(), true, pathname, MAX_PATH, "") && (pathname[0] != 0))
 	{
 		m_saveDiskImage = false;
 		bool res = Insert(drive, pathname);
@@ -340,12 +340,12 @@ void HarddiskInterfaceCard::SaveLastDiskImage(const int drive)
 		return;
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, TRUE, CT_GenericHDD);
+	RegSaveValue(regSection.c_str(), REGVALUE_CARD_TYPE, true, CT_GenericHDD);
 
 	const std::string regKey = std::string(REGVALUE_LAST_HARDDISK_) + (char)('1' + drive);
 	const std::string& pathName = HarddiskGetFullPathName(drive);
 
-	RegSaveString(regSection.c_str(), regKey.c_str(), TRUE, pathName);
+	RegSaveString(regSection.c_str(), regKey.c_str(), true, pathName);
 
 	//
 
@@ -358,7 +358,7 @@ void HarddiskInterfaceCard::SaveLastDiskImage(const int drive)
 	if (slash != std::string::npos)
 	{
 		const std::string dirName = pathName.substr(0, slash + 1);
-		RegSaveString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, 1, dirName);
+		RegSaveString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, true, dirName);
 	}
 }
 
@@ -489,7 +489,7 @@ bool HarddiskInterfaceCard::UserSelectNewDiskImageOnly(const int drive, LPCSTR p
 
 	StringCbCopy(filename, MAX_PATH, pszFilename);
 
-	RegLoadString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, 1, directory, MAX_PATH, "");
+	RegLoadString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, true, directory, MAX_PATH, "");
 	std::string title = StrFormat("Select HDV Image For HDD %d", drive + 1);
 
 	OPENFILENAME ofn;
@@ -1042,7 +1042,7 @@ BYTE HarddiskInterfaceCard::GetProDOSBlockDeviceUnit(void)
 
 HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
 {
-	const bool isSmartPortCmd = m_command & SP_Cmd_base;
+	const bool isSmartPortCmd = !!(m_command & SP_Cmd_base);
 
 	if (!isSmartPortCmd)
 		return &m_hardDiskDrive[GetProDOSBlockDeviceUnit()];
@@ -1473,7 +1473,7 @@ bool HarddiskInterfaceCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT ve
 		userSelectedImageFolder |= LoadSnapshotHDDUnit(yamlLoadHelper, i, version);
 
 	if (!userSelectedImageFolder)
-		RegSaveString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, 1, Snapshot_GetPath());
+		RegSaveString(REG_PREFS, REGVALUE_PREF_HDV_START_DIR, true, Snapshot_GetPath());
 
 	GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);
 

@@ -916,7 +916,7 @@ static void RepeatInitialization(void)
 		if (!AboutDlg())
 			g_cmdLine.bShutdown = true;											// Close everything down
 		else
-			RegSaveString(REG_CONFIG, REGVALUE_VERSION, TRUE, g_VERSIONSTRING);	// Only save version after user accepts license
+			RegSaveString(REG_CONFIG, REGVALUE_VERSION, true, g_VERSIONSTRING);	// Only save version after user accepts license
 	}
 
 	if (g_bCapturePrintScreenKey)

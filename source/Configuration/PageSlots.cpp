@@ -701,7 +701,7 @@ void CPageSlots::DlgDisk2OK(HWND hWnd)
 
 		if (win32Frame.GetWindowedModeShowDiskiiStatus() != bNewDiskiiStatus)
 		{
-			REGSAVE(REGVALUE_SHOW_DISKII_STATUS, bNewDiskiiStatus ? 1 : 0);
+			REGSAVE(REGVALUE_SHOW_DISKII_STATUS, bNewDiskiiStatus);
 			win32Frame.SetWindowedModeShowDiskiiStatus(bNewDiskiiStatus);
 
 			if (!win32Frame.IsFullScreen())

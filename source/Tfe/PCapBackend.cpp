@@ -65,7 +65,7 @@ int PCapBackend::receive(const int size, uint8_t * rxframe)
 
 bool PCapBackend::isValid()
 {
-    return m_tfePcapFP;
+    return !!m_tfePcapFP;
 }
 
 void PCapBackend::update(const ULONG /* nExecutedCycles */)
@@ -111,14 +111,14 @@ const char * PCapBackend::tfe_lib_version(void)
 void PCapBackend::SetRegistryInterface(UINT slot, const std::string& name)
 {
     std::string regSection = RegGetConfigSlotSection(slot);
-    RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, name);
+    RegSaveString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, true, name);
 }
 
 std::string PCapBackend::GetRegistryInterface(UINT slot)
 {
     char interfaceName[MAX_PATH];
     std::string regSection = RegGetConfigSlotSection(slot);
-    RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, TRUE, interfaceName, sizeof(interfaceName), "");
+    RegLoadString(regSection.c_str(), REGVALUE_UTHERNET_INTERFACE, true, interfaceName, sizeof(interfaceName), "");
     return interfaceName;
 }
 

@@ -604,7 +604,7 @@ void Uthernet2::receiveOnePacketRaw()
         const uint8_t mr = myMemory[socket0.registerAddress + W5100_SN_MR];
 
         // see if MAC RAW filters or not
-        const bool filterMAC = mr & W5100_SN_MR_MF;
+        const bool filterMAC = !!(mr & W5100_SN_MR_MF);
         if (!filterMAC)
         {
             acceptAll = true;
@@ -951,7 +951,7 @@ void Uthernet2::openSocket(const size_t i)
 
     const uint8_t mr = myMemory[socket.registerAddress + W5100_SN_MR];
     const uint8_t protocol = mr & W5100_SN_MR_PROTO_MASK;
-    const bool virtual_dns = protocol & W5100_SN_VIRTUAL_DNS;
+    const bool virtual_dns = !!(protocol & W5100_SN_VIRTUAL_DNS);
 
     // if virtual_dns is requested, but not enabled, we cannot handle it here.
     if (virtual_dns && !myVirtualDNSEnabled)
@@ -1661,7 +1661,7 @@ bool Uthernet2::LoadSnapshot(YamlLoadHelper &yamlLoadHelper, UINT version)
 void Uthernet2::SetRegistryVirtualDNS(UINT slot, const bool enabled)
 {
     const std::string regSection = RegGetConfigSlotSection(slot);
-    RegSaveValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, enabled);
+    RegSaveValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, true, enabled);
 }
 
 bool Uthernet2::GetRegistryVirtualDNS(UINT slot)
@@ -1673,7 +1673,7 @@ bool Uthernet2::GetRegistryVirtualDNS(UINT slot)
     // (except for the initial value of PTIMER which is anyway never used)
 
     uint32_t enabled = 1;
-    RegLoadValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, TRUE, &enabled);
+    RegLoadValue(regSection.c_str(), REGVALUE_UTHERNET_VIRTUAL_DNS, true, &enabled);
     return enabled != 0;
 }
 

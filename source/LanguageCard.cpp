@@ -308,7 +308,7 @@ bool LanguageCardSlot0::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versio
 
 	yamlLoadHelper.PopMap();
 
-	// NB. MemUpdatePaging(TRUE) called at end of Snapshot_LoadState_v2()
+	// NB. MemUpdatePaging(PagingFullInitialize) called at end of Snapshot_LoadState_v2()
 
 	return true;
 }
@@ -329,7 +329,7 @@ Saturn128K::Saturn128K(UINT slot, UINT banks)
 	if (banks == 0)
 	{
 		std::string regSection = RegGetConfigSlotSection(m_slot);
-		RegLoadValue(regSection.c_str(), REGVALUE_SATURN_NUM_BANKS, TRUE, &m_uSaturnTotalBanks, kMaxSaturnBanks);
+		RegLoadValue(regSection.c_str(), REGVALUE_SATURN_NUM_BANKS, true, &m_uSaturnTotalBanks, kMaxSaturnBanks);
 	}
 
 	for (UINT i=0; i<kMaxSaturnBanks; i++)
@@ -542,7 +542,7 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	// NB. MemInitializeFromSnapshot() called at end of Snapshot_LoadState_v2():
 	// . SetMemMainLanguageCard() for the slot/card that last set the 16KB LC bank
-	// . MemUpdatePaging(TRUE)
+	// . MemUpdatePaging(PagingFullInitialize)
 
 	return true;
 }
@@ -582,7 +582,7 @@ void Saturn128K::SetSaturnMemorySize(uint8_t banks)
 	m_uSaturnTotalBanks = banks;
 
 	std::string regSection = RegGetConfigSlotSection(m_slot);
-	RegSaveValue(regSection.c_str(), REGVALUE_SATURN_NUM_BANKS, TRUE, m_uSaturnTotalBanks);
+	RegSaveValue(regSection.c_str(), REGVALUE_SATURN_NUM_BANKS, true, m_uSaturnTotalBanks);
 }
 
 uint8_t Saturn128K::GetSaturnMemorySizeSlot0()
@@ -608,7 +608,7 @@ void Saturn128K::SetSaturnMemorySizeSlot0(uint8_t banks)
 * . TODO: assist with debugger's display of "sNN" for active 16K bank
 */
 
-// Only called by ResetPaging(BOOL initialize)
+// Only called by ResetPaging(bool initialize)
 // NB. Individual cards (LC or Saturn) are reset via GetCardMgr().Reset()
 void LanguageCardManager::Reset(const bool powerCycle /*=false*/)
 {
@@ -671,7 +671,7 @@ void LanguageCardManager::SetMemMode(const uint8_t slot)
 			card.SetMainMemLanguageCardMemory();
 	}
 
-	MemUpdatePaging(0);	// Initialize=0
+	MemUpdatePaging(PagingUpdateOnly);
 }
 
 void LanguageCardManager::SetMemModeFromSnapshot(void)

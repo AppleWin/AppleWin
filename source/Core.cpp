@@ -264,7 +264,7 @@ bool CheckOldAppleWinVersion(void)
 {
 	const int VERSIONSTRING_SIZE = 16;
 	char szOldAppleWinVersion[VERSIONSTRING_SIZE + 1];
-	RegLoadString(REG_CONFIG, REGVALUE_VERSION, TRUE, szOldAppleWinVersion, VERSIONSTRING_SIZE, "");
+	RegLoadString(REG_CONFIG, REGVALUE_VERSION, true, szOldAppleWinVersion, VERSIONSTRING_SIZE, "");
 	const bool bShowAboutDlg = (g_VERSIONSTRING != szOldAppleWinVersion);
 
 	// version: xx.yy.zz.ww
