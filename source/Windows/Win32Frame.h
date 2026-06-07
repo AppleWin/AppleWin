@@ -105,7 +105,7 @@ private:
 	void DrawCrosshairs(int x, int y);
 	void DrawFrameWindow(bool bPaintingWindow = false);
 	void DrawStatusArea(HDC passdc, int drawflags);
-	void Draw3dRect(HDC dc, int x1, int y1, int x2, int y2, BOOL out);
+	void Draw3dRect(HDC dc, int x1, int y1, int x2, int y2, bool out);
 	void DrawBitmapRect(HDC dc, int x, int y, LPRECT rect, HBITMAP bitmap);
 	void ProcessButtonClick(int button, bool bFromButtonUI = false);
 	bool ConfirmReboot(bool bFromButtonUI);
@@ -113,7 +113,7 @@ private:
 	void RelayEvent(UINT message, WPARAM wparam, LPARAM lparam);
 	void SetFullScreenMode();
 	void SetNormalMode();
-	void SetUsingCursor(BOOL bNewValue);
+	void SetUsingCursor(bool bNewValue);
 	void SetupTooltipControls();
 	void FrameResizeWindow(int nNewScale);
 	void RevealCursor();
@@ -123,7 +123,7 @@ private:
 	void FrameSetCursorPosByMousePos(int x, int y, int dx, int dy, bool bLeavingAppleScreen);
 	void CreateGdiObjects();
 	void DeleteGdiObjects();
-	void FrameShowCursor(BOOL bShow);
+	void FrameShowCursor(bool bShow);
 	void FullScreenRevealCursor();
 	void GetWidthHeight(int& nWidth, int& nHeight);
 	void SetSlotUIOffsets();
@@ -138,7 +138,7 @@ private:
 	HBITMAP       g_hDeviceBitmap;
 	HDC           g_hDeviceDC;
 	LPBITMAPINFO  g_pFramebufferinfo;
-	BOOL    g_bUsingCursor;	// TRUE = AppleWin is using (hiding) the mouse-cursor && restricting cursor to window - see SetUsingCursor()
+	bool    g_bUsingCursor;	// true = AppleWin is using (hiding) the mouse-cursor && restricting cursor to window - see SetUsingCursor()
 	bool    g_bAppActive;
 	bool g_bFrameActive;
 	bool g_windowMinimized;

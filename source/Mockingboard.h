@@ -109,7 +109,7 @@ private:
 			nAYCurrentRegister[0] = nAYCurrentRegister[1] = 0;	// not valid
 			state[0] = state[1] = AY_INACTIVE;
 			isAYLatchedAddressValid[0] = isAYLatchedAddressValid[1] = false;	// after AY reset
-			isChipSelected[0] = type == CT_Phasor ? false : true;	// Only Phasor is false, all other MB variants are true
+			isChipSelected[0] = type != CT_Phasor;	// Only Phasor is false, all other MB variants are true
 			isChipSelected[1] = false;
 			SetBusState(false);
 		}

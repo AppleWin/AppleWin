@@ -70,23 +70,18 @@ namespace DIMouse
 #else // NO_DIRECT_X
 
 		HRESULT hr;
-		BOOL    bExclusive;
-		BOOL    bForeground;
-		BOOL    bImmediate;
-		DWORD   dwCoopFlags;
+
+		// Determine where the buffer would like to be allocated 
+		const bool bExclusive = false;
+		const bool bForeground = false;	// Otherwise get DIERR_OTHERAPPHASPRIO (== E_ACCESSDENIED) on Acquire()
+		const bool bImmediate = true;
 
 		DirectInputUninit(hDlg);
 		LogFileOutput("DirectInputInit: DirectInputUninit()\n");
 
-		// Determine where the buffer would like to be allocated 
-		bExclusive         = FALSE;
-		bForeground        = FALSE;	// Otherwise get DIERR_OTHERAPPHASPRIO (== E_ACCESSDENIED) on Acquire()
-		bImmediate         = TRUE;
-
-		if( bExclusive )
-			dwCoopFlags = DISCL_EXCLUSIVE;
-		else
-			dwCoopFlags = DISCL_NONEXCLUSIVE;
+		DWORD dwCoopFlags = ( bExclusive )
+			? DISCL_EXCLUSIVE
+			: DISCL_NONEXCLUSIVE;
 
 		if( bForeground )
 			dwCoopFlags |= DISCL_FOREGROUND;
@@ -200,7 +195,7 @@ namespace DIMouse
 
 		if (g_TimerIDEvent)
 		{
-			BOOL bRes = KillTimer(hDlg, g_TimerIDEvent);
+			const bool bRes = !!KillTimer(hDlg, g_TimerIDEvent);
 			LogFileOutput("DirectInputUninit: KillTimer(), res=%d\n", bRes ? 1 : 0);
 			g_TimerIDEvent = 0;
 		}

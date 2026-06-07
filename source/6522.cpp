@@ -57,7 +57,7 @@ void SY6522::Reset(const bool powerCycle)
 	StopTimer1();
 	StopTimer2();
 
-	m_timer1IrqDelay = m_timer2IrqDelay = 0;
+	m_timer1IrqDelay = m_timer2IrqDelay = false;
 }
 
 //---------------------------------------------------------------------------
@@ -215,9 +215,9 @@ void SY6522::Write(BYTE nReg, BYTE nValue)
 			m_regs.IER |= nValue;
 		}
 		if (m_syncEvent[0])
-			m_syncEvent[0]->m_canAssertIRQ = (m_regs.IER & IxR_TIMER1) ? true : false;
+			m_syncEvent[0]->m_canAssertIRQ = !!(m_regs.IER & IxR_TIMER1);
 		if (m_syncEvent[1])
-			m_syncEvent[1]->m_canAssertIRQ = (m_regs.IER & IxR_TIMER2) ? true : false;
+			m_syncEvent[1]->m_canAssertIRQ = !!(m_regs.IER & IxR_TIMER2);
 		UpdateIFR(0);
 		break;
 	}
@@ -239,7 +239,7 @@ void SY6522::UpdateTimer2(USHORT clocks)
 
 //-----------------------------------------------------------------------------
 
-bool SY6522::CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHORT clocks)
+bool SY6522::CheckTimerUnderflow(USHORT& counter, bool& timerIrqDelay, const USHORT clocks) const
 {
 	if (clocks == 0)
 		return false;
@@ -253,8 +253,8 @@ bool SY6522::CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHO
 
 	if (timerIrqDelay)	// Deal with any previous counter underflow which didn't yet result in an IRQ
 	{
-		_ASSERT(timerIrqDelay == 1);
-		timerIrqDelay = 0;
+		_ASSERT(timerIrqDelay);
+		timerIrqDelay = false;
 		timerIrq = true;
 		// if LATCH is very small then could underflow for every opcode...
 	}
@@ -266,14 +266,14 @@ bool SY6522::CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHO
 			if (timer <= -3)				// TIMER = 0xFFFD (or less)
 				timerIrq = true;
 			else							// TIMER = 0xFFFF or 0xFFFE
-				timerIrqDelay = 1;			// ...so 1 or 2 cycles until IRQ
+				timerIrqDelay = true;		// ...so 1 or 2 cycles until IRQ
 		}
 		else
 		{
 			if (timer <= -2)				// TIMER = 0xFFFE (or less)
 				timerIrq = true;
 			else							// TIMER = 0xFFFF
-				timerIrqDelay = 1;			// ...so 1 cycle until IRQ
+				timerIrqDelay = true;		// ...so 1 cycle until IRQ
 		}
 
 	}
@@ -281,7 +281,7 @@ bool SY6522::CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHO
 	return timerIrq;
 }
 
-int SY6522::OnTimer1Underflow(USHORT& counter)
+bool SY6522::OnTimer1Underflow(USHORT& counter) const
 {
 	int timer = (int)(short)(counter);
 	if (m_isMegaAudio)
@@ -296,7 +296,7 @@ int SY6522::OnTimer1Underflow(USHORT& counter)
 			timer += (m_regs.TIMER1_LATCH.w + kExtraTimerCycles);	// GH#651: account for underflowed cycles / GH#652: account for extra 2 cycles
 	}
 	counter = (USHORT)timer;
-	return (timer < 0) ? 1 : 0;			// timer1IrqDelay
+	return timer < 0;			// timer1IrqDelay
 }
 
 //-----------------------------------------------------------------------------
@@ -304,7 +304,7 @@ int SY6522::OnTimer1Underflow(USHORT& counter)
 USHORT SY6522::GetTimer1Counter(BYTE reg)
 {
 	USHORT counter = m_regs.TIMER1_COUNTER.w;	// NB. don't update the real T1C
-	int timerIrqDelay = m_timer1IrqDelay;		// NB. don't update the real timer1IrqDelay
+	bool timerIrqDelay = m_timer1IrqDelay;		// NB. don't update the real timer1IrqDelay
 	const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(reg) - 1;	// to compensate for the 4/5/6 cycle read opcode
 	if (CheckTimerUnderflow(counter, timerIrqDelay, opcodeCycleAdjust))
 		OnTimer1Underflow(counter);
@@ -320,7 +320,7 @@ USHORT SY6522::GetTimer2Counter(BYTE reg)
 bool SY6522::IsTimer1Underflowed(BYTE reg)
 {
 	USHORT counter = m_regs.TIMER1_COUNTER.w;	// NB. don't update the real T1C
-	int timerIrqDelay = m_timer1IrqDelay;		// NB. don't update the real timer1IrqDelay
+	bool timerIrqDelay = m_timer1IrqDelay;		// NB. don't update the real timer1IrqDelay
 	const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(reg);	// to compensate for the 4/5/6 cycle read opcode
 	return CheckTimerUnderflow(counter, timerIrqDelay, opcodeCycleAdjust);
 }
@@ -328,7 +328,7 @@ bool SY6522::IsTimer1Underflowed(BYTE reg)
 bool SY6522::IsTimer2Underflowed(BYTE reg)
 {
 	USHORT counter = m_regs.TIMER2_COUNTER.w;	// NB. don't update the real T2C
-	int timerIrqDelay = m_timer2IrqDelay;		// NB. don't update the real timer2IrqDelay
+	bool timerIrqDelay = m_timer2IrqDelay;		// NB. don't update the real timer2IrqDelay
 	const UINT opcodeCycleAdjust = GetOpcodeCyclesForRead(reg);	// to compensate for the 4/5/6 cycle read opcode
 	return CheckTimerUnderflow(counter, timerIrqDelay, opcodeCycleAdjust);
 }
@@ -641,11 +641,11 @@ void SY6522::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SY6522_REG_DDRA, m_regs.DDRA);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SY6522_REG_T1_COUNTER, m_regs.TIMER1_COUNTER.w);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SY6522_REG_T1_LATCH, m_regs.TIMER1_LATCH.w);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_SY6522_TIMER1_IRQ_DELAY, m_timer1IrqDelay);	// v4
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SY6522_TIMER1_IRQ_DELAY, m_timer1IrqDelay);	// v4
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_SY6522_TIMER1_ACTIVE, m_timer1Active);		// v8
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SY6522_REG_T2_COUNTER, m_regs.TIMER2_COUNTER.w);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SY6522_REG_T2_LATCH, m_regs.TIMER2_LATCH.w);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY, m_timer2IrqDelay);	// v4
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY, m_timer2IrqDelay);	// v4
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_SY6522_TIMER2_ACTIVE, m_timer2Active);		// v8
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SY6522_REG_SERIAL_SHIFT, m_regs.SERIAL_SHIFT);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SY6522_REG_ACR, m_regs.ACR);
@@ -675,12 +675,12 @@ void SY6522::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	m_regs.IER = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_REG_IER);
 	m_regs.ORA_NO_HS = 0;	// Not saved
 
-	m_timer1IrqDelay = m_timer2IrqDelay = 0;
+	m_timer1IrqDelay = m_timer2IrqDelay = false;
 
 	if (version >= 4)
 	{
-		m_timer1IrqDelay = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_TIMER1_IRQ_DELAY);
-		m_timer2IrqDelay = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY);
+		m_timer1IrqDelay = yamlLoadHelper.LoadBool(SS_YAML_KEY_SY6522_TIMER1_IRQ_DELAY);
+		m_timer2IrqDelay = yamlLoadHelper.LoadBool(SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY);
 	}
 
 	if (version < 7)
@@ -721,14 +721,14 @@ void SY6522::SetTimersActiveFromSnapshot(bool timer1Active, bool timer2Active, U
 	{
 		SyncEvent* syncEvent = m_syncEvent[0];
 		syncEvent->SetCycles(GetRegT1C() + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
-		syncEvent->m_canAssertIRQ = (m_regs.IER & IxR_TIMER1) ? true : false;
+		syncEvent->m_canAssertIRQ = !!(m_regs.IER & IxR_TIMER1);
 		g_SynchronousEventMgr.Insert(syncEvent);
 	}
 	if (IsTimer2Active())
 	{
 		SyncEvent* syncEvent = m_syncEvent[1];
 		syncEvent->SetCycles(GetRegT2C() + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
-		syncEvent->m_canAssertIRQ = (m_regs.IER & IxR_TIMER2) ? true : false;
+		syncEvent->m_canAssertIRQ = !!(m_regs.IER & IxR_TIMER2);
 		g_SynchronousEventMgr.Insert(syncEvent);
 	}
 }

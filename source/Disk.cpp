@@ -76,11 +76,11 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	m_deferredStepperAddress = 0;
 	m_deferredStepperCumulativeCycles = 0;
 
-	uint32_t tmp;
+	uint32_t tmp = 0;
 	std::string regSection = RegGetConfigSlotSection(m_slot);
 	const uint32_t kForce13SectorFirmware_Default = 0;
 	RegLoadValue(regSection.c_str(), REGVALUE_DISKII_13_SECTOR_FIRMWARE, true, &tmp, kForce13SectorFirmware_Default);
-	m_force13SectorFirmware = tmp ? true : false;
+	m_force13SectorFirmware = !!tmp;
 
 	ResetLogicStateSequencer();
 
@@ -494,14 +494,14 @@ void Disk2InterfaceCard::Boot()
 	// THIS FUNCTION RELOADS A PROGRAM IMAGE IF ONE IS LOADED IN DRIVE ONE.
 	// IF A DISK IMAGE OR NO IMAGE IS LOADED IN DRIVE ONE, IT DOES NOTHING.
 	if (m_floppyDrive[0].m_disk.m_imagehandle && ImageBoot(m_floppyDrive[0].m_disk.m_imagehandle))
-		m_floppyMotorOn = 0;
+		m_floppyMotorOn = false;
 }
 
 //===========================================================================
 
 void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	BOOL newState = address & 1;
+	bool newState = !!(address & 1);
 	bool stateChanged = (newState != m_floppyMotorOn);
 
 	// "2. [...] (DRIVES OFF forces the control flip-flops to clear.)" (UTAIIe page 9-12)
@@ -509,7 +509,7 @@ void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, 
 	// "5. Causes the ENABLE1' or the ENABLE2' signal to go low depending on which drive is selected by the drive1/drive2 switch."
 	// - so m_currDrive not affected.
 	// TODO: what about m_seqFunc.function?
-	if (newState == FALSE)
+	if (!newState)
 	{
 		m_magnetStates = 0;		// GH#926, GH#1315
 		ControlStepperLogging(address, g_nCumulativeCycles);
@@ -1948,7 +1948,7 @@ void __stdcall Disk2InterfaceCard::SetWriteMode(WORD, WORD, BYTE, BYTE, ULONG uE
 {
 	m_formatTrack.DriveSwitchedToWriteMode(m_floppyDrive[m_currDrive].m_disk.m_byte);
 
-	BOOL modechange = !m_floppyDrive[m_currDrive].m_writelight;
+	const bool modechange = !m_floppyDrive[m_currDrive].m_writelight;
 #if LOG_DISK_RW_MODE
 	LOG_DISK("rw mode: write (mode changed=%d)\r\n", modechange ? 1 : 0);
 #endif
@@ -2324,8 +2324,8 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_BIT_COUNT, m_floppyDrive[unit].m_disk.m_bitCount);		// v4
 	yamlSaveHelper.SaveDouble(SS_YAML_KEY_EXTRA_CYCLES, m_floppyDrive[unit].m_disk.m_extraCycles);	// v4
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITE_PROTECTED, m_floppyDrive[unit].m_disk.m_bWriteProtected);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DATA, m_floppyDrive[unit].m_disk.m_trackimagedata);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY, m_floppyDrive[unit].m_disk.m_trackimagedirty);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_TRACK_IMAGE_DATA, m_floppyDrive[unit].m_disk.m_trackimagedata);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_TRACK_IMAGE_DIRTY, m_floppyDrive[unit].m_disk.m_trackimagedirty);
 
 	if (m_floppyDrive[unit].m_disk.m_trackimage)
 	{
@@ -2358,7 +2358,7 @@ void Disk2InterfaceCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint4(SS_YAML_KEY_PHASES, m_magnetStates);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_ENHANCE_DISK, m_enhanceDisk);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_FLOPPY_LATCH, m_floppyLatch);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, m_floppyMotorOn == TRUE);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_FLOPPY_MOTOR_ON, m_floppyMotorOn);
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_CYCLE, m_diskLastCycle);	// v2
 	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_LAST_READ_LATCH_CYCLE, m_diskLastReadLatchCycle);	// v3
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_LSS_SHIFT_REG, m_shiftReg);			// v4
@@ -2417,8 +2417,8 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 	yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
 	m_floppyDrive[unit].m_disk.m_byte = yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTE);
 	m_floppyDrive[unit].m_disk.m_nibbles = yamlLoadHelper.LoadUint(SS_YAML_KEY_NIBBLES);
-	m_floppyDrive[unit].m_disk.m_trackimagedata = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA) ? true : false;
-	m_floppyDrive[unit].m_disk.m_trackimagedirty = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY) ? true : false;
+	m_floppyDrive[unit].m_disk.m_trackimagedata = yamlLoadHelper.LoadBool(SS_YAML_KEY_TRACK_IMAGE_DATA);
+	m_floppyDrive[unit].m_disk.m_trackimagedirty = yamlLoadHelper.LoadBool(SS_YAML_KEY_TRACK_IMAGE_DIRTY);
 
 	if (version >= 4)
 	{

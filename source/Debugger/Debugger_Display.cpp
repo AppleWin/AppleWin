@@ -639,7 +639,7 @@ void StretchBltMemToFrameDC()
 	int wdest = nViewportCX;
 	int hdest = nViewportCY;
 
-	BOOL bRes = StretchBlt(
+	StretchBlt(
 		win32Frame.FrameGetDC(),			                // HDC hdcDest,
 		xdest, ydest,									    // int nXOriginDest, int nYOriginDest,
 		wdest, hdest,										// int nWidthDest,   int nHeightDest,
@@ -2814,8 +2814,8 @@ void _DrawSoftSwitchMainAuxBanks( RECT & rect, int bg_default = BG_INFO )
 	int dx = 7 * w;
 
 	int  nAddress  = 0xC002;
-	bool bMainRead = (GetMemMode() & MF_AUXREAD)  ? true : false;
-	bool bAuxWrite = (GetMemMode() & MF_AUXWRITE) ? true : false;
+	bool bMainRead = !!(GetMemMode() & MF_AUXREAD);
+	bool bAuxWrite = !!(GetMemMode() & MF_AUXWRITE);
 
 	temp.right = rect.left + dx;
 	_DrawSoftSwitch( temp, nAddress, !bMainRead, "R", "m", "x", NULL, BG_DATA_2 );

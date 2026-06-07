@@ -145,8 +145,8 @@ private:
 	void tfe_proceed_rx_buffer(int oddaddress);
 
 	WORD tfe_receive();
-	int tfe_should_accept(unsigned char *buffer, int length, int *phashed, int *phash_index,
-                          int *pcorrect_mac, int *pbroadcast, int *pmulticast);
+	bool tfe_should_accept(unsigned char *buffer, int length, int *phashed, int *phash_index,
+                           int *pcorrect_mac, int *pbroadcast, int *pmulticast) const;
 
 	// this function is virtually useless
 	// it is only here to keep a record of these unused arguments
@@ -177,16 +177,16 @@ private:
 	/* remember the value of the hash mask */
 	uint32_t tfe_hash_mask[2];
 
-	int  tfe_recv_broadcast;	/* broadcast */
-	int  tfe_recv_mac;			/* individual address (IA) */
-	int  tfe_recv_multicast;	/* multicast if address passes the hash filter */
-	int  tfe_recv_correct;		/* accept correct frames */
-	int  tfe_recv_promiscuous;	/* promiscuous mode */
-	int  tfe_recv_hashfilter;	/* accept if IA passes the hash filter */
+	bool  tfe_recv_broadcast;	/* broadcast */
+	bool  tfe_recv_mac;			/* individual address (IA) */
+	bool  tfe_recv_multicast;	/* multicast if address passes the hash filter */
+	bool  tfe_recv_correct;		/* accept correct frames */
+	bool  tfe_recv_promiscuous;	/* promiscuous mode */
+	bool  tfe_recv_hashfilter;	/* accept if IA passes the hash filter */
 
 #ifdef TFE_DEBUG_WARN
 	/* remember if the TXCMD has been completed before a new one is issued */
-	int tfe_started_tx;
+	bool tfe_started_tx;
 #endif
 
 	/* TFE registers */

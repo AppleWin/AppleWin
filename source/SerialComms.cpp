@@ -291,7 +291,7 @@ bool CSuperSerialCard::CheckComm()
 		{
 			GetCommModemStatus(m_hCommHandle, const_cast<DWORD*>(&m_dwModemStatus));
 
-			//BOOL bRes = SetupComm(m_hCommHandle, 8192, 8192);
+			//const bool bRes = !!SetupComm(m_hCommHandle, 8192, 8192);
 			//_ASSERT(bRes);
 
 			UpdateCommState();
@@ -762,7 +762,7 @@ BYTE __stdcall CSuperSerialCard::CommTransmit(WORD, WORD, BYTE, BYTE value, ULON
 	}
 	else if (m_hCommHandle != INVALID_HANDLE_VALUE)
 	{
-		BOOL res = false;
+		bool res = false;
 		DWORD error = 0;
 
 		// Use CriticalSection to keep WriteFile() & m_vbTxEmpty in sync (GH#707)
@@ -770,7 +770,7 @@ BYTE __stdcall CSuperSerialCard::CommTransmit(WORD, WORD, BYTE, BYTE value, ULON
 
 		_ASSERT(m_vbTxEmpty == true);
 		DWORD uBytesWritten;
-		res = WriteFile(m_hCommHandle, &value, 1, &uBytesWritten, &m_o);
+		res = !!WriteFile(m_hCommHandle, &value, 1, &uBytesWritten, &m_o);
 		_ASSERT(res);
 		if (res)
 		{
@@ -1077,7 +1077,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 {
 	CSuperSerialCard* pSSC = (CSuperSerialCard*) lpParameter;
 
-	BOOL bRes = SetCommMask(pSSC->m_hCommHandle, EV_RLSD | EV_DSR | EV_CTS | EV_TXEMPTY | EV_RXCHAR);
+	const bool bRes = !!SetCommMask(pSSC->m_hCommHandle, EV_RLSD | EV_DSR | EV_CTS | EV_TXEMPTY | EV_RXCHAR);
 	if (!bRes)
 	{
 		LogOutput("SSC: CommThread(): SetCommMask() failed\n");
@@ -1095,7 +1095,7 @@ DWORD WINAPI CSuperSerialCard::CommThread(LPVOID lpParameter)
 		DWORD dwEvtMask = 0;
 		DWORD dwWaitResult;
 
-		bRes = WaitCommEvent(pSSC->m_hCommHandle, &dwEvtMask, &pSSC->m_o);	// Will return immediately (probably with ERROR_IO_PENDING)
+		const bool bRes = !!WaitCommEvent(pSSC->m_hCommHandle, &dwEvtMask, &pSSC->m_o);	// Will return immediately (probably with ERROR_IO_PENDING)
 		if (!bRes)
 		{
 			DWORD dwRet = GetLastError();

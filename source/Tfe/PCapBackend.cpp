@@ -88,17 +88,17 @@ const std::string & PCapBackend::getInterfaceName()
     return m_interfaceName;
 }
 
-int PCapBackend::tfe_enumadapter_open()
+bool PCapBackend::tfe_enumadapter_open()
 {
     return tfe_arch_enumadapter_open();
 }
 
-int PCapBackend::tfe_enumadapter(std::string & name, std::string & description)
+bool PCapBackend::tfe_enumadapter(std::string & name, std::string & description)
 {
     return tfe_arch_enumadapter(name, description);
 }
 
-int PCapBackend::tfe_enumadapter_close()
+bool PCapBackend::tfe_enumadapter_close()
 {
     return tfe_arch_enumadapter_close();
 }
@@ -122,7 +122,7 @@ std::string PCapBackend::GetRegistryInterface(UINT slot)
     return interfaceName;
 }
 
-int PCapBackend::tfe_is_npcap_loaded()
+bool PCapBackend::tfe_is_npcap_loaded()
 {
     return tfe_arch_is_npcap_loaded();
 }

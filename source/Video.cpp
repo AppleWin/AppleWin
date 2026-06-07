@@ -242,49 +242,49 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 
 //===========================================================================
 
-bool Video::VideoGetSW80COL()
+bool Video::VideoGetSW80COL() const
 {
-	return SW_80COL ? true : false;
+	return !!SW_80COL;
 }
 
-bool Video::VideoGetSWDHIRES()
+bool Video::VideoGetSWDHIRES() const
 {
-	return SW_DHIRES ? true : false;
+	return !!SW_DHIRES;
 }
 
-bool Video::VideoGetSWHIRES()
+bool Video::VideoGetSWHIRES() const
 {
-	return SW_HIRES ? true : false;
+	return !!SW_HIRES;
 }
 
-bool Video::VideoGetSW80STORE()
+bool Video::VideoGetSW80STORE() const
 {
-	return SW_80STORE ? true : false;
+	return !!SW_80STORE;
 }
 
-bool Video::VideoGetSWMIXED()
+bool Video::VideoGetSWMIXED() const
 {
-	return SW_MIXED ? true : false;
+	return !!SW_MIXED;
 }
 
-bool Video::VideoGetSWPAGE2()
+bool Video::VideoGetSWPAGE2() const
 {
-	return SW_PAGE2 ? true : false;
+	return !!SW_PAGE2;
 }
 
-bool Video::VideoGetSWTEXT()
+bool Video::VideoGetSWTEXT() const
 {
-	return SW_TEXT ? true : false;
+	return !!SW_TEXT;
 }
 
-bool Video::VideoGetSWAltCharSet()
+bool Video::VideoGetSWAltCharSet() const
 {
-	return g_nAltCharSetOffset != 0;
+	return !!g_nAltCharSetOffset;
 }
 
-bool Video::VideoGet80COLAUXEMPTY()
+bool Video::VideoGet80COLAUXEMPTY() const
 {
-	return g_uVideoMode & VF_80COL_AUX_EMPTY ? true : false;
+	return !!(g_uVideoMode & VF_80COL_AUX_EMPTY);
 }
 
 //===========================================================================
@@ -303,7 +303,7 @@ const std::string& Video::VideoGetSnapshotStructName()
 void Video::VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, g_nAltCharSetOffset ? true : false);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, !!g_nAltCharSetOffset);
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEO_MODE, g_uVideoMode);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLES_THIS_FRAME, g_dwCyclesThisFrame);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_VIDEO_REFRESH_RATE, (UINT)GetVideoRefreshRate());

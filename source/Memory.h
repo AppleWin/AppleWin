@@ -80,7 +80,7 @@ void    MemInitializeCustomF8ROM();
 void    MemInitializeIO();
 void    MemInitializeFromSnapshot();
 BYTE    MemReadFloatingBus(const ULONG uExecutedCycles);
-BYTE    MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles);
+BYTE    MemReadFloatingBus(const bool highbit, const ULONG uExecutedCycles);
 BYTE    MemReadFloatingBusFromNTSC();
 void    MemReset ();
 void    MemResetPaging ();

@@ -32,7 +32,7 @@
   Bit 1 = Down, Active High
   Bit 2 = Left, Active High
   Bit 3 = Right, Active High
-  Bit 4 = Trigger 2, Active High
+  Bit 4 = Not Used, Always Low
   Bit 5 = Not Used, Always High
   Bit 6 = Trigger 2, Active High
   Bit 7 = Trigger 1, Active High
@@ -53,19 +53,25 @@
 #include "Memory.h"
 #include "YamlHelper.h"
 
+inline static int _b2bit(bool b, int shift)
+{
+	return b ? (1 << shift) : 0;
+}
+
+BYTE FourPlayCard::MakeByte(bool up, bool down, bool left, bool right, bool trigger1, bool trigger2)
+{
+	return _b2bit(up, 0) | _b2bit(down, 1) | _b2bit(left, 2) | _b2bit(right, 3)
+         | _b2bit(false, 4) | _b2bit(true, 5) | _b2bit(trigger2, 6) | _b2bit(trigger1, 7);
+}
+
 BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
 {
-	BYTE nOutput = MemReadFloatingBus(nExecutedCycles);
-	BOOL up = 0;
-	BOOL down = 0;
-	BOOL left = 0;
-	BOOL right = 0;
-	BOOL trigger1 = 0;
-	BOOL trigger2 = 0;
-	BOOL trigger3 = 0;
-	BOOL alwaysHigh = 1;
-	UINT xAxis = 0;
-	UINT yAxis = 0;
+	bool up = false;
+	bool down = false;
+	bool left = false;
+	bool right = false;
+	bool trigger1 = false;
+	bool trigger2 = false;
 
 	JOYINFOEX infoEx;
 	infoEx.dwSize = sizeof(infoEx);
@@ -76,49 +82,57 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 	case 0: // Joystick 1
 		if (GetJoystick1() >= 0 && joyGetPosEx(GetJoystick1(), &infoEx) == JOYERR_NOERROR)
 		{
-			xAxis = (infoEx.dwXpos >> 8) & 0xFF;
-			yAxis = (infoEx.dwYpos >> 8) & 0xFF;
-			trigger1 = infoEx.dwButtons & 0x01;
-			trigger2 = (infoEx.dwButtons & 0x02) >> 1;
+			UINT xAxis = (infoEx.dwXpos >> 8) & 0xFF;
+			UINT yAxis = (infoEx.dwYpos >> 8) & 0xFF;
+			trigger1 = !!(infoEx.dwButtons & 0x01);
+			trigger2 = !!(infoEx.dwButtons & 0x02);
 			up = yAxis < 103 || infoEx.dwPOV == 0 || infoEx.dwPOV == 4500 || infoEx.dwPOV == 31500;
 			down = yAxis > 153 || (infoEx.dwPOV >= 13500 && infoEx.dwPOV <= 22500);
 			left = xAxis < 103 || (infoEx.dwPOV >= 22500 && infoEx.dwPOV <= 31500);
 			right = xAxis > 153 || (infoEx.dwPOV >= 4500 && infoEx.dwPOV <= 13500);
 		}
-		nOutput = up | (down << 1) | (left << 2) | (right << 3) | (alwaysHigh << 5) | (trigger2 << 6) | (trigger1 << 7);
 		break;
 	case 1: // Joystick 2
 		if (GetJoystick2() >= 0 && joyGetPosEx(GetJoystick2(), &infoEx) == JOYERR_NOERROR)
 		{
-			xAxis = (infoEx.dwXpos >> 8) & 0xFF;
-			yAxis = (infoEx.dwYpos >> 8) & 0xFF;
-			trigger1 = infoEx.dwButtons & 0x01;
-			trigger2 = (infoEx.dwButtons & 0x02) >> 1;
+			UINT xAxis = (infoEx.dwXpos >> 8) & 0xFF;
+			UINT yAxis = (infoEx.dwYpos >> 8) & 0xFF;
+			trigger1 = !!(infoEx.dwButtons & 0x01);
+			trigger2 = !!(infoEx.dwButtons & 0x02);
 			up = yAxis < 103 || infoEx.dwPOV == 0 || infoEx.dwPOV == 4500 || infoEx.dwPOV == 31500;
 			down = yAxis > 153 || (infoEx.dwPOV >= 13500 && infoEx.dwPOV <= 22500);
 			left = xAxis < 103 || (infoEx.dwPOV >= 22500 && infoEx.dwPOV <= 31500);
 			right = xAxis > 153 || (infoEx.dwPOV >= 4500 && infoEx.dwPOV <= 13500);
 		}
-		nOutput = up | (down << 1) | (left << 2) | (right << 3) | (alwaysHigh << 5) | (trigger2 << 6) | (trigger1 << 7);
 		break;
 	case 2: // Joystick 3
-		nOutput = FourPlayCard::JOYSTICKSTATIONARY; // esdf - direction buttons, zx - trigger buttons
-		nOutput = nOutput | (MyGetAsyncKeyState('E') | (MyGetAsyncKeyState('D') << 1) | (MyGetAsyncKeyState('S') << 2) | (MyGetAsyncKeyState('F') << 3) | (MyGetAsyncKeyState('X') << 6) | (MyGetAsyncKeyState('Z') << 7));
+        // esdf - direction buttons, zx - trigger buttons
+        trigger1 = MyGetAsyncKeyState('Z');
+        trigger2 = MyGetAsyncKeyState('X');
+        up = MyGetAsyncKeyState('E');
+        down = MyGetAsyncKeyState('D');
+        left = MyGetAsyncKeyState('S');
+        right = MyGetAsyncKeyState('F');
 		break;
 	case 3: // Joystick 4
-		nOutput = FourPlayCard::JOYSTICKSTATIONARY; // ijkl - direction buttons, nm - trigger buttons
-		nOutput = nOutput | (MyGetAsyncKeyState('I') | (MyGetAsyncKeyState('K') << 1) | (MyGetAsyncKeyState('J') << 2) | (MyGetAsyncKeyState('L') << 3) | (MyGetAsyncKeyState('M') << 6) | (MyGetAsyncKeyState('N') << 7));
+        // ijkl - direction buttons, nm - trigger buttons
+        trigger1 = MyGetAsyncKeyState('N');
+        trigger2 = MyGetAsyncKeyState('M');
+        up = MyGetAsyncKeyState('I');
+        down = MyGetAsyncKeyState('K');
+        left = MyGetAsyncKeyState('J');
+        right = MyGetAsyncKeyState('L');
 		break;
 	default:
-		break;
+        return MemReadFloatingBus(nExecutedCycles);
 	}
 
-	return nOutput;
+    return MakeByte(up, down, left, right, trigger1, trigger2);
 }
 
-BYTE FourPlayCard::MyGetAsyncKeyState(int vKey)
+bool FourPlayCard::MyGetAsyncKeyState(int vKey)
 {
-	return GetAsyncKeyState(vKey) < 0 ? 1 : 0;
+	return GetAsyncKeyState(vKey) < 0;
 }
 
 void FourPlayCard::InitializeIO(LPBYTE pCxRomPeripheral)

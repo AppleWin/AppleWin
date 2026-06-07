@@ -107,9 +107,9 @@ void ImageClose(ImageInfo* const pImageInfo)
 
 //===========================================================================
 
-BOOL ImageBoot(ImageInfo* const pImageInfo)
+bool ImageBoot(ImageInfo* const pImageInfo)
 {
-	BOOL result = 0;
+	bool result = false;
 
 	if (pImageInfo->pImageType->AllowBoot())
 		result = pImageInfo->pImageType->Boot(pImageInfo);
@@ -284,12 +284,12 @@ void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pF
 	imagetitle[MAX_DISK_FULL_NAME] = 0;
 
 	// if imagetitle contains a lowercase char, then found=1 (why?)
-	BOOL found = 0;
+	bool found = false;
 	int  loop  = 0;
 	while (imagetitle[loop] && !found)
 	{
 		if (IsCharLower(imagetitle[loop]))
-			found = 1;
+			found = true;
 		else
 			loop++;
 	}

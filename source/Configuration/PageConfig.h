@@ -38,7 +38,7 @@ protected:
 private:
 	void InitOptions(HWND hWnd);
 	eApple2Type GetApple2Type(uint32_t NewMenuItem);
-	void EnableTrackbar(HWND hWnd, BOOL enable);
+	void EnableTrackbar(HWND hWnd, bool enable);
 	void ui_tfe_settings_dialog(HWND hWnd);
 
 	static CPageConfig* ms_this;

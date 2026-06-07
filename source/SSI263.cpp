@@ -129,7 +129,7 @@ BYTE SSI263::Read(ULONG nExecutedCycles)
 	if (m_type == SSI263Empty)
 		return MemReadFloatingBus(nExecutedCycles);
 
-	return MemReadFloatingBus(m_currentMode.D7, nExecutedCycles);
+	return MemReadFloatingBus(!!m_currentMode.D7, nExecutedCycles);
 }
 
 void SSI263::Write(BYTE nReg, BYTE nValue)

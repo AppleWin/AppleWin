@@ -25,9 +25,9 @@ public:
 
 	virtual void SetMainMemLanguageCardMemory();
 
-	BOOL GetLastRamWrite() { return m_uLastRamWrite; }
-	void SetLastRamWrite(BOOL count) { m_uLastRamWrite = count; }
-	UINT GetLCMemMode() { return m_memMode; }
+	bool GetLastRamWrite() const { return m_bLastRamWrite; }
+	void SetLastRamWrite(bool bLastRamWrite) { m_bLastRamWrite = bLastRamWrite; }
+	UINT GetLCMemMode() const { return m_memMode; }
 	void SetLCMemMode(UINT memMode) { m_memMode = memMode; }
 	SS_CARDTYPE GetMemoryType() { return QueryType(); }
 	bool IsOpcodeRMWabs(WORD addr);
@@ -44,7 +44,7 @@ protected:
 	LPBYTE m_pMemory;
 
 private:
-	UINT m_uLastRamWrite;
+	bool m_bLastRamWrite;
 	UINT m_memMode;
 };
 

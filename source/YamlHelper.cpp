@@ -195,7 +195,7 @@ int YamlHelper::ParseMap(MapYaml& mapYaml)
 				pKey.clear();
 			}
 
-			bKey = bKey ? false : true;
+			bKey = !bKey;
 			break;
 		case YAML_SEQUENCE_START_EVENT:
 		case YAML_SEQUENCE_END_EVENT:

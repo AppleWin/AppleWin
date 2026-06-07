@@ -99,7 +99,7 @@ void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG 
 	}
 }
 
-bool VidHDCard::IsWriteAux()
+bool VidHDCard::IsWriteAux() const
 {
 	return MemIsWriteAux(m_memMode);
 }

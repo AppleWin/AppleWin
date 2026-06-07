@@ -80,7 +80,7 @@ void CPageConfigTfe::DlgCANCEL(HWND window)
 	EndDialog(window, 0);
 }
 
-BOOL CPageConfigTfe::get_tfename(int number, std::string & name, std::string & description)
+bool CPageConfigTfe::get_tfename(int number, std::string & name, std::string & description)
 {
 	if (PCapBackend::tfe_enumadapter_open())
 	{
@@ -98,13 +98,13 @@ BOOL CPageConfigTfe::get_tfename(int number, std::string & name, std::string & d
 			name = adapterName;
 			description = adapterDescription;
 			PCapBackend::tfe_enumadapter_close();
-			return TRUE;
+			return true;
 		}
 
 		PCapBackend::tfe_enumadapter_close();
 	}
 
-	return FALSE;
+	return false;
 }
 
 void CPageConfigTfe::gray_ungray_items(HWND hwnd)
@@ -119,7 +119,7 @@ void CPageConfigTfe::gray_ungray_items(HWND hwnd)
 		SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), description.c_str());
 	}
 
-	EnableWindow(GetDlgItem(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS), m_enableVirtualDnsCheckbox ? TRUE : FALSE);
+	EnableWindow(GetDlgItem(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS), _b2B(m_enableVirtualDnsCheckbox));
 }
 
 void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
@@ -131,9 +131,9 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 	}
 	else
 	{
-		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), 0);
-		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), 0);
-		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), 0);
+		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE), FALSE);
+		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), FALSE);
+		EnableWindow(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), FALSE);
 
 		SetWindowText(GetDlgItem(hwnd, IDC_TFE_NPCAP_INFO),
 			"Limited Uthernet support is available on your system.\n\n"
@@ -154,18 +154,11 @@ void CPageConfigTfe::init_tfe_dialog(HWND hwnd)
 
 		for (cnt = 0; PCapBackend::tfe_enumadapter(name, description); cnt++)
 		{
-			BOOL this_entry = FALSE;
-
-			if (name == m_tfe_interface_name)
-			{
-				this_entry = TRUE;
-			}
-
 			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_NAME), name.c_str());
 			SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), description.c_str());
 			SendMessage(temp_hwnd, CB_ADDSTRING, 0, (LPARAM)name.c_str());
 
-			if (this_entry)
+			if (name == m_tfe_interface_name)
 			{
 				SendMessage(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE),
 					CB_SETCURSEL, (WPARAM)cnt, 0);
@@ -184,5 +177,5 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 	GetDlgItemText(hwnd, IDC_TFE_SETTINGS_INTERFACE, buffer, sizeof(buffer) - 1);
 
 	m_tfe_interface_name = buffer;
-	m_tfe_virtual_dns = IsDlgButtonChecked(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS) ? true : false;
+	m_tfe_virtual_dns = !!IsDlgButtonChecked(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS);
 }

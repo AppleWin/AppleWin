@@ -233,15 +233,15 @@ public:
 	bool VideoGetVblBarEx(const uint32_t dwCyclesThisFrame);
 	bool VideoGetVblBar(const uint32_t uExecutedCycles);
 
-	bool VideoGetSW80COL();
-	bool VideoGetSWDHIRES();
-	bool VideoGetSWHIRES();
-	bool VideoGetSW80STORE();
-	bool VideoGetSWMIXED();
-	bool VideoGetSWPAGE2();
-	bool VideoGetSWTEXT();
-	bool VideoGetSWAltCharSet();
-	bool VideoGet80COLAUXEMPTY();
+	bool VideoGetSW80COL() const;
+	bool VideoGetSWDHIRES() const;
+	bool VideoGetSWHIRES() const;
+	bool VideoGetSW80STORE() const;
+	bool VideoGetSWMIXED() const;
+	bool VideoGetSWPAGE2() const;
+	bool VideoGetSWTEXT() const;
+	bool VideoGetSWAltCharSet() const;
+	bool VideoGet80COLAUXEMPTY() const;
 
 	void VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);

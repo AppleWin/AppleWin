@@ -42,7 +42,7 @@ BYTE __stdcall TapeRead(WORD, WORD address, BYTE, BYTE, ULONG nExecutedCycles)	/
 	if (g_Apple2Type == A2TYPE_PRAVETS8A)
 		return GetPravets().GetKeycode( MemReadFloatingBus(nExecutedCycles) );
 
-	return MemReadFloatingBus(1, nExecutedCycles); // TAPEIN has high bit 1 when input is low or not connected (UTAIIe page 7-5, 7-6)
+	return MemReadFloatingBus(true, nExecutedCycles); // TAPEIN has high bit 1 when input is low or not connected (UTAIIe page 7-5, 7-6)
 }
 
 BYTE __stdcall TapeWrite(WORD, WORD address, BYTE, BYTE, ULONG nExecutedCycles)	// $C020 TAPEOUT

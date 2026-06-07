@@ -41,16 +41,16 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name);
 void TfePcapCloseAdapter(pcap_t * TfePcapFP);
 
 extern
-void tfe_arch_recv_ctl( int bBroadcast,   /* broadcast */
-                        int bIA,          /* individual address (IA) */
-                        int bMulticast,   /* multicast if address passes the hash filter */
-                        int bCorrect,     /* accept correct frames */
-                        int bPromiscuous, /* promiscuous mode */
-                        int bIAHash       /* accept if IA passes the hash filter */
+void tfe_arch_recv_ctl( bool bBroadcast,   /* broadcast */
+                        bool bIA,          /* individual address (IA) */
+                        bool bMulticast,   /* multicast if address passes the hash filter */
+                        bool bCorrect,     /* accept correct frames */
+                        bool bPromiscuous, /* promiscuous mode */
+                        bool bIAHash       /* accept if IA passes the hash filter */
                       );
 
 extern
-void tfe_arch_line_ctl(int bEnableTransmitter, int bEnableReceiver);
+void tfe_arch_line_ctl(bool bEnableTransmitter, bool bEnableReceiver);
 
 extern
 void tfe_arch_transmit(pcap_t * TfePcapFP,
@@ -64,10 +64,10 @@ int tfe_arch_receive(pcap_t * TfePcapFP,
                      BYTE *pbuffer       /* where to store a frame */
                     );
 
-extern int tfe_arch_is_npcap_loaded();
-extern int tfe_arch_enumadapter_open();
-extern int tfe_arch_enumadapter(std::string & name, std::string & description);
-extern int tfe_arch_enumadapter_close();
+extern bool tfe_arch_is_npcap_loaded();
+extern bool tfe_arch_enumadapter_open();
+extern bool tfe_arch_enumadapter(std::string & name, std::string & description);
+extern bool tfe_arch_enumadapter_close();
 
 extern const char * tfe_arch_lib_version();
 

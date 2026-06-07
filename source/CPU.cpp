@@ -132,7 +132,7 @@ static bool g_bCritSectionValid = false;	// Deleting CritialSection when not val
 static CRITICAL_SECTION g_CriticalSection;	// To guard /g_bmIRQ/ & /g_bmNMI/
 static volatile UINT32 g_bmIRQ = 0;
 static volatile UINT32 g_bmNMI = 0;
-static volatile BOOL g_bNmiFlank = FALSE; // Positive going flank on NMI line
+static volatile bool g_bNmiFlank = false; // Positive going flank on NMI line
 
 static bool g_irqDefer1Opcode = false;
 static bool g_interruptInLastExecutionBatch = false;	// Last batch of executed cycles included an interrupt (IRQ/NMI)
@@ -187,7 +187,7 @@ void SetActiveCpu(eCpuType cpu)
 
 bool IsIrqAsserted()
 {
-	return g_bmIRQ ? true : false;
+	return !!g_bmIRQ;
 }
 
 bool Is6502InterruptEnabled()
@@ -319,7 +319,7 @@ void CaptureCOUT()
 	}
 	else if (ch == 0x1B)	// Escape
 	{
-		bEscMode = bEscMode ? false : true;		// Toggle mode
+		bEscMode = !bEscMode;		// Toggle mode
 	}
 	else if (ch >= ' ' && ch <= '~')
 	{
@@ -405,7 +405,7 @@ static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, 
 		return false;
 
 	// NMI signals are only serviced once
-	g_bNmiFlank = FALSE;
+	g_bNmiFlank = false;
 #ifdef _DEBUG
 	g_nCycleIrqStart = g_nCumulativeCycles + uExecutedCycles;
 #endif
@@ -886,7 +886,7 @@ void CpuNmiReset()
 	_ASSERT(g_bCritSectionValid);
 	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	g_bmNMI = 0;
-	g_bNmiFlank = FALSE;
+	g_bNmiFlank = false;
 	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
 }
 
@@ -895,7 +895,7 @@ void CpuNmiAssert(eIRQSRC Device)
 	_ASSERT(g_bCritSectionValid);
 	if (g_bCritSectionValid) EnterCriticalSection(&g_CriticalSection);
 	if (g_bmNMI == 0) // NMI line is just becoming active
-	    g_bNmiFlank = TRUE;
+	    g_bNmiFlank = true;
 	g_bmNMI |= 1<<Device;
 	if (g_bCritSectionValid) LeaveCriticalSection(&g_CriticalSection);
 }

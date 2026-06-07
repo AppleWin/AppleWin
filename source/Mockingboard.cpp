@@ -114,7 +114,7 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 		{
 			uint32_t hasSC01;
 			std::string regSection = RegGetConfigSlotSection(m_slot);
-			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, true, &hasSC01, kSC01_Default == SC01 ? TRUE : FALSE);
+			RegLoadValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_SC01, true, &hasSC01, kSC01_Default == SC01 ? 1 : 0);
 			m_MBSubUnit[i].ssi263.SetSC01(hasSC01 ? SC01 : SSI263Empty);
 		}
 	}
@@ -458,7 +458,7 @@ bool MockingboardCard::Is6522IRQ()
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
 	bool irq = false;
 	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
-		irq |= m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & 0x80 ? true : false;
+		irq |= !!(m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & 0x80);
 
 	// NB. Mockingboard generates IRQ on both 6522s:
 	// . SSI263's IRQ (A/!R) is routed via the 2nd 6522's CA1 input (at $Cn80) and must generate a 6502 IRQ (not NMI)
@@ -698,7 +698,7 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 		if (CS & 2)
 			nRes |= m_MBSubUnit[SY6522_DEVICE_B].sy6522.Read(nAddr & 0xf);
 
-		bool bAccessedDevice = (CS & 3) ? true : false;
+		bool bAccessedDevice = !!(CS & 3);
 
 		bool CS_SSI263 = !(nAddr & 0x10) && (nAddr & 0x60) && !(nAddr & 0x80);				// SSI263 at $Cn2x and/or $Cn4x
 

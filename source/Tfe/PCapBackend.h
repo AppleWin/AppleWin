@@ -60,11 +60,11 @@ public:
 	   *ppname and *ppdescription are not altered.
 	*/
 
-	static int tfe_enumadapter_open();
-	static int tfe_enumadapter(std::string & name, std::string & description);
-	static int tfe_enumadapter_close();
+	static bool tfe_enumadapter_open();
+	static bool tfe_enumadapter(std::string & name, std::string & description);
+	static bool tfe_enumadapter_close();
 	static const char * tfe_lib_version();
-	static int tfe_is_npcap_loaded();
+	static bool tfe_is_npcap_loaded();
 
 private:
 	const std::string m_interfaceName;

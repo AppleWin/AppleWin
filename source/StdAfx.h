@@ -83,3 +83,6 @@
 #define SIZE_T_FMT "zu"
 
 #endif // _WIN32
+
+// Convert bool to BOOL for Windows API.
+inline BOOL _b2B(bool b) { return b ? TRUE : FALSE; }
