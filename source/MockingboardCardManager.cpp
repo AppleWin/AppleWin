@@ -331,38 +331,20 @@ UINT MockingboardCardManager::GenerateAllSoundData(void)
 	if (m_byteOffset == (uint32_t)-1)
 	{
 		// First time in this func
-
 		m_byteOffset = dwCurrentWriteCursor;
 	}
 	else
 	{
 		// Check that our offset isn't between Play & Write positions
-
-		if (dwCurrentWriteCursor > dwCurrentPlayCursor)
+		if (SoundCore_ValidateAndAlignWriteOffset(m_byteOffset, dwCurrentPlayCursor, dwCurrentWriteCursor))
 		{
-			// |-----PxxxxxW-----|
-			if ((m_byteOffset > dwCurrentPlayCursor) && (m_byteOffset < dwCurrentWriteCursor))
-			{
 #ifdef DBG_MB_UPDATE
-				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X xxx\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples);
+			double fTicksSecs = (double)GetTickCount() / 1000.0;
+			const char* tag = (dwCurrentWriteCursor > dwCurrentPlayCursor) ? "xxx" : "XXX";
+			LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X %s\n",
+				fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset, nNumSamples, tag);
 #endif
-				m_byteOffset = dwCurrentWriteCursor;
-				m_numSamplesError = 0;
-			}
-		}
-		else
-		{
-			// |xxW----------Pxxx|
-			if ((m_byteOffset > dwCurrentPlayCursor) || (m_byteOffset < dwCurrentWriteCursor))
-			{
-#ifdef DBG_MB_UPDATE
-				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X XXX\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples);
-#endif
-				m_byteOffset = dwCurrentWriteCursor;
-				m_numSamplesError = 0;
-			}
+			m_numSamplesError = 0;
 		}
 	}
 
