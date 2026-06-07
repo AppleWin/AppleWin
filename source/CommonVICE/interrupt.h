@@ -103,9 +103,9 @@ struct interrupt_cpu_status_s {
 
     unsigned int global_pending_int;
 
-    void (*nmi_trap_func)(void);
+    void (*nmi_trap_func)();
 
-    void (*reset_trap_func)(void);
+    void (*reset_trap_func)();
 
     /* flag for interrupt_restore to handle CPU snapshots before 1.1 */
     int needs_global_restore;
@@ -114,8 +114,8 @@ typedef struct interrupt_cpu_status_s interrupt_cpu_status_t;
 
 /* ------------------------------------------------------------------------- */
 
-extern void interrupt_log_wrong_nirq(void);
-extern void interrupt_log_wrong_nnmi(void);
+extern void interrupt_log_wrong_nirq();
+extern void interrupt_log_wrong_nnmi();
 
 extern void interrupt_trigger_dma(interrupt_cpu_status_t *cs, CLOCK cpu_clk);
 extern void interrupt_ack_dma(interrupt_cpu_status_t *cs);
@@ -246,7 +246,7 @@ inline static void interrupt_ack_irq(interrupt_cpu_status_t *cs)
 
 struct snapshot_module_s;
 
-extern interrupt_cpu_status_t *interrupt_cpu_status_new(void);
+extern interrupt_cpu_status_t *interrupt_cpu_status_new();
 extern void interrupt_cpu_status_destroy(interrupt_cpu_status_t *cs);
 extern void interrupt_cpu_status_init(interrupt_cpu_status_t *cs,
                                       unsigned int *last_opcode_info_ptr);
@@ -257,7 +257,7 @@ extern unsigned int interrupt_cpu_status_int_new(interrupt_cpu_status_t *cs,
                                                  const char *name);
 extern void interrupt_ack_reset(interrupt_cpu_status_t *cs);
 extern void interrupt_set_reset_trap_func(interrupt_cpu_status_t *cs,
-                                        void (*reset_trap_func)(void));
+                                          void (*reset_trap_func)());
 extern void interrupt_maincpu_trigger_trap(void (*trap_func)(WORD,
                                            void *data), void *data);
 extern void interrupt_do_trap(interrupt_cpu_status_t *cs, WORD address);
@@ -285,7 +285,7 @@ extern void interrupt_restore_nmi(interrupt_cpu_status_t *cs, int int_num,
 extern int interrupt_get_irq(interrupt_cpu_status_t *cs, int int_num);
 extern int interrupt_get_nmi(interrupt_cpu_status_t *cs, int int_num);
 extern void interrupt_set_nmi_trap_func(interrupt_cpu_status_t *cs,
-                                        void (*nmi_trap_func)(void));
+                                        void (*nmi_trap_func)());
 
 /* ------------------------------------------------------------------------- */
 

@@ -160,7 +160,7 @@ CMouseInterface::~CMouseInterface()
 
 //===========================================================================
 
-void CMouseInterface::InitializeROM(void)
+void CMouseInterface::InitializeROM()
 {
 	_ASSERT(m_pSlotRom == NULL);
 	if (m_pSlotRom)
@@ -633,7 +633,7 @@ void CMouseInterface::SetButton(eBUTTON Button, eBUTTONSTATE State)
 #define SS_YAML_KEY_BUTTON1 "Button1"
 #define SS_YAML_KEY_ENABLED "Enabled"
 
-const std::string& CMouseInterface::GetSnapshotCardName(void)
+const std::string& CMouseInterface::GetSnapshotCardName()
 {
 	static const std::string name("Mouse Card");
 	return name;

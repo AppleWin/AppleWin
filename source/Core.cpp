@@ -101,7 +101,7 @@ UINT64 g_timeMB_NoTimer = 0;
 UINT64 g_timeSpeaker = 0;
 static UINT64 g_timeVideoRefresh = 0;
 
-void LogPerfTimings(void)
+void LogPerfTimings()
 {
 	if (g_timeTotal)
 	{
@@ -131,7 +131,7 @@ void LogPerfTimings(void)
 static uint32_t dwLogKeyReadTickStart;
 static bool bLogKeyReadDone = false;
 
-void LogFileTimeUntilFirstKeyReadReset(void)
+void LogFileTimeUntilFirstKeyReadReset()
 {
 #ifdef LOG_PERF_TIMINGS
 	LogPerfTimings();
@@ -149,7 +149,7 @@ void LogFileTimeUntilFirstKeyReadReset(void)
 // . AZTEC.DSK (DOS 3.3) does prior LDY $C000 reads, but the BIT $C000 is at the "Press any key" message
 // . Phasor1.dsk / ProDOS 1.1.1: PC=E797: B1 50: LDA ($50),Y / "Select an Option:" message
 // . Rescue Raiders v1.3,v1.5: PC=895: LDA $C000 / boot to intro
-void LogFileTimeUntilFirstKeyRead(void)
+void LogFileTimeUntilFirstKeyRead()
 {
 	if (!g_fh || bLogKeyReadDone)
 		return;
@@ -169,7 +169,7 @@ void LogFileTimeUntilFirstKeyRead(void)
 
 //---------------------------------------------------------------------------
 
-eApple2Type GetApple2Type(void)
+eApple2Type GetApple2Type()
 {
 	return g_Apple2Type;
 }
@@ -180,12 +180,12 @@ void SetApple2Type(eApple2Type type)
 	SetMainCpuDefault(type);
 }
 
-const UINT16* GetOldAppleWinVersion(void)
+const UINT16* GetOldAppleWinVersion()
 {
 	return g_OldAppleWinVersion;
 }
 
-CardManager& GetCardMgr(void)
+CardManager& GetCardMgr()
 {
 	static CardManager g_CardMgr;	// singleton
 	return g_CardMgr;
@@ -193,12 +193,12 @@ CardManager& GetCardMgr(void)
 
 //===========================================================================
 
-double Get6502BaseClock(void)
+double Get6502BaseClock()
 {
 	return (GetVideo().GetVideoRefreshRate() == VR_50HZ) ? CLK_6502_PAL : CLK_6502_NTSC;
 }
 
-void SetCurrentCLK6502(void)
+void SetCurrentCLK6502()
 {
 	static uint32_t dwPrevSpeed = (uint32_t) -1;
 	static VideoRefreshRate_e prevVideoRefreshRate = VR_NONE;
@@ -260,7 +260,7 @@ void SetAppleWinVersion(UINT16 major, UINT16 minor, UINT16 fix, UINT16 fix_minor
 	g_VERSIONSTRING = StrFormat("%d.%d.%d.%d", major, minor, fix, fix_minor);
 }
 
-bool CheckOldAppleWinVersion(void)
+bool CheckOldAppleWinVersion()
 {
 	const int VERSIONSTRING_SIZE = 16;
 	char szOldAppleWinVersion[VERSIONSTRING_SIZE + 1];
@@ -285,12 +285,12 @@ bool CheckOldAppleWinVersion(void)
 	return bShowAboutDlg;
 }
 
-UINT GetCompilationTarget(void)
+UINT GetCompilationTarget()
 {
 	return sizeof(void*) * 8;	// Portable (Windows, Linux); returns 32 or 64
 }
 
-std::string GetAppleWinVersionAndBuild(void)
+std::string GetAppleWinVersionAndBuild()
 {
 	std::string debugStr =
 #ifdef _DEBUG
@@ -314,7 +314,7 @@ bool SetCurrentImageDir(const std::string& pszImageDir)
 	return false;
 }
 
-Pravets& GetPravets(void)
+Pravets& GetPravets()
 {
 	static Pravets pravets;
 	return pravets;

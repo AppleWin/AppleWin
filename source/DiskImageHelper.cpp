@@ -650,8 +650,8 @@ bool CImageBase::IsValidImageSize(const uint32_t uImageSize)
 class CDoImage : public CImageBase
 {
 public:
-	CDoImage(void) {}
-	virtual ~CDoImage(void) {}
+	CDoImage() {}
+	virtual ~CDoImage() {}
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
@@ -704,12 +704,12 @@ public:
 		WriteTrack(pImageInfo, track, m_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
 
-	virtual bool AllowCreate(void) { return true; }
-	virtual UINT GetImageSizeForCreate(void) { m_uNumTracksInImage = TRACKS_STANDARD; return TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD; }
+	virtual bool AllowCreate() { return true; }
+	virtual UINT GetImageSizeForCreate() { m_uNumTracksInImage = TRACKS_STANDARD; return TRACK_DENIBBLIZED_SIZE * TRACKS_STANDARD; }
 
-	virtual eImageType GetType(void) { return eImageDO; }
-	virtual const char* GetCreateExtensions(void) { return ".do;.dsk"; }
-	virtual const char* GetRejectExtensions(void) { return ".nib;.iie;.po;.prg"; }
+	virtual eImageType GetType() { return eImageDO; }
+	virtual const char* GetCreateExtensions() { return ".do;.dsk"; }
+	virtual const char* GetRejectExtensions() { return ".nib;.iie;.po;.prg"; }
 };
 
 //-------------------------------------
@@ -718,8 +718,8 @@ public:
 class CPoImage : public CImageBase
 {
 public:
-	CPoImage(void) {}
-	virtual ~CPoImage(void) {}
+	CPoImage() {}
+	virtual ~CPoImage() {}
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
@@ -772,9 +772,9 @@ public:
 		WriteTrack(pImageInfo, track, m_pWorkBuffer, TRACK_DENIBBLIZED_SIZE);
 	}
 
-	virtual eImageType GetType(void) { return eImagePO; }
-	virtual const char* GetCreateExtensions(void) { return ".po"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.nib;.prg;.woz"; }
+	virtual eImageType GetType() { return eImagePO; }
+	virtual const char* GetCreateExtensions() { return ".po"; }
+	virtual const char* GetRejectExtensions() { return ".do;.iie;.nib;.prg;.woz"; }
 };
 
 //-------------------------------------
@@ -783,8 +783,8 @@ public:
 class CNib1Image : public CImageBase
 {
 public:
-	CNib1Image(void) {}
-	virtual ~CNib1Image(void) {}
+	CNib1Image() {}
+	virtual ~CNib1Image() {}
 
 	static const UINT NIB1_TRACK_SIZE = NIBBLES_PER_TRACK_NIB;
 
@@ -836,12 +836,12 @@ public:
 		WriteTrack(pImageInfo, track, pTrackImageBuffer, nNibbles);
 	}
 
-	virtual bool AllowCreate(void) { return true; }
-	virtual UINT GetImageSizeForCreate(void) { m_uNumTracksInImage = TRACKS_STANDARD; return NIB1_TRACK_SIZE * TRACKS_STANDARD; }
+	virtual bool AllowCreate() { return true; }
+	virtual UINT GetImageSizeForCreate() { m_uNumTracksInImage = TRACKS_STANDARD; return NIB1_TRACK_SIZE * TRACKS_STANDARD; }
 
-	virtual eImageType GetType(void) { return eImageNIB1; }
-	virtual const char* GetCreateExtensions(void) { return ".nib"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg;.woz"; }
+	virtual eImageType GetType() { return eImageNIB1; }
+	virtual const char* GetCreateExtensions() { return ".nib"; }
+	virtual const char* GetRejectExtensions() { return ".do;.iie;.po;.prg;.woz"; }
 };
 
 //-------------------------------------
@@ -850,8 +850,8 @@ public:
 class CNib2Image : public CImageBase
 {
 public:
-	CNib2Image(void) {}
-	virtual ~CNib2Image(void) {}
+	CNib2Image() {}
+	virtual ~CNib2Image() {}
 
 	static const UINT NIB2_TRACK_SIZE = 6384;
 
@@ -878,9 +878,9 @@ public:
 		WriteTrack(pImageInfo, track, pTrackImageBuffer, nNibbles);
 	}
 
-	virtual eImageType GetType(void) { return eImageNIB2; }
-	virtual const char* GetCreateExtensions(void) { return ".nb2"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.po;.prg;.woz;.2mg;.2img"; }
+	virtual eImageType GetType() { return eImageNIB2; }
+	virtual const char* GetCreateExtensions() { return ".nb2"; }
+	virtual const char* GetRejectExtensions() { return ".do;.iie;.po;.prg;.woz;.2mg;.2img"; }
 };
 
 //-------------------------------------
@@ -889,8 +889,8 @@ public:
 class CHDVImage : public CImageBase
 {
 public:
-	CHDVImage(void) {}
-	virtual ~CHDVImage(void) {}
+	CHDVImage() {}
+	virtual ~CHDVImage() {}
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
@@ -919,9 +919,9 @@ public:
 		return WriteBlock(pImageInfo, nBlock, pBlockBuffer);
 	}
 
-	virtual eImageType GetType(void) { return eImageHDV; }
-	virtual const char* GetCreateExtensions(void) { return ".hdv"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.iie;.prg"; }
+	virtual eImageType GetType() { return eImageHDV; }
+	virtual const char* GetCreateExtensions() { return ".hdv"; }
+	virtual const char* GetRejectExtensions() { return ".do;.iie;.prg"; }
 };
 
 //-------------------------------------
@@ -930,8 +930,8 @@ public:
 class CIIeImage : public CImageBase
 {
 public:
-	CIIeImage(void) : m_pHeader(NULL) {}
-	virtual ~CIIeImage(void) { delete [] m_pHeader; }
+	CIIeImage() : m_pHeader(NULL) {}
+	virtual ~CIIeImage() { delete [] m_pHeader; }
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
@@ -985,9 +985,9 @@ public:
 		// note: unimplemented
 	}
 
-	virtual eImageType GetType(void) { return eImageIIE; }
-	virtual const char* GetCreateExtensions(void) { return ".iie"; }
-	virtual const char* GetRejectExtensions(void) { return ".do.;.nib;.po;.prg;.woz;.2mg;.2img"; }
+	virtual eImageType GetType() { return eImageIIE; }
+	virtual const char* GetCreateExtensions() { return ".iie"; }
+	virtual const char* GetRejectExtensions() { return ".do.;.nib;.po;.prg;.woz;.2mg;.2img"; }
 
 private:
 	void ConvertSectorOrder(LPBYTE sourceorder)
@@ -1020,8 +1020,8 @@ private:
 class CAplImage : public CImageBase
 {
 public:
-	CAplImage(void) {}
-	virtual ~CAplImage(void) {}
+	CAplImage() {}
+	virtual ~CAplImage() {}
 
 	virtual bool Boot(ImageInfo* ptr)
 	{
@@ -1056,12 +1056,12 @@ public:
 		return !bRes ? eMismatch : ePossibleMatch;
 	}
 
-	virtual bool AllowBoot(void) { return true; }
-	virtual bool AllowRW(void) { return false; }
+	virtual bool AllowBoot() { return true; }
+	virtual bool AllowRW() { return false; }
 
-	virtual eImageType GetType(void) { return eImageAPL; }
-	virtual const char* GetCreateExtensions(void) { return ".apl"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.woz;.2mg;.2img"; }
+	virtual eImageType GetType() { return eImageAPL; }
+	virtual const char* GetCreateExtensions() { return ".apl"; }
+	virtual const char* GetRejectExtensions() { return ".do;.dsk;.iie;.nib;.po;.woz;.2mg;.2img"; }
 };
 
 //-------------------------------------
@@ -1069,8 +1069,8 @@ public:
 class CPrgImage : public CImageBase
 {
 public:
-	CPrgImage(void) {}
-	virtual ~CPrgImage(void) {}
+	CPrgImage() {}
+	virtual ~CPrgImage() {}
 
 	virtual bool Boot(ImageInfo* pImageInfo)
 	{
@@ -1107,12 +1107,12 @@ public:
 		return (*(LPDWORD)pImage == 0x214C470A) ? eMatch : eMismatch;	// "!LG\x0A"
 	}
 
-	virtual bool AllowBoot(void) { return true; }
-	virtual bool AllowRW(void) { return false; }
+	virtual bool AllowBoot() { return true; }
+	virtual bool AllowRW() { return false; }
 
-	virtual eImageType GetType(void) { return eImagePRG; }
-	virtual const char* GetCreateExtensions(void) { return ".prg"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.iie;.nib;.po;.woz;.2mg;.2img"; }
+	virtual eImageType GetType() { return eImagePRG; }
+	virtual const char* GetCreateExtensions() { return ".prg"; }
+	virtual const char* GetRejectExtensions() { return ".do;.dsk;.iie;.nib;.po;.woz;.2mg;.2img"; }
 };
 
 //-------------------------------------
@@ -1120,7 +1120,7 @@ public:
 class CWOZImageHelper
 {
 public:
-	CWOZImageHelper(void)
+	CWOZImageHelper()
 	{
 		m_pWOZEmptyTrack = new BYTE[CWOZHelper::EMPTY_TRACK_SIZE];
 
@@ -1136,7 +1136,7 @@ public:
 			m_pWOZEmptyTrack[i] = n;
 		}
 	}
-	virtual ~CWOZImageHelper(void) { delete [] m_pWOZEmptyTrack; }
+	virtual ~CWOZImageHelper() { delete [] m_pWOZEmptyTrack; }
 
 	void ReadEmptyTrack(LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount)
 	{
@@ -1163,8 +1163,8 @@ private:
 class CWOZ1Image : public CImageBase, private CWOZImageHelper
 {
 public:
-	CWOZ1Image(void) {}
-	virtual ~CWOZ1Image(void) {}
+	CWOZ1Image() {}
+	virtual ~CWOZ1Image() {}
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
@@ -1274,9 +1274,9 @@ public:
 		}
 	}
 
-	virtual eImageType GetType(void) { return eImageWOZ1; }
-	virtual const char* GetCreateExtensions(void) { return ".woz"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.nib;.iie;.po;.prg"; }
+	virtual eImageType GetType() { return eImageWOZ1; }
+	virtual const char* GetCreateExtensions() { return ".woz"; }
+	virtual const char* GetRejectExtensions() { return ".do;.dsk;.nib;.iie;.po;.prg"; }
 };
 
 //-------------------------------------
@@ -1284,8 +1284,8 @@ public:
 class CWOZ2Image : public CImageBase, private CWOZImageHelper
 {
 public:
-	CWOZ2Image(void) {}
-	virtual ~CWOZ2Image(void) {}
+	CWOZ2Image() {}
+	virtual ~CWOZ2Image() {}
 
 	virtual eDetectResult Detect(const LPBYTE pImage, const uint32_t dwImageSize, const char* pszExt)
 	{
@@ -1406,12 +1406,12 @@ public:
 		}
 	}
 
-	virtual bool AllowCreate(void) { return true; }
-	virtual UINT GetImageSizeForCreate(void) { m_uNumTracksInImage = CWOZHelper::MAX_TRACKS_5_25; return sizeof(CWOZHelper::WOZHeader); }
+	virtual bool AllowCreate() { return true; }
+	virtual UINT GetImageSizeForCreate() { m_uNumTracksInImage = CWOZHelper::MAX_TRACKS_5_25; return sizeof(CWOZHelper::WOZHeader); }
 
-	virtual eImageType GetType(void) { return eImageWOZ2; }
-	virtual const char* GetCreateExtensions(void) { return ".woz"; }
-	virtual const char* GetRejectExtensions(void) { return ".do;.dsk;.nib;.iie;.po;.prg"; }
+	virtual eImageType GetType() { return eImageWOZ2; }
+	virtual const char* GetCreateExtensions() { return ".woz"; }
+	virtual const char* GetRejectExtensions() { return ".do;.dsk;.nib;.iie;.po;.prg"; }
 };
 
 //-----------------------------------------------------------------------------
@@ -1500,7 +1500,7 @@ eDetectResult C2IMGHelper::DetectHdr(LPBYTE& pImage, uint32_t& dwImageSize, uint
 	return eMatch;
 }
 
-BYTE C2IMGHelper::GetVolumeNumber(void)
+BYTE C2IMGHelper::GetVolumeNumber()
 {
 	if (m_Hdr.ImageFormat != e2IMGFormatDOS33 || !m_Hdr.Flags.bDOS33VolumeNumberValid)
 		return DEFAULT_VOLUME_NUMBER;
@@ -1508,7 +1508,7 @@ BYTE C2IMGHelper::GetVolumeNumber(void)
 	return m_Hdr.Flags.VolumeNumber;
 }
 
-bool C2IMGHelper::IsLocked(void)
+bool C2IMGHelper::IsLocked()
 {
 	return m_Hdr.Flags.bDiskImageLocked;
 }
@@ -2054,7 +2054,7 @@ bool CImageHelperBase::WOZUpdateInfo(ImageInfo* pImageInfo, uint32_t& dwOffset)
 
 //-----------------------------------------------------------------------------
 
-CDiskImageHelper::CDiskImageHelper(void) :
+CDiskImageHelper::CDiskImageHelper() :
 	CImageHelperBase(true)
 {
 	m_vecImageTypes.push_back( new CWOZ1Image );	// Try to match WOZ1/WOZ2 first, as these can be precisely matched
@@ -2181,7 +2181,7 @@ CImageBase* CDiskImageHelper::GetImageForCreation(const char* pszExt, uint32_t* 
 	return NULL;
 }
 
-UINT CDiskImageHelper::GetMaxImageSize(void)
+UINT CDiskImageHelper::GetMaxImageSize()
 {
 	// Pathologic largest 5.25 image is a WOZ with FLUX tracks for each 0.25 track (GH#1240)
 	const UINT largestFluxTrackInBlocks = 100;	// typically this is 70-80 blocks
@@ -2198,7 +2198,7 @@ UINT CDiskImageHelper::GetMinDetectSize(const UINT uImageSize, bool* pTempDetect
 
 //-----------------------------------------------------------------------------
 
-CHardDiskImageHelper::CHardDiskImageHelper(void) :
+CHardDiskImageHelper::CHardDiskImageHelper() :
 	CImageHelperBase(false)
 {
 	m_vecImageTypes.push_back( new CHDVImage );
@@ -2266,7 +2266,7 @@ CImageBase* CHardDiskImageHelper::GetImageForCreation(const char* pszExt, uint32
 	return NULL;
 }
 
-UINT CHardDiskImageHelper::GetMaxImageSize(void)
+UINT CHardDiskImageHelper::GetMaxImageSize()
 {
 	// TODO: This doesn't account for .2mg files with comments after the disk-image
 	return HARDDISK_32M_SIZE + m_2IMGHelper.GetMaxHdrSize();

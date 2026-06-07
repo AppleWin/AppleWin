@@ -1,3 +1,3 @@
 #pragma once
 
-bool AboutDlg(void);
+bool AboutDlg();

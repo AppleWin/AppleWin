@@ -157,5 +157,5 @@
 
 // Color
 	COLORREF DebuggerGetColor( int iColor );
-	bool DebuggerSetColor ( const int iScheme, const int iColor, const COLORREF nColor );
-	void ConfigColorsReset(void);
+	bool DebuggerSetColor( const int iScheme, const int iColor, const COLORREF nColor );
+	void ConfigColorsReset();

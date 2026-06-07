@@ -78,7 +78,7 @@ static INT_PTR CALLBACK DlgProcAbout(HWND hWnd, UINT message, WPARAM wparam, LPA
 	return FALSE;
 }
 
-bool AboutDlg(void)
+bool AboutDlg()
 {
 	return DialogBox(GetFrame().g_hInstance, (LPCTSTR)IDD_ABOUT, GetFrame().g_hFrameWindow, DlgProcAbout) ? true : false;
 }

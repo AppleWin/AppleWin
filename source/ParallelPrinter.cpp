@@ -53,7 +53,7 @@ void ParallelPrinterCard::InitializeIO(LPBYTE pCxRomPeripheral)
 }
 
 //===========================================================================
-bool ParallelPrinterCard::CheckPrint(void)
+bool ParallelPrinterCard::CheckPrint()
 {
 	m_inactivity = 0;
 	if (m_file == NULL)
@@ -71,7 +71,7 @@ bool ParallelPrinterCard::CheckPrint(void)
 }
 
 //===========================================================================
-void ParallelPrinterCard::ClosePrint(void)
+void ParallelPrinterCard::ClosePrint()
 {
 	if (m_file != NULL)
 	{
@@ -90,7 +90,7 @@ void ParallelPrinterCard::ClosePrint(void)
 }
 
 //===========================================================================
-void ParallelPrinterCard::Destroy(void)
+void ParallelPrinterCard::Destroy()
 {
 	ClosePrint();
 }
@@ -154,7 +154,7 @@ BYTE __stdcall ParallelPrinterCard::IOWrite(WORD, WORD address, BYTE, BYTE value
 
 //===========================================================================
 
-const std::string& ParallelPrinterCard::GetFilename(void)
+const std::string& ParallelPrinterCard::GetFilename()
 {
 	return m_szPrintFilename;
 }
@@ -176,7 +176,7 @@ void ParallelPrinterCard::SetFilename(const std::string& prtFilename)
 
 //===========================================================================
 
-void ParallelPrinterCard::GetRegistryConfig(void)
+void ParallelPrinterCard::GetRegistryConfig()
 {
 	std::string regSection = RegGetConfigSlotSection(m_slot);
 
@@ -202,7 +202,7 @@ void ParallelPrinterCard::GetRegistryConfig(void)
 		SetIdleLimit(dwTmp);
 }
 
-void ParallelPrinterCard::SetRegistryConfig(void)
+void ParallelPrinterCard::SetRegistryConfig()
 {
 	std::string regSection = RegGetConfigSlotSection(m_slot);
 	RegSaveValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, true, GetDumpToPrinter());
@@ -225,7 +225,7 @@ void ParallelPrinterCard::SetRegistryConfig(void)
 #define SS_YAML_KEY_APPEND "Printer Append"
 #define SS_YAML_KEY_DUMPTOREALPRINTER "Enable Dump To Real Printer"
 
-const std::string& ParallelPrinterCard::GetSnapshotCardName(void)
+const std::string& ParallelPrinterCard::GetSnapshotCardName()
 {
 	static const std::string name("Generic Printer");
 	return name;

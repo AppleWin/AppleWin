@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Windows/AppleWin.h"
 #include "../resource/resource.h"
 
-void CPropertySheet::Init(void)
+void CPropertySheet::Init()
 {
 	PROPSHEETPAGE PropSheetPages[PG_NUM_SHEETS];
 

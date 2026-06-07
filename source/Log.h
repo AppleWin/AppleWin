@@ -14,8 +14,8 @@
 
 extern FILE* g_fh;	// File handle for log file
 
-void LogInit(void);
-void LogDone(void);
+void LogInit();
+void LogDone();
 
 void LogOutput(const char* format, ...) ATTRIBUTE_FORMAT_PRINTF(1, 2);
 void LogFileOutput(const char* format, ...) ATTRIBUTE_FORMAT_PRINTF(1, 2);

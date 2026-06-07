@@ -50,9 +50,9 @@ extern BYTE *mem_color_ram_vicii;
 extern unsigned int mem_old_reg_pc;
 extern BYTE *mem_chargen_rom_ptr;
 
-extern void mem_initialize_memory(void);
-extern void mem_powerup(void);
-extern int mem_load(void);
+extern void mem_initialize_memory();
+extern void mem_powerup();
+extern int mem_load();
 extern void mem_get_basic_text(WORD *start, WORD *end);
 extern void mem_set_basic_text(WORD start, WORD end);
 extern void mem_toggle_watchpoints(int flag, void *context);
@@ -70,7 +70,7 @@ extern store_func_t mem_store;
 /* ------------------------------------------------------------------------- */
 
 /* Memory access functions for the monitor.  */
-extern const char **mem_bank_list(void);
+extern const char **mem_bank_list();
 extern int mem_bank_from_name(const char *name);
 extern BYTE mem_bank_read(int bank, WORD addr, void *context);
 extern BYTE mem_bank_peek(int bank, WORD addr, void *context);

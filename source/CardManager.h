@@ -9,7 +9,7 @@
 class CardManager
 {
 public:
-	CardManager(void) :
+	CardManager() :
 		m_pMouseCard(NULL),
 		m_pSSC(NULL),
 		m_pParallelPrinterCard(NULL),
@@ -27,7 +27,7 @@ public:
 		InsertInternal(SLOT7, CT_Empty);
 		InsertAuxInternal(CT_Extended80Col);	// For Apple //e and above
 	}
-	~CardManager(void)
+	~CardManager()
 	{
 		for (UINT i=0; i<NUM_SLOTS; i++)
 			RemoveInternal(i);
@@ -48,29 +48,29 @@ public:
 	}
 
 	void InsertAux(SS_CARDTYPE type, bool updateRegistry = true);
-	void RemoveAux(void);
-	SS_CARDTYPE QueryAux(void) { return m_aux->QueryType(); }
-	Card* GetObjAux(void) { _ASSERT(0); return m_aux; }	// ASSERT because this is a DummyCard
+	void RemoveAux();
+	SS_CARDTYPE QueryAux() { return m_aux->QueryType(); }
+	Card* GetObjAux() { _ASSERT(0); return m_aux; }	// ASSERT because this is a DummyCard
 
 	//
 
-	Disk2CardManager& GetDisk2CardMgr(void) { return m_disk2CardMgr; }
-	LanguageCardManager& GetLanguageCardMgr(void) { return m_languageCardMgr; }
-	MockingboardCardManager& GetMockingboardCardMgr(void) { return m_mockingboardCardMgr; }
-	class CMouseInterface* GetMouseCard(void) { return m_pMouseCard; }
-	bool IsMouseCardInstalled(void) { return m_pMouseCard != NULL; }
-	class CSuperSerialCard* GetSSC(void) { return m_pSSC; }
-	bool IsSSCInstalled(void) { return m_pSSC != NULL; }
-	class ParallelPrinterCard* GetParallelPrinterCard(void) { return m_pParallelPrinterCard; }
-	bool IsParallelPrinterCardInstalled(void) { return m_pParallelPrinterCard != NULL; }
-	class VidHDCard* GetVidHDCard(void) { return m_pVidHDCard; }
+	Disk2CardManager& GetDisk2CardMgr() { return m_disk2CardMgr; }
+	LanguageCardManager& GetLanguageCardMgr() { return m_languageCardMgr; }
+	MockingboardCardManager& GetMockingboardCardMgr() { return m_mockingboardCardMgr; }
+	class CMouseInterface* GetMouseCard() { return m_pMouseCard; }
+	bool IsMouseCardInstalled() { return m_pMouseCard != NULL; }
+	class CSuperSerialCard* GetSSC() { return m_pSSC; }
+	bool IsSSCInstalled() { return m_pSSC != NULL; }
+	class ParallelPrinterCard* GetParallelPrinterCard() { return m_pParallelPrinterCard; }
+	bool IsParallelPrinterCardInstalled() { return m_pParallelPrinterCard != NULL; }
+	class VidHDCard* GetVidHDCard() { return m_pVidHDCard; }
 	SS_CARDTYPE QueryDefaultCardForSlot(UINT slot, eApple2Type model);
 
 	void GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currConfig[NUM_SLOTS], std::vector<SS_CARDTYPE>& choicesList);
 	void GetCardChoicesForAuxSlot(std::vector<SS_CARDTYPE>& choicesList);
 
 	void InitializeIO(LPBYTE pCxRomPeripheral);
-	void Destroy(void);
+	void Destroy();
 	void Reset(const bool powerCycle);
 	void Update(const ULONG nExecutedCycles);
 	void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
@@ -79,7 +79,7 @@ private:
 	void InsertInternal(UINT slot, SS_CARDTYPE type);
 	void InsertAuxInternal(SS_CARDTYPE type);
 	void RemoveInternal(UINT slot);
-	void RemoveAuxInternal(void);
+	void RemoveAuxInternal();
 	bool IsSingleInstanceCard(SS_CARDTYPE card);
 
 	Card* m_slot[NUM_SLOTS];

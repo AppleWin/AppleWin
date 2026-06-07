@@ -3,12 +3,12 @@
 class Pravets
 {
 public:
-	Pravets(void);
-	~Pravets(void){}
+	Pravets();
+	~Pravets() {}
 
-	void Reset(void);
+	void Reset();
 
-	void ToggleP8ACapsLock(void) { P8CAPS_ON = !P8CAPS_ON; }
+	void ToggleP8ACapsLock() { P8CAPS_ON = !P8CAPS_ON; }
 
 	BYTE SetCapsLockAllowed(BYTE value);
 	BYTE GetKeycode(BYTE floatingBus);

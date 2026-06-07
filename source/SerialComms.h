@@ -31,7 +31,7 @@ public:
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Reset(const bool powerCycle);
 	virtual void Destroy() {}
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName();
 	virtual void	SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool	LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
@@ -68,7 +68,7 @@ private:
 	void	SetDIPSWDefaults();
 	UINT	BaudRateToIndex(UINT uBaudRate);
 	void	UpdateCommState();
-	void	TransmitDone(void);
+	void	TransmitDone();
 	bool	CheckComm();
 	void	CloseComm();
 	void	CheckCommEvent(DWORD dwEvtMask);
@@ -78,7 +78,7 @@ private:
 	UINT	GetNumSerialPortChoices() { return (UINT) m_vecSerialPortsItems.size(); }
 	void	ScanCOMPorts();
 	void	SetSerialPortName(const char* pSerialPortName);
-	void	SetRegistrySerialPortName(void);
+	void	SetRegistrySerialPortName();
 	void	SaveSnapshotDIPSW(class YamlSaveHelper& yamlSaveHelper, std::string key, SSC_DIPSW& dipsw);
 	void	LoadSnapshotDIPSW(class YamlLoadHelper& yamlLoadHelper, std::string key, SSC_DIPSW& dipsw);
 

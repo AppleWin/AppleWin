@@ -20,8 +20,8 @@ public:
 	int SaveStateSelectImage(HWND hWindow, const char* pszTitle, bool bSave);
 	void PostMsgAfterClose(HWND hWnd, PAGETYPE page);
 
-	void ResetPageMask(void) { m_bmPages = 0; }	// Req'd because cancelling doesn't clear the page-mask
-	PAGETYPE GetLastPage(void) { return m_LastPage; }
+	void ResetPageMask() { m_bmPages = 0; }	// Req'd because cancelling doesn't clear the page-mask
+	PAGETYPE GetLastPage() { return m_LastPage; }
 	void SetLastPage(PAGETYPE page)
 	{
 		m_LastPage = page;
@@ -29,11 +29,11 @@ public:
 		m_bmAfterClosePages = m_bmPages;
 	}
 
-	void SaveCurrentConfig(void);
-	const std::string & GetSSNewFilename(void) { return m_szSSNewFilename; }
-	CConfigNeedingRestart& GetConfigNew(void) { return m_ConfigNew; }
-	bool IsConfigChangedForRestart(void) { return m_ConfigNew != m_ConfigOld; }
-	void SetDoBenchmark(void) { m_bDoBenchmark = true; }
+	void SaveCurrentConfig();
+	const std::string & GetSSNewFilename() { return m_szSSNewFilename; }
+	CConfigNeedingRestart& GetConfigNew() { return m_ConfigNew; }
+	bool IsConfigChangedForRestart() { return m_ConfigNew != m_ConfigOld; }
+	void SetDoBenchmark() { m_bDoBenchmark = true; }
 	void ApplyNewConfigFromSnapshot();
 	void ConfigSaveApple2Type(eApple2Type apple2Type);
 	void SetSlot(UINT slot, SS_CARDTYPE newCardType);

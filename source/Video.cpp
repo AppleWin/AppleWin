@@ -91,50 +91,50 @@ const char* const Video::g_apVideoModeDesc[NUM_VIDEO_MODES] =
 
 //===========================================================================
 
-UINT Video::GetFrameBufferBorderlessWidth(void)
+UINT Video::GetFrameBufferBorderlessWidth()
 {
 	return HasVidHD() ? kVideoWidthIIgs : kVideoWidthII;
 }
 
-UINT Video::GetFrameBufferBorderlessHeight(void)
+UINT Video::GetFrameBufferBorderlessHeight()
 {
 	return HasVidHD() ? kVideoHeightIIgs : kVideoHeightII;
 }
 
 // NB. These border areas are not visible (... and these border areas are unrelated to the 3D border below)
-UINT Video::GetFrameBufferBorderWidth(void)
+UINT Video::GetFrameBufferBorderWidth()
 {
 	static const UINT uBorderW = 20;
 	return uBorderW;
 }
 
-UINT Video::GetFrameBufferBorderHeight(void)
+UINT Video::GetFrameBufferBorderHeight()
 {
 	static const UINT uBorderH = 18;
 	return uBorderH;
 }
 
-UINT Video::GetFrameBufferWidth(void)
+UINT Video::GetFrameBufferWidth()
 {
 	return GetFrameBufferBorderlessWidth() + 2 * GetFrameBufferBorderWidth();
 }
 
-UINT Video::GetFrameBufferHeight(void)
+UINT Video::GetFrameBufferHeight()
 {
 	return GetFrameBufferBorderlessHeight() + 2 * GetFrameBufferBorderHeight();
 }
 
-UINT Video::GetFrameBufferCentringOffsetX(void)
+UINT Video::GetFrameBufferCentringOffsetX()
 {
 	return HasVidHD() ? ((kVideoWidthIIgs - kVideoWidthII) / 2) : 0;
 }
 
-UINT Video::GetFrameBufferCentringOffsetY(void)
+UINT Video::GetFrameBufferCentringOffsetY()
 {
 	return HasVidHD() ? ((kVideoHeightIIgs - kVideoHeightII) / 2) : 0;
 }
 
-int Video::GetFrameBufferCentringValue(void)
+int Video::GetFrameBufferCentringValue()
 {
 	int value = 0;
 
@@ -161,7 +161,7 @@ void Video::VideoReinitialize(bool bInitVideoScannerAddress)
 
 //===========================================================================
 
-void Video::VideoResetState(void)
+void Video::VideoResetState()
 {
 	g_nAltCharSetOffset    = 0;
 	g_uVideoMode           = VF_TEXT;
@@ -242,47 +242,47 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 
 //===========================================================================
 
-bool Video::VideoGetSW80COL(void)
+bool Video::VideoGetSW80COL()
 {
 	return SW_80COL ? true : false;
 }
 
-bool Video::VideoGetSWDHIRES(void)
+bool Video::VideoGetSWDHIRES()
 {
 	return SW_DHIRES ? true : false;
 }
 
-bool Video::VideoGetSWHIRES(void)
+bool Video::VideoGetSWHIRES()
 {
 	return SW_HIRES ? true : false;
 }
 
-bool Video::VideoGetSW80STORE(void)
+bool Video::VideoGetSW80STORE()
 {
 	return SW_80STORE ? true : false;
 }
 
-bool Video::VideoGetSWMIXED(void)
+bool Video::VideoGetSWMIXED()
 {
 	return SW_MIXED ? true : false;
 }
 
-bool Video::VideoGetSWPAGE2(void)
+bool Video::VideoGetSWPAGE2()
 {
 	return SW_PAGE2 ? true : false;
 }
 
-bool Video::VideoGetSWTEXT(void)
+bool Video::VideoGetSWTEXT()
 {
 	return SW_TEXT ? true : false;
 }
 
-bool Video::VideoGetSWAltCharSet(void)
+bool Video::VideoGetSWAltCharSet()
 {
 	return g_nAltCharSetOffset != 0;
 }
 
-bool Video::VideoGet80COLAUXEMPTY(void)
+bool Video::VideoGet80COLAUXEMPTY()
 {
 	return g_uVideoMode & VF_80COL_AUX_EMPTY ? true : false;
 }
@@ -294,7 +294,7 @@ bool Video::VideoGet80COLAUXEMPTY(void)
 #define SS_YAML_KEY_CYCLES_THIS_FRAME "Cycles This Frame"
 #define SS_YAML_KEY_VIDEO_REFRESH_RATE "Video Refresh Rate"
 
-const std::string& Video::VideoGetSnapshotStructName(void)
+const std::string& Video::VideoGetSnapshotStructName()
 {
 	static const std::string name("Video");
 	return name;
@@ -643,7 +643,7 @@ UINT Video::GetVideoRom(const BYTE*& pVideoRom)
 	return g_videoRomSize;
 }
 
-bool Video::GetVideoRomRockerSwitch(void)
+bool Video::GetVideoRomRockerSwitch()
 {
 	return g_videoRomRockerSwitch;
 }
@@ -653,7 +653,7 @@ void Video::SetVideoRomRockerSwitch(bool state)
 	g_videoRomRockerSwitch = state;
 }
 
-bool Video::IsVideoRom4K(void)
+bool Video::IsVideoRom4K()
 {
 	return g_videoRomSize <= kVideoRomSize4K;
 }
@@ -737,7 +737,7 @@ void Video::Config_Save_Video()
 
 //===========================================================================
 
-uint32_t Video::GetVideoMode(void)
+uint32_t Video::GetVideoMode()
 {
 	return g_uVideoMode;
 }
@@ -747,7 +747,7 @@ void Video::SetVideoMode(uint32_t videoMode)
 	g_uVideoMode = videoMode;
 }
 
-VideoType_e Video::GetVideoType(void)
+VideoType_e Video::GetVideoType()
 {
 	return (VideoType_e) g_eVideoType;
 }
@@ -758,19 +758,19 @@ void Video::SetVideoType(VideoType_e newVideoType)
 	g_eVideoType = newVideoType;
 }
 
-VideoStyle_e Video::GetVideoStyle(void)
+VideoStyle_e Video::GetVideoStyle()
 {
 	return g_eVideoStyle;
 }
 
-void Video::IncVideoType(void)
+void Video::IncVideoType()
 {
 	g_eVideoType++;
 	if (g_eVideoType >= NUM_VIDEO_MODES)
 		g_eVideoType = 0;
 }
 
-void Video::DecVideoType(void)
+void Video::DecVideoType()
 {
 	if (g_eVideoType <= 0)
 		g_eVideoType = NUM_VIDEO_MODES;
@@ -794,7 +794,7 @@ bool Video::IsVideoStyle(VideoStyle_e mask)
 
 //===========================================================================
 
-VideoRefreshRate_e Video::GetVideoRefreshRate(void)
+VideoRefreshRate_e Video::GetVideoRefreshRate()
 {
 	return (g_bVideoScannerNTSC == false) ? VR_50HZ : VR_60HZ;
 }
@@ -810,7 +810,7 @@ void Video::SetVideoRefreshRate(VideoRefreshRate_e rate)
 
 //===========================================================================
 
-const char* Video::VideoGetAppWindowTitle(void)
+const char* Video::VideoGetAppWindowTitle()
 {
 	static const char *apVideoMonitorModeDesc[ 2 ] =
 	{
@@ -846,7 +846,7 @@ void Video::Initialize(uint8_t* frameBuffer, bool resetState)
 #endif
 }
 
-void Video::Destroy(void)
+void Video::Destroy()
 {
 	SetFrameBuffer(NULL);
 	NTSC_Destroy();
@@ -870,14 +870,14 @@ void Video::VideoRefreshBuffer(uint32_t uRedrawWholeScreenVideoMode, bool bRedra
 	}
 }
 
-void Video::ClearFrameBuffer(void)
+void Video::ClearFrameBuffer()
 {
 	UINT32* frameBuffer = (UINT32*)GetFrameBuffer();
 	std::fill(frameBuffer, frameBuffer + GetFrameBufferWidth() * GetFrameBufferHeight(), OPAQUE_BLACK);
 }
 
 // Called when entering debugger, and after viewing Apple II video screen from debugger
-void Video::ClearSHRResidue(void)
+void Video::ClearSHRResidue()
 {
 	ClearFrameBuffer();
 	GetFrame().VideoPresentScreen();

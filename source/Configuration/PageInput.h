@@ -23,15 +23,15 @@ public:
 
 	static INT_PTR CALLBACK DlgProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam);
 
-	UINT GetJoystickCursorControl(void){ return m_uCursorControl; }
-	void SetJoystickCursorControl(UINT uValue){ m_uCursorControl = uValue; }
-	UINT GetJoystickCenteringControl(void){ return m_uCenteringControl; }
-	void SetJoystickCenteringControl(UINT uValue){ m_uCenteringControl = uValue; }
+	UINT GetJoystickCursorControl() { return m_uCursorControl; }
+	void SetJoystickCursorControl(UINT uValue) { m_uCursorControl = uValue; }
+	UINT GetJoystickCenteringControl() { return m_uCenteringControl; }
+	void SetJoystickCenteringControl(UINT uValue) { m_uCenteringControl = uValue; }
 	UINT GetAutofire(UINT uButton) { return (m_bmAutofire >> uButton) & 1; }	// Get a specific button
-	UINT GetAutofire(void) { return m_bmAutofire; }								// Get all buttons
+	UINT GetAutofire() { return m_bmAutofire; }								// Get all buttons
 	void SetAutofire(UINT uValue) { m_bmAutofire = uValue; }					// Set all buttons
-	bool GetButtonsSwapState(void){ return m_bSwapButtons0and1; }
-	void SetButtonsSwapState(bool value){ m_bSwapButtons0and1 = value; }
+	bool GetButtonsSwapState() { return m_bSwapButtons0and1; }
+	void SetButtonsSwapState(bool value) { m_bSwapButtons0and1 = value; }
 
 	static const UINT kAutofire_Default = 0;
 	static const UINT kCenteringControl_Default = JOYSTICK_MODE_CENTERING;

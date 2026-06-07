@@ -16,16 +16,16 @@ typedef SHORT libspectrum_signed_word;
 class AY8913
 {
 public:
-	AY8913(void);
-	~AY8913(void) {};
+	AY8913();
+	~AY8913() {};
 
-	void sound_ay_init( void );
+	void sound_ay_init();
 	void sound_init( const char *device );
 	BYTE sound_ay_read( int reg );	// TC
 	void sound_ay_write( int reg, int val, libspectrum_dword now );
-	void sound_ay_reset( void );
-	void sound_frame( void );
-	BYTE* GetAYRegsPtr( void ) { return &sound_ay_registers[0]; }
+	void sound_ay_reset();
+	void sound_frame();
+	BYTE* GetAYRegsPtr() { return &sound_ay_registers[0]; }
 	void SetFramesize(int frameSize) { sound_generator_framesiz = frameSize; }
 	void SetSoundBuffers(INT16** buffers) { ppSoundBuffers = buffers; }
 	static void SetCLK( double CLK ) { m_fCurrentCLK_AY8910 = CLK; }
@@ -33,9 +33,9 @@ public:
 	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, const std::string& suffix);
 
 private:
-	void init( void );
-	void sound_end( void );
-	void sound_ay_overlay( void );
+	void init();
+	void sound_end();
+	void sound_ay_overlay();
 
 private:
 	/* foo_subcycles are fixed-point with low 16 bits as fractional part.

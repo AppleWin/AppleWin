@@ -30,8 +30,8 @@ short   JoyGetTrim(bool bAxisX);
 void	JoyportControl(const UINT uControl);
 void	JoySetHookAltKeys(bool hook);
 void	JoySetButtonVirtualKey(UINT button, UINT virtKey);
-int		GetJoystick1(void);
-int		GetJoystick2(void);
+int		GetJoystick1();
+int		GetJoystick2();
 void    JoySaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    JoyLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
 

@@ -189,7 +189,7 @@ HarddiskInterfaceCard::HarddiskInterfaceCard(UINT slot) :
 	m_useHdcFirmwareMode = (HdcMode)tmp;
 }
 
-HarddiskInterfaceCard::~HarddiskInterfaceCard(void)
+HarddiskInterfaceCard::~HarddiskInterfaceCard()
 {
 	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 		CleanupDriveInternal(i);
@@ -406,7 +406,7 @@ void HarddiskInterfaceCard::GetFilenameAndPathForSaveState(std::string& filename
 
 //===========================================================================
 
-void HarddiskInterfaceCard::Destroy(void)
+void HarddiskInterfaceCard::Destroy()
 {
 	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
 	{
@@ -1009,7 +1009,7 @@ BYTE __stdcall HarddiskInterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, B
 
 //===========================================================================
 
-void HarddiskInterfaceCard::FixupUnitNum(void)
+void HarddiskInterfaceCard::FixupUnitNum()
 {
 	if (!m_isFirmwareV1or2)
 		return;
@@ -1019,7 +1019,7 @@ void HarddiskInterfaceCard::FixupUnitNum(void)
 		m_unitNum = (m_unitNum & 0x8F) | (m_slot << 4);
 }
 
-BYTE HarddiskInterfaceCard::GetNumConnectedDevices(void)
+BYTE HarddiskInterfaceCard::GetNumConnectedDevices()
 {
 	// Scan backwards to find the index of the last attached HDD
 	int numDevices = NUM_HARDDISKS - 1;
@@ -1033,14 +1033,14 @@ BYTE HarddiskInterfaceCard::GetNumConnectedDevices(void)
 	return numDevices + 1;
 }
 
-BYTE HarddiskInterfaceCard::GetProDOSBlockDeviceUnit(void)
+BYTE HarddiskInterfaceCard::GetProDOSBlockDeviceUnit()
 {
 	const BYTE slotFromUnitNum = (m_unitNum >> 4) & 7;
 	const BYTE offset = (slotFromUnitNum == m_slot) ? 0 : 2;
 	return offset + (m_unitNum >> 7);	// bit7 = drive select
 }
 
-HardDiskDrive* HarddiskInterfaceCard::GetUnit(void)
+HardDiskDrive* HarddiskInterfaceCard::GetUnit()
 {
 	const bool isSmartPortCmd = !!(m_command & SP_Cmd_base);
 
@@ -1236,7 +1236,7 @@ void HarddiskInterfaceCard::GetLightStatus(Disk_Status_e *pDisk1Status)
 
 //===========================================================================
 
-bool HarddiskInterfaceCard::ImageSwap(void)
+bool HarddiskInterfaceCard::ImageSwap()
 {
 	std::swap(m_hardDiskDrive[HARDDISK_1], m_hardDiskDrive[HARDDISK_2]);
 
@@ -1279,13 +1279,13 @@ static const UINT kUNIT_VERSION = 6;
 #define SS_YAML_KEY_FIFO_INDEX "FIFO Index"
 #define SS_YAML_KEY_FIRMWARE "Firmware"
 
-const std::string& HarddiskInterfaceCard::GetSnapshotCardNameOld(void)
+const std::string& HarddiskInterfaceCard::GetSnapshotCardNameOld()
 {
 	static const std::string name("Generic HDD");
 	return name;
 }
 
-const std::string& HarddiskInterfaceCard::GetSnapshotCardName(void)
+const std::string& HarddiskInterfaceCard::GetSnapshotCardName()
 {
 	static const std::string name("Hard Disk Controller");
 	return name;

@@ -149,17 +149,17 @@ void Snapshot_SetFilename(const std::string& filename, const std::string& path/*
 	Snapshot_SetPathname(pathname+filename);
 }
 
-const std::string& Snapshot_GetFilename(void)
+const std::string& Snapshot_GetFilename()
 {
 	return g_strSaveStateFilename;
 }
 
-const std::string& Snapshot_GetPath(void)
+const std::string& Snapshot_GetPath()
 {
 	return g_strSaveStatePath;
 }
 
-const std::string& Snapshot_GetPathname(void)
+const std::string& Snapshot_GetPathname()
 {
 	return g_strSaveStatePathname;
 }
@@ -187,7 +187,7 @@ void Snapshot_GetDefaultFilenameAndPath(std::string& defaultFilename, std::strin
 // Called by Disk2InterfaceCard::InsertDisk() and HD_Insert() after a successful insertion
 // Called by Disk2InterfaceCard::EjectDisk() and HD_Unplug()
 // Called by RepeatInitialization() when Harddisk Controller card is disabled
-void Snapshot_UpdatePath(void)
+void Snapshot_UpdatePath()
 {
 	std::string defaultFilename;
 	std::string defaultPath;
@@ -204,25 +204,25 @@ void Snapshot_UpdatePath(void)
 
 //-----------------------------------------------------------------------------
 
-static const std::string& GetSnapshotUnitApple2Name(void)
+static const std::string& GetSnapshotUnitApple2Name()
 {
 	static const std::string name("Apple2");
 	return name;
 }
 
-static const std::string& GetSnapshotUnitSlotsName(void)
+static const std::string& GetSnapshotUnitSlotsName()
 {
 	static const std::string name("Slots");
 	return name;
 }
 
-static const std::string& GetSnapshotUnitGameIOConnectorName(void)
+static const std::string& GetSnapshotUnitGameIOConnectorName()
 {
 	static const std::string name("Game I/O Connector");
 	return name;
 }
 
-static const std::string& GetSnapshotUnitMiscName(void)
+static const std::string& GetSnapshotUnitMiscName()
 {
 	static const std::string name("Miscellaneous");
 	return name;
@@ -259,7 +259,7 @@ static eApple2Type ParseApple2Type(std::string type)
 	throw std::runtime_error("Load: Unknown Apple2 type");
 }
 
-static std::string GetApple2TypeAsString(void)
+static std::string GetApple2TypeAsString()
 {
 	switch ( GetApple2Type() )
 	{
@@ -346,7 +346,7 @@ static void ParseSlots(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 
 //---
 
-static void ParseUnit(void)
+static void ParseUnit()
 {
 	yamlHelper.GetMapStartEvent();
 
@@ -388,7 +388,7 @@ static void ParseUnit(void)
 	}
 }
 
-static void Snapshot_LoadState_v2(void)
+static void Snapshot_LoadState_v2()
 {
 	bool restart = false;	// Only need to restart if any VM state has change
 	HCURSOR oldcursor = SetCursor(LoadCursor(0,IDC_WAIT));
@@ -500,7 +500,7 @@ void Snapshot_LoadState()
 
 //-----------------------------------------------------------------------------
 
-void Snapshot_SaveState(void)
+void Snapshot_SaveState()
 {
 	LogFileOutput("Saving Save-State to %s\n", g_strSaveStatePathname.c_str());
 	try

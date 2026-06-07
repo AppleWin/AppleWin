@@ -43,7 +43,7 @@ class Card
 {
 public:
 	Card(SS_CARDTYPE type, UINT slot) : m_type(type), m_slot(slot) {}
-	virtual ~Card(void) {}
+	virtual ~Card() {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral) = 0;
 	virtual void Destroy() = 0;		// Called by CardManager::Destroy() on WM_DESTROY
@@ -52,10 +52,10 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper) = 0;
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version) = 0;
 
-	SS_CARDTYPE QueryType(void) { return m_type; }
+	SS_CARDTYPE QueryType() { return m_type; }
 
 	static const std::string& GetCardNameEmpty();
-	std::string GetCardName(void);
+	std::string GetCardName();
 	static std::string GetCardName(const SS_CARDTYPE cardType);
 	static SS_CARDTYPE GetCardType(const std::string & card);
 
@@ -79,7 +79,7 @@ class EmptyCard : public Card
 {
 public:
 	EmptyCard(UINT slot) : Card(CT_Empty, slot) {}
-	virtual ~EmptyCard(void) {}
+	virtual ~EmptyCard() {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral) {}
 	virtual void Destroy() {}
@@ -95,7 +95,7 @@ class DummyCard : public Card	// For cards that currently can't be instantiated 
 {
 public:
 	DummyCard(SS_CARDTYPE type, UINT slot) : Card(type, slot) {}
-	virtual ~DummyCard(void) {}
+	virtual ~DummyCard() {}
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 	virtual void Destroy() {}

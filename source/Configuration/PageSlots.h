@@ -23,9 +23,9 @@ public:
 
 	static INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 
-	UINT GetMouseShowCrosshair(void) { return m_mouseShowCrosshair; }
+	UINT GetMouseShowCrosshair() { return m_mouseShowCrosshair; }
 	void SetMouseShowCrosshair(UINT uValue) { m_mouseShowCrosshair = uValue; }
-	UINT GetMouseRestrictToWindow(void) { return m_mouseRestrictToWindow; }
+	UINT GetMouseRestrictToWindow() { return m_mouseRestrictToWindow; }
 	void SetMouseRestrictToWindow(UINT uValue) { m_mouseRestrictToWindow = uValue; }
 
 	virtual void ApplyConfigAfterClose();	// IPropertySheetPage

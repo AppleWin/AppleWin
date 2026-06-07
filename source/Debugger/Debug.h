@@ -169,15 +169,15 @@
 
 	bool	DebugGetVideoMode(UINT* pVideoMode);
 
-	void	DebugBegin ();
-	void	DebugExitDebugger ();
+	void	DebugBegin();
+	void	DebugExitDebugger();
 	void	DebugContinueStepping(const bool bCallerWillUpdateDisplay = false);
-	void    DebugStopStepping(void);
-	void	DebugDestroy ();
-	void	DebugDisplay ( BOOL bInitDisasm = FALSE );
-	void	DebugInitialize ();
-	void	DebugReset(void);
-	bool	DebugQueryAnyBreakpointsSet ();
+	void    DebugStopStepping();
+	void	DebugDestroy();
+	void	DebugDisplay( BOOL bInitDisasm = FALSE );
+	void	DebugInitialize();
+	void	DebugReset();
+	bool	DebugQueryAnyBreakpointsSet();
 
 	void	DebuggerInputConsoleChar( char ch );
 	void	DebuggerProcessKey( int keycode );
@@ -187,7 +187,7 @@
 
 	void	DebuggerMouseClick( int x, int y );
 
-	bool	IsDebugSteppingAtFullSpeed(void);
+	bool	IsDebugSteppingAtFullSpeed();
 	void	DebuggerBreakOnDmaToOrFromIoMemory(WORD nAddress, bool isDmaToMemory);
 	bool	DebuggerCheckMemBreakpoints(WORD nAddress, WORD nSize, bool isDmaToMemory);
 

@@ -241,7 +241,7 @@ void BreakpointCard::Deferred(uint8_t type, uint16_t addrStart, uint16_t addrEnd
 
 static const UINT kUNIT_VERSION = 1;
 
-const std::string& BreakpointCard::GetSnapshotCardName(void)
+const std::string& BreakpointCard::GetSnapshotCardName()
 {
 	static const std::string name("Breakpoint");
 	return name;

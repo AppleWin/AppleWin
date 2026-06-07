@@ -153,7 +153,7 @@ WORD Uthernet1::tfe_debug_output_io_getFunc( int i )
     return GET_TFE_16(i);
 }
 
-void Uthernet1::tfe_debug_output_io( void )
+void Uthernet1::tfe_debug_output_io()
 {
     tfe_debug_output_general( "TFE I/O", &Uthernet1::tfe_debug_output_io_getFunc, TFE_COUNT_IO_REGISTER );
 }
@@ -164,7 +164,7 @@ WORD Uthernet1::tfe_debug_output_pp_getFunc( int i )
     return GET_PP_16(i);
 }
 
-void Uthernet1::tfe_debug_output_pp( void )
+void Uthernet1::tfe_debug_output_pp()
 {
     tfe_debug_output_general( "PacketPage", &Uthernet1::tfe_debug_output_pp_getFunc, 0x0160 /* MAX_PACKETPAGE_ARRAY */ );
 }
@@ -189,7 +189,7 @@ Uthernet1::Uthernet1(UINT slot) : Card(CT_Uthernet, slot)
     Init();
 }
 
-void Uthernet1::Init(void)
+void Uthernet1::Init()
 {
     // Initialise all state member variables
     // in the same order as the header file to ease maintenance
@@ -864,7 +864,7 @@ int Uthernet1::tfe_should_accept(unsigned char *buffer, int length, int *phashed
 #endif
 
 
-WORD Uthernet1::tfe_receive(void)
+WORD Uthernet1::tfe_receive()
 {
     WORD ret_val = 0x0004;
 
@@ -1057,7 +1057,7 @@ void Uthernet1::Update(const ULONG nExecutedCycles)
 
 static const UINT kUNIT_VERSION = 1;
 
-const std::string& Uthernet1::GetSnapshotCardName(void)
+const std::string& Uthernet1::GetSnapshotCardName()
 {
     static const std::string name("Uthernet");
     return name;

@@ -65,9 +65,9 @@ int tfe_arch_receive(pcap_t * TfePcapFP,
                     );
 
 extern int tfe_arch_is_npcap_loaded();
-extern int tfe_arch_enumadapter_open(void);
+extern int tfe_arch_enumadapter_open();
 extern int tfe_arch_enumadapter(std::string & name, std::string & description);
-extern int tfe_arch_enumadapter_close(void);
+extern int tfe_arch_enumadapter_close();
 
 extern const char * tfe_arch_lib_version();
 

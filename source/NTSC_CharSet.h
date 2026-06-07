@@ -11,5 +11,5 @@ extern unsigned char csbits_pravets8C[2][256][8];	// Pravets 8A & 8C
 extern unsigned char csbits_base64a[2][256][8];  	// Base64A
 
 
-void make_csbits(void);
-csbits_t Get2e_csbits(void);
+void make_csbits();
+csbits_t Get2e_csbits();

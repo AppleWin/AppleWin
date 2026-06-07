@@ -17,13 +17,13 @@ public:
 	{
 	}
 
-	bool InitHookThread(void);
-	void UninitHookThread(void);
+	bool InitHookThread();
+	void UninitHookThread();
 
 private:
 	static LRESULT CALLBACK LowLevelKeyboardProc(_In_ int nCode, _In_ WPARAM wParam, _In_ LPARAM lParam);
-	bool HookFilterForKeyboard(void);
-	void UnhookFilterForKeyboard(void);
+	bool HookFilterForKeyboard();
+	void UnhookFilterForKeyboard();
 	static DWORD WINAPI HookThread(LPVOID lpParameter);
 
 	HWND m_hFrameWindow;
@@ -35,4 +35,4 @@ private:
 	DWORD m_HookThreadId;
 };
 
-HookFilter& GetHookFilter(void);
+HookFilter& GetHookFilter();

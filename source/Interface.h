@@ -9,10 +9,10 @@
 // nor the actual rendering of the video buffer to screen
 
 #include "Video.h"
-Video& GetVideo(void);
+Video& GetVideo();
 
 #include "Configuration/IPropertySheet.h"
-IPropertySheet& GetPropertySheet(void);
+IPropertySheet& GetPropertySheet();
 
 #include "FrameBase.h"
-FrameBase& GetFrame(void);
+FrameBase& GetFrame();

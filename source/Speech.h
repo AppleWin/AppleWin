@@ -11,9 +11,9 @@ public:
 	}
 	virtual ~CSpeech();
 
-	bool Init(void);
-	void Reset(void);
-	bool IsEnabled(void) { return m_cpVoice != NULL; }
+	bool Init();
+	void Reset();
+	bool IsEnabled() { return m_cpVoice != NULL; }
 	void Speak(const char* const pBuffer);
 
 private:
