@@ -52,6 +52,7 @@ public:
 	virtual void VideoPresentScreen(void);
 	virtual void ResizeWindow(void);
 
+	virtual int FrameMessageBox(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 	virtual void GetBitmap(WORD id, LONG cb, LPVOID lpvBits);
 	virtual BYTE* GetResource(WORD id, LPCSTR lpType, uint32_t expectedSize);
