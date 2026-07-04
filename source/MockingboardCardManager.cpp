@@ -363,7 +363,8 @@ UINT MockingboardCardManager::GenerateAllSoundData(void)
 
 #ifdef DBG_MB_UPDATE
 	double fTicksSecs = (double)GetTickCount() / 1000.0;
-	LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X, NSE=%08X, Interval=%f\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, dwByteOffset, nNumSamples, nNumSamplesError, updateInterval);
+	// NB. removed outputting 'updateInterval' - would need to get it above from MB.MB_Update()
+	LogOutput("%010.3f: [MBUpdt]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X, NSE=%08X\n", fTicksSecs, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset, nNumSamples, m_numSamplesError);
 #endif
 
 	return nNumSamples;
