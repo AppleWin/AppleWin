@@ -482,7 +482,8 @@ void SSI263::Update(void)
 		// First time in this func (or transitioned from full-speed to normal speed, or a ring-buffer reset)
 #ifdef DBG_SSI263_UPDATE
 		double fTicksSecs = (double)GetTickCount() / 1000.0;
-		LogOutput("%010.3f: [SSUpdtInit%1d]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset);
+		LogOutput("%010.3f: [SSUpdtInit%1d]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n",
+			fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset);
 #endif
 		m_byteOffset = dwCurrentWriteCursor;
 		m_numSamplesError = 0;
@@ -491,32 +492,15 @@ void SSI263::Update(void)
 	else
 	{
 		// Check that our offset isn't between Play & Write positions
-
-		if (dwCurrentWriteCursor > dwCurrentPlayCursor)
+		if (SoundCore_ValidateAndAlignWriteOffset(m_byteOffset, dwCurrentPlayCursor, dwCurrentWriteCursor))
 		{
-			// |-----PxxxxxW-----|
-			if ((m_byteOffset > dwCurrentPlayCursor) && (m_byteOffset < dwCurrentWriteCursor))
-			{
 #ifdef DBG_SSI263_UPDATE
-				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset);
+			double fTicksSecs = (double)GetTickCount() / 1000.0;
+			const char* tag = (dwCurrentWriteCursor > dwCurrentPlayCursor) ? "xxx" : "XXX";
+			LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X %s\n",
+				fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset, tag);
 #endif
-				m_byteOffset = dwCurrentWriteCursor;
-				m_numSamplesError = 0;
-			}
-		}
-		else
-		{
-			// |xxW----------Pxxx|
-			if ((m_byteOffset > dwCurrentPlayCursor) || (m_byteOffset < dwCurrentWriteCursor))
-			{
-#ifdef DBG_SSI263_UPDATE
-				double fTicksSecs = (double)GetTickCount() / 1000.0;
-				LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X XXX\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset);
-#endif
-				m_byteOffset = dwCurrentWriteCursor;
-				m_numSamplesError = 0;
-			}
+			m_numSamplesError = 0;
 		}
 	}
 
