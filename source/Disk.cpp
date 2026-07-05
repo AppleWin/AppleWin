@@ -94,7 +94,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 #endif
 }
 
-Disk2InterfaceCard::~Disk2InterfaceCard(void)
+Disk2InterfaceCard::~Disk2InterfaceCard()
 {
 	EjectDiskInternal(DRIVE_1);
 	EjectDiskInternal(DRIVE_2);
@@ -103,15 +103,15 @@ Disk2InterfaceCard::~Disk2InterfaceCard(void)
 		g_SynchronousEventMgr.Remove(m_syncEvent.m_id);
 }
 
-bool Disk2InterfaceCard::GetEnhanceDisk(void) { return m_enhanceDisk; }
+bool Disk2InterfaceCard::GetEnhanceDisk() { return m_enhanceDisk; }
 void Disk2InterfaceCard::SetEnhanceDisk(bool bEnhanceDisk) { m_enhanceDisk = bEnhanceDisk; }
 
-UINT   Disk2InterfaceCard::GetCurrentBitOffset  (void) { return m_floppyDrive[m_currDrive].m_disk.m_bitOffset; }
-double Disk2InterfaceCard::GetCurrentExtraCycles(void) { return m_floppyDrive[m_currDrive].m_disk.m_extraCycles; }
-float  Disk2InterfaceCard::GetCurrentPhase      (void) { return m_floppyDrive[m_currDrive].m_phasePrecise; }
-int    Disk2InterfaceCard::GetCurrentDrive      (void) { return m_currDrive; }
-BYTE   Disk2InterfaceCard::GetCurrentShiftReg   (void) { return m_shiftReg; }
-int    Disk2InterfaceCard::GetCurrentTrack      (void) { return ImagePhaseToTrack(m_floppyDrive[m_currDrive].m_disk.m_imagehandle, m_floppyDrive[m_currDrive].m_phasePrecise, false); }
+UINT   Disk2InterfaceCard::GetCurrentBitOffset  () { return m_floppyDrive[m_currDrive].m_disk.m_bitOffset; }
+double Disk2InterfaceCard::GetCurrentExtraCycles() { return m_floppyDrive[m_currDrive].m_disk.m_extraCycles; }
+float  Disk2InterfaceCard::GetCurrentPhase      () { return m_floppyDrive[m_currDrive].m_phasePrecise; }
+int    Disk2InterfaceCard::GetCurrentDrive      () { return m_currDrive; }
+BYTE   Disk2InterfaceCard::GetCurrentShiftReg   () { return m_shiftReg; }
+int    Disk2InterfaceCard::GetCurrentTrack      () { return ImagePhaseToTrack(m_floppyDrive[m_currDrive].m_disk.m_imagehandle, m_floppyDrive[m_currDrive].m_phasePrecise, false); }
 
 float Disk2InterfaceCard::GetPhase(const int drive) { return m_floppyDrive[drive].m_phasePrecise; }
 int   Disk2InterfaceCard::GetTrack(const int drive)  { return ImagePhaseToTrack(m_floppyDrive[drive].m_disk.m_imagehandle, m_floppyDrive[drive].m_phasePrecise, false); }
@@ -128,12 +128,12 @@ std::string Disk2InterfaceCard::FormatIntFracString(float phase, bool hex)
 
 }
 
-std::string Disk2InterfaceCard::GetCurrentTrackString(void)
+std::string Disk2InterfaceCard::GetCurrentTrackString()
 {
 	return FormatIntFracString(m_floppyDrive[m_currDrive].m_phasePrecise / 2, true);
 }
 
-std::string Disk2InterfaceCard::GetCurrentPhaseString(void)
+std::string Disk2InterfaceCard::GetCurrentPhaseString()
 {
 	return FormatIntFracString(m_floppyDrive[m_currDrive].m_phasePrecise, true);
 }
@@ -489,7 +489,7 @@ void Disk2InterfaceCard::FlushCurrentTrack(const int drive)
 
 //===========================================================================
 
-void Disk2InterfaceCard::Boot(void)
+void Disk2InterfaceCard::Boot()
 {
 	// THIS FUNCTION RELOADS A PROGRAM IMAGE IF ONE IS LOADED IN DRIVE ONE.
 	// IF A DISK IMAGE OR NO IMAGE IS LOADED IN DRIVE ONE, IT DOES NOTHING.
@@ -609,7 +609,7 @@ void __stdcall Disk2InterfaceCard::ControlStepper(WORD, WORD address, BYTE, BYTE
 	m_deferredStepperEvent = true;
 }
 
-void Disk2InterfaceCard::InsertSyncEvent(void)
+void Disk2InterfaceCard::InsertSyncEvent()
 {
 	m_syncEvent.m_cyclesRemaining = 10;	// NB. same cycle delay for magnet off and on - but perhaps they take different times?
 	g_SynchronousEventMgr.Insert(&m_syncEvent);
@@ -622,7 +622,7 @@ int Disk2InterfaceCard::SyncEventCallback(int id, int cycles, ULONG uExecutedCyc
 	return 0;	// Don't repeat event
 }
 
-void Disk2InterfaceCard::ControlStepperDeferred(void)
+void Disk2InterfaceCard::ControlStepperDeferred()
 {
 	m_deferredStepperEvent = false;
 	const WORD address = m_deferredStepperAddress;
@@ -700,7 +700,7 @@ void Disk2InterfaceCard::ControlStepperLogging(WORD address, unsigned __int64 cu
 
 //===========================================================================
 
-void Disk2InterfaceCard::Destroy(void)
+void Disk2InterfaceCard::Destroy()
 {
 	m_saveDiskImage = false;
 	EjectDisk(DRIVE_1);
@@ -902,7 +902,7 @@ ImageError_e Disk2InterfaceCard::InsertDisk(const int drive, const std::string& 
 
 //===========================================================================
 
-bool Disk2InterfaceCard::IsConditionForFullSpeed(void)
+bool Disk2InterfaceCard::IsConditionForFullSpeed()
 {
 	return m_floppyMotorOn && m_enhanceDisk;
 }
@@ -1185,7 +1185,7 @@ void __stdcall Disk2InterfaceCard::ReadWrite(WORD pc, WORD addr, BYTE bWrite, BY
 
 //===========================================================================
 
-void Disk2InterfaceCard::ResetLogicStateSequencer(void)
+void Disk2InterfaceCard::ResetLogicStateSequencer()
 {
 	m_shiftReg = 0;
 	m_latchDelay = 0;
@@ -1821,7 +1821,7 @@ void Disk2InterfaceCard::Reset(const bool bIsPowerCycle)
 	GetFrame().FrameRefreshStatus(DRAW_TITLE);
 }
 
-void Disk2InterfaceCard::ResetSwitches(void)
+void Disk2InterfaceCard::ResetSwitches()
 {
 	m_currDrive = 0;
 	m_floppyMotorOn = 0;
@@ -2004,7 +2004,7 @@ void Disk2InterfaceCard::Update(const ULONG cycles)
 
 //===========================================================================
 
-bool Disk2InterfaceCard::DriveSwap(void)
+bool Disk2InterfaceCard::DriveSwap()
 {
 	// Refuse to swap if either Disk][ is active
 	// TODO: if Shift-Click then FORCE drive swap to bypass message
@@ -2301,13 +2301,13 @@ static const UINT kUNIT_VERSION = 9;
 #define SS_YAML_KEY_TRACK_IMAGE_DIRTY "Track Image Dirty"
 #define SS_YAML_KEY_TRACK_IMAGE "Track Image"
 
-const std::string& Disk2InterfaceCard::GetSnapshotCardNameOld(void)
+const std::string& Disk2InterfaceCard::GetSnapshotCardNameOld()
 {
 	static const std::string name("Disk][");
 	return name;
 }
 
-const std::string& Disk2InterfaceCard::GetSnapshotCardName(void)
+const std::string& Disk2InterfaceCard::GetSnapshotCardName()
 {
 	static const std::string name("Disk II");
 	return name;

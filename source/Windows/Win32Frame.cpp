@@ -219,7 +219,7 @@ void Win32Frame::Initialize(bool resetVideoState)
 #endif
 }
 
-void Win32Frame::Destroy(void)
+void Win32Frame::Destroy()
 {
 	// DESTROY BUFFERS
 	delete[] g_pFramebufferinfo;
@@ -243,7 +243,7 @@ void Win32Frame::Destroy(void)
 }
 
 //===========================================================================
-void Win32Frame::Benchmark(void)
+void Win32Frame::Benchmark()
 {
 	_ASSERT(g_nAppMode == MODE_BENCHMARK);
 	Sleep(500);
@@ -446,7 +446,7 @@ void Win32Frame::VideoDrawLogoBitmap(HDC hDstDC, int xoff, int yoff, int srcw, i
 
 //===========================================================================
 
-void Win32Frame::DisplayLogo(void)
+void Win32Frame::DisplayLogo()
 {
 	Video& video = GetVideo();
 	int nLogoX = 0, nLogoY = 0;
@@ -520,7 +520,7 @@ void Win32Frame::DisplayLogo(void)
 
 //===========================================================================
 
-void Win32Frame::VideoPresentScreen(void)
+void Win32Frame::VideoPresentScreen()
 {
 	HDC hFrameDC = FrameGetDC();
 
@@ -573,7 +573,7 @@ BOOL CALLBACK Win32Frame::DDEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lp
 	return TRUE;
 }
 
-bool Win32Frame::DDInit(void)
+bool Win32Frame::DDInit()
 {
 #ifdef NO_DIRECT_X
 
@@ -616,14 +616,14 @@ bool Win32Frame::DDInit(void)
 // From SoundCore.h
 #define SAFE_RELEASE(p)      { if(p) { (p)->Release(); (p)=NULL; } }
 
-void Win32Frame::DDUninit(void)
+void Win32Frame::DDUninit()
 {
 	SAFE_RELEASE(g_lpDD);
 }
 
 #undef SAFE_RELEASE
 
-void Win32Frame::ApplyVideoModeChange(void)
+void Win32Frame::ApplyVideoModeChange()
 {
 	Video& video = GetVideo();
 	video.Config_Save_Video();

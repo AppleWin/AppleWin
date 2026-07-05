@@ -243,7 +243,7 @@ eApple2Type CPageAdvanced::GetCloneType(uint32_t NewMenuItem)
 	}
 }
 
-int CPageAdvanced::GetCloneMenuItem(void)
+int CPageAdvanced::GetCloneMenuItem()
 {
 	const eApple2Type type = m_PropertySheetHelper.GetConfigNew().m_Apple2Type;
 	const bool bIsClone = IsClone(type);

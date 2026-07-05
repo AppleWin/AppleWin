@@ -49,7 +49,7 @@ static VOICE* g_pSpeakerVoice = NULL;
 // NB. Also similar is done by: MockingboardCardManager::Destroy()
 // - which is called from WM_DESTROY (when both restarting VM & exiting the app)
 
-VOICE::~VOICE(void)
+VOICE::~VOICE()
 {
 	if (lpDSBvoice)
 	{

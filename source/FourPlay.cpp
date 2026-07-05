@@ -130,7 +130,7 @@ void FourPlayCard::InitializeIO(LPBYTE pCxRomPeripheral)
 
 static const UINT kUNIT_VERSION = 1;
 
-const std::string& FourPlayCard::GetSnapshotCardName(void)
+const std::string& FourPlayCard::GetSnapshotCardName()
 {
 	static const std::string name("4Play");
 	return name;

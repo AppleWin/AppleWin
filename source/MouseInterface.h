@@ -17,7 +17,7 @@ public:
 
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
 //	void Uninitialize();
-	UINT GetSlot(void) { return m_slot; }
+	UINT GetSlot() { return m_slot; }
 	static BYTE __stdcall IORead(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 	static BYTE __stdcall IOWrite(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULONG nExecutedCycles);
 
@@ -42,12 +42,12 @@ public:
 		m_iY = iY;
 	}
 
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName();
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
 protected:
-	void InitializeROM(void);
+	void InitializeROM();
 	void SetSlotRom();
 	void On6821_A(BYTE byData);
 	void On6821_B(BYTE byData);

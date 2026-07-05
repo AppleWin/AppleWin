@@ -99,7 +99,7 @@ void VidHDCard::VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG 
 	}
 }
 
-bool VidHDCard::IsWriteAux(void)
+bool VidHDCard::IsWriteAux()
 {
 	return MemIsWriteAux(m_memMode);
 }
@@ -182,13 +182,13 @@ static const UINT kUNIT_VERSION = 1;
 #define SS_YAML_KEY_BORDER_COLOR "Border Color"
 #define SS_YAML_KEY_SHADOW "Shadow"
 
-const std::string& VidHDCard::GetSnapshotCardName(void)
+const std::string& VidHDCard::GetSnapshotCardName()
 {
 	static const std::string name("VidHD");
 	return name;
 }
 
-static const std::string& MemGetSnapshotAuxMemStructName(void)
+static const std::string& MemGetSnapshotAuxMemStructName()
 {
 	static const std::string name("Auxiliary Memory Bank");
 	return name;

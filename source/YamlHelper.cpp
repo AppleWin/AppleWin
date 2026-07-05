@@ -47,7 +47,7 @@ int YamlHelper::InitParser(const char* pPathname)
 	return 1;
 }
 
-void YamlHelper::FinaliseParser(void)
+void YamlHelper::FinaliseParser()
 {
 	if (m_hFile)
 		fclose(m_hFile);
@@ -83,7 +83,7 @@ UINT YamlHelper::ParseFileHdr(const char* tag)
 	return yamlLoadHelper.LoadUint(SS_YAML_KEY_VERSION);
 }
 
-void YamlHelper::GetNextEvent(void)
+void YamlHelper::GetNextEvent()
 {
 	yaml_event_delete(&m_newEvent);
 	if (!yaml_parser_parse(&m_parser, &m_newEvent))
@@ -133,7 +133,7 @@ int YamlHelper::GetScalar(std::string& scalar)
 	return res;
 }
 
-void YamlHelper::GetMapStartEvent(void)
+void YamlHelper::GetMapStartEvent()
 {
 	GetNextEvent();
 
@@ -258,7 +258,7 @@ void YamlHelper::GetMapRemainder(std::string& mapName, MapYaml& mapYaml)
 
 //
 
-void YamlHelper::MakeAsciiToHexTable(void)
+void YamlHelper::MakeAsciiToHexTable()
 {
 	memset(m_AsciiToHex, -1, sizeof(m_AsciiToHex));
 

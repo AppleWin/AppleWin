@@ -30,7 +30,7 @@ void FrameBase::VideoRefreshScreen(uint32_t uRedrawWholeScreenVideoMode, bool bR
 	VideoPresentScreen();
 }
 
-void FrameBase::VideoRedrawScreen(void)
+void FrameBase::VideoRedrawScreen()
 {
 	// NB. Can't rely on g_uVideoMode being non-zero (ie. so it can double up as a flag) since 'GR,PAGE1,non-mixed' mode == 0x00.
 	VideoRefreshScreen(GetVideo().GetVideoMode(), true);

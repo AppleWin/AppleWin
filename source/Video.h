@@ -187,7 +187,7 @@ struct WinBmpHeader4_t
 class Video
 {
 public:
-	Video(void)
+	Video()
 	{
 		g_pFramebufferbits = NULL; // last drawn frame (initialized in WinVideoInitialize)
 		g_nAltCharSetOffset = 0;
@@ -201,47 +201,47 @@ public:
 		m_hasVidHD = false;
 	}
 
-	~Video(void){}
+	~Video() {}
 
 	void Initialize(uint8_t* frameBuffer, bool resetState); // Do not call directly. Call FrameBase::Initialize()
-	void Destroy(void); // Call FrameBase::Destroy()
+	void Destroy(); // Call FrameBase::Destroy()
 
-	uint8_t* GetFrameBuffer(void) { return g_pFramebufferbits; }
+	uint8_t* GetFrameBuffer() { return g_pFramebufferbits; }
 
 	// size of the video buffer stored in g_pFramebufferbits
-	UINT GetFrameBufferBorderlessWidth(void);
-	UINT GetFrameBufferBorderlessHeight(void);
-	UINT GetFrameBufferBorderWidth(void);
-	UINT GetFrameBufferBorderHeight(void);
-	UINT GetFrameBufferWidth(void);
-	UINT GetFrameBufferHeight(void);
-	UINT GetFrameBufferCentringOffsetX(void);
-	UINT GetFrameBufferCentringOffsetY(void);
-	int GetFrameBufferCentringValue(void);
+	UINT GetFrameBufferBorderlessWidth();
+	UINT GetFrameBufferBorderlessHeight();
+	UINT GetFrameBufferBorderWidth();
+	UINT GetFrameBufferBorderHeight();
+	UINT GetFrameBufferWidth();
+	UINT GetFrameBufferHeight();
+	UINT GetFrameBufferCentringOffsetX();
+	UINT GetFrameBufferCentringOffsetY();
+	int GetFrameBufferCentringValue();
 
-	COLORREF GetMonochromeRGB(void) { return g_nMonochromeRGB; }
+	COLORREF GetMonochromeRGB() { return g_nMonochromeRGB; }
 	void SetMonochromeRGB(COLORREF colorRef) { g_nMonochromeRGB = colorRef; }
 
 	void VideoReinitialize(bool bInitVideoScannerAddress);
-	void VideoResetState(void);
+	void VideoResetState();
 	void VideoRefreshBuffer(uint32_t uRedrawWholeScreenVideoMode, bool bRedrawWholeScreen);
-	void ClearFrameBuffer(void);
-	void ClearSHRResidue(void);
+	void ClearFrameBuffer();
+	void ClearSHRResidue();
 
 	enum VideoScanner_e {VS_FullAddr, VS_PartialAddrV, VS_PartialAddrH};
 	WORD VideoGetScannerAddress(uint32_t nCycles, VideoScanner_e videoScannerAddr = VS_FullAddr);
 	bool VideoGetVblBarEx(const uint32_t dwCyclesThisFrame);
 	bool VideoGetVblBar(const uint32_t uExecutedCycles);
 
-	bool VideoGetSW80COL(void);
-	bool VideoGetSWDHIRES(void);
-	bool VideoGetSWHIRES(void);
-	bool VideoGetSW80STORE(void);
-	bool VideoGetSWMIXED(void);
-	bool VideoGetSWPAGE2(void);
-	bool VideoGetSWTEXT(void);
-	bool VideoGetSWAltCharSet(void);
-	bool VideoGet80COLAUXEMPTY(void);
+	bool VideoGetSW80COL();
+	bool VideoGetSWDHIRES();
+	bool VideoGetSWHIRES();
+	bool VideoGetSW80STORE();
+	bool VideoGetSWMIXED();
+	bool VideoGetSWPAGE2();
+	bool VideoGetSWTEXT();
+	bool VideoGetSWAltCharSet();
+	bool VideoGet80COLAUXEMPTY();
 
 	void VideoSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 	void VideoLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version);
@@ -259,31 +259,31 @@ public:
 
 	bool ReadVideoRomFile(const char* pRomFile);
 	UINT GetVideoRom(const BYTE*& pVideoRom);
-	bool GetVideoRomRockerSwitch(void);
+	bool GetVideoRomRockerSwitch();
 	void SetVideoRomRockerSwitch(bool state);
-	bool IsVideoRom4K(void);
+	bool IsVideoRom4K();
 
-	void Config_Load_Video(void);
-	void Config_Save_Video(void);
+	void Config_Load_Video();
+	void Config_Save_Video();
 
-	uint32_t GetVideoMode(void);
+	uint32_t GetVideoMode();
 	void SetVideoMode(uint32_t videoMode);
-	VideoType_e GetVideoType(void);
+	VideoType_e GetVideoType();
 	void SetVideoType(VideoType_e newVideoType);
-	void IncVideoType(void);
-	void DecVideoType(void);
-	VideoStyle_e GetVideoStyle(void);
+	void IncVideoType();
+	void DecVideoType();
+	VideoStyle_e GetVideoStyle();
 	void SetVideoStyle(VideoStyle_e newVideoStyle);
 	bool IsVideoStyle(VideoStyle_e style, VideoStyle_e mask);
 	bool IsVideoStyle(VideoStyle_e mask);
 
-	VideoRefreshRate_e GetVideoRefreshRate(void);
+	VideoRefreshRate_e GetVideoRefreshRate();
 	void SetVideoRefreshRate(VideoRefreshRate_e rate);
 
-	const char* VideoGetAppWindowTitle(void);
-	const char* GetVideoChoices(void) { return g_aVideoChoices; }
+	const char* VideoGetAppWindowTitle();
+	const char* GetVideoChoices() { return g_aVideoChoices; }
 
-	bool HasVidHD(void) { return m_hasVidHD; }
+	bool HasVidHD() { return m_hasVidHD; }
 	void SetVidHD(bool hasVidHD) { m_hasVidHD = hasVidHD; }
 
 	static const UINT kVideoRomSize2K = 1024*2;
@@ -296,7 +296,7 @@ protected:
 
 private:
 	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
-	const std::string& VideoGetSnapshotStructName(void);
+	const std::string& VideoGetSnapshotStructName();
 
 	int g_nAltCharSetOffset;
 	uint32_t g_uVideoMode;		// Current Video Mode (this is the last set one as it may change mid-scan line!)

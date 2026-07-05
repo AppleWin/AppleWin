@@ -29,16 +29,16 @@
 
 #include "../CommonVICE/mem.h"		// [AppleWin-TC]
 
-extern int z80mem_resources_init(void);
-extern int z80mem_cmdline_options_init(void);
+extern int z80mem_resources_init();
+extern int z80mem_cmdline_options_init();
 
 extern void z80mem_set_bank_pointer(BYTE **base, int *limit);
 extern void z80mem_update_config(int config);
 
-extern int z80mem_load(void);
+extern int z80mem_load();
 extern BYTE z80bios_rom[0x1000];
 
-extern void z80mem_initialize(void);
+extern void z80mem_initialize();
 
 /* Pointers to the currently used memory read and write tables.  */
 extern read_func_ptr_t *_z80mem_read_tab_ptr;

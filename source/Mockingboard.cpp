@@ -123,7 +123,7 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 	LogFileOutput("MockingboardCard::ctor: Reset()\n");
 }
 
-MockingboardCard::~MockingboardCard(void)
+MockingboardCard::~MockingboardCard()
 {
 	Destroy();
 }
@@ -151,7 +151,7 @@ void MockingboardCard::SetSocketSC01(SSI263Type type)
 
 //---------------------------------------------------------------------------
 
-bool MockingboardCard::IsAnyTimer1Active(void)
+bool MockingboardCard::IsAnyTimer1Active()
 {
 	bool active = false;
 	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
@@ -432,7 +432,7 @@ void MockingboardCard::UpdateIFRandIRQ(MB_SUBUNIT* pMB, BYTE clr_mask, BYTE set_
 //---------------------------------------------------------------------------
 
 // Called from MockingboardCardMgr
-bool MockingboardCard::Is6522IRQ(void)
+bool MockingboardCard::Is6522IRQ()
 {
 	// Now update the IRQ signal from all 6522s
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
@@ -452,7 +452,7 @@ bool MockingboardCard::Is6522IRQ(void)
 //---------------------------------------------------------------------------
 
 // Called from class SSI263
-UINT64 MockingboardCard::GetLastCumulativeCycles(void)
+UINT64 MockingboardCard::GetLastCumulativeCycles()
 {
 	return m_lastCumulativeCycle;
 }
@@ -472,7 +472,7 @@ BYTE MockingboardCard::GetPCR(BYTE nDevice)
 // Called by:
 // . MB_SyncEventCallback() -> MockingboardCardManager::UpdateSoundBuffer() on a TIMER1 (not TIMER2) underflow - when IsAnyTimer1Active() == true (for any MB)
 // . MockingboardCardManager::Update()                                                                         - when IsAnyTimer1Active() == false (for all MB's)
-UINT MockingboardCard::MB_Update(void)
+UINT MockingboardCard::MB_Update()
 {
 	if (g_bFullSpeed)
 	{
@@ -570,7 +570,7 @@ UINT MockingboardCard::MB_Update(void)
 //-----------------------------------------------------------------------------
 
 // NB. Called when /g_fCurrentCLK6502/ changes
-void MockingboardCard::ReinitializeClock(void)
+void MockingboardCard::ReinitializeClock()
 {
 	AY8910_InitClock((int)g_fCurrentCLK6502);	// todo: account for g_PhasorClockScaleFactor?
 												// NB. Other calls to AY8910_InitClock() use the constant CLK_6502
@@ -578,7 +578,7 @@ void MockingboardCard::ReinitializeClock(void)
 
 //-----------------------------------------------------------------------------
 
-void MockingboardCard::Destroy(void)
+void MockingboardCard::Destroy()
 {
 	for (UINT i = 0; i < NUM_SSI263; i++)
 		m_MBSubUnit[i].ssi263.DSUninit();
@@ -930,7 +930,7 @@ void MockingboardCard::MuteControl(bool mute)
 //-----------------------------------------------------------------------------
 
 #ifdef _DEBUG
-void MockingboardCard::CheckCumulativeCycles(void)
+void MockingboardCard::CheckCumulativeCycles()
 {
 	_ASSERT(m_lastCumulativeCycle == g_nCumulativeCycles);
 	m_lastCumulativeCycle = g_nCumulativeCycles;
@@ -938,7 +938,7 @@ void MockingboardCard::CheckCumulativeCycles(void)
 #endif
 
 // Called by: ResetState() and Snapshot_LoadState_v2()
-void MockingboardCard::SetCumulativeCycles(void)
+void MockingboardCard::SetCumulativeCycles()
 {
 	m_lastCumulativeCycle = g_nCumulativeCycles;
 }
@@ -1027,7 +1027,7 @@ int MockingboardCard::MB_SyncEventCallbackInternal(int id, int /*cycles*/, ULONG
 
 //-----------------------------------------------------------------------------
 
-bool MockingboardCard::IsActiveToPreventFullSpeed(void)
+bool MockingboardCard::IsActiveToPreventFullSpeed()
 {
 	// Full-speed check ignores SSI263::IsPhonemeActive(), because: (GH#1340)
 	// . Once an SSI263 has started playing a phoneme (and the chip isn't powered-down) then it'll repeat it indefinitely.
@@ -1215,25 +1215,25 @@ const UINT kUNIT_VERSION = 14;
 
 #define SS_YAML_KEY_VOTRAX_PHONEME "Votrax Phoneme"
 
-std::string MockingboardCard::GetSnapshotCardName(void)
+std::string MockingboardCard::GetSnapshotCardName()
 {
 	static const std::string name("Mockingboard C");
 	return name;
 }
 
-std::string MockingboardCard::GetSnapshotCardNamePhasor(void)
+std::string MockingboardCard::GetSnapshotCardNamePhasor()
 {
 	static const std::string name("Phasor");
 	return name;
 }
 
-std::string MockingboardCard::GetSnapshotCardNameMegaAudio(void)
+std::string MockingboardCard::GetSnapshotCardNameMegaAudio()
 {
 	static const std::string name("MEGA Audio");
 	return name;
 }
 
-std::string MockingboardCard::GetSnapshotCardNameSDMusic(void)
+std::string MockingboardCard::GetSnapshotCardNameSDMusic()
 {
 	static const std::string name("SD Music");
 	return name;

@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CardManager.h"
 #include "Disk.h"
 
-bool Disk2CardManager::IsConditionForFullSpeed(void)
+bool Disk2CardManager::IsConditionForFullSpeed()
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
@@ -59,7 +59,7 @@ void Disk2CardManager::Update(const ULONG nExecutedCycles)
 	}
 }
 
-bool Disk2CardManager::GetEnhanceDisk(void)
+bool Disk2CardManager::GetEnhanceDisk()
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
@@ -83,7 +83,7 @@ void Disk2CardManager::SetEnhanceDisk(bool enhanceDisk)
 	}
 }
 
-void Disk2CardManager::LoadLastDiskImage(void)
+void Disk2CardManager::LoadLastDiskImage()
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{
@@ -95,7 +95,7 @@ void Disk2CardManager::LoadLastDiskImage(void)
 	}
 }
 
-bool Disk2CardManager::IsAnyFirmware13Sector(void)
+bool Disk2CardManager::IsAnyFirmware13Sector()
 {
 	for (UINT i = 0; i < NUM_SLOTS; i++)
 	{

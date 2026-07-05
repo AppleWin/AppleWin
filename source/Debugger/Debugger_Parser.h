@@ -54,7 +54,7 @@ inline const char* SkipUntilToken( const char *pSrc, const TokenTable_t *aTokens
 	bool ArgsGetImmediateValue ( Arg_t *pArg, WORD * pAddressValue_ );
 	int	 ArgsGet ( char * pInput );
 	bool ArgsGetRegisterValue ( Arg_t *pArg, WORD * pAddressValue_ );
-	void ArgsRawParse ( void );
+	void ArgsRawParse ();
 	int ArgsCook ( const int nArgs ); // const int bProcessMask );
 
 #endif

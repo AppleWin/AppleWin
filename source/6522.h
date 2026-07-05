@@ -10,7 +10,7 @@ public:
 		Reset(true);
 	}
 
-	~SY6522(void)
+	~SY6522()
 	{
 	}
 
@@ -27,11 +27,11 @@ public:
 
 	void Reset(const bool powerCycle);
 
-	void StartTimer1(void);
-	void StopTimer1(void);
-	bool IsTimer1Active(void) { return m_timer1Active; }
-	void StopTimer2(void);
-	bool IsTimer2Active(void) { return m_timer2Active; }
+	void StartTimer1();
+	void StopTimer1();
+	bool IsTimer1Active() { return m_timer1Active; }
+	void StopTimer2();
+	bool IsTimer2Active() { return m_timer2Active; }
 
 	void UpdateIFR(BYTE clr_ifr, BYTE set_ifr = 0);
 
@@ -53,14 +53,14 @@ public:
 		_ASSERT(0);
 		return 0;
 	}
-	BYTE GetBusViewOfORB(void) { return m_regs.ORB & m_regs.DDRB; }	// Return how the AY8913 sees ORB on the bus (ie. not CPU's view which will be OR'd with !DDRB)
-	USHORT GetRegT1C(void) { return m_regs.TIMER1_COUNTER.w; }
-	USHORT GetRegT2C(void) { return m_regs.TIMER2_COUNTER.w; }
+	BYTE GetBusViewOfORB() { return m_regs.ORB & m_regs.DDRB; }	// Return how the AY8913 sees ORB on the bus (ie. not CPU's view which will be OR'd with !DDRB)
+	USHORT GetRegT1C() { return m_regs.TIMER1_COUNTER.w; }
+	USHORT GetRegT2C() { return m_regs.TIMER2_COUNTER.w; }
 	void GetRegs(BYTE regs[SIZE_6522_REGS]) { memcpy(&regs[0], (BYTE*)&m_regs, SIZE_6522_REGS); }	// For debugger
 	void SetRegIRA(BYTE reg) { m_regs.ORA = reg; }
-	bool IsTimer1IrqDelay(void) { return m_timer1IrqDelay ? true : false; }
+	bool IsTimer1IrqDelay() { return m_timer1IrqDelay ? true : false; }
 	void SetBusBeingDriven(bool state) { m_isBusDriven = state; }
-	bool IsBad(void) { return m_bad6522; }
+	bool IsBad() { return m_bad6522; }
 
 	BYTE Read(BYTE nReg);
 	void Write(BYTE nReg, BYTE nValue);
@@ -99,8 +99,8 @@ private:
 	UINT GetOpcodeCyclesForWrite(BYTE reg);
 	UINT GetOpcodeCycles(BYTE reg, UINT zpOpcodeCycles, UINT opcodeCycles, BYTE zpOpcode, BYTE opcode, bool abs16x, bool abs16y, bool indx, bool indy);
 
-	void StartTimer2(void);
-	void StartTimer1_LoadStateV1(void);
+	void StartTimer2();
+	void StartTimer1_LoadStateV1();
 
 #pragma pack(push)
 #pragma pack(1)	// Ensure 'struct Regs' is packed so that GetRegs() can just do a memcpy()

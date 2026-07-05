@@ -51,7 +51,7 @@ Writes the following: (in 1 continuous write operation)
 // Occurs on these conditions:
 // . ctor
 // . disk][ reset
-void FormatTrack::Reset(void)
+void FormatTrack::Reset()
 {
 	memset(m_VolTrkSecChk, 0, sizeof(m_VolTrkSecChk));
 	memset(m_VolTrkSecChk4and4, 0, sizeof(m_VolTrkSecChk4and4));
@@ -67,7 +67,7 @@ void FormatTrack::Reset(void)
 // . drive stepper track change
 // . drive motor state change
 // . switch to read mode after having written a complete track
-void FormatTrack::DriveNotWritingTrack(void)
+void FormatTrack::DriveNotWritingTrack()
 {
 	m_bmWrittenSectorAddrFields = 0x0000;
 	m_WriteTrackStartIndex = 0;

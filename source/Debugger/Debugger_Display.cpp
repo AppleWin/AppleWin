@@ -504,7 +504,7 @@ const uint32_t aROP4[ 256 ] =
 
 //===========================================================================
 
-HDC GetDebuggerMemDC(void)
+HDC GetDebuggerMemDC()
 {
 	if (!g_hDebuggerMemDC)
 	{
@@ -540,7 +540,7 @@ HDC GetDebuggerMemDC(void)
 	return g_hDebuggerMemDC;
 }
 
-void ReleaseDebuggerMemDC(void)
+void ReleaseDebuggerMemDC()
 {
 	if (g_hDebuggerMemDC)
 	{
@@ -559,7 +559,7 @@ void ReleaseDebuggerMemDC(void)
 }
 
 
-HDC GetConsoleFontDC(void)
+HDC GetConsoleFontDC()
 {
 	if (!g_hConsoleFontDC)
 	{
@@ -606,7 +606,7 @@ HDC GetConsoleFontDC(void)
 	return g_hConsoleFontDC;
 }
 
-void ReleaseConsoleFontDC(void)
+void ReleaseConsoleFontDC()
 {
 	if (g_hConsoleFontDC)
 	{
@@ -627,7 +627,7 @@ void ReleaseConsoleFontDC(void)
 }
 
 
-void StretchBltMemToFrameDC(void)
+void StretchBltMemToFrameDC()
 {
 	Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
 

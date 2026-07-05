@@ -43,7 +43,7 @@ class BreakpointCard : public Card
 {
 public:
 	BreakpointCard(UINT slot);
-	virtual ~BreakpointCard(void);
+	virtual ~BreakpointCard();
 
 	void ResetState()
 	{
@@ -53,7 +53,7 @@ public:
 			m_BP_FIFO.pop();
 	}
 
-	virtual void Destroy(void) {}
+	virtual void Destroy() {}
 	virtual void Reset(const bool powerCycle);
 	virtual void Update(const ULONG nExecutedCycles) {}
 	virtual void InitializeIO(LPBYTE pCxRomPeripheral);
@@ -63,7 +63,7 @@ public:
 
 	static void CbFunction(uint8_t slot, INTERCEPTBREAKPOINT interceptBreakpoint);
 
-	static const std::string& GetSnapshotCardName(void);
+	static const std::string& GetSnapshotCardName();
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 

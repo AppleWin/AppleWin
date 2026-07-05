@@ -29,7 +29,7 @@ class YamlHelper
 friend class YamlLoadHelper;	// YamlLoadHelper can access YamlHelper's private members
 
 public:
-	YamlHelper(void) :
+	YamlHelper() :
 		m_hFile(NULL)
 	{
 		memset(&m_parser, 0, sizeof(m_parser));
@@ -37,28 +37,28 @@ public:
 		MakeAsciiToHexTable();
 	}
 
-	~YamlHelper(void)
+	~YamlHelper()
 	{
 		FinaliseParser();
 	}
 
 	int InitParser(const char* pPathname);
-	void FinaliseParser(void);
+	void FinaliseParser();
 
 	UINT ParseFileHdr(const char* tag);
 
 	int GetScalar(std::string& scalar);
-	void GetMapStartEvent(void);
+	void GetMapStartEvent();
 
 private:
-	void GetNextEvent(void);
+	void GetNextEvent();
 	int ParseMap(MapYaml& mapYaml);
 	std::string GetMapValue(MapYaml& mapYaml, const std::string &key, bool& bFound);
 	UINT LoadMemory(MapYaml& mapYaml, const LPBYTE pMemBase, const size_t kAddrSpaceSize, const UINT offset);
 	bool GetSubMap(MapYaml** mapYaml, const std::string &key, const bool canBeNull=false);
 	void GetMapRemainder(std::string& mapName, MapYaml& mapYaml);
 
-	void MakeAsciiToHexTable(void);
+	void MakeAsciiToHexTable();
 
 	yaml_parser_t m_parser;
 	yaml_event_t m_newEvent;
@@ -91,7 +91,7 @@ public:
 		}
 	}
 
-	~YamlLoadHelper(void)
+	~YamlLoadHelper()
 	{
 		if (m_bDoGetMapRemainder)
 			m_yamlHelper.GetMapRemainder(m_topLevelMapName, m_yamlHelper.m_mapYaml);
@@ -120,7 +120,7 @@ public:
 		return res;
 	}
 
-	void PopMap(void)
+	void PopMap()
 	{
 		if (m_stackMap.empty())
 			return;
@@ -132,7 +132,7 @@ public:
 		m_currentMapName = item.mapName;
 	}
 
-	std::string GetMapNextSlotNumber(void)
+	std::string GetMapNextSlotNumber()
 	{
 		if (!m_bIteratingOverMap)
 		{
@@ -252,7 +252,7 @@ public:
 			_ASSERT(yamlSaveHelper.m_indent < yamlSaveHelper.kMaxIndent);
 		}
 
-		~Label(void)
+		~Label()
 		{
 			yamlSaveHelper.m_indent -= 2;
 			_ASSERT(yamlSaveHelper.m_indent >= 0);
@@ -271,7 +271,7 @@ public:
 			rYamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_VERSION, version);
 		}
 
-		~Slot(void) {}
+		~Slot() {}
 	};
 
 	void FileHdr(UINT version);

@@ -16,8 +16,8 @@ void    Spkr_Mute();
 void    Spkr_Unmute();
 bool    Spkr_IsActive();
 bool    Spkr_DSInit();
-void	Spkr_OutputToRiff(void);
-UINT    Spkr_GetNumChannels(void);
+void	Spkr_OutputToRiff();
+UINT    Spkr_GetNumChannels();
 void    SpkrSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
 void    SpkrLoadSnapshot(class YamlLoadHelper& yamlLoadHelper);
 

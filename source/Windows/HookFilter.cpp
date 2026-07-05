@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "Log.h"
 
-HookFilter& GetHookFilter(void)
+HookFilter& GetHookFilter()
 {
 	static HookFilter hookFilter;
 	return hookFilter;
@@ -103,7 +103,7 @@ LRESULT CALLBACK HookFilter::LowLevelKeyboardProc(_In_ int nCode, _In_ WPARAM wP
 
 // The hook filter code can be static (within the application) rather than in a DLL.
 // Pre: g_hFrameWindow must be valid
-bool HookFilter::HookFilterForKeyboard(void)
+bool HookFilter::HookFilterForKeyboard()
 {
 	_ASSERT(GetFrame().g_hFrameWindow);
 
@@ -133,7 +133,7 @@ bool HookFilter::HookFilterForKeyboard(void)
 	return false;
 }
 
-void HookFilter::UnhookFilterForKeyboard(void)
+void HookFilter::UnhookFilterForKeyboard()
 {
 	UnhookWindowsHookEx(m_hhook);
 }
@@ -159,7 +159,7 @@ DWORD WINAPI HookFilter::HookThread(LPVOID lpParameter)
 	return 0;
 }
 
-bool HookFilter::InitHookThread(void)
+bool HookFilter::InitHookThread()
 {
 	m_hHookThread = CreateThread(NULL,			// lpThreadAttributes
 		0,				// dwStackSize
@@ -174,7 +174,7 @@ bool HookFilter::InitHookThread(void)
 	return true;
 }
 
-void HookFilter::UninitHookThread(void)
+void HookFilter::UninitHookThread()
 {
 	if (m_hHookThread)
 	{

@@ -79,7 +79,7 @@ LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 		SetMemMainLanguageCard(NULL, SLOT0, true);
 }
 
-LanguageCardUnit::~LanguageCardUnit(void)
+LanguageCardUnit::~LanguageCardUnit()
 {
 	// Nothing to do for SetMemMainLanguageCard():
 	// . if //e, then no ptr to clean up (since just using memmain)
@@ -227,7 +227,7 @@ LanguageCardSlot0::LanguageCardSlot0(SS_CARDTYPE type, UINT slot)
 		SetMemMainLanguageCard(m_pMemory, SLOT0);
 }
 
-LanguageCardSlot0::~LanguageCardSlot0(void)
+LanguageCardSlot0::~LanguageCardSlot0()
 {
 	delete [] m_pMemory;
 	m_pMemory = NULL;
@@ -242,13 +242,13 @@ static const UINT kUNIT_LANGUAGECARD_VER = 1;
 #define SS_YAML_KEY_MEMORYMODE "Memory Mode"
 #define SS_YAML_KEY_LASTRAMWRITE "Last RAM Write"
 
-const std::string& LanguageCardSlot0::GetSnapshotMemStructName(void)
+const std::string& LanguageCardSlot0::GetSnapshotMemStructName()
 {
 	static const std::string name("Memory Bank");
 	return name;
 }
 
-const std::string& LanguageCardSlot0::GetSnapshotCardName(void)
+const std::string& LanguageCardSlot0::GetSnapshotCardName()
 {
 	static const std::string name("Language Card");
 	return name;
@@ -344,7 +344,7 @@ Saturn128K::Saturn128K(UINT slot, UINT banks)
 		::SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], SLOT0);
 }
 
-Saturn128K::~Saturn128K(void)
+Saturn128K::~Saturn128K()
 {
 	m_aSaturnBanks[0] = NULL;	// just zero this - deallocated in base ctor
 
@@ -361,7 +361,7 @@ Saturn128K::~Saturn128K(void)
 	// In reality, dtor only called when whole VM is being destroyed, so won't have have use-after-frees.
 }
 
-UINT Saturn128K::GetActiveBank(void)
+UINT Saturn128K::GetActiveBank()
 {
 	return m_uSaturnActiveBank;
 }
@@ -473,13 +473,13 @@ static const UINT kUNIT_SATURN_VER = 1;
 #define SS_YAML_KEY_NUM_SATURN_BANKS "Num Saturn Banks"
 #define SS_YAML_KEY_ACTIVE_SATURN_BANK "Active Saturn Bank"
 
-const std::string& Saturn128K::GetSnapshotMemStructName(void)
+const std::string& Saturn128K::GetSnapshotMemStructName()
 {
 	static const std::string name("Memory Bank");
 	return name;
 }
 
-const std::string& Saturn128K::GetSnapshotCardName(void)
+const std::string& Saturn128K::GetSnapshotCardName()
 {
 	static const std::string name("Saturn 128");
 	return name;
@@ -547,7 +547,7 @@ bool Saturn128K::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	return true;
 }
 
-void Saturn128K::SetMemMainLanguageCard(void)
+void Saturn128K::SetMemMainLanguageCard()
 {
 	::SetMemMainLanguageCard(m_aSaturnBanks[m_uSaturnActiveBank], m_slot);
 }
@@ -674,7 +674,7 @@ void LanguageCardManager::SetMemMode(const uint8_t slot)
 	MemUpdatePaging(PagingUpdateOnly);
 }
 
-void LanguageCardManager::SetMemModeFromSnapshot(void)
+void LanguageCardManager::SetMemModeFromSnapshot()
 {
 	// If multiple "Language Cards" (eg. LC+Saturn or 2xSaturn) then setup via the last card that selected the 16KB LC bank.
 	// NB. Skip if not Saturn card (ie. a LC), since LC's are only in slot0 and in the ctor it has called SetMainMemLanguageCard()

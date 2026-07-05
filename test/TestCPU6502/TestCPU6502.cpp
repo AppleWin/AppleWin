@@ -25,7 +25,7 @@ iofunction		IOWrite[256] = {0};	// TODO: Init
 
 static bool g_isMemCacheValid = true;
 
-bool GetIsMemCacheValid(void)
+bool GetIsMemCacheValid()
 {
 	return g_isMemCacheValid;
 }
@@ -46,12 +46,12 @@ bool g_irqOnLastOpcodeCycle = false;
 
 static eCpuType g_ActiveCPU = CPU_65C02;
 
-eCpuType GetActiveCpu(void)
+eCpuType GetActiveCpu()
 {
 	return g_ActiveCPU;
 }
 
-void SetIrqOnLastOpcodeCycle(void)
+void SetIrqOnLastOpcodeCycle()
 {
 }
 
@@ -156,7 +156,7 @@ void NTSC_VideoUpdateCycles( long cycles6502 )
 
 //-------------------------------------
 
-void init(void)
+void init()
 {
 	// memory must be zero initialised like MemInitiaize() does.
 	mem = (LPBYTE)calloc(64, 1024);
@@ -174,7 +174,7 @@ void init(void)
 		memreadPageType[i] = MEM_IORead;
 }
 
-void reset(void)
+void reset()
 {
 	regs.a  = 0;
 	regs.x  = 0;
@@ -205,7 +205,7 @@ uint32_t TestCpu65C02(uint32_t uTotalCycles)
 
 //-------------------------------------
 
-int GH264_test(void)
+int GH264_test()
 {
 	// No page-cross
 	reset();
@@ -290,7 +290,7 @@ void INC_ABSX(BYTE x, WORD base, BYTE d)
 	mem[regs.pc+2] = base>>8;
 }
 
-int GH271_test(void)
+int GH271_test()
 {
 	// asl abs,x
 	{
@@ -704,7 +704,7 @@ int GH278_Bcc(BYTE op, BYTE ps_not_taken, BYTE ps_taken)
 	return 0;
 }
 
-int GH278_BRA(void)
+int GH278_BRA()
 {
 	// No page-cross
 	{
@@ -735,7 +735,7 @@ int GH278_BRA(void)
 	return 0;
 }
 
-int GH278_JMP_INDX(void)
+int GH278_JMP_INDX()
 {
 	// No page-cross
 	reset();
@@ -825,7 +825,7 @@ int GH278_ADC_SBC(UINT op)
 	return 0;
 }
 
-int GH278_ADC(void)
+int GH278_ADC()
 {
 	const BYTE adc[] = {0x61,0x65,0x69,0x6D,0x71,0x72,0x75,0x79,0x7D};
 
@@ -837,7 +837,7 @@ int GH278_ADC(void)
 	return 0;
 }
 
-int GH278_SBC(void)
+int GH278_SBC()
 {
 	const BYTE sbc[] = {0xE1,0xE5,0xE9,0xED,0xF1,0xF2,0xF5,0xF9,0xFD};
 
@@ -849,7 +849,7 @@ int GH278_SBC(void)
 	return 0;
 }
 
-int GH278_test(void)
+int GH278_test()
 {
 	int variant = 0;
 
@@ -1015,7 +1015,7 @@ uint32_t XAS_ABSY(BYTE a, BYTE x, BYTE y, WORD base)
 	return TestCpu6502(0);
 }
 
-int GH282_test(void)
+int GH282_test()
 {
 	// axa (zp),y
 	{
@@ -1140,7 +1140,7 @@ BYTE __stdcall fn_C000(WORD, WORD, BYTE, BYTE, ULONG)
 	return 42;
 }
 
-int GH292_test(void)
+int GH292_test()
 {
 	// Undocumented 65C02 NOPs: 1 cycle & 1 byte
 	for (UINT op=0; op<256; op+=0x10)
@@ -1370,7 +1370,7 @@ int testCB(int id, int cycles, ULONG uExecutedCycles)
 	return 0;
 }
 
-int SyncEvents_test(void)
+int SyncEvents_test()
 {
 	SyncEvent syncEvent0(0, 0x10, testCB);
 	SyncEvent syncEvent1(1, 0x20, testCB);
@@ -1421,7 +1421,7 @@ int SyncEvents_test(void)
 
 //-------------------------------------
 
-int DoTest(void)
+int DoTest()
 {
 	int res = 1;
 	init();
