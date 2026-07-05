@@ -653,10 +653,15 @@ Win32Frame& Win32Frame::GetWin32Frame()
 	return win32Frame;
 }
 
+int Win32Frame::FrameMessageBox(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType)
+{
+	return MessageBox(hWnd, lpText, lpCaption, uType);
+}
+
 int Win32Frame::FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType)
 {
-	const HWND handle = g_hFrameWindow ? g_hFrameWindow : GetDesktopWindow();
-	return MessageBox(handle, lpText, lpCaption, uType);
+	const HWND hWnd = g_hFrameWindow ? g_hFrameWindow : GetDesktopWindow();
+	return FrameMessageBox(hWnd, lpText, lpCaption, uType);
 }
 
 void Win32Frame::GetBitmap(WORD id, LONG cb, LPVOID lpvBits)

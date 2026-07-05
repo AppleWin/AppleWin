@@ -43,6 +43,7 @@ public:
 	virtual void ResizeWindow() = 0;
 
 	// this function has the same interface as MessageBox in windows.h
+	virtual int FrameMessageBox(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType) = 0;
 	virtual int FrameMessageBox(LPCSTR lpText, LPCSTR lpCaption, UINT uType) = 0;
 
 	// this function merges LoadBitmap and GetBitmapBits from windows.h

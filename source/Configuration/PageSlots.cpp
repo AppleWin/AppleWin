@@ -616,7 +616,7 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 			m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = "";
 
 			std::string strText = StrFormat("%s already mounted in slot %d, drive %d.", pathname.c_str(), inUseSlot, inUseDrive + 1);
-			GetFrame().FrameMessageBox(strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+			GetFrame().FrameMessageBox(hWnd, strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 			return;
 		}
 
@@ -656,7 +656,7 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 	{
 		if (dwComboSelection > 1)
 		{
-			if (RemovalConfirmation(comboSelected))
+			if (RemovalConfirmation(hWnd, comboSelected))
 			{
 				// Eject selected disk
 				card.EjectDisk(driveSelected);
@@ -682,7 +682,7 @@ void CPageSlots::EnableFloppyDrive(HWND hWnd, BOOL enable)
 
 void CPageSlots::HandleFloppyDriveSwap(HWND hWnd, UINT slot)
 {
-	if (!RemovalConfirmation(IDC_SLOT_OPT_DISK_SWAP))
+	if (!RemovalConfirmation(hWnd, IDC_SLOT_OPT_DISK_SWAP))
 		return;
 
 	std::string temp = m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[DRIVE_1];
@@ -867,7 +867,7 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 			m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = "";
 
 			std::string strText = StrFormat("%s already mounted in slot %d, drive %d.", pathname.c_str(), inUseSlot, inUseDrive + 1);
-			GetFrame().FrameMessageBox(strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+			GetFrame().FrameMessageBox(hWnd, strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 			return;
 		}
 
@@ -913,7 +913,7 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 	{
 		if (dwComboSelection > 1)
 		{
-			if (RemovalConfirmation(comboSelected))
+			if (RemovalConfirmation(hWnd, comboSelected))
 			{
 				// Unplug selected disk
 				card.Unplug(driveSelected);
@@ -939,7 +939,7 @@ void CPageSlots::EnableHDD(HWND hWnd, BOOL enable)
 
 void CPageSlots::HandleHDDSwap(HWND hWnd, UINT slot)
 {
-	if (!RemovalConfirmation(IDC_SLOT_OPT_HDD_SWAP))
+	if (!RemovalConfirmation(hWnd, IDC_SLOT_OPT_HDD_SWAP))
 		return;
 
 	std::string temp = m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[HARDDISK_1];
@@ -968,7 +968,7 @@ void CPageSlots::ConfigResetHarddisk(UINT slot)
 
 //===========================================================================
 
-UINT CPageSlots::RemovalConfirmation(UINT command)
+UINT CPageSlots::RemovalConfirmation(HWND hWnd, UINT command)
 {
 	bool bMsgBox = true;
 
@@ -994,7 +994,7 @@ UINT CPageSlots::RemovalConfirmation(UINT command)
 
 	if (bMsgBox)
 	{
-		int nRes = GetFrame().FrameMessageBox(strText.c_str(), "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
+		int nRes = GetFrame().FrameMessageBox(hWnd, strText.c_str(), "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 			command = 0;
 	}
