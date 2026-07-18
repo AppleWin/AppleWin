@@ -274,12 +274,33 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 					if (!CardInstanceExists(CT_VidHD))
 						g_cmdLine.slotInfo[slot].card = CT_VidHD;
 				}
+				else if (strncmp(lpCmdLine, "ay-socket", 9) == 0 &&
+					(lpCmdLine[9] >= '0' || lpCmdLine[9] <= '3') &&	// 0=bottom of MB-C card, 1=top of MB-C card, 2+3 for Phasor
+					lpCmdLine[10] == '=')
+				{
+					const BYTE socket = lpCmdLine[9] - '0';
+					const LPSTR socketType = &lpCmdLine[11];
+					AY891xType type = AY_Unknown;
+					if (strcmp(socketType, "empty") == 0)
+						type = AY_Empty;
+					else if (strcmp(socketType, "ay8910") == 0)
+						type = AY_3_8910;
+					else if (strcmp(socketType, "ay8912") == 0)
+						type = AY_3_8912;
+					else if (strcmp(socketType, "ay8913") == 0)
+						type = AY_3_8913;
+					else if (strcmp(socketType, "ym2149") == 0)
+						type = YM2149F;
+					g_cmdLine.slotInfo[slot].socketAY891x[socket] = type;
+					if (type == AY_Unknown)
+						LogFileOutput("Unsupported AY type: %s\n", socketType);
+				}
 				else if (strncmp(lpCmdLine, "socket", 6) == 0 &&
 					(lpCmdLine[6] == '0' || lpCmdLine[6] == '1') &&	// 0=$Cs20(bottom of MB-C card), 1=$Cs40(top of MB-C card)
 					lpCmdLine[7] == '=')
 				{
-					BYTE socket = lpCmdLine[6] - '0';
-					LPSTR socketType = &lpCmdLine[8];
+					const BYTE socket = lpCmdLine[6] - '0';
+					const LPSTR socketType = &lpCmdLine[8];
 					SSI263Type type = SSI263Unknown;
 					if (strcmp(socketType, "empty") == 0)
 						type = SSI263Empty;

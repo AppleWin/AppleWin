@@ -6,6 +6,7 @@
 #include "Common.h"
 #include "Card.h"
 #include "MockingboardDefs.h"
+#include "AY8910.h"
 
 struct CmdLine
 {
@@ -18,6 +19,7 @@ struct CmdLine
 			useHdcFirmwareMode = HdcUndefinedFromCmdLine;
 			useBad6522A = false;
 			useBad6522B = false;
+			for (int i = 0; i < NUM_AY8913; i++) socketAY891x[i] = AY_Unknown;
 			socketSSI263[0] = socketSSI263[1] = socketSC01 = SSI263Unknown;
 		}
 
@@ -26,6 +28,7 @@ struct CmdLine
 		HdcMode useHdcFirmwareMode;
 		bool useBad6522A;
 		bool useBad6522B;
+		AY891xType socketAY891x[NUM_AY8913];
 		SSI263Type socketSSI263[NUM_SSI263];
 		SSI263Type socketSC01;
 	};

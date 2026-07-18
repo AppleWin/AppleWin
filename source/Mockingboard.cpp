@@ -98,6 +98,9 @@ MockingboardCard::MockingboardCard(UINT slot, SS_CARDTYPE type) : Card(type, slo
 		m_MBSubUnit[i].sy6522.InitSyncEvents(m_syncEvent[id0], m_syncEvent[id1]);
 		m_MBSubUnit[i].ssi263.SetDevice(i);
 
+		// Load AY891x chip config from Registry
+		// TODO: do this when we can config the AYs via the Config GUI
+
 		// Load speech chip config from Registry
 		uint32_t type;
 		std::string regSection = RegGetConfigSlotSection(m_slot);
@@ -129,6 +132,23 @@ MockingboardCard::~MockingboardCard()
 }
 
 //---------------------------------------------------------------------------
+
+void MockingboardCard::SetSocketAY891x(BYTE socket, AY891xType type)
+{
+	UINT subUnit = socket & 1;
+	UINT ayUnit = socket < 2 ? 0 : 1;
+	m_MBSubUnit[subUnit].ay8913[ayUnit].SetType(type);
+
+	std::string regSection = RegGetConfigSlotSection(m_slot);
+	if (socket == 0)
+		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_AY_SOCKET0, true, type);
+	else if (socket == 1)
+		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_AY_SOCKET1, true, type);
+	else if (socket == 2)
+		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_AY_SOCKET2, true, type);
+	else
+		RegSaveValue(regSection.c_str(), REGVALUE_MOCKINGBOARD_AY_SOCKET3, true, type);
+}
 
 void MockingboardCard::SetSocketSSI263(BYTE socket, SSI263Type type)
 {
@@ -1158,10 +1178,10 @@ UINT MockingboardCard::AY8910_SaveSnapshot(YamlSaveHelper& yamlSaveHelper, BYTE 
 	return 1;
 }
 
-UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE subunit, BYTE ay, const std::string& suffix)
+UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE subunit, BYTE ay, const std::string& suffix, UINT version)
 {
 	_ASSERT(subunit < NUM_SUBUNITS_PER_MB && ay < NUM_AY8913_PER_SUBUNIT);
-	return m_MBSubUnit[subunit].ay8913[ay].LoadSnapshot(yamlLoadHelper, suffix) ? 1 : 0;
+	return m_MBSubUnit[subunit].ay8913[ay].LoadSnapshot(yamlLoadHelper, suffix, version) ? 1 : 0;
 }
 
 //=============================================================================
@@ -1191,7 +1211,8 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE 
 //13: Removed SS_YAML_KEY_SSI263_ACTIVE_PHONEME
 //    Removed SS_YAML_KEY_VOTRAX_PHONEME (as this has been present in the SC01 subunit since v12!)
 //14: Added: SSI263: Type
-const UINT kUNIT_VERSION = 14;
+//15: Added: AY891x: Type
+const UINT kUNIT_VERSION = 15;
 
 #define SS_YAML_KEY_MB_UNIT "Unit"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
@@ -1306,7 +1327,7 @@ bool MockingboardCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version
 
 		pMB->sy6522.LoadSnapshot(yamlLoadHelper, version);
 		UpdateIFRandIRQ(pMB, 0, pMB->sy6522.GetReg(SY6522::rIFR));			// Assert any pending IRQs (GH#677)
-		AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string(""));
+		AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string(""), version);
 
 		pMB->ssi263.LoadSnapshot(yamlLoadHelper, PH_Mockingboard, version, subunit);
 
@@ -1430,19 +1451,19 @@ bool MockingboardCard::Phasor_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT 
 		if (version >= 5 && version <= 8)
 		{
 			const BYTE phasorDevice = subunit == 0 ? AY8913_DEVICE_B : AY8913_DEVICE_A;
-			AY8910_LoadSnapshot(yamlLoadHelper, 0, phasorDevice, std::string("-A"));
-			AY8910_LoadSnapshot(yamlLoadHelper, 1, phasorDevice, std::string("-B"));
+			AY8910_LoadSnapshot(yamlLoadHelper, 0, phasorDevice, std::string("-A"), version);
+			AY8910_LoadSnapshot(yamlLoadHelper, 1, phasorDevice, std::string("-B"), version);
 		}
 		else if (version <= 4 || version == 9)
 		{
 			const BYTE phasorDevice = subunit == 0 ? AY8913_DEVICE_A : AY8913_DEVICE_B;
-			AY8910_LoadSnapshot(yamlLoadHelper, 0, phasorDevice, std::string("-A"));
-			AY8910_LoadSnapshot(yamlLoadHelper, 1, phasorDevice, std::string("-B"));
+			AY8910_LoadSnapshot(yamlLoadHelper, 0, phasorDevice, std::string("-A"), version);
+			AY8910_LoadSnapshot(yamlLoadHelper, 1, phasorDevice, std::string("-B"), version);
 		}
 		else
 		{
-			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string("-A"));
-			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_B, std::string("-B"));
+			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_A, std::string("-A"), version);
+			AY8910_LoadSnapshot(yamlLoadHelper, subunit, AY8913_DEVICE_B, std::string("-B"), version);
 		}
 
 		pMB->ssi263.LoadSnapshot(yamlLoadHelper, m_phasorMode, version, subunit);

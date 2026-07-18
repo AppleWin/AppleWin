@@ -50,6 +50,7 @@ public:
 	bool IsAnyTimer1Active();
 	void UseBad6522A() { m_MBSubUnit[0].sy6522.InitBadState(true); }
 	void UseBad6522B() { m_MBSubUnit[1].sy6522.InitBadState(true); }
+	void SetSocketAY891x(BYTE socket, AY891xType type);
 	SSI263Type GetSocketSSI263(BYTE socket) { return m_MBSubUnit[socket].ssi263.GetType(); }
 	void SetSocketSSI263(BYTE socket, SSI263Type type);
 	SSI263Type GetSocketSC01() { return m_MBSubUnit[0].ssi263.GetSC01(); }
@@ -146,7 +147,7 @@ private:
 	void AY8910UpdateSetCycles();
 
 	UINT AY8910_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, BYTE subunit, BYTE ay, const std::string& suffix);
-	UINT AY8910_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, BYTE subunit, BYTE ay, const std::string& suffix);
+	UINT AY8910_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, BYTE subunit, BYTE ay, const std::string& suffix, UINT version);
 
 	UINT64 m_lastAYUpdateCycle;
 	//-------------------------------------

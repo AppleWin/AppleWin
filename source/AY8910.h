@@ -1,5 +1,7 @@
 #pragma once
 
+enum AY891xType {AY_Empty, AY_3_8910, AY_3_8912, AY_3_8913, YM2149F, AY_Unknown};
+
 //-------------------------------------
 // FUSE stuff
 
@@ -29,8 +31,11 @@ public:
 	void SetFramesize(int frameSize) { sound_generator_framesiz = frameSize; }
 	void SetSoundBuffers(INT16** buffers) { ppSoundBuffers = buffers; }
 	static void SetCLK( double CLK ) { m_fCurrentCLK_AY8910 = CLK; }
+	void SetType(AY891xType type) { m_type = type; }
+	std::string Type2String();
+	AY891xType String2Type(std::string type);
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const std::string& suffix);
-	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, const std::string& suffix);
+	bool LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, const std::string& suffix, UINT version);
 
 private:
 	void init();
@@ -72,6 +77,7 @@ private:
 	int sound_generator_framesiz;
 	int sound_generator_freq;
 	unsigned int ay_tone_levels[16];
+	AY891xType m_type;
 
 	// Vars shared between all AY's
 	static double m_fCurrentCLK_AY8910;
