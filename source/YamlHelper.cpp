@@ -522,7 +522,9 @@ void YamlSaveHelper::SaveString(const char* key,  const char* value)
 	}
 
 	// A string in quotes needs double-backslashes, otherwise backslash treated as an escape-character (GH#1499)
-	if (std::string(m_pMbStr).find("\\") != std::string::npos)
+	// . Instead of special-casing quoted-strings, just double-up the backslashes for all strings (to reduce test cases)
+	if (std::string(m_pMbStr).find("\\") != std::string::npos &&	// String contains a backslash?
+		std::string(m_pMbStr).find("\\\\") == std::string::npos)	// and backslashes haven't been already doubled
 	{
 		std::string str(m_pMbStr);
 		size_t pos = 0;
