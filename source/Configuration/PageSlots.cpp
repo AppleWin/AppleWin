@@ -676,9 +676,10 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 
 void CPageSlots::EnableFloppyDrive(HWND hWnd, bool enable)
 {
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK1), bool_to_BOOL(enable));
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK2), bool_to_BOOL(enable));
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_DISK_SWAP), bool_to_BOOL(enable));
+	const BOOL bEnabled = bool_to_BOOL(enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK1), bEnabled);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK2), bEnabled);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_DISK_SWAP),   bEnabled);
 }
 
 void CPageSlots::HandleFloppyDriveSwap(HWND hWnd, UINT slot)
@@ -933,9 +934,10 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 
 void CPageSlots::EnableHDD(HWND hWnd, bool enable)
 {
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD1), bool_to_BOOL(enable));
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD2), bool_to_BOOL(enable));
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_HDD_SWAP), bool_to_BOOL(enable));
+	const BOOL bEnabled = bool_to_BOOL(enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD1), bEnabled);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD2), bEnabled);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_HDD_SWAP),   bEnabled);
 }
 
 void CPageSlots::HandleHDDSwap(HWND hWnd, UINT slot)
