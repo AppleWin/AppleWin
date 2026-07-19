@@ -887,7 +887,7 @@ Update_t _BP_InfoNone ()
 // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
 static bool IsDebugBreakOnInvalid (int iOpcodeType)
 {
-	return !!((g_nDebugBreakOnInvalid >> iOpcodeType) & 1);
+	return (g_nDebugBreakOnInvalid & (1 << iOpcodeType));
 }
 
 // iOpcodeType = AM_IMPLIED (BRK), AM_1, AM_2, AM_3
@@ -2762,7 +2762,7 @@ Update_t CmdUnassemble (int nArgs)
 Update_t CmdKey (int nArgs)
 {
 	KeybQueueKeypress(
-		nArgs ? g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0] : ' ', ASCII); // FIXME!!!
+		nArgs ? (g_aArgs[1].nValue ? g_aArgs[1].nValue : g_aArgs[1].sArg[0]) : ' ', ASCII); // FIXME!!!
 	return UPDATE_CONSOLE_DISPLAY;
 }
 
@@ -3188,7 +3188,7 @@ Update_t CmdConfigDisasm (int nArgs)
 					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
 					{					
 						iArg++;
-						g_bConfigDisasmAddressColon = !!(g_aArgs[ iArg ].nValue);
+						g_bConfigDisasmAddressColon = (g_aArgs[ iArg ].nValue != 0);
 					}
 					else // show current setting
 					{
@@ -3202,7 +3202,7 @@ Update_t CmdConfigDisasm (int nArgs)
 					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
 					{
 						iArg++;
-						g_bConfigDisasmOpcodesView = !!(g_aArgs[ iArg ].nValue);
+						g_bConfigDisasmOpcodesView = (g_aArgs[ iArg ].nValue != 0);
 					}
 					else
 					{
@@ -3216,7 +3216,7 @@ Update_t CmdConfigDisasm (int nArgs)
 					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
 					{
 						iArg++;
-						g_bConfigInfoTargetPointer = !!(g_aArgs[ iArg ].nValue);
+						g_bConfigInfoTargetPointer = (g_aArgs[ iArg ].nValue != 0);
 					}
 					else
 					{
@@ -3230,7 +3230,7 @@ Update_t CmdConfigDisasm (int nArgs)
 					if ((nArgs > 1) && (! bDisplayCurrentSettings)) // set
 					{
 						iArg++;
-						g_bConfigDisasmOpcodeSpaces = !!(g_aArgs[ iArg ].nValue);
+						g_bConfigDisasmOpcodeSpaces = (g_aArgs[ iArg ].nValue != 0);
 					}
 					else
 					{
@@ -4032,10 +4032,7 @@ Update_t CmdDisk (int nArgs)
 		if (nArgs > 3)
 			return HelpLastCommand();
 
-		bool bProtect = true;
-
-		if (nArgs == 3)
-			bProtect = !!(g_aArgs[ 3 ].nValue);
+		const bool bProtect = (nArgs < 3) || (g_aArgs[ 3 ].nValue != 0);
 
 		diskCard.SetProtect( iDrive, bProtect );
 		GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_BUTTON_DRIVES | DRAW_DISK_STATUS);
@@ -6586,7 +6583,7 @@ Update_t CmdOutputPrint (int nArgs)
 
 	for ( int iArg = 1; iArg <= nArgs; iArg++ )
 	{
-		sText += (!!(g_aArgs[ iArg ].bType & TYPE_QUOTED_2))
+		sText += (g_aArgs[ iArg ].bType & TYPE_QUOTED_2)
 			? g_aArgs[ iArg ].sArg
 			: WordToHexStr( g_aArgs[ iArg ].nValue );
 

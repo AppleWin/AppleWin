@@ -183,7 +183,7 @@ void CPageInput::DlgOK(HWND hWnd)
 
 	m_PropertySheetHelper.GetConfigNew().m_cursorControl = IsDlgButtonChecked(hWnd, IDC_CURSORCONTROL) ? 1 : 0;
 	m_PropertySheetHelper.GetConfigNew().m_autofire = IsDlgButtonChecked(hWnd, IDC_AUTOFIRE) ? 7 : 0;	// bitmap of 3 bits
-	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = !!IsDlgButtonChecked(hWnd, IDC_SWAPBUTTONS0AND1);
+	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = IsDlgButtonChecked(hWnd, IDC_SWAPBUTTONS0AND1);
 	m_PropertySheetHelper.GetConfigNew().m_centeringControl = IsDlgButtonChecked(hWnd, IDC_CENTERINGCONTROL) ? 1 : 0;
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);

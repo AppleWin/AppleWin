@@ -244,47 +244,47 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 
 bool Video::VideoGetSW80COL() const
 {
-	return !!SW_80COL;
+	return SW_80COL;
 }
 
 bool Video::VideoGetSWDHIRES() const
 {
-	return !!SW_DHIRES;
+	return SW_DHIRES;
 }
 
 bool Video::VideoGetSWHIRES() const
 {
-	return !!SW_HIRES;
+	return SW_HIRES;
 }
 
 bool Video::VideoGetSW80STORE() const
 {
-	return !!SW_80STORE;
+	return SW_80STORE;
 }
 
 bool Video::VideoGetSWMIXED() const
 {
-	return !!SW_MIXED;
+	return SW_MIXED;
 }
 
 bool Video::VideoGetSWPAGE2() const
 {
-	return !!SW_PAGE2;
+	return SW_PAGE2;
 }
 
 bool Video::VideoGetSWTEXT() const
 {
-	return !!SW_TEXT;
+	return SW_TEXT;
 }
 
 bool Video::VideoGetSWAltCharSet() const
 {
-	return !!g_nAltCharSetOffset;
+	return (g_nAltCharSetOffset != 0);
 }
 
 bool Video::VideoGet80COLAUXEMPTY() const
 {
-	return !!(g_uVideoMode & VF_80COL_AUX_EMPTY);
+	return (g_uVideoMode & VF_80COL_AUX_EMPTY);
 }
 
 //===========================================================================
@@ -303,7 +303,7 @@ const std::string& Video::VideoGetSnapshotStructName()
 void Video::VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, !!g_nAltCharSetOffset);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, (g_nAltCharSetOffset != 0));
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEO_MODE, g_uVideoMode);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLES_THIS_FRAME, g_dwCyclesThisFrame);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_VIDEO_REFRESH_RATE, (UINT)GetVideoRefreshRate());

@@ -200,9 +200,9 @@ static void _SetupColorRamp(const int iPrimary, int & iColor_)
 {
 	std::string strRamp;
 
-	bool bR = !!(iPrimary & 1);
-	bool bG = !!(iPrimary & 2);
-	bool bB = !!(iPrimary & 4);
+	bool bR = (iPrimary & 1);
+	bool bG = (iPrimary & 2);
+	bool bB = (iPrimary & 4);
 	int dStep = 32;
 	int nLevels = 256 / dStep;
 	for (int iLevel = nLevels; iLevel > 0; iLevel--)

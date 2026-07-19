@@ -276,7 +276,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 	// This GetConfigNew() has already been set:
 	// . m_Apple2Type, m_CpuType, m_monochromeRGB
 
-	m_PropertySheetHelper.GetConfigNew().m_confirmReboot = !!IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT);
+	m_PropertySheetHelper.GetConfigNew().m_confirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT);
 
 	const uint32_t newMasterVolume = VOLUME_MAX - (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_GETPOS, 0, 0);	// Invert: L=MIN, R=MAX
 	m_PropertySheetHelper.GetConfigNew().m_masterVolume = newMasterVolume;
@@ -292,11 +292,11 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = IsDlgButtonChecked(hWnd, IDC_CHECK_50HZ_VIDEO) ? VR_50HZ : VR_60HZ;
 
-	m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus = !!IsDlgButtonChecked(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS);
+	m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS);
 
 	// Emulation speed control
 
-	m_PropertySheetHelper.GetConfigNew().m_enhanceDiskAccessSpeed = !!IsDlgButtonChecked(hWnd, IDC_ENHANCE_DISK_ENABLE);
+	m_PropertySheetHelper.GetConfigNew().m_enhanceDiskAccessSpeed = IsDlgButtonChecked(hWnd, IDC_ENHANCE_DISK_ENABLE);
 	m_PropertySheetHelper.GetConfigNew().m_scrollLockToggle = IsDlgButtonChecked(hWnd, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
 
 	m_PropertySheetHelper.GetConfigNew().m_machineSpeed = IsDlgButtonChecked(hWnd, IDC_AUTHENTIC_SPEED)	? SPEED_NORMAL
@@ -337,7 +337,7 @@ void CPageConfig::ApplyConfigAfterClose()
 		bVideoReinit = true;
 	}
 
-	const bool newHalfScanLines = !!((UINT)m_PropertySheetHelper.GetConfigNew().m_videoStyle & (UINT)VS_HALF_SCANLINES);
+	const bool newHalfScanLines = ((UINT)m_PropertySheetHelper.GetConfigNew().m_videoStyle & (UINT)VS_HALF_SCANLINES);
 	const bool currentHalfScanLines = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
 	if (currentHalfScanLines != newHalfScanLines)
 	{
@@ -348,7 +348,7 @@ void CPageConfig::ApplyConfigAfterClose()
 		bVideoReinit = true;
 	}
 
-	const bool newVerticalBlend = !!((UINT)m_PropertySheetHelper.GetConfigNew().m_videoStyle & (UINT)VS_COLOR_VERTICAL_BLEND);
+	const bool newVerticalBlend = ((UINT)m_PropertySheetHelper.GetConfigNew().m_videoStyle & (UINT)VS_COLOR_VERTICAL_BLEND);
 	const bool currentVerticalBlend = GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
 	if (currentVerticalBlend != newVerticalBlend)
 	{

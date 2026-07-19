@@ -338,12 +338,12 @@ void Uthernet1::tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress)
 
 
     case TFE_PP_ADDR_CC_RXCTL:
-        tfe_recv_broadcast   = !!(content & 0x0800); /* broadcast */
-        tfe_recv_mac         = !!(content & 0x0400); /* individual address (IA) */
-        tfe_recv_multicast   = !!(content & 0x0200); /* multicast if address passes the hash filter */
-        tfe_recv_correct     = !!(content & 0x0100); /* accept correct frames */
-        tfe_recv_promiscuous = !!(content & 0x0080); /* promiscuous mode */
-        tfe_recv_hashfilter  = !!(content & 0x0040); /* accept if IA passes the hash filter */
+        tfe_recv_broadcast   = (content & 0x0800); /* broadcast */
+        tfe_recv_mac         = (content & 0x0400); /* individual address (IA) */
+        tfe_recv_multicast   = (content & 0x0200); /* multicast if address passes the hash filter */
+        tfe_recv_correct     = (content & 0x0100); /* accept correct frames */
+        tfe_recv_promiscuous = (content & 0x0080); /* promiscuous mode */
+        tfe_recv_hashfilter  = (content & 0x0040); /* accept if IA passes the hash filter */
 
         tfe_arch_recv_ctl( tfe_recv_broadcast,
                            tfe_recv_mac,
@@ -355,8 +355,8 @@ void Uthernet1::tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress)
         break;
 
     case TFE_PP_ADDR_CC_LINECTL:
-        tfe_arch_line_ctl( !!(content & 0x0080), /* enable transmitter */
-                           !!(content & 0x0040)  /* enable receiver    */
+        tfe_arch_line_ctl( (content & 0x0080), /* enable transmitter */
+                           (content & 0x0040)  /* enable receiver    */
                          );
         break;
 

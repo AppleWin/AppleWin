@@ -115,7 +115,7 @@ bool RiffFinishWriteFile()
 	SetFilePointer(g_hRiffFile, dwDataOffset, NULL, FILE_BEGIN);
 	WriteFile(g_hRiffFile, &temp32, 4, &dwNumberOfBytesWritten, NULL);
 
-	return !!CloseHandle(g_hRiffFile);
+	return CloseHandle(g_hRiffFile);
 }
 
 bool RiffPutSamples(const short* buf, unsigned int uSamples)

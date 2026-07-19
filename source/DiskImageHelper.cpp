@@ -144,7 +144,7 @@ bool CImageBase::ReadBlock(ImageInfo* pImageInfo, const int nBlock, LPBYTE pBloc
 		SetFilePointer(pImageInfo->hFile, Offset, NULL, FILE_BEGIN);
 
 		DWORD dwBytesRead;
-		const bool bRes = !!ReadFile(pImageInfo->hFile, pBlockBuffer, HD_BLOCK_SIZE, &dwBytesRead, NULL);
+		const bool bRes = ReadFile(pImageInfo->hFile, pBlockBuffer, HD_BLOCK_SIZE, &dwBytesRead, NULL);
 		if (!bRes || dwBytesRead != HD_BLOCK_SIZE)
 			return false;
 	}
@@ -218,7 +218,7 @@ bool CImageBase::WriteImageData(ImageInfo* pImageInfo, LPBYTE pSrcBuffer, const 
 		}
 
 		DWORD dwBytesWritten;
-		const bool bRes = !!WriteFile(pImageInfo->hFile, pSrcBuffer, uSrcSize, &dwBytesWritten, NULL);
+		const bool bRes = WriteFile(pImageInfo->hFile, pSrcBuffer, uSrcSize, &dwBytesWritten, NULL);
 		_ASSERT(dwBytesWritten == uSrcSize);
 		if (!bRes || dwBytesWritten != uSrcSize)
 			return false;
@@ -1889,7 +1889,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 		pImageInfo->pImageBuffer = new BYTE [dwSize];
 
 		DWORD dwBytesRead;
-		const bool bRes = !!ReadFile(hFile, pImageInfo->pImageBuffer, dwSize, &dwBytesRead, NULL);
+		const bool bRes = ReadFile(hFile, pImageInfo->pImageBuffer, dwSize, &dwBytesRead, NULL);
 		if (!bRes || dwSize != dwBytesRead)
 		{
 			delete [] pImageInfo->pImageBuffer;
@@ -1941,7 +1941,7 @@ ImageError_e CImageHelperBase::CheckNormalFile(LPCTSTR pszImageFilename, ImageIn
 			// As a convenience, resize the file to the complete size (GH#506)
 			// - this also means that a save-state done mid-way through a format won't reference an image file with a partial size (GH#494)
 			DWORD dwBytesWritten = 0;
-			const bool res = !!WriteFile(hFile, pImageInfo->pImageBuffer, dwSize, &dwBytesWritten, NULL); 
+			const bool res = WriteFile(hFile, pImageInfo->pImageBuffer, dwSize, &dwBytesWritten, NULL);
 			if (!res || dwBytesWritten != dwSize)
 				return eIMAGE_ERROR_FAILED_TO_INIT_ZEROLENGTH;
 		}

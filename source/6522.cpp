@@ -215,9 +215,9 @@ void SY6522::Write(BYTE nReg, BYTE nValue)
 			m_regs.IER |= nValue;
 		}
 		if (m_syncEvent[0])
-			m_syncEvent[0]->m_canAssertIRQ = !!(m_regs.IER & IxR_TIMER1);
+			m_syncEvent[0]->m_canAssertIRQ = (m_regs.IER & IxR_TIMER1);
 		if (m_syncEvent[1])
-			m_syncEvent[1]->m_canAssertIRQ = !!(m_regs.IER & IxR_TIMER2);
+			m_syncEvent[1]->m_canAssertIRQ = (m_regs.IER & IxR_TIMER2);
 		UpdateIFR(0);
 		break;
 	}
@@ -721,14 +721,14 @@ void SY6522::SetTimersActiveFromSnapshot(bool timer1Active, bool timer2Active, U
 	{
 		SyncEvent* syncEvent = m_syncEvent[0];
 		syncEvent->SetCycles(GetRegT1C() + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
-		syncEvent->m_canAssertIRQ = !!(m_regs.IER & IxR_TIMER1);
+		syncEvent->m_canAssertIRQ = (m_regs.IER & IxR_TIMER1);
 		g_SynchronousEventMgr.Insert(syncEvent);
 	}
 	if (IsTimer2Active())
 	{
 		SyncEvent* syncEvent = m_syncEvent[1];
 		syncEvent->SetCycles(GetRegT2C() + kExtraTimerCycles);	// NB. use COUNTER, not LATCH
-		syncEvent->m_canAssertIRQ = !!(m_regs.IER & IxR_TIMER2);
+		syncEvent->m_canAssertIRQ = (m_regs.IER & IxR_TIMER2);
 		g_SynchronousEventMgr.Insert(syncEvent);
 	}
 }

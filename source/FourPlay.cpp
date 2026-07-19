@@ -91,8 +91,8 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 		{
 			UINT xAxis = (infoEx.dwXpos >> 8) & 0xFF;
 			UINT yAxis = (infoEx.dwYpos >> 8) & 0xFF;
-			trigger1 = !!(infoEx.dwButtons & 0x01);
-			trigger2 = !!(infoEx.dwButtons & 0x02);
+			trigger1 = (infoEx.dwButtons & 0x01);
+			trigger2 = (infoEx.dwButtons & 0x02);
 			up = yAxis < 103 || infoEx.dwPOV == 0 || infoEx.dwPOV == 4500 || infoEx.dwPOV == 31500;
 			down = yAxis > 153 || (infoEx.dwPOV >= 13500 && infoEx.dwPOV <= 22500);
 			left = xAxis < 103 || (infoEx.dwPOV >= 22500 && infoEx.dwPOV <= 31500);
@@ -104,8 +104,8 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 		{
 			UINT xAxis = (infoEx.dwXpos >> 8) & 0xFF;
 			UINT yAxis = (infoEx.dwYpos >> 8) & 0xFF;
-			trigger1 = !!(infoEx.dwButtons & 0x01);
-			trigger2 = !!(infoEx.dwButtons & 0x02);
+			trigger1 = (infoEx.dwButtons & 0x01);
+			trigger2 = (infoEx.dwButtons & 0x02);
 			up = yAxis < 103 || infoEx.dwPOV == 0 || infoEx.dwPOV == 4500 || infoEx.dwPOV == 31500;
 			down = yAxis > 153 || (infoEx.dwPOV >= 13500 && infoEx.dwPOV <= 22500);
 			left = xAxis < 103 || (infoEx.dwPOV >= 22500 && infoEx.dwPOV <= 31500);

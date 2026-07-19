@@ -1037,7 +1037,7 @@ LRESULT Win32Frame::WndProc(
 
     case WM_ACTIVATEAPP:	// Sent when different app's window is activated/deactivated.
 							// Eg. Deactivate when AppleWin app loses focus
-      g_bAppActive = !!wparam;
+      g_bAppActive = (wparam != 0);
       break;
 
 	case WM_SIZE:
@@ -1073,7 +1073,7 @@ LRESULT Win32Frame::WndProc(
       }
       if (g_TimerIDEvent_100msec)
       {
-        const bool bRes = !!KillTimer(g_hFrameWindow, g_TimerIDEvent_100msec);
+        const bool bRes = KillTimer(g_hFrameWindow, g_TimerIDEvent_100msec);
         LogFileOutput("KillTimer(g_TimerIDEvent_100msec), res=%d\n", bRes ? 1 : 0);
         g_TimerIDEvent_100msec = 0;
       }
@@ -2443,7 +2443,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 			if (nRes)
 			{
-				New_DOSProDOS_Disk(pTitle, pathname, nDiskSize, bIsDOS33, !!bNewDiskCopyBitsyBoot, !!bNewDiskCopyBitsyBye, !!bNewDiskCopyBASIC, !!bNewDiskCopyProDOS, this);
+				New_DOSProDOS_Disk(pTitle, pathname, nDiskSize, bIsDOS33, bNewDiskCopyBitsyBoot, bNewDiskCopyBitsyBye, bNewDiskCopyBASIC, bNewDiskCopyProDOS, this);
 			}
 		}
 	}
@@ -2701,7 +2701,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	}
 
 	// Destroy the menu.
-	const bool bRes = !!DestroyMenu(hmenu);
+	const bool bRes = DestroyMenu(hmenu);
 	_ASSERT(bRes);
 
 	SoundCore_SetFade(FADE_IN);
@@ -3386,7 +3386,7 @@ bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& be
 		DEVMODE devMode;
 		devMode.dmSize = sizeof(DEVMODE);
 		devMode.dmDriverExtra = 0;
-		const bool bValid = !!EnumDisplaySettings(NULL, iModeNum, &devMode);
+		const bool bValid = EnumDisplaySettings(NULL, iModeNum, &devMode);
 		if (!bValid)
 			break;
 		if (iModeNum == 0)	// 0 is the initial "cache info about display device" operation

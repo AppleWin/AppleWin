@@ -177,5 +177,5 @@ void CPageConfigTfe::save_tfe_dialog(HWND hwnd)
 	GetDlgItemText(hwnd, IDC_TFE_SETTINGS_INTERFACE, buffer, sizeof(buffer) - 1);
 
 	m_tfe_interface_name = buffer;
-	m_tfe_virtual_dns = !!IsDlgButtonChecked(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS);
+	m_tfe_virtual_dns = IsDlgButtonChecked(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS);
 }

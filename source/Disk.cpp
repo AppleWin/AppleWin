@@ -80,7 +80,7 @@ Disk2InterfaceCard::Disk2InterfaceCard(UINT slot) :
 	std::string regSection = RegGetConfigSlotSection(m_slot);
 	const uint32_t kForce13SectorFirmware_Default = 0;
 	RegLoadValue(regSection.c_str(), REGVALUE_DISKII_13_SECTOR_FIRMWARE, true, &tmp, kForce13SectorFirmware_Default);
-	m_force13SectorFirmware = !!tmp;
+	m_force13SectorFirmware = (tmp != 0);
 
 	ResetLogicStateSequencer();
 
@@ -501,7 +501,7 @@ void Disk2InterfaceCard::Boot()
 
 void __stdcall Disk2InterfaceCard::ControlMotor(WORD, WORD address, BYTE, BYTE, ULONG uExecutedCycles)
 {
-	bool newState = !!(address & 1);
+	bool newState = (address & 1);
 	bool stateChanged = (newState != m_floppyMotorOn);
 
 	// "2. [...] (DRIVES OFF forces the control flip-flops to clear.)" (UTAIIe page 9-12)

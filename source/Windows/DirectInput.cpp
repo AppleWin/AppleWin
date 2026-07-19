@@ -195,7 +195,7 @@ namespace DIMouse
 
 		if (g_TimerIDEvent)
 		{
-			const bool bRes = !!KillTimer(hDlg, g_TimerIDEvent);
+			const bool bRes = KillTimer(hDlg, g_TimerIDEvent);
 			LogFileOutput("DirectInputUninit: KillTimer(), res=%d\n", bRes ? 1 : 0);
 			g_TimerIDEvent = 0;
 		}

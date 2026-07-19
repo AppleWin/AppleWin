@@ -187,7 +187,7 @@ void SetActiveCpu(eCpuType cpu)
 
 bool IsIrqAsserted()
 {
-	return !!g_bmIRQ;
+	return (g_bmIRQ != 0);
 }
 
 bool Is6502InterruptEnabled()

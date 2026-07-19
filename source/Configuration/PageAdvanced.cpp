@@ -146,7 +146,7 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 
 		case IDC_NO_SLOT_CLOCK:
 			{
-				const bool newState = !!IsDlgButtonChecked(hWnd, IDC_NO_SLOT_CLOCK);
+				const bool newState = IsDlgButtonChecked(hWnd, IDC_NO_SLOT_CLOCK);
 				m_PropertySheetHelper.GetConfigNew().m_NoSlotClock = newState;
 			}
 			break;
@@ -205,7 +205,7 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 		m_PropertySheetHelper.GetConfigNew().m_ciderPressPathname = szFilename;
 	}
 
-	m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit = !!IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT);
+	m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT);
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }

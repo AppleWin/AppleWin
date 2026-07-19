@@ -460,21 +460,21 @@ static void RegisterHotKeys()
 {
 	bool bStatus[3] = {false, false, false};
 
-	bStatus[0] = !!RegisterHotKey( 
+	bStatus[0] = RegisterHotKey(
 		GetFrame().g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_560, // int id (user/custom id)
 		0              , // UINT fsModifiers
 		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
-	bStatus[1] = !!RegisterHotKey( 
+	bStatus[1] = RegisterHotKey(
 		GetFrame().g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_280, // int id (user/custom id)
 		MOD_SHIFT      , // UINT fsModifiers
 		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
-	bStatus[2] = !!RegisterHotKey( 
+	bStatus[2] = RegisterHotKey(
 		GetFrame().g_hFrameWindow  , // HWND hWnd
 		VK_SNAPSHOT_TEXT, // int id (user/custom id)
 		MOD_CONTROL     , // UINT fsModifiers

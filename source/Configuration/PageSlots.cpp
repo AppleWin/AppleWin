@@ -706,7 +706,7 @@ void CPageSlots::DlgDisk2OK(HWND hWnd)
 	if (ms_slot == SLOT5 || ms_slot == SLOT6)
 	{
 		Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
-		const bool bNewDiskiiStatus = !!IsDlgButtonChecked(hWnd, IDC_DISKII_STATUS_ENABLE);
+		const bool bNewDiskiiStatus = IsDlgButtonChecked(hWnd, IDC_DISKII_STATUS_ENABLE);
 
 		if (win32Frame.GetWindowedModeShowDiskiiStatus() != bNewDiskiiStatus)
 		{
@@ -718,7 +718,7 @@ void CPageSlots::DlgDisk2OK(HWND hWnd)
 		}
 	}
 
-	const bool newDiskii13SectorFW = !!IsDlgButtonChecked(hWnd, IDC_DISKII_13_SECTOR_FW_ENABLE);
+	const bool newDiskii13SectorFW = IsDlgButtonChecked(hWnd, IDC_DISKII_13_SECTOR_FW_ENABLE);
 	m_PropertySheetHelper.GetConfigNew().m_diskII13SectorFirmware[ms_slot] = newDiskii13SectorFW;
 }
 
@@ -1163,10 +1163,10 @@ void CPageSlots::DlgPrinterOK(HWND hWnd)
 		card.SetFilename(szFilename);
 	}
 
-	card.SetDumpToPrinter(!!IsDlgButtonChecked(hWnd, IDC_DUMPTOPRINTER));
-	card.SetConvertEncoding(!!IsDlgButtonChecked(hWnd, IDC_PRINTER_CONVERT_ENCODING));
-	card.SetFilterUnprintable(!!IsDlgButtonChecked(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE));
-	card.SetPrinterAppend(!!IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND));
+	card.SetDumpToPrinter(IsDlgButtonChecked(hWnd, IDC_DUMPTOPRINTER));
+	card.SetConvertEncoding(IsDlgButtonChecked(hWnd, IDC_PRINTER_CONVERT_ENCODING));
+	card.SetFilterUnprintable(IsDlgButtonChecked(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE));
+	card.SetPrinterAppend(IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND));
 
 	card.SetIdleLimit((short)SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_GETPOS, 0, 0));
 }

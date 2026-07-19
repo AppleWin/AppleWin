@@ -458,7 +458,7 @@ bool MockingboardCard::Is6522IRQ()
 	// . OR-sum of all active TIMER1, TIMER2 & SPEECH sources (from all 6522s)
 	bool irq = false;
 	for (UINT i = 0; i < NUM_SUBUNITS_PER_MB; i++)
-		irq |= !!(m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & 0x80);
+		irq |= ((m_MBSubUnit[i].sy6522.GetReg(SY6522::rIFR) & 0x80) != 0);
 
 	// NB. Mockingboard generates IRQ on both 6522s:
 	// . SSI263's IRQ (A/!R) is routed via the 2nd 6522's CA1 input (at $Cn80) and must generate a 6502 IRQ (not NMI)
@@ -698,7 +698,7 @@ BYTE MockingboardCard::IOReadInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nVa
 		if (CS & 2)
 			nRes |= m_MBSubUnit[SY6522_DEVICE_B].sy6522.Read(nAddr & 0xf);
 
-		bool bAccessedDevice = !!(CS & 3);
+		bool bAccessedDevice = (CS & 3);
 
 		bool CS_SSI263 = !(nAddr & 0x10) && (nAddr & 0x60) && !(nAddr & 0x80);				// SSI263 at $Cn2x and/or $Cn4x
 
@@ -806,9 +806,9 @@ BYTE MockingboardCard::IOWriteInternal(WORD PC, WORD nAddr, BYTE bWrite, BYTE nV
 		if (m_phasorMode == PH_Mockingboard || m_phasorMode == PH_Phasor)	// No SSI263 for Echo+
 		{
 			// Confirmed that Phasor has no extra logic to map SSI263 (it's the same as Mockingboard's)
-			bool CS_SSI263_A = !!(nAddr & 0x40);					// SSI263 at $Cn4x-Cn7x, $CnCx-CnFx
+			bool CS_SSI263_A = (nAddr & 0x40);					// SSI263 at $Cn4x-Cn7x, $CnCx-CnFx
 
-			bool CS_SSI263_B = !!(nAddr & 0x20);					// SSI263 at $Cn2x-Cn3x, $Cn6x-Cn7x, $CnAx-CnBx, $CnEx-CnFx
+			bool CS_SSI263_B = (nAddr & 0x20);					// SSI263 at $Cn2x-Cn3x, $Cn6x-Cn7x, $CnAx-CnBx, $CnEx-CnFx
 
 			// NB. Mockingboard mode: writes to $Cn4x/SSI263 also get written to 1st 6522 (have confirmed on real Phasor h/w)
 			if (CS_SSI263_A)	// Primary SSI263

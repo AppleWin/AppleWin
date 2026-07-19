@@ -432,7 +432,7 @@ bool HarddiskInterfaceCard::Insert(const int iDrive, const std::string& pathname
 	if (dwAttributes == INVALID_FILE_ATTRIBUTES)
 		m_hardDiskDrive[iDrive].m_bWriteProtected = false;	// File doesn't exist - so ImageOpen() below will fail
 	else
-		m_hardDiskDrive[iDrive].m_bWriteProtected = !!(dwAttributes & FILE_ATTRIBUTE_READONLY);
+		m_hardDiskDrive[iDrive].m_bWriteProtected = (dwAttributes & FILE_ATTRIBUTE_READONLY);
 
 	// Check if image is being used by any other HDD, and unplug it in order to be swapped
 	for (UINT i = HARDDISK_1; i < NUM_HARDDISKS; i++)
@@ -1042,7 +1042,7 @@ BYTE HarddiskInterfaceCard::GetProDOSBlockDeviceUnit()
 
 HardDiskDrive* HarddiskInterfaceCard::GetUnit()
 {
-	const bool isSmartPortCmd = !!(m_command & SP_Cmd_base);
+	const bool isSmartPortCmd = (m_command & SP_Cmd_base);
 
 	if (!isSmartPortCmd)
 		return &m_hardDiskDrive[GetProDOSBlockDeviceUnit()];

@@ -145,7 +145,7 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 		memmode &= ~MF_WRITERAM; // UTAIIe:5-23
 	}
 
-	pLC->SetLastRamWrite(!!(uAddr & 1) && !bWrite); // UTAIIe:5-23
+	pLC->SetLastRamWrite((uAddr & 1) && !bWrite); // UTAIIe:5-23
 	pLC->SetLCMemMode(memmode);
 
 	const bool bCardChanged = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC() != SLOT0;
@@ -444,7 +444,7 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 		else
 			memmode &= ~MF_WRITERAM;
 
-		pLC->SetLastRamWrite(!!(uAddr & 1));		// Saturn differs from Apple's 16K LC: any access (LC is read-only)
+		pLC->SetLastRamWrite((uAddr & 1));		// Saturn differs from Apple's 16K LC: any access (LC is read-only)
 		pLC->SetLCMemMode(memmode);
 
 		bBankChanged = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC() != uSlot;

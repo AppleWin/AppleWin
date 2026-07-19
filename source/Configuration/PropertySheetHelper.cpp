@@ -212,7 +212,7 @@ bool CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, const char* pszTit
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrTitle      = pszTitle;
 
-	const bool bRes = bSave ? !!GetSaveFileName(&ofn) : !!GetOpenFileName(&ofn);
+	const bool bRes = bSave ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
 	if (bRes)
 	{
 		if (bSave)	// Only for saving (allow loading of any file for backwards compatibility)

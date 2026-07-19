@@ -180,16 +180,16 @@ void LoadConfiguration(bool loadImages)
 	uint32_t dwTmp = 0;
 
 	if(REGLOAD(REGVALUE_FS_SHOW_SUBUNIT_STATUS, &dwTmp))
-		GetFrame().SetFullScreenShowSubunitStatus(!!dwTmp);
+		GetFrame().SetFullScreenShowSubunitStatus(dwTmp != 0);
 
 	if (REGLOAD(REGVALUE_SHOW_DISKII_STATUS, &dwTmp))
-		GetFrame().SetWindowedModeShowDiskiiStatus(!!dwTmp);
+		GetFrame().SetWindowedModeShowDiskiiStatus(dwTmp != 0);
 
 	if(REGLOAD(REGVALUE_THE_FREEZES_F8_ROM, &dwTmp))
 		GetPropertySheet().SetTheFreezesF8Rom(dwTmp);
 
 	if(REGLOAD(REGVALUE_SAVE_STATE_ON_EXIT, &dwTmp))
-		SetSaveStateOnExit(!!dwTmp);
+		SetSaveStateOnExit(dwTmp != 0);
 
 	if(REGLOAD(REGVALUE_PDL_XTRIM, &dwTmp))
 		JoySetTrim((short)dwTmp, true);
@@ -204,7 +204,7 @@ void LoadConfiguration(bool loadImages)
 	if(REGLOAD(REGVALUE_AUTOFIRE, &dwTmp))
 		GetPropertySheet().SetAutofire(dwTmp);
 	if(REGLOAD(REGVALUE_SWAP_BUTTONS_0_AND_1, &dwTmp))
-		GetPropertySheet().SetButtonsSwapState(!!dwTmp);
+		GetPropertySheet().SetButtonsSwapState(dwTmp != 0);
 	if(REGLOAD(REGVALUE_CENTERING_CONTROL, &dwTmp))
 		GetPropertySheet().SetJoystickCenteringControl(dwTmp);
 
@@ -325,7 +325,7 @@ void LoadConfiguration(bool loadImages)
 	// Do this after populating the slots with Disk II controller(s)
 	uint32_t dwEnhanceDisk;
 	REGLOAD_DEFAULT(REGVALUE_ENHANCE_DISK_SPEED, &dwEnhanceDisk, 1);
-	GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(!!dwEnhanceDisk);
+	GetCardMgr().GetDisk2CardMgr().SetEnhanceDisk(dwEnhanceDisk != 0);
 
 	//
 
@@ -338,7 +338,7 @@ void LoadConfiguration(bool loadImages)
 		GetFrame().SetViewportScale(dwTmp);
 
 	if (REGLOAD(REGVALUE_CONFIRM_REBOOT, &dwTmp))
-		GetFrame().g_bConfirmReboot = !!dwTmp;
+		GetFrame().g_bConfirmReboot = (dwTmp != 0);
 }
 
 static std::string GetFullPath(LPCSTR szFileName)

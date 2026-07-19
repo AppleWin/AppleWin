@@ -284,7 +284,7 @@ Update_t CmdSymbolsClear (int nArgs)
 std::string _CmdSymbolsInfoHeader ( int iTable, int nDisplaySize /* = 0 */ )
 {
 	// Common case is to use/calc the table size
-	bool bActive = !!(g_bDisplaySymbolTables & (1 << iTable));
+	bool bActive = (g_bDisplaySymbolTables & (1 << iTable));
 	int nSymbols  = nDisplaySize ? nDisplaySize : (int)g_aSymbols[ iTable ].size();
 
 	// Short Desc: `MAIN`: `1000`
@@ -299,7 +299,7 @@ std::string _CmdSymbolsInfoHeader ( int iTable, int nDisplaySize /* = 0 */ )
 //===========================================================================
 std::string _CmdSymbolsSummaryStatus ( int iTable )
 {
-	bool bActive = !!(g_bDisplaySymbolTables & (1 << iTable));
+	bool bActive = (g_bDisplaySymbolTables & (1 << iTable));
 	int iParam  = bActive
 	            ? PARAM_ON
 	            : PARAM_OFF
@@ -339,7 +339,7 @@ Update_t CmdSymbolsInfo (int nArgs)
 
 	for ( int iTable = 0, bTable = 1; bTable <= bDisplaySymbolTables; iTable++, bTable <<= 1 )
 	{
-		if ( !!(bDisplaySymbolTables & bTable) )
+		if ( (bDisplaySymbolTables & bTable) )
 		{
 			std::string hdr = _CmdSymbolsInfoHeader( iTable ); // 15 chars per table
 

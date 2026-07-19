@@ -184,16 +184,16 @@ void ParallelPrinterCard::GetRegistryConfig()
 	char szFilename[MAX_PATH];
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, true, &dwTmp))
-		SetDumpToPrinter(!!dwTmp);
+		SetDumpToPrinter(dwTmp != 0);
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_CONVERT_ENCODING, true, &dwTmp))
-		SetConvertEncoding(!!dwTmp);
+		SetConvertEncoding(dwTmp != 0);
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_FILTER_UNPRINTABLE, true, &dwTmp))
-		SetFilterUnprintable(!!dwTmp);
+		SetFilterUnprintable(dwTmp != 0);
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, true, &dwTmp))
-		SetPrinterAppend(!!dwTmp);
+		SetPrinterAppend(dwTmp != 0);
 
 	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, true, szFilename, MAX_PATH, ""))
 		SetFilename(szFilename);

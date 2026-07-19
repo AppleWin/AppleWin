@@ -213,7 +213,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 		{	// For the TK3000 //e we use Scroll Lock to switch between Apple ][ and accented chars modes
 			if (GetApple2Type() == A2TYPE_TK30002E)
 			{
-				g_bTK3KModeKey = !!(GetKeyState(VK_SCROLL) & 1);	// Sync with the Scroll Lock status
+				g_bTK3KModeKey = (GetKeyState(VK_SCROLL) & 1);	// Sync with the Scroll Lock status
 				GetFrame().FrameRefreshStatus(DRAW_LEDS | DRAW_DISK_STATUS);	// TODO: Implement |Mode| LED in the UI; make it appear only when in TK3000 mode
 				GetFrame().VideoRedrawScreen();	// TODO: Still need to implement page mode switching and 'whatnot'
 			}

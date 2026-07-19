@@ -623,7 +623,7 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 				const UINT button0 = !swapButtons0and1 ? 0 : 1;
 				DoAutofire(button0, pressed);
 				if (CopyProtectionDonglePB0() >= 0)				//If a copy protection dongle needs PB0, this overrides the joystick
-					pressed = !!CopyProtectionDonglePB0();
+					pressed = CopyProtectionDonglePB0();
 			}
 			break;
 
@@ -633,13 +633,13 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 				const UINT button1 = !swapButtons0and1 ? 1 : 0;
 				DoAutofire(button1, pressed);
 				if (CopyProtectionDonglePB1() >= 0)				//If a copy protection dongle needs PB1, this overrides the joystick
-					pressed = !!CopyProtectionDonglePB1();
+					pressed = CopyProtectionDonglePB1();
 			}
 			break;
 
 		case 0x63:
 			if (CopyProtectionDonglePB2() >= 0)					//If a copy protection dongle needs PB2, this overrides the joystick
-				pressed = !!CopyProtectionDonglePB2();
+				pressed = CopyProtectionDonglePB2();
 			else if (IS_APPLE2 && (joyinfo[joytype[1]] == DEVICE_NONE))
 			{
 				// Apple II/II+ with no joystick has the "SHIFT key mod"

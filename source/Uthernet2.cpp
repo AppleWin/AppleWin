@@ -604,7 +604,7 @@ void Uthernet2::receiveOnePacketRaw()
         const uint8_t mr = myMemory[socket0.registerAddress + W5100_SN_MR];
 
         // see if MAC RAW filters or not
-        const bool filterMAC = !!(mr & W5100_SN_MR_MF);
+        const bool filterMAC = (mr & W5100_SN_MR_MF);
         if (!filterMAC)
         {
             acceptAll = true;
@@ -951,7 +951,7 @@ void Uthernet2::openSocket(const size_t i)
 
     const uint8_t mr = myMemory[socket.registerAddress + W5100_SN_MR];
     const uint8_t protocol = mr & W5100_SN_MR_PROTO_MASK;
-    const bool virtual_dns = !!(protocol & W5100_SN_VIRTUAL_DNS);
+    const bool virtual_dns = (protocol & W5100_SN_VIRTUAL_DNS);
 
     // if virtual_dns is requested, but not enabled, we cannot handle it here.
     if (virtual_dns && !myVirtualDNSEnabled)
