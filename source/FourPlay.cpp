@@ -139,7 +139,7 @@ BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value,
 
 bool FourPlayCard::MyGetAsyncKeyState(int vKey)
 {
-	return GetAsyncKeyState(vKey) < 0;
+	return (GetAsyncKeyState(vKey) < 0);
 }
 
 void FourPlayCard::InitializeIO(LPBYTE pCxRomPeripheral)

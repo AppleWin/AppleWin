@@ -34,7 +34,7 @@ public:
 
 	void VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
-	bool IsSHR() const { return (m_NEWVIDEO & 0xC0) == 0xC0; }	// 11000000 = Enable SHR(b7) | Linearize SHR video memory(b6)
+	bool IsSHR() const { return ((m_NEWVIDEO & 0xC0) == 0xC0); }	// 11000000 = Enable SHR(b7) | Linearize SHR video memory(b6)
 	bool IsDHGRBlackAndWhite() const { return !!(m_NEWVIDEO & (1 << 5)); }
 	bool IsWriteAux() const;
 

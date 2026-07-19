@@ -831,7 +831,7 @@ bool Uthernet1::tfe_should_accept(unsigned char *buffer, int length, int *phashe
         *pbroadcast = 1;
 
         /* broadcasts cannot be accepted by the hash filter */
-            return tfe_recv_broadcast || tfe_recv_promiscuous;
+            return (tfe_recv_broadcast || tfe_recv_promiscuous);
     }
 
 	/* now check if DA passes the hash filter */
@@ -851,9 +851,9 @@ bool Uthernet1::tfe_should_accept(unsigned char *buffer, int length, int *phashe
              */
             *phashed = 0;
 
-            return tfe_recv_multicast || tfe_recv_promiscuous;
+            return (tfe_recv_multicast || tfe_recv_promiscuous);
         }
-        return tfe_recv_hashfilter || tfe_recv_promiscuous;
+        return (tfe_recv_hashfilter || tfe_recv_promiscuous);
     }
 
     return tfe_recv_promiscuous;

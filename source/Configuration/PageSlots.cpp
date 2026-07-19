@@ -265,17 +265,24 @@ int CPageSlots::CardTypeToComboItem(UINT slot)
 
 bool CPageSlots::CardTypeHasOptions(SS_CARDTYPE card)
 {
-	return card == CT_Disk2 ||
-		card == CT_GenericHDD ||
-		card == CT_SSC ||
-		card == CT_GenericPrinter ||
-		card == CT_MockingboardC ||
-		card == CT_MouseInterface ||
-		card == CT_Phasor ||
-		card == CT_Saturn128K ||
-		card == CT_Uthernet ||
-		card == CT_Uthernet2 ||
-		card == CT_RamWorksIII;
+	switch (card)
+	{
+	case CT_Disk2:
+	case CT_GenericHDD:
+	case CT_SSC:
+	case CT_GenericPrinter:
+	case CT_MockingboardC:
+	case CT_MouseInterface:
+	case CT_Phasor:
+	case CT_Saturn128K:
+	case CT_Uthernet:
+	case CT_Uthernet2:
+	case CT_RamWorksIII:
+		return true;
+	default:
+		break;
+	}
+	return false;
 }
 
 //
