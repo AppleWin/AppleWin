@@ -103,9 +103,9 @@ bool KeybGetShiftStatus()
 //===========================================================================
 void KeybUpdateCtrlShiftStatus()
 {
-	g_bAltKey   = GetKeyState( VK_MENU   ) < 0;	//  L or R alt
-	g_bCtrlKey  = GetKeyState( VK_CONTROL) < 0;	//  L or R ctrl
-	g_bShiftKey = GetKeyState( VK_SHIFT  ) < 0;	//  L or R shift
+	g_bAltKey   = (GetKeyState( VK_MENU   ) < 0);	//  L or R alt
+	g_bCtrlKey  = (GetKeyState( VK_CONTROL) < 0);	//  L or R ctrl
+	g_bShiftKey = (GetKeyState( VK_SHIFT  ) < 0);	//  L or R shift
 }
 
 //===========================================================================

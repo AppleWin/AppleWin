@@ -296,7 +296,7 @@ bool SY6522::OnTimer1Underflow(USHORT& counter) const
 			timer += (m_regs.TIMER1_LATCH.w + kExtraTimerCycles);	// GH#651: account for underflowed cycles / GH#652: account for extra 2 cycles
 	}
 	counter = (USHORT)timer;
-	return timer < 0;			// timer1IrqDelay
+	return (timer < 0);			// timer1IrqDelay
 }
 
 //-----------------------------------------------------------------------------
