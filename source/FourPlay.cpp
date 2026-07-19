@@ -53,15 +53,22 @@
 #include "Memory.h"
 #include "YamlHelper.h"
 
-inline static int _b2bit(bool b, int shift)
+inline static int bool_to_bit(bool b, int shift)
 {
 	return b ? (1 << shift) : 0;
 }
 
 BYTE FourPlayCard::MakeByte(bool up, bool down, bool left, bool right, bool trigger1, bool trigger2)
 {
-	return _b2bit(up, 0) | _b2bit(down, 1) | _b2bit(left, 2) | _b2bit(right, 3)
-         | _b2bit(false, 4) | _b2bit(true, 5) | _b2bit(trigger2, 6) | _b2bit(trigger1, 7);
+	const int byte = bool_to_bit(up,       0)
+				   | bool_to_bit(down,     1)
+				   | bool_to_bit(left,     2)
+				   | bool_to_bit(right,    3)
+				   | bool_to_bit(false,    4)
+				   | bool_to_bit(true,     5)
+				   | bool_to_bit(trigger2, 6)
+				   | bool_to_bit(trigger1, 7);
+	return byte;
 }
 
 BYTE __stdcall FourPlayCard::IORead(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles)
