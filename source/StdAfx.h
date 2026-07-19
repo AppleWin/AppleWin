@@ -85,4 +85,4 @@
 #endif // _WIN32
 
 // Convert bool to BOOL for Windows API.
-inline BOOL _b2B(bool b) { return b ? TRUE : FALSE; }
+inline BOOL bool_to_BOOL(bool b) { return b ? TRUE : FALSE; }

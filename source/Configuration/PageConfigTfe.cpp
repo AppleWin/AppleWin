@@ -119,7 +119,7 @@ void CPageConfigTfe::gray_ungray_items(HWND hwnd)
 		SetWindowText(GetDlgItem(hwnd, IDC_TFE_SETTINGS_INTERFACE_DESC), description.c_str());
 	}
 
-	EnableWindow(GetDlgItem(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS), _b2B(m_enableVirtualDnsCheckbox));
+	EnableWindow(GetDlgItem(hwnd, IDC_CHECK_TFE_VIRTUAL_DNS), bool_to_BOOL(m_enableVirtualDnsCheckbox));
 }
 
 void CPageConfigTfe::init_tfe_dialog(HWND hwnd)

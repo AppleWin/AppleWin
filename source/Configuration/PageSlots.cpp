@@ -309,8 +309,8 @@ void CPageSlots::InitOptions(HWND hWnd)
 			enableOpt = CardTypeHasOptions(m_PropertySheetHelper.GetConfigNew().m_Slot[slot]);
 		}
 
-		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0 + slot), _b2B(enable));
-		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0_OPTION + slot), _b2B(enableOpt));
+		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0 + slot), bool_to_BOOL(enable));
+		EnableWindow(GetDlgItem(hWnd, IDC_SLOT0_OPTION + slot), bool_to_BOOL(enableOpt));
 	}
 
 	if (IsAppleIIe(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
@@ -329,8 +329,8 @@ void CPageSlots::InitOptions(HWND hWnd)
 		enableOpt = false;
 	}
 
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX), _b2B(enable));
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX_OPTION), _b2B(enableOpt));
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX), bool_to_BOOL(enable));
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX_OPTION), bool_to_BOOL(enableOpt));
 
 	//
 
@@ -676,9 +676,9 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 
 void CPageSlots::EnableFloppyDrive(HWND hWnd, bool enable)
 {
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK1), _b2B(enable));
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK2), _b2B(enable));
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_DISK_SWAP), _b2B(enable));
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK1), bool_to_BOOL(enable));
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK2), bool_to_BOOL(enable));
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_DISK_SWAP), bool_to_BOOL(enable));
 }
 
 void CPageSlots::HandleFloppyDriveSwap(HWND hWnd, UINT slot)
@@ -933,9 +933,9 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 
 void CPageSlots::EnableHDD(HWND hWnd, bool enable)
 {
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD1), _b2B(enable));
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD2), _b2B(enable));
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_HDD_SWAP), _b2B(enable));
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD1), bool_to_BOOL(enable));
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD2), bool_to_BOOL(enable));
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_HDD_SWAP), bool_to_BOOL(enable));
 }
 
 void CPageSlots::HandleHDDSwap(HWND hWnd, UINT slot)
@@ -1044,7 +1044,7 @@ INT_PTR CPageSlots::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, L
 
 			CSuperSerialCard* card = GetCardMgr().GetSSC();
 			const bool enable = !card || !card->IsActive();
-			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), _b2B(enable));
+			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), bool_to_BOOL(enable));
 			break;
 		}
 
@@ -1123,7 +1123,7 @@ INT_PTR CPageSlots::DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wpara
 			SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)card.GetFilename().c_str());
 
 			// Need to specify cmd-line switch: -printer-real to enable this control
-			EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), _b2B(card.GetEnableDumpToRealPrinter()));
+			EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), bool_to_BOOL(card.GetEnableDumpToRealPrinter()));
 		}
 		break;
 

@@ -277,7 +277,7 @@ int CPageAdvanced::GetCloneMenuItem()
 void CPageAdvanced::InitFreezeDlgButton(HWND hWnd)
 {
 	const bool bIsApple2Plus = IsApple2Plus( m_PropertySheetHelper.GetConfigNew().m_Apple2Type );
-	EnableWindow(GetDlgItem(hWnd, IDC_THE_FREEZES_F8_ROM_FW), _b2B(bIsApple2Plus));
+	EnableWindow(GetDlgItem(hWnd, IDC_THE_FREEZES_F8_ROM_FW), bool_to_BOOL(bIsApple2Plus));
 
 	const UINT CheckTheFreezesRom = m_PropertySheetHelper.GetConfigNew().m_enableTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED;
 	CheckDlgButton(hWnd, IDC_THE_FREEZES_F8_ROM_FW, CheckTheFreezesRom);
@@ -290,7 +290,7 @@ void CPageAdvanced::InitCloneDropdownMenu(HWND hWnd)
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_CLONETYPE, m_CloneChoices, nCurrentChoice);
 
 	const bool bIsClone = IsClone( m_PropertySheetHelper.GetConfigNew().m_Apple2Type );
-	EnableWindow(GetDlgItem(hWnd, IDC_CLONETYPE), _b2B(bIsClone));
+	EnableWindow(GetDlgItem(hWnd, IDC_CLONETYPE), bool_to_BOOL(bIsClone));
 }
 
 void CPageAdvanced::InitGameIOConnectorDropdownMenu(HWND hWnd)
