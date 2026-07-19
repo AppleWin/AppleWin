@@ -409,7 +409,7 @@ void tfe_arch_receive_remove_committed_frame()
 }
 */
 
-inline static const char* _b2psz(bool b) { return b ? "true" : "false"; }
+inline static const char* bool_to_cstring(bool b) { return b ? "true" : "false"; }
 
 void tfe_arch_recv_ctl( bool bBroadcast,   /* broadcast */
                         bool bIA,          /* individual address (IA) */
@@ -422,12 +422,12 @@ void tfe_arch_recv_ctl( bool bBroadcast,   /* broadcast */
 #if defined(TFE_DEBUG_ARCH) || defined(TFE_DEBUG_FRAMES)
 	if(g_fh) {
 		fprintf( g_fh, "tfe_arch_recv_ctl() called with the following parameters:" );
-		fprintf( g_fh, "\tbBroadcast   = %s", _b2psz(bBroadcast) );
-		fprintf( g_fh, "\tbIA          = %s", _b2psz(bIA) );
-		fprintf( g_fh, "\tbMulticast   = %s", _b2psz(bMulticast) );
-		fprintf( g_fh, "\tbCorrect     = %s", _b2psz(bCorrect) );
-		fprintf( g_fh, "\tbPromiscuous = %s", _b2psz(bPromiscuous) );
-		fprintf( g_fh, "\tbIAHash      = %s", _b2psz(bIAHash) );
+		fprintf( g_fh, "\tbBroadcast   = %s", bool_to_cstring(bBroadcast) );
+		fprintf( g_fh, "\tbIA          = %s", bool_to_cstring(bIA) );
+		fprintf( g_fh, "\tbMulticast   = %s", bool_to_cstring(bMulticast) );
+		fprintf( g_fh, "\tbCorrect     = %s", bool_to_cstring(bCorrect) );
+		fprintf( g_fh, "\tbPromiscuous = %s", bool_to_cstring(bPromiscuous) );
+		fprintf( g_fh, "\tbIAHash      = %s", bool_to_cstring(bIAHash) );
 		fprintf( g_fh, "\n" );
 	}
 #endif
@@ -438,8 +438,8 @@ void tfe_arch_line_ctl(bool bEnableTransmitter, bool bEnableReceiver)
 #if defined(TFE_DEBUG_ARCH) || defined(TFE_DEBUG_FRAMES)
 	if(g_fh) {
 		fprintf( g_fh, "tfe_arch_line_ctl() called with the following parameters:" );
-		fprintf( g_fh, "\tbEnableTransmitter = %s", _b2psz(bEnableTransmitter) );
-		fprintf( g_fh, "\tbEnableReceiver    = %s", _b2psz(bEnableReceiver) );
+		fprintf( g_fh, "\tbEnableTransmitter = %s", bool_to_cstring(bEnableTransmitter) );
+		fprintf( g_fh, "\tbEnableReceiver    = %s", bool_to_cstring(bEnableReceiver) );
 		fprintf( g_fh, "\n" );
 	}
 #endif
