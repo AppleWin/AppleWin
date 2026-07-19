@@ -163,7 +163,7 @@ void Video::VideoReinitialize(bool bInitVideoScannerAddress)
 
 void Video::VideoResetState()
 {
-	g_nAltCharSetOffset    = 0;
+	g_bAltCharSetOffset    = false;
 	g_uVideoMode           = VF_TEXT;
 
 	NTSC_SetVideoTextMode( 40 );
@@ -187,8 +187,8 @@ BYTE Video::VideoSetMode(WORD pc, WORD address, BYTE write, BYTE d, ULONG uExecu
 		case 0x01: g_uVideoMode |=  VF_80STORE; break;
 		case 0x0C: if (!IS_APPLE2) { g_uVideoMode &= ~VF_80COL; NTSC_SetVideoTextMode(40); } break;
 		case 0x0D: if (!IS_APPLE2) { g_uVideoMode |=  VF_80COL; NTSC_SetVideoTextMode(80); } break;
-		case 0x0E: if (!IS_APPLE2) g_nAltCharSetOffset = 0;   break;	// Alternate char set off
-		case 0x0F: if (!IS_APPLE2) g_nAltCharSetOffset = 256; break;	// Alternate char set on
+		case 0x0E: if (!IS_APPLE2) g_bAltCharSetOffset = false; break;	// Alternate char set off
+		case 0x0F: if (!IS_APPLE2) g_bAltCharSetOffset = true;  break;	// Alternate char set on
 		case 0x22: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
 		case 0x29: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
 		case 0x34: if (vidHD) vidHD->VideoIOWrite(pc, address, write, d, uExecutedCycles); break;	// VidHD IIgs video mode register
@@ -279,7 +279,7 @@ bool Video::VideoGetSWTEXT() const
 
 bool Video::VideoGetSWAltCharSet() const
 {
-	return (g_nAltCharSetOffset != 0);
+	return g_bAltCharSetOffset;
 }
 
 bool Video::VideoGet80COLAUXEMPTY() const
@@ -303,7 +303,7 @@ const std::string& Video::VideoGetSnapshotStructName()
 void Video::VideoSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", VideoGetSnapshotStructName().c_str());
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, (g_nAltCharSetOffset != 0));
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_ALT_CHARSET, g_bAltCharSetOffset);
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_VIDEO_MODE, g_uVideoMode);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_CYCLES_THIS_FRAME, g_dwCyclesThisFrame);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_VIDEO_REFRESH_RATE, (UINT)GetVideoRefreshRate());
@@ -321,7 +321,7 @@ void Video::VideoLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		SetCurrentCLK6502();
 	}
 
-	g_nAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALT_CHARSET) ? 256 : 0;
+	g_bAltCharSetOffset = yamlLoadHelper.LoadBool(SS_YAML_KEY_ALT_CHARSET);
 	g_uVideoMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_VIDEO_MODE);
 	g_dwCyclesThisFrame = yamlLoadHelper.LoadUint(SS_YAML_KEY_CYCLES_THIS_FRAME);
 

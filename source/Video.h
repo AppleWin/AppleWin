@@ -190,7 +190,7 @@ public:
 	Video()
 	{
 		g_pFramebufferbits = NULL; // last drawn frame (initialized in WinVideoInitialize)
-		g_nAltCharSetOffset = 0;
+		g_bAltCharSetOffset = false;
 		g_uVideoMode = VF_TEXT;
 		g_eVideoType = VT_DEFAULT;
 		g_eVideoStyle = VS_DEFAULT;
@@ -298,7 +298,7 @@ private:
 	void SetFrameBuffer(uint8_t* frameBuffer) { g_pFramebufferbits = frameBuffer; }
 	const std::string& VideoGetSnapshotStructName();
 
-	int g_nAltCharSetOffset;
+	bool g_bAltCharSetOffset;
 	uint32_t g_uVideoMode;		// Current Video Mode (this is the last set one as it may change mid-scan line!)
 	uint32_t g_eVideoType;			// saved to Registry
 	VideoStyle_e g_eVideoStyle;
