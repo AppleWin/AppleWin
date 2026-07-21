@@ -169,8 +169,8 @@ void CPageInput::InitOptions(HWND hWnd)
 	CheckDlgButton(hWnd, IDC_CURSORCONTROL, m_PropertySheetHelper.GetConfigNew().m_cursorControl ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hWnd, IDC_SWAPBUTTONS0AND1, m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 ? BST_CHECKED : BST_UNCHECKED);
 
-	EnableWindow(GetDlgItem(hWnd, IDC_CURSORCONTROL), bool_to_BOOL(JoyUsingKeyboardCursors()));
-	EnableWindow(GetDlgItem(hWnd, IDC_CENTERINGCONTROL), bool_to_BOOL(JoyUsingKeyboard()));
+	EnableWindow(GetDlgItem(hWnd, IDC_CURSORCONTROL), JoyUsingKeyboardCursors());
+	EnableWindow(GetDlgItem(hWnd, IDC_CENTERINGCONTROL), JoyUsingKeyboard());
 }
 
 void CPageInput::DlgOK(HWND hWnd)

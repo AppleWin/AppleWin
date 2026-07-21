@@ -164,8 +164,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				const VideoType_e newVideoType = (VideoType_e) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
-				const BOOL bEnabled = bool_to_BOOL(newVideoType == VT_COLOR_IDEALIZED);
-				EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), bEnabled);
+				EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (newVideoType == VT_COLOR_IDEALIZED));
 			}
 			break;
 
@@ -249,8 +248,7 @@ void CPageConfig::InitOptions(HWND hWnd)
 	const VideoStyle_e style = m_PropertySheetHelper.GetConfigNew().m_videoStyle;
 	CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, GetVideo().IsVideoStyle(style, VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, GetVideo().IsVideoStyle(style, VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
-	const BOOL bEnabled = bool_to_BOOL(m_PropertySheetHelper.GetConfigNew().m_videoType == VT_COLOR_IDEALIZED);
-	EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), bEnabled);
+	EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (m_PropertySheetHelper.GetConfigNew().m_videoType == VT_COLOR_IDEALIZED));
 	CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus ? BST_CHECKED : BST_UNCHECKED);
@@ -422,12 +420,11 @@ eApple2Type CPageConfig::GetApple2Type(uint32_t NewMenuItem)
 
 void CPageConfig::EnableTrackbar(HWND hWnd, bool enable)
 {
-	const BOOL bEnabled = bool_to_BOOL(enable);
-	EnableWindow(GetDlgItem(hWnd, IDC_SLIDER_CPU_SPEED), bEnabled);
-	EnableWindow(GetDlgItem(hWnd, IDC_0_5_MHz), bEnabled);
-	EnableWindow(GetDlgItem(hWnd, IDC_1_0_MHz), bEnabled);
-	EnableWindow(GetDlgItem(hWnd, IDC_2_0_MHz), bEnabled);
-	EnableWindow(GetDlgItem(hWnd, IDC_MAX_MHz), bEnabled);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLIDER_CPU_SPEED), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_0_5_MHz), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_1_0_MHz), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_2_0_MHz), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_MAX_MHz), enable);
 }
 
 
