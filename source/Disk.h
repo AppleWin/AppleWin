@@ -268,7 +268,7 @@ private:
 	WORD m_currDrive;
 	FloppyDrive m_floppyDrive[NUM_DRIVES];
 	BYTE m_floppyLatch;
-	BOOL m_floppyMotorOn;
+	bool m_floppyMotorOn;
 
 	// Although the magnets are a property of the drive, their state is a property of the controller card,
 	// since the magnets will only be on for whichever of the 2 drives is currently selected.

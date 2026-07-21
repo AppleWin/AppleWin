@@ -458,30 +458,30 @@ void RegisterExtensions()
 // NB. On a restart, it's OK to call RegisterHotKey() again since the old g_hFrameWindow has been destroyed
 static void RegisterHotKeys()
 {
-	BOOL bStatus[3] = {0,0,0};
+	bool bStatus[3] = {false, false, false};
 
-	bStatus[0] = RegisterHotKey( 
+	bStatus[0] = RegisterHotKey(
 		GetFrame().g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_560, // int id (user/custom id)
 		0              , // UINT fsModifiers
 		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
-	bStatus[1] = RegisterHotKey( 
+	bStatus[1] = RegisterHotKey(
 		GetFrame().g_hFrameWindow , // HWND hWnd
 		VK_SNAPSHOT_280, // int id (user/custom id)
 		MOD_SHIFT      , // UINT fsModifiers
 		VK_SNAPSHOT      // UINT vk = PrintScreen
 	);
 
-	bStatus[2] = RegisterHotKey( 
+	bStatus[2] = RegisterHotKey(
 		GetFrame().g_hFrameWindow  , // HWND hWnd
 		VK_SNAPSHOT_TEXT, // int id (user/custom id)
 		MOD_CONTROL     , // UINT fsModifiers
 		VK_SNAPSHOT       // UINT vk = PrintScreen
 	);
 
-	if ((!bStatus[0] || !bStatus[1] || !bStatus[2]))
+	if (!bStatus[0] || !bStatus[1] || !bStatus[2])
 	{
 		std::string msg("Unable to register for PrintScreen key(s):\n");
 

@@ -127,7 +127,7 @@ std::string FrameBase::Util_MakeScreenShotFileName() const
 	return StrFormat("%s%s_%09d.bmp", folder.c_str(), pPrefixFileName.c_str(), g_nLastScreenShot);
 }
 
-// Returns TRUE if file exists, else FALSE
+// Returns true if file exists, else false
 bool FrameBase::Util_TestScreenShotFileName(const char* pFileName)
 {
 	bool bFileExists = false;

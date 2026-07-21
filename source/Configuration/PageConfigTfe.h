@@ -29,7 +29,7 @@ protected:
 	virtual void ResetToDefault() {}
 
 private:
-	BOOL get_tfename(int number, std::string & name, std::string & description);
+	bool get_tfename(int number, std::string & name, std::string & description);
 	void gray_ungray_items(HWND hwnd);
 	void init_tfe_dialog(HWND hwnd);
 	void save_tfe_dialog(HWND hwnd);

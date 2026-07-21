@@ -456,7 +456,7 @@ static void Snapshot_LoadState_v2()
 
 		DebugReset();
 		if (g_nAppMode == MODE_DEBUG)
-			DebugDisplay(TRUE);
+			DebugDisplay(true);
 
 		frame.Initialize(false);	// don't reset the video state
 		frame.ResizeWindow();

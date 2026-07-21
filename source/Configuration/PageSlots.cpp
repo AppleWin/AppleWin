@@ -263,19 +263,26 @@ int CPageSlots::CardTypeToComboItem(UINT slot)
 	return currentChoice;
 }
 
-BOOL CPageSlots::CardTypeHasOptions(SS_CARDTYPE card)
+bool CPageSlots::CardTypeHasOptions(SS_CARDTYPE card)
 {
-	return (card == CT_Disk2 ||
-		card == CT_GenericHDD ||
-		card == CT_SSC ||
-		card == CT_GenericPrinter ||
-		card == CT_MockingboardC ||
-		card == CT_MouseInterface ||
-		card == CT_Phasor ||
-		card == CT_Saturn128K ||
-		card == CT_Uthernet ||
-		card == CT_Uthernet2 ||
-		card == CT_RamWorksIII) ? TRUE : FALSE;
+	switch (card)
+	{
+	case CT_Disk2:
+	case CT_GenericHDD:
+	case CT_SSC:
+	case CT_GenericPrinter:
+	case CT_MockingboardC:
+	case CT_MouseInterface:
+	case CT_Phasor:
+	case CT_Saturn128K:
+	case CT_Uthernet:
+	case CT_Uthernet2:
+	case CT_RamWorksIII:
+		return true;
+	default:
+		break;
+	}
+	return false;
 }
 
 //
@@ -284,7 +291,8 @@ BOOL CPageSlots::CardTypeHasOptions(SS_CARDTYPE card)
 
 void CPageSlots::InitOptions(HWND hWnd)
 {
-	BOOL enable = FALSE, enableOpt = FALSE;
+	bool enable = false;
+	bool enableOpt = false;
 
 	SS_CARDTYPE currConfig[NUM_SLOTS];
 	for (int i = SLOT0; i < NUM_SLOTS; i++)
@@ -294,8 +302,8 @@ void CPageSlots::InitOptions(HWND hWnd)
 	{
 		if (slot == SLOT0 && IsAppleIIe(m_PropertySheetHelper.GetConfigNew().m_Apple2Type))
 		{
-			enable = FALSE;
-			enableOpt = FALSE;
+			enable = false;
+			enableOpt = false;
 		}
 		else
 		{
@@ -304,7 +312,7 @@ void CPageSlots::InitOptions(HWND hWnd)
 			int currentChoice = CardTypeToComboItem(slot);
 			m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOT0 + slot, choices.c_str(), currentChoice);
 
-			enable = TRUE;
+			enable = true;
 			enableOpt = CardTypeHasOptions(m_PropertySheetHelper.GetConfigNew().m_Slot[slot]);
 		}
 
@@ -319,13 +327,13 @@ void CPageSlots::InitOptions(HWND hWnd)
 		int currentChoice = CardTypeToComboItem(SLOT_AUX);
 		m_PropertySheetHelper.FillComboBox(hWnd, IDC_SLOTAUX, choices.c_str(), currentChoice);
 
-		enable = TRUE;
+		enable = true;
 		enableOpt = CardTypeHasOptions(m_PropertySheetHelper.GetConfigNew().m_SlotAux);
 	}
 	else
 	{
-		enable = FALSE;
-		enableOpt = FALSE;
+		enable = false;
+		enableOpt = false;
 	}
 
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOTAUX), enable);
@@ -593,11 +601,11 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 
 	if (dwComboSelection == dwOpenDialogIndex)
 	{
-		EnableFloppyDrive(hWnd, FALSE);	// Prevent multiple Selection dialogs to be triggered
+		EnableFloppyDrive(hWnd, false);	// Prevent multiple Selection dialogs to be triggered
 		std::string pathname;
 		DWORD flags = 0;
 		bool bRes = card.UserSelectNewDiskImageOnly(driveSelected, "", pathname, flags);
-		EnableFloppyDrive(hWnd, TRUE);
+		EnableFloppyDrive(hWnd, true);
 
 		if (!bRes)
 		{
@@ -673,11 +681,11 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 	}
 }
 
-void CPageSlots::EnableFloppyDrive(HWND hWnd, BOOL enable)
+void CPageSlots::EnableFloppyDrive(HWND hWnd, bool enable)
 {
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK1), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_DISK2), enable);
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_DISK_SWAP), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_DISK_SWAP),   enable);
 }
 
 void CPageSlots::HandleFloppyDriveSwap(HWND hWnd, UINT slot)
@@ -697,7 +705,7 @@ void CPageSlots::DlgDisk2OK(HWND hWnd)
 	if (ms_slot == SLOT5 || ms_slot == SLOT6)
 	{
 		Win32Frame& win32Frame = Win32Frame::GetWin32Frame();
-		const bool bNewDiskiiStatus = IsDlgButtonChecked(hWnd, IDC_DISKII_STATUS_ENABLE) ? true : false;
+		const bool bNewDiskiiStatus = IsDlgButtonChecked(hWnd, IDC_DISKII_STATUS_ENABLE);
 
 		if (win32Frame.GetWindowedModeShowDiskiiStatus() != bNewDiskiiStatus)
 		{
@@ -709,7 +717,7 @@ void CPageSlots::DlgDisk2OK(HWND hWnd)
 		}
 	}
 
-	const bool newDiskii13SectorFW = IsDlgButtonChecked(hWnd, IDC_DISKII_13_SECTOR_FW_ENABLE) ? true : false;
+	const bool newDiskii13SectorFW = IsDlgButtonChecked(hWnd, IDC_DISKII_13_SECTOR_FW_ENABLE);
 	m_PropertySheetHelper.GetConfigNew().m_diskII13SectorFirmware[ms_slot] = newDiskii13SectorFW;
 }
 
@@ -844,11 +852,11 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 
 	if (dwComboSelection == dwOpenDialogIndex)
 	{
-		EnableHDD(hWnd, FALSE);	// Prevent multiple Selection dialogs to be triggered
+		EnableHDD(hWnd, false);	// Prevent multiple Selection dialogs to be triggered
 		std::string pathname;
 		DWORD flags = 0;
 		bool bRes = card.UserSelectNewDiskImageOnly(driveSelected, "", pathname, flags);
-		EnableHDD(hWnd, TRUE);
+		EnableHDD(hWnd, true);
 
 		if (!bRes)
 		{
@@ -930,11 +938,11 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 	}
 }
 
-void CPageSlots::EnableHDD(HWND hWnd, BOOL enable)
+void CPageSlots::EnableHDD(HWND hWnd, bool enable)
 {
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD1), enable);
 	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_COMBO_HDD2), enable);
-	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_HDD_SWAP), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLOT_OPT_HDD_SWAP),   enable);
 }
 
 void CPageSlots::HandleHDDSwap(HWND hWnd, UINT slot)
@@ -1041,10 +1049,8 @@ INT_PTR CPageSlots::DlgProcSSCInternal(HWND hWnd, UINT message, WPARAM wparam, L
 			const UINT serialPortItem = m_PropertySheetHelper.GetConfigNew().m_serialPortItem;
 			m_PropertySheetHelper.FillComboBox(hWnd, IDC_SERIALPORT, cardForConfig.GetSerialPortChoices().c_str(), serialPortItem);
 
-			BOOL enable = TRUE;
 			CSuperSerialCard* card = GetCardMgr().GetSSC();
-			if (card && card->IsActive())
-				enable = FALSE;
+			const bool enable = !card || !card->IsActive();
 			EnableWindow(GetDlgItem(hWnd, IDC_SERIALPORT), enable);
 			break;
 		}
@@ -1124,7 +1130,7 @@ INT_PTR CPageSlots::DlgProcPrinterInternal(HWND hWnd, UINT message, WPARAM wpara
 			SendDlgItemMessage(hWnd, IDC_PRINTER_DUMP_FILENAME, WM_SETTEXT, 0, (LPARAM)card.GetFilename().c_str());
 
 			// Need to specify cmd-line switch: -printer-real to enable this control
-			EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), card.GetEnableDumpToRealPrinter() ? TRUE : FALSE);
+			EnableWindow(GetDlgItem(hWnd, IDC_DUMPTOPRINTER), card.GetEnableDumpToRealPrinter());
 		}
 		break;
 
@@ -1155,10 +1161,10 @@ void CPageSlots::DlgPrinterOK(HWND hWnd)
 		card.SetFilename(szFilename);
 	}
 
-	card.SetDumpToPrinter(IsDlgButtonChecked(hWnd, IDC_DUMPTOPRINTER) ? true : false);
-	card.SetConvertEncoding(IsDlgButtonChecked(hWnd, IDC_PRINTER_CONVERT_ENCODING) ? true : false);
-	card.SetFilterUnprintable(IsDlgButtonChecked(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE) ? true : false);
-	card.SetPrinterAppend(IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND) ? true : false);
+	card.SetDumpToPrinter(IsDlgButtonChecked(hWnd, IDC_DUMPTOPRINTER));
+	card.SetConvertEncoding(IsDlgButtonChecked(hWnd, IDC_PRINTER_CONVERT_ENCODING));
+	card.SetFilterUnprintable(IsDlgButtonChecked(hWnd, IDC_PRINTER_FILTER_UNPRINTABLE));
+	card.SetPrinterAppend(IsDlgButtonChecked(hWnd, IDC_PRINTER_APPEND));
 
 	card.SetIdleLimit((short)SendDlgItemMessage(hWnd, IDC_SPIN_PRINTER_IDLE, UDM_GETPOS, 0, 0));
 }

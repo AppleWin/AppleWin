@@ -112,7 +112,7 @@ Win32Frame::Win32Frame()
 	g_bLastCursorInAppleViewport = false;
 	g_uCount100msec = 0;
 	g_TimerIDEvent_100msec = 0;
-	g_bUsingCursor = FALSE;
+	g_bUsingCursor = false;
 	g_bAppActive = false;
 	g_bFrameActive = false;
 	g_windowMinimized = false;
@@ -317,7 +317,7 @@ void Win32Frame::Benchmark()
 		while (GetTickCount() == milliseconds);
 		milliseconds = GetTickCount();
 		do {
-			CpuExecute(100000, i == 0 ? true : false);
+			CpuExecute(100000, (i == 0));
 			totalmhz10[i]++;
 		} while (GetTickCount() - milliseconds < 1000);
 	}
@@ -331,14 +331,14 @@ void Win32Frame::Benchmark()
 			"information?",
 			"Benchmarks",
 			MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND) == IDYES) {
-			BOOL error = 0;
+			bool error = false;
 			WORD lastpc = 0x300;
 			int  loop = 0;
 			while ((loop < 10000) && !error) {
 				CpuSetupBenchmark();
 				CpuExecute(loop, true);
 				if ((regs.pc < 0x300) || (regs.pc > 0x400))
-					error = 1;
+					error = true;
 				else {
 					lastpc = regs.pc;
 					++loop;

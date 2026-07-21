@@ -34,9 +34,9 @@ public:
 
 	void VideoIOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE value, ULONG nExecutedCycles);
 
-	bool IsSHR() { return (m_NEWVIDEO & 0xC0) == 0xC0; }	// 11000000 = Enable SHR(b7) | Linearize SHR video memory(b6)
-	bool IsDHGRBlackAndWhite() { return (m_NEWVIDEO & (1 << 5)) ? true : false; }
-	bool IsWriteAux();
+	bool IsSHR() const { return ((m_NEWVIDEO & 0xC0) == 0xC0); }	// 11000000 = Enable SHR(b7) | Linearize SHR video memory(b6)
+	bool IsDHGRBlackAndWhite() const { return (m_NEWVIDEO & (1 << 5)); }
+	bool IsWriteAux() const;
 
 	static void UpdateSHRCell(bool is640Mode, bool isColorFillMode, uint16_t addrPalette, bgra_t* pVideoAddress, uint32_t a);
 

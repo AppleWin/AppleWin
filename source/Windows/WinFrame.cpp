@@ -127,7 +127,7 @@ UINT Win32Frame::Get3DBorderHeight()
 
 //===========================================================================
 
-void Win32Frame::FrameShowCursor(BOOL bShow)
+void Win32Frame::FrameShowCursor(bool bShow)
 {
 	int nCount;
 
@@ -164,13 +164,13 @@ void Win32Frame::RevealCursor()
 
 	pMouseCard->SetEnabled(false);
 
-	FrameShowCursor(TRUE);
+	FrameShowCursor(true);
 
 	if (GetPropertySheet().GetMouseShowCrosshair())	// Erase crosshairs if they are being drawn
 		DrawCrosshairs(0,0);
 
 	if (GetPropertySheet().GetMouseRestrictToWindow())
-		SetUsingCursor(FALSE);
+		SetUsingCursor(false);
 
 	g_bLastCursorInAppleViewport = false;
 }
@@ -189,7 +189,7 @@ void Win32Frame::FullScreenRevealCursor()
 
 	if (!g_bUsingCursor && !g_bShowingCursor)
 	{
-		FrameShowCursor(TRUE);
+		FrameShowCursor(true);
 		g_uCount100msec = 0;
 	}
 }
@@ -293,19 +293,19 @@ void Win32Frame::DeleteGdiObjects()
 
 // Draws an 3D box around the main apple screen
 //===========================================================================
-void Win32Frame::Draw3dRect(HDC dc, int x1, int y1, int x2, int y2, BOOL out)
+void Win32Frame::Draw3dRect(HDC dc, int x1, int y1, int x2, int y2, bool out)
 {	
-	SelectObject(dc,GetStockObject(NULL_BRUSH));
-	SelectObject(dc,out ? btnshadowpen : btnhighlightpen);
+	SelectObject(dc, GetStockObject(NULL_BRUSH));
+	SelectObject(dc, out ? btnshadowpen : btnhighlightpen);
 	POINT pt[3];
 	pt[0].x = x1;    pt[0].y = y2-1;
 	pt[1].x = x2-1;  pt[1].y = y2-1;
 	pt[2].x = x2-1;  pt[2].y = y1; 
-	Polyline(dc,(LPPOINT)&pt,3);
-	SelectObject(dc,(out == 1) ? btnhighlightpen : btnshadowpen);
+	Polyline(dc, (LPPOINT)&pt, 3);
+	SelectObject(dc, (out == 1) ? btnhighlightpen : btnshadowpen);
 	pt[1].x = x1;    pt[1].y = y1;
 	pt[2].x = x2;    pt[2].y = y1;
-	Polyline(dc,(LPPOINT)&pt,3);
+	Polyline(dc, (LPPOINT)&pt, 3);
 }
 
 //===========================================================================
@@ -331,13 +331,13 @@ void Win32Frame::DrawButton (HDC passdc, int number) {
   if (number == buttondown) {
     int loop = 0;
     while (loop++ < 3)
-      Draw3dRect(dc,x+loop,y+loop,x+BUTTONCX,y+BUTTONCY,0);
+      Draw3dRect(dc, x+loop, y+loop, x+BUTTONCX, y+BUTTONCY, false);
     RECT rect = {0,0,39,39};
     DrawBitmapRect(dc,x+4,y+4,&rect,buttonbitmap[number]);
   }
   else {
-    Draw3dRect(dc,x+1,y+1,x+BUTTONCX,y+BUTTONCY,1);
-    Draw3dRect(dc,x+2,y+2,x+BUTTONCX-1,y+BUTTONCY-1,1);
+    Draw3dRect(dc, x+1, y+1, x+BUTTONCX, y+BUTTONCY, true);
+    Draw3dRect(dc, x+2, y+2, x+BUTTONCX-1, y+BUTTONCY-1, true);
     RECT rect = {1,1,40,40};
     DrawBitmapRect(dc,x+3,y+3,&rect,buttonbitmap[number]);
   }
@@ -475,11 +475,11 @@ void Win32Frame::DrawFrameWindow (bool bPaintingWindow/*=false*/)
 		Draw3dRect(dc,
 			VIEWPORTX-2,VIEWPORTY-2,
 			VIEWPORTX+g_nViewportCX+2,VIEWPORTY+g_nViewportCY+2,
-			0);
+			false);
 		Draw3dRect(dc,
 			VIEWPORTX-3,VIEWPORTY-3,
 			VIEWPORTX+g_nViewportCX+3,VIEWPORTY+g_nViewportCY+3,
-			0);
+			false);
 		SelectObject(dc,btnfacepen);
 		Rectangle(dc,
 			VIEWPORTX-4,VIEWPORTY-4,
@@ -913,16 +913,16 @@ void Win32Frame::DrawStatusArea(HDC passdc, int drawflags)
 		if (drawflags & DRAW_BACKGROUND)
 		{
 			// Erase background (Slot6 drive LEDs, HDD LED & Caps)
-			SelectObject(dc,GetStockObject(NULL_PEN));
-			SelectObject(dc,btnfacebrush);
-			Rectangle(dc,x,y,x+BUTTONCX+2,y+34);
-			Draw3dRect(dc,x+1,y+3,x+BUTTONCX,y+30,0);
+			SelectObject(dc, GetStockObject(NULL_PEN));
+			SelectObject(dc, btnfacebrush);
+			Rectangle(dc, x, y, x+BUTTONCX+2, y+34);
+			Draw3dRect(dc, x+1, y+3, x+BUTTONCX, y+30, false);
 
 			// Add text for Slot6 drives: "1" & "2"
-			SelectObject(dc,smallfont);
-			SetTextAlign(dc,TA_CENTER | TA_TOP);
-			SetTextColor(dc,RGB(0,0,0));
-			SetBkMode(dc,TRANSPARENT);
+			SelectObject(dc, smallfont);
+			SetTextAlign(dc, TA_CENTER | TA_TOP);
+			SetTextColor(dc, RGB(0,0,0));
+			SetBkMode(dc, TRANSPARENT);
 			TextOut(dc, x + 7, y + yOffsetSlot6LEDNumbers, "1", 1);
 			TextOut(dc, x + 27, y + yOffsetSlot6LEDNumbers, "2", 1);
 
@@ -1029,7 +1029,7 @@ LRESULT Win32Frame::WndProc(
     case WM_ACTIVATE:		// Sent when window is activated/deactivated. wParam indicates WA_ACTIVE, WA_INACTIVE, etc
 							// Eg. Deactivate when Config dialog is active, AppleWin app loses focus, etc
       JoyReset();
-      SetUsingCursor(FALSE);
+      SetUsingCursor(false);
 	  RevealCursor();
 	  FullScreenRevealCursor();
 	  g_bFrameActive = (wparam != WA_INACTIVE);
@@ -1037,7 +1037,7 @@ LRESULT Win32Frame::WndProc(
 
     case WM_ACTIVATEAPP:	// Sent when different app's window is activated/deactivated.
 							// Eg. Deactivate when AppleWin app loses focus
-      g_bAppActive = (wparam ? TRUE : FALSE);
+      g_bAppActive = (wparam != 0);
       break;
 
 	case WM_SIZE:
@@ -1066,14 +1066,14 @@ LRESULT Win32Frame::WndProc(
       RegSaveValue(REG_PREFS, REGVALUE_PREF_WINDOW_X_POS, true, framerect.left);
       RegSaveValue(REG_PREFS, REGVALUE_PREF_WINDOW_Y_POS, true, framerect.top);
       FrameReleaseDC();
-      SetUsingCursor(FALSE);
+      SetUsingCursor(false);
       if (helpquit) {
         helpquit = 0;
         HtmlHelp(NULL,NULL,HH_CLOSE_ALL,0);
       }
       if (g_TimerIDEvent_100msec)
       {
-        BOOL bRes = KillTimer(g_hFrameWindow, g_TimerIDEvent_100msec);
+        const bool bRes = KillTimer(g_hFrameWindow, g_TimerIDEvent_100msec);
         LogFileOutput("KillTimer(g_TimerIDEvent_100msec), res=%d\n", bRes ? 1 : 0);
         g_TimerIDEvent_100msec = 0;
       }
@@ -1238,7 +1238,7 @@ LRESULT Win32Frame::WndProc(
 		// Processing is done in WM_KEYUP for: VK_F1 VK_F2 VK_F3 VK_F4 VK_F5 VK_F6 VK_F7 VK_F8
 		if ((wparam >= VK_F1) && (wparam <= VK_F8) && (buttondown == -1))
 		{
-			SetUsingCursor(FALSE);
+			SetUsingCursor(false);
 			buttondown = (int)(wparam-VK_F1);
 			if (g_bIsFullScreen && (buttonover != -1)) {
 				if (buttonover != buttondown)
@@ -1307,7 +1307,7 @@ LRESULT Win32Frame::WndProc(
 		}
 		else if (wparam == VK_PAUSE)
 		{
-			SetUsingCursor(FALSE);
+			SetUsingCursor(false);
 			switch (g_nAppMode)
 			{
 				case MODE_RUNNING:
@@ -1318,7 +1318,7 @@ LRESULT Win32Frame::WndProc(
 				case MODE_PAUSED:
 					g_nAppMode = MODE_RUNNING;
 					SoundCore_SetFade(FADE_IN);
-					// Don't call FrameShowCursor(FALSE) else ClipCursor() won't be called
+					// Don't call FrameShowCursor(false) else ClipCursor() won't be called
 					break;
 				case MODE_STEPPING:
 					SoundCore_SetFade(FADE_OUT);
@@ -1340,7 +1340,7 @@ LRESULT Win32Frame::WndProc(
 			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			bool down     = true;
 			bool autorep  = (HIWORD(lparam) & KF_REPEAT) != 0;
-			BOOL IsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
+			bool IsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
 
 #if DEBUG_KEY_MESSAGES
 			LogOutput("WM_KEYDOWN: %08X (scanCode=%04X)\n", wparam, (lparam>>16)&0xfff);
@@ -1445,7 +1445,7 @@ LRESULT Win32Frame::WndProc(
 			bool extended = (HIWORD(lparam) & KF_EXTENDED) != 0;
 			bool down     = false;
 			bool autorep  = false;
-			BOOL bIsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
+			bool bIsJoyKey = JoyProcessKey((int)wparam, extended, down, autorep);
 
 #if DEBUG_KEY_MESSAGES
 			LogOutput("WM_KEYUP: %08X\n", wparam);
@@ -1474,7 +1474,7 @@ LRESULT Win32Frame::WndProc(
 		{
           if (wparam & (MK_CONTROL | MK_SHIFT))
 		  {
-            SetUsingCursor(FALSE);
+            SetUsingCursor(false);
 		  }
           else
 		  {
@@ -1483,7 +1483,7 @@ LRESULT Win32Frame::WndProc(
 		}
         else if ( ((x < buttonx) && JoyUsingMouse() && ((g_nAppMode == MODE_RUNNING) || (g_nAppMode == MODE_STEPPING))) )
 		{
-          SetUsingCursor(TRUE);
+          SetUsingCursor(true);
 		}
 		else if (GetCardMgr().IsMouseCardInstalled())
 		{
@@ -1634,7 +1634,7 @@ LRESULT Win32Frame::WndProc(
 				g_uCount100msec++;
 				if (g_uCount100msec > 20)	// Hide every 2sec of mouse inactivity
 				{
-					FrameShowCursor(FALSE);
+					FrameShowCursor(false);
 				}
 			}
 		}
@@ -2046,7 +2046,7 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 		{
 			CtrlReset();
 			if (g_nAppMode == MODE_DEBUG)
-				DebugDisplay(TRUE);
+				DebugDisplay(true);
 			return;
 		}
 
@@ -2078,7 +2078,7 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 				// NB. Don't exit debugger or stepping
 
 				if (g_nAppMode == MODE_DEBUG)
-					DebugDisplay(TRUE);
+					DebugDisplay(true);
 			}
 		}
 
@@ -2443,7 +2443,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 
 			if (nRes)
 			{
-				New_DOSProDOS_Disk(pTitle, pathname, nDiskSize, bIsDOS33, !!bNewDiskCopyBitsyBoot, !!bNewDiskCopyBitsyBye, !!bNewDiskCopyBASIC, !!bNewDiskCopyProDOS, this);
+				New_DOSProDOS_Disk(pTitle, pathname, nDiskSize, bIsDOS33, bNewDiskCopyBitsyBoot, bNewDiskCopyBitsyBye, bNewDiskCopyBASIC, bNewDiskCopyProDOS, this);
 			}
 		}
 	}
@@ -2701,7 +2701,7 @@ void Win32Frame::ProcessDiskPopupMenu(HWND hwnd, POINT pt, const int iDrive)
 	}
 
 	// Destroy the menu.
-	BOOL bRes = DestroyMenu(hmenu);
+	const bool bRes = DestroyMenu(hmenu);
 	_ASSERT(bRes);
 
 	SoundCore_SetFade(FADE_IN);
@@ -2839,7 +2839,7 @@ void Win32Frame::SetNormalMode()
 }
 
 //===========================================================================
-void Win32Frame::SetUsingCursor (BOOL bNewValue)
+void Win32Frame::SetUsingCursor (bool bNewValue)
 {
 	if (bNewValue == g_bUsingCursor)
 		return;
@@ -2848,7 +2848,7 @@ void Win32Frame::SetUsingCursor (BOOL bNewValue)
 
 	if (g_bUsingCursor)
 	{
-		// Set TRUE when:
+		// Set true when:
 		// . Using mouse for joystick emulation
 		// . Using mousecard and mouse is restricted to window
 		SetCapture(g_hFrameWindow);
@@ -2859,7 +2859,7 @@ void Win32Frame::SetUsingCursor (BOOL bNewValue)
 		ClientToScreen(g_hFrameWindow,(LPPOINT)&rect.left);
 		ClientToScreen(g_hFrameWindow,(LPPOINT)&rect.right);
 		ClipCursor(&rect);
-		FrameShowCursor(FALSE);
+		FrameShowCursor(false);
 		POINT pt;
 		GetCursorPos(&pt);
 		ScreenToClient(g_hFrameWindow,&pt);
@@ -2868,7 +2868,7 @@ void Win32Frame::SetUsingCursor (BOOL bNewValue)
 	else
 	{
 		DrawCrosshairs(0,0);
-		FrameShowCursor(TRUE);
+		FrameShowCursor(true);
 		ClipCursor(NULL);
 		ReleaseCapture();
 	}
@@ -3321,7 +3321,7 @@ void Win32Frame::UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY
 #ifdef _DEBUG_SHOW_CURSOR
 			g_bShowingCursor = true;
 #else
-			FrameShowCursor(TRUE);
+			FrameShowCursor(true);
 #endif
 		}
 	}
@@ -3336,13 +3336,13 @@ void Win32Frame::UpdateMouseInAppleViewport(int iOutOfBoundsX, int iOutOfBoundsY
 #ifdef _DEBUG_SHOW_CURSOR
 			g_bShowingCursor = false;
 #else
-			FrameShowCursor(FALSE);
+			FrameShowCursor(false);
 #endif
 
 			//
 
 			if (GetPropertySheet().GetMouseRestrictToWindow())
-				SetUsingCursor(TRUE);
+				SetUsingCursor(true);
 		}
 		else
 		{
@@ -3386,7 +3386,7 @@ bool Win32Frame::GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& be
 		DEVMODE devMode;
 		devMode.dmSize = sizeof(DEVMODE);
 		devMode.dmDriverExtra = 0;
-		BOOL bValid = EnumDisplaySettings(NULL, iModeNum, &devMode);
+		const bool bValid = EnumDisplaySettings(NULL, iModeNum, &devMode);
 		if (!bValid)
 			break;
 		if (iModeNum == 0)	// 0 is the initial "cache info about display device" operation

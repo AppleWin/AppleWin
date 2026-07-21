@@ -23,8 +23,7 @@ public:
 	virtual void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 	virtual bool LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version);
 
-	static const UINT JOYSTICKSTATIONARY = 0x20;
-
 private:
-	static BYTE MyGetAsyncKeyState(int vKey);
+	static bool MyGetAsyncKeyState(int vKey);
+    static BYTE MakeByte(bool up, bool down, bool left, bool right, bool trigger1, bool trigger2);
 };

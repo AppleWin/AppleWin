@@ -53,14 +53,14 @@ public:
 		_ASSERT(0);
 		return 0;
 	}
-	BYTE GetBusViewOfORB() { return m_regs.ORB & m_regs.DDRB; }	// Return how the AY8913 sees ORB on the bus (ie. not CPU's view which will be OR'd with !DDRB)
-	USHORT GetRegT1C() { return m_regs.TIMER1_COUNTER.w; }
-	USHORT GetRegT2C() { return m_regs.TIMER2_COUNTER.w; }
+	BYTE GetBusViewOfORB() const { return (m_regs.ORB & m_regs.DDRB); }	// Return how the AY8913 sees ORB on the bus (ie. not CPU's view which will be OR'd with !DDRB)
+	USHORT GetRegT1C() const { return m_regs.TIMER1_COUNTER.w; }
+	USHORT GetRegT2C() const { return m_regs.TIMER2_COUNTER.w; }
 	void GetRegs(BYTE regs[SIZE_6522_REGS]) { memcpy(&regs[0], (BYTE*)&m_regs, SIZE_6522_REGS); }	// For debugger
 	void SetRegIRA(BYTE reg) { m_regs.ORA = reg; }
-	bool IsTimer1IrqDelay() { return m_timer1IrqDelay ? true : false; }
+	bool IsTimer1IrqDelay() const { return m_timer1IrqDelay; }
 	void SetBusBeingDriven(bool state) { m_isBusDriven = state; }
-	bool IsBad() { return m_bad6522; }
+	bool IsBad() const { return m_bad6522; }
 
 	BYTE Read(BYTE nReg);
 	void Write(BYTE nReg, BYTE nValue);
@@ -92,8 +92,8 @@ private:
 	bool IsTimer1Underflowed(BYTE reg);
 	bool IsTimer2Underflowed(BYTE reg);
 
-	bool CheckTimerUnderflow(USHORT& counter, int& timerIrqDelay, const USHORT clocks);
-	int OnTimer1Underflow(USHORT& counter);
+	bool CheckTimerUnderflow(USHORT& counter, bool& timerIrqDelay, const USHORT clocks) const;
+	bool OnTimer1Underflow(USHORT& counter) const;
 
 	UINT GetOpcodeCyclesForRead(BYTE reg);
 	UINT GetOpcodeCyclesForWrite(BYTE reg);
@@ -144,8 +144,8 @@ private:
 
 	Regs m_regs;
 
-	int m_timer1IrqDelay;
-	int m_timer2IrqDelay;
+	bool m_timer1IrqDelay;
+	bool m_timer2IrqDelay;
 	bool m_timer1Active;
 	bool m_timer2Active;
 

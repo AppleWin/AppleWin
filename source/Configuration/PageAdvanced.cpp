@@ -146,7 +146,7 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 
 		case IDC_NO_SLOT_CLOCK:
 			{
-				const bool newState = IsDlgButtonChecked(hWnd, IDC_NO_SLOT_CLOCK) ? true : false;
+				const bool newState = IsDlgButtonChecked(hWnd, IDC_NO_SLOT_CLOCK);
 				m_PropertySheetHelper.GetConfigNew().m_NoSlotClock = newState;
 			}
 			break;
@@ -205,7 +205,7 @@ void CPageAdvanced::DlgOK(HWND hWnd)
 		m_PropertySheetHelper.GetConfigNew().m_ciderPressPathname = szFilename;
 	}
 
-	m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT) ? true : false;
+	m_PropertySheetHelper.GetConfigNew().m_saveStateOnExit = IsDlgButtonChecked(hWnd, IDC_SAVESTATE_ON_EXIT);
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
@@ -277,7 +277,7 @@ int CPageAdvanced::GetCloneMenuItem()
 void CPageAdvanced::InitFreezeDlgButton(HWND hWnd)
 {
 	const bool bIsApple2Plus = IsApple2Plus( m_PropertySheetHelper.GetConfigNew().m_Apple2Type );
-	EnableWindow(GetDlgItem(hWnd, IDC_THE_FREEZES_F8_ROM_FW), bIsApple2Plus ? TRUE : FALSE);
+	EnableWindow(GetDlgItem(hWnd, IDC_THE_FREEZES_F8_ROM_FW), bIsApple2Plus);
 
 	const UINT CheckTheFreezesRom = m_PropertySheetHelper.GetConfigNew().m_enableTheFreezesF8Rom ? BST_CHECKED : BST_UNCHECKED;
 	CheckDlgButton(hWnd, IDC_THE_FREEZES_F8_ROM_FW, CheckTheFreezesRom);
@@ -290,7 +290,7 @@ void CPageAdvanced::InitCloneDropdownMenu(HWND hWnd)
 	m_PropertySheetHelper.FillComboBox(hWnd, IDC_CLONETYPE, m_CloneChoices, nCurrentChoice);
 
 	const bool bIsClone = IsClone( m_PropertySheetHelper.GetConfigNew().m_Apple2Type );
-	EnableWindow(GetDlgItem(hWnd, IDC_CLONETYPE), bIsClone ? TRUE : FALSE);
+	EnableWindow(GetDlgItem(hWnd, IDC_CLONETYPE), bIsClone);
 }
 
 void CPageAdvanced::InitGameIOConnectorDropdownMenu(HWND hWnd)

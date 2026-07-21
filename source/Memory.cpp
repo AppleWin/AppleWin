@@ -436,17 +436,17 @@ UINT GetRamWorksActiveBank()
 
 //
 
-static BOOL GetLastRamWrite()
+static bool GetLastRamWrite()
 {
 	if (GetCardMgr().GetLanguageCardMgr().GetLanguageCard())
 		return GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->GetLastRamWrite();
-	return 0;
+	return false;
 }
 
-static void SetLastRamWrite(BOOL count)
+static void SetLastRamWrite(bool bLastRamWrite)
 {
 	if (GetCardMgr().GetLanguageCardMgr().GetLanguageCard())
-		GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->SetLastRamWrite(count);
+		GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->SetLastRamWrite(bLastRamWrite);
 }
 
 //
@@ -588,18 +588,18 @@ static BYTE __stdcall IORead_C01x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	switch (addr & 0xf)
 	{
 	case 0x0: return KeybReadFlag();
-	case 0x1: res = SW_BANK2     ? true : false;		break;
-	case 0x2: res = SW_HIGHRAM   ? true : false;		break;
-	case 0x3: res = SW_AUXREAD   ? true : false;		break;
-	case 0x4: res = SW_AUXWRITE  ? true : false;		break;
-	case 0x5: res = SW_INTCXROM  ? true : false;		break;
-	case 0x6: res = SW_ALTZP     ? true : false;		break;
-	case 0x7: res = SW_SLOTC3ROM ? true : false;		break;
-	case 0x8: res = SW_80STORE   ? true : false;		break;
+	case 0x1: res = SW_BANK2;						    break;
+	case 0x2: res = SW_HIGHRAM;						break;
+	case 0x3: res = SW_AUXREAD;						break;
+	case 0x4: res = SW_AUXWRITE;						break;
+	case 0x5: res = SW_INTCXROM;						break;
+	case 0x6: res = SW_ALTZP;					    	break;
+	case 0x7: res = SW_SLOTC3ROM;						break;
+	case 0x8: res = SW_80STORE;						break;
 	case 0x9: res = GetVideo().VideoGetVblBar(nExecutedCycles);	break;
 	case 0xA: res = GetVideo().VideoGetSWTEXT();		break;
 	case 0xB: res = GetVideo().VideoGetSWMIXED();		break;
-	case 0xC: res = SW_PAGE2     ? true : false;		break;
+	case 0xC: res = SW_PAGE2;					    	break;
 	case 0xD: res = GetVideo().VideoGetSWHIRES();		break;
 	case 0xE: res = GetVideo().VideoGetSWAltCharSet();	break;
 	case 0xF: res = GetVideo().VideoGetSW80COL();		break;
@@ -771,7 +771,7 @@ static BYTE __stdcall IORead_C07x(WORD pc, WORD addr, BYTE bWrite, BYTE d, ULONG
 	case 0xB:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xC:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xD:	return IO_Null(pc, addr, bWrite, d, nExecutedCycles);
-	case 0xE:	return IS_APPLE2C()			? MemReadFloatingBus(SW_IOUDIS ? true : false, nExecutedCycles)	// GH#636
+	case 0xE:	return IS_APPLE2C()			? MemReadFloatingBus(SW_IOUDIS, nExecutedCycles)	// GH#636
 											: IO_Null(pc, addr, bWrite, d, nExecutedCycles);
 	case 0xF:	return IsEnhancedIIEorIIC()	? MemReadFloatingBus(GetVideo().VideoGetSWDHIRES(), nExecutedCycles)		// GH#636
 											: IO_Null(pc, addr, bWrite, d, nExecutedCycles);
@@ -883,7 +883,7 @@ BYTE __stdcall IO_Annunciator(WORD programcounter, WORD address, BYTE write, BYT
 
 	DongleControl(address);	// do before setting g_Annunciator[] as may need to access old MemGetAnnunciator() state
 
-	g_Annunciator[(address>>1) & 3] = (address&1) ? true : false;
+	g_Annunciator[(address>>1) & 3] = (address & 1);
 
 	if (address >= 0xC058 && address <= 0xC05B)
 		JoyportControl(address & 0x3);	// AN0 and AN1 control
@@ -1635,12 +1635,12 @@ void MemDestroy()
 
 bool MemCheckSLOTC3ROM()
 {
-	return SW_SLOTC3ROM ? true : false;
+	return SW_SLOTC3ROM;
 }
 
 bool MemCheckINTCXROM()
 {
-	return SW_INTCXROM ? true : false;
+	return SW_INTCXROM;
 }
 
 //===========================================================================
@@ -2142,11 +2142,11 @@ void MemInitializeCustomF8ROM()
 
 		SetFilePointer(g_hCustomRomF8, 0, NULL, FILE_BEGIN);
 		DWORD uNumBytesRead;
-		BOOL bRes = ReadFile(g_hCustomRomF8, memrom+F8RomOffset, F8RomSize, &uNumBytesRead, NULL);
+		bool bRes = ReadFile(g_hCustomRomF8, memrom+F8RomOffset, F8RomSize, &uNumBytesRead, NULL);
 		if (uNumBytesRead != F8RomSize)
 		{
 			memcpy(memrom, &oldRom[0], Apple2RomSize);	// ROM at $D000...$FFFF
-			bRes = FALSE;
+			bRes = false;
 		}
 
 		// NB. If succeeded, then keep g_hCustomRomF8 handle open - so that any next restart can load it again
@@ -2177,7 +2177,7 @@ void MemInitializeCustomROM()
 
 	SetFilePointer(g_hCustomRom, 0, NULL, FILE_BEGIN);
 	DWORD uNumBytesRead;
-	BOOL bRes = TRUE;
+	bool bRes = true;
 
 	if (GetFileSize(g_hCustomRom, NULL) == Apple2eRomSize)
 	{
@@ -2186,7 +2186,7 @@ void MemInitializeCustomROM()
 		if (uNumBytesRead != CxRomSize)
 		{
 			memcpy(pCxRomInternal, &oldRomC0[0], CxRomSize);	// ROM at $C000...$CFFF
-			bRes = FALSE;
+			bRes = false;
 		}
 	}
 
@@ -2197,7 +2197,7 @@ void MemInitializeCustomROM()
 		if (uNumBytesRead != Apple2RomSize)
 		{
 			memcpy(memrom, &oldRom[0], Apple2RomSize);	// ROM at $D000...$FFFF
-			bRes = FALSE;
+			bRes = false;
 		}
 	}
 
@@ -2475,7 +2475,7 @@ BYTE MemReadFloatingBus(const ULONG uExecutedCycles)
 	return ReadFloatingBus(uExecutedCycles, g_bFullSpeed);
 }
 
-BYTE MemReadFloatingBus(const BYTE highbit, const ULONG uExecutedCycles)
+BYTE MemReadFloatingBus(const bool highbit, const ULONG uExecutedCycles)
 {
 	BYTE r = ReadFloatingBus(uExecutedCycles, g_bFullSpeed);
 	return (r & ~0x80) | (highbit ? 0x80 : 0);
@@ -2841,7 +2841,7 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		if (!IsApple2PlusOrClone(GetApple2Type()))	// NB. Thesed are set later for II,II+ by slot-0 LC or Saturn
 		{
 			yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MMULCMODE, g_memmode & MF_LANGCARD_MASK);
-			yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
+			yamlSaveHelper.SaveBool(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite());
 		}
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT, IO_SELECT);
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, INTC8ROM ? 1 : 0);
@@ -2880,7 +2880,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 	//
 
 	IO_SELECT = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT);
-	INTC8ROM = yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT) ? true : false;
+	INTC8ROM = yamlLoadHelper.LoadBool(SS_YAML_KEY_IOSELECT_INT);
 	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);
 	g_uPeripheralRomSlot = yamlLoadHelper.LoadUint(SS_YAML_KEY_PERIPHERALROMSLOT);
 
@@ -2892,7 +2892,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		if (GetCardMgr().GetLanguageCardMgr().GetLanguageCard())
 			GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->SetLCMemMode(uMemMode & MF_LANGCARD_MASK);
 
-		SetLastRamWrite(yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE);
+		SetLastRamWrite(yamlLoadHelper.LoadBool(SS_YAML_KEY_LASTRAMWRITE));
 	}
 	else
 	{
@@ -2914,7 +2914,7 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 				UINT LCMemMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MMULCMODE);
 				GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->SetLCMemMode(LCMemMode);
 			}
-			SetLastRamWrite(yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE);
+			SetLastRamWrite(yamlLoadHelper.LoadBool(SS_YAML_KEY_LASTRAMWRITE));
 		}
 	}
 

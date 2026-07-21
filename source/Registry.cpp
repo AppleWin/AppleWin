@@ -43,14 +43,14 @@ namespace _ini {
 	//===========================================================================
 	void RegSaveString(LPCTSTR section, LPCTSTR key, bool /*peruser*/, const std::string& buffer)
 	{
-		bool updated = !!WritePrivateProfileString(section, key, buffer.c_str(), g_sConfigFile.c_str());
+		bool updated = WritePrivateProfileString(section, key, buffer.c_str(), g_sConfigFile.c_str());
 		_ASSERT(updated || GetLastError() == 0);
 	}
 
 	//===========================================================================
 	void RegDeleteString(LPCTSTR section, bool /*peruser*/)
 	{
-	    bool updated = !!WritePrivateProfileString(section, NULL, NULL, g_sConfigFile.c_str());
+	    bool updated = WritePrivateProfileString(section, NULL, NULL, g_sConfigFile.c_str());
 		_ASSERT(updated || GetLastError() == 0);
 	}
 }

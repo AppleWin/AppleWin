@@ -115,7 +115,7 @@ bool RiffFinishWriteFile()
 	SetFilePointer(g_hRiffFile, dwDataOffset, NULL, FILE_BEGIN);
 	WriteFile(g_hRiffFile, &temp32, 4, &dwNumberOfBytesWritten, NULL);
 
-	return CloseHandle(g_hRiffFile) ? true : false;
+	return CloseHandle(g_hRiffFile);
 }
 
 bool RiffPutSamples(const short* buf, unsigned int uSamples)
@@ -127,7 +127,7 @@ bool RiffPutSamples(const short* buf, unsigned int uSamples)
 
 	DWORD dwNumberOfBytesWritten;
 
-	BOOL bRes = WriteFile(
+	WriteFile(
 		g_hRiffFile,
 		buf,
 		uSamples * sizeof(short) * g_NumChannels,

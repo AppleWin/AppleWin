@@ -77,12 +77,12 @@ const UINT PDL_MIN = 0;
 const UINT PDL_CENTRAL = 127;
 const UINT PDL_MAX = 255;
 
-static BOOL  keydown[JK_MAX] = {FALSE};
+static bool  keydown[JK_MAX] = {false};
 static POINT keyvalue[9] = {{PDL_MIN,PDL_MAX},    {PDL_CENTRAL,PDL_MAX},    {PDL_MAX,PDL_MAX},
                             {PDL_MIN,PDL_CENTRAL},{PDL_CENTRAL,PDL_CENTRAL},{PDL_MAX,PDL_CENTRAL},
                             {PDL_MIN,PDL_MIN},    {PDL_CENTRAL,PDL_MIN},    {PDL_MAX,PDL_MIN}};
 
-static BOOL  joybutton[3]   = {0,0,0};
+static bool  joybutton[3]   = {false, false, false};
 
 static int   joyshrx[2]     = {8,8};
 static int   joyshry[2]     = {8,8};
@@ -92,7 +92,7 @@ static int   joysuby[2]     = {0,0};
 // Value persisted to Registry for REGVALUE_JOYSTICK0_EMU_TYPE
 static uint32_t joytype[JN_NUM] = { kJoystick_Default[JN_JOYSTICK0], kJoystick_Default[JN_JOYSTICK1] };	// Emulation Type for joysticks #0 & #1
 
-static BOOL  setbutton[3]   = {0,0,0};	// Used when a mouse button is pressed/released
+static bool  setbutton[3]   = {false, false, false};	// Used when a mouse button is pressed/released
 
 static int   xpos[2]        = { PDL_MAX,PDL_MAX };
 static int   ypos[2]        = { PDL_MAX,PDL_MAX };
@@ -348,7 +348,7 @@ void JoySetButtonVirtualKey(UINT button, UINT virtKey)
 
 #define SUPPORT_CURSOR_KEYS
 
-BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
+bool JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 {
 	static struct
 	{
@@ -365,32 +365,32 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 		 (virtKeyWithExtended != g_buttonVirtKey[0]) &&
 		 (virtKeyWithExtended != g_buttonVirtKey[1]) )
 	{
-		return 0;
+		return false;
 	}
 
 	if (!g_bHookAltKeys && virtkey == VK_MENU)				// GH#583
-		return 0;
+		return false;
 
 	//
 
-	BOOL keychange = 0;
+	bool keychange = false;
 	bool bIsCursorKey = false;
 
 	if (virtKeyWithExtended == g_buttonVirtKey[0])
 	{
-		keychange = 1;
+		keychange = true;
 		keydown[JK_OPENAPPLE] = down;
 	}
 	else if (virtKeyWithExtended == g_buttonVirtKey[1])
 	{
-		keychange = 1;
+		keychange = true;
 		keydown[JK_CLOSEDAPPLE] = down;
 	}
 	else if (!extended)
 	{
 		if (JoyUsingKeyboardNumpad())
 		{
-			keychange = 1;
+			keychange = true;
 
 			if ((virtkey >= VK_NUMPAD1) && (virtkey <= VK_NUMPAD9))		// NumLock on
 			{
@@ -413,7 +413,7 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 				case VK_NUMPAD0: keydown[JK_BUTTON0] = down;	break;	// NumLock on
 				case VK_DELETE:  // fall through... (NB. extended=0 for NumPad's Delete)
 				case VK_DECIMAL: keydown[JK_BUTTON1] = down;	break;	// NumLock on
-				default:         keychange = 0;					break;
+				default:         keychange = false;				break;
 				}
 			}
 		}
@@ -423,7 +423,7 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 	{
 		if (JoyUsingKeyboardCursors() && (virtkey == VK_LEFT || virtkey == VK_UP || virtkey == VK_RIGHT || virtkey == VK_DOWN))
 		{
-			keychange = 1;	// This prevents cursors keys being available to the Apple II (eg. Lode Runner uses cursor left/right for game speed & Ctrl-J/K for joystick/keyboard)
+			keychange = true;	// This prevents cursors keys being available to the Apple II (eg. Lode Runner uses cursor left/right for game speed & Ctrl-J/K for joystick/keyboard)
 			bIsCursorKey = true;
 
 			switch (virtkey)
@@ -438,7 +438,7 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 #endif
 
 	if (!keychange)
-		return 0;
+		return false;
 
 	//
 
@@ -500,23 +500,23 @@ BOOL JoyProcessKey(int virtkey, bool extended, bool down, bool autorep)
 	if (bIsCursorKey && GetPropertySheet().GetJoystickCursorControl())
 	{
 		// Allow AppleII keyboard to see this cursor keypress too
-		return 0;
+		return false;
 	}
 
-	return 1;
+	return true;
 }
 
 //===========================================================================
 
-static void DoAutofire(UINT uButton, BOOL& pressed)
+static void DoAutofire(UINT uButton, bool& pressed)
 {
-	static BOOL toggle[3] = {0,0,0};
-	static BOOL lastPressed[3] = {0,0,0};
+	static bool toggle[3] = {false, false, false};
+	static bool lastPressed[3] = {false, false, false};
 
-	BOOL nowPressed = pressed;
+	bool nowPressed = pressed;
 	if (GetPropertySheet().GetAutofire(uButton) && pressed)
 	{
-		toggle[uButton] = (!lastPressed[uButton]) ? TRUE : !toggle[uButton];
+		toggle[uButton] = (!lastPressed[uButton]) ? true : !toggle[uButton];
 		pressed = pressed && toggle[uButton];
 	}
 	lastPressed[uButton] = nowPressed;
@@ -524,7 +524,7 @@ static void DoAutofire(UINT uButton, BOOL& pressed)
 
 BYTE __stdcall JoyportReadButton(WORD address, ULONG nExecutedCycles)
 {
-	BOOL pressed = 0;
+	bool pressed = false;
 
 	if (g_uJoyportActiveStick == 0)
 	{
@@ -540,12 +540,12 @@ BYTE __stdcall JoyportReadButton(WORD address, ULONG nExecutedCycles)
 				if (g_uJoyportReadMode == JOYPORT_LEFTRIGHT)	// LEFT
 				{
 					if (xpos[0] == 0)	// TODO: More range for mouse control?
-						pressed = 1;
+						pressed = true;
 				}
 				else	// UP
 				{
 					if (ypos[0] == 0)	// TODO: More range for mouse control?
-						pressed = 1;
+						pressed = true;
 				}
 				break;
 
@@ -553,12 +553,12 @@ BYTE __stdcall JoyportReadButton(WORD address, ULONG nExecutedCycles)
 				if (g_uJoyportReadMode == JOYPORT_LEFTRIGHT)	// RIGHT
 				{
 					if (xpos[0] >= 255)	// TODO: More range for mouse control?
-						pressed = 1;
+						pressed = true;
 				}
 				else	// DOWN
 				{
 					if (ypos[0] >= 255)	// TODO: More range for mouse control?
-						pressed = 1;
+						pressed = true;
 				}
 				break;
 		}
@@ -567,14 +567,14 @@ BYTE __stdcall JoyportReadButton(WORD address, ULONG nExecutedCycles)
 	{
 	}
 
-	pressed = pressed ? 0 : 1;	// Invert as Joyport signals are active low
+	pressed = !pressed;	// Invert as Joyport signals are active low
 
 	return MemReadFloatingBus(pressed, nExecutedCycles);
 }
 
-static BOOL CheckButton0Pressed()
+static bool CheckButton0Pressed()
 {
-	BOOL pressed =	joybutton[0] ||
+	bool pressed =	joybutton[0] ||
 					setbutton[0] ||
 					keydown[JK_OPENAPPLE];
 
@@ -584,9 +584,9 @@ static BOOL CheckButton0Pressed()
 	return pressed;
 }
 
-static BOOL CheckButton1Pressed()
+static bool CheckButton1Pressed()
 {
-	BOOL pressed =	joybutton[1] ||
+	bool pressed =	joybutton[1] ||
 					setbutton[1] ||
 					keydown[JK_CLOSEDAPPLE];
 
@@ -614,7 +614,7 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 
 	const bool swapButtons0and1 = GetPropertySheet().GetButtonsSwapState();
 
-	BOOL pressed = FALSE;
+	bool pressed = false;
 	switch (address)
 	{
 		case 0x61:
@@ -680,14 +680,14 @@ BYTE __stdcall JoyReadPosition(WORD programcounter, WORD address, BYTE, BYTE, UL
 {
 	CpuCalcCycles(nExecutedCycles);
 
-	BOOL nPdlCntrActive = g_nCumulativeCycles <= g_paddleInactiveCycle[address & 3];
+	bool bPdlCntrActive = g_nCumulativeCycles <= g_paddleInactiveCycle[address & 3];
 
 	// If no joystick connected, then this is always active (GH#778) && no copy-protection dongle connected
 	const UINT joyNum = (address & 2) ? 1 : 0;	// $C064..$C067
 	if (joyinfo[joytype[joyNum]] == DEVICE_NONE && CopyProtectionDonglePDL(address & 3) < 0)
-		nPdlCntrActive = TRUE;
+		bPdlCntrActive = true;
 
-	return MemReadFloatingBus(nPdlCntrActive, nExecutedCycles);
+	return MemReadFloatingBus(bPdlCntrActive, nExecutedCycles);
 }
 
 //===========================================================================
@@ -695,7 +695,7 @@ void JoyReset()
 {
   int loop = 0;
   while (loop < JK_MAX)
-    keydown[loop++] = FALSE;
+    keydown[loop++] = false;
 }
 
 //===========================================================================
@@ -792,14 +792,14 @@ void JoySetButton(eBUTTON number, eBUTTONSTATE down)
 	number = BUTTON1;	// 2nd joystick controls Apple button #1
   }
 
-  setbutton[number] = down;
+  setbutton[number] = (down == BUTTON_DOWN);
 }
 
 //===========================================================================
-BOOL JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, const bool bMousecardActive)
+bool JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, const bool bMousecardActive)
 {
   if(joytype[nJoystickNumber] == newtype)
-	  return 1;	// Already set to this type. Return OK.
+	  return true;	// Already set to this type. Return OK.
 
   if (joyinfo[newtype] == DEVICE_JOYSTICK || joyinfo[newtype] == DEVICE_JOYSTICK_THUMBSTICK2)
   {
@@ -815,7 +815,7 @@ BOOL JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, con
                  "you have a joystick driver installed.",
                  "Configuration",
                  MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-      return 0;
+      return false;
     }
     if ((joyinfo[newtype] == DEVICE_JOYSTICK_THUMBSTICK2) && (caps.wNumAxes < 4))
     {
@@ -826,7 +826,7 @@ BOOL JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, con
                  "you have a joystick driver installed.",
                  "Configuration",
                  MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-      return 0;
+      return false;
     }
   }
   else if ((joyinfo[newtype] == DEVICE_MOUSE) &&
@@ -839,7 +839,7 @@ BOOL JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, con
 				 "Mouse interface card is enabled - unable to use mouse for joystick emulation.",
 				 "Configuration",
 				 MB_ICONEXCLAMATION | MB_SETFOREGROUND);
-	  return 0;
+	  return false;
 	}
 
     MessageBox(window,
@@ -873,7 +873,7 @@ BOOL JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, con
   joytype[nJoystickNumber] = newtype;
   JoyInitialize();
   JoyReset();
-  return 1;
+  return true;
 }
 
 
@@ -889,22 +889,22 @@ void JoySetPosition(int xvalue, int xrange, int yvalue, int yrange)
  
 //===========================================================================
 
-BOOL JoyUsingMouse()
+bool JoyUsingMouse()
 {
 	return (joyinfo[joytype[0]] == DEVICE_MOUSE) || (joyinfo[joytype[1]] == DEVICE_MOUSE);
 }
 
-BOOL JoyUsingKeyboard()
+bool JoyUsingKeyboard()
 {
 	return (joyinfo[joytype[0]] == DEVICE_KEYBOARD) || (joyinfo[joytype[1]] == DEVICE_KEYBOARD);
 }
 
-BOOL JoyUsingKeyboardCursors()
+bool JoyUsingKeyboardCursors()
 {
 	return (joytype[0] == J0C_KEYBD_CURSORS) || (joytype[1] == J1C_KEYBD_CURSORS);
 }
 
-BOOL JoyUsingKeyboardNumpad()
+bool JoyUsingKeyboardNumpad()
 {
 	return (joytype[0] == J0C_KEYBD_NUMPAD) || (joytype[1] == J1C_KEYBD_NUMPAD);
 }

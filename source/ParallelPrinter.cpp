@@ -184,16 +184,16 @@ void ParallelPrinterCard::GetRegistryConfig()
 	char szFilename[MAX_PATH];
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_DUMP_TO_PRINTER, true, &dwTmp))
-		SetDumpToPrinter(dwTmp ? true : false);
+		SetDumpToPrinter(dwTmp != 0);
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_CONVERT_ENCODING, true, &dwTmp))
-		SetConvertEncoding(dwTmp ? true : false);
+		SetConvertEncoding(dwTmp != 0);
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_FILTER_UNPRINTABLE, true, &dwTmp))
-		SetFilterUnprintable(dwTmp ? true : false);
+		SetFilterUnprintable(dwTmp != 0);
 
 	if (RegLoadValue(regSection.c_str(), REGVALUE_PRINTER_APPEND, true, &dwTmp))
-		SetPrinterAppend(dwTmp ? true : false);
+		SetPrinterAppend(dwTmp != 0);
 
 	if (RegLoadString(regSection.c_str(), REGVALUE_PRINTER_FILENAME, true, szFilename, MAX_PATH, ""))
 		SetFilename(szFilename);
@@ -239,7 +239,7 @@ void ParallelPrinterCard::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_INACTIVITY, m_inactivity);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_IDLELIMIT, m_printerIdleLimit);
 	yamlSaveHelper.SaveString(SS_YAML_KEY_FILENAME, m_szPrintFilename);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_FILEOPEN, (m_file != NULL) ? true : false);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_FILEOPEN, (m_file != NULL));
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_DUMPTOPRINTER, m_bDumpToPrinter);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_CONVERTENCODING, m_bConvertEncoding);
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_FILTERUNPRINTABLE, m_bFilterUnprintable);
@@ -260,7 +260,7 @@ bool ParallelPrinterCard::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UIN
 	{
 		yamlLoadHelper.LoadBool(SS_YAML_KEY_APPEND);	// Consume
 		m_bPrinterAppend = true;	// Re-open print-file in append mode
-		BOOL bRes = CheckPrint();
+		const bool bRes = CheckPrint();
 		if (!bRes)
 			throw std::runtime_error("Printer Card: Unable to resume printing to file");
 	}

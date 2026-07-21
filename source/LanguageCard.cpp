@@ -68,7 +68,7 @@ LanguageCardUnit * LanguageCardUnit::create(UINT slot)
 
 LanguageCardUnit::LanguageCardUnit(SS_CARDTYPE type, UINT slot) :
 	Card(type, slot),
-	m_uLastRamWrite(0),
+	m_bLastRamWrite(false),
 	m_memMode(kMemModeInitialState),
 	m_pMemory(NULL)
 {
@@ -145,7 +145,7 @@ BYTE __stdcall LanguageCardUnit::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValu
 		memmode &= ~MF_WRITERAM; // UTAIIe:5-23
 	}
 
-	pLC->SetLastRamWrite( ((uAddr & 1) && !bWrite) ); // UTAIIe:5-23
+	pLC->SetLastRamWrite((uAddr & 1) && !bWrite); // UTAIIe:5-23
 	pLC->SetLCMemMode(memmode);
 
 	const bool bCardChanged = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC() != SLOT0;
@@ -257,13 +257,13 @@ const std::string& LanguageCardSlot0::GetSnapshotCardName()
 void LanguageCardSlot0::SaveLCState(YamlSaveHelper& yamlSaveHelper)
 {
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetLCMemMode() & MF_LANGCARD_MASK);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite() ? 1 : 0);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite());
 }
 
 void LanguageCardSlot0::LoadLCState(YamlLoadHelper& yamlLoadHelper)
 {
 	UINT memMode      = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) & MF_LANGCARD_MASK;
-	BOOL lastRamWrite = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE) ? TRUE : FALSE;
+	bool lastRamWrite = yamlLoadHelper.LoadBool(SS_YAML_KEY_LASTRAMWRITE);
 	SetLCMemMode(memMode);
 	SetLastRamWrite(lastRamWrite);
 }
@@ -444,7 +444,7 @@ BYTE __stdcall Saturn128K::IO(WORD PC, WORD uAddr, BYTE bWrite, BYTE uValue, ULO
 		else
 			memmode &= ~MF_WRITERAM;
 
-		pLC->SetLastRamWrite(uAddr & 1);		// Saturn differs from Apple's 16K LC: any access (LC is read-only)
+		pLC->SetLastRamWrite((uAddr & 1));		// Saturn differs from Apple's 16K LC: any access (LC is read-only)
 		pLC->SetLCMemMode(memmode);
 
 		bBankChanged = GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC() != uSlot;
@@ -616,7 +616,7 @@ void LanguageCardManager::Reset(const bool powerCycle /*=false*/)
 		return;
 
 //	if (GetLanguageCard())	// Redundant: done via GetCardMgr().Reset()
-//		GetLanguageCard()->SetLastRamWrite(0);
+//		GetLanguageCard()->SetLastRamWrite(false);
 
 	if (IsApple2PlusOrClone(GetApple2Type()) && GetCardMgr().QuerySlot(SLOT0) == CT_Empty)
 		::SetMemMode(0);

@@ -117,18 +117,18 @@ void TfePcapFreeLibrary()
     } 
 
 static
-BOOL TfePcapLoadLibrary()
+bool TfePcapLoadLibrary()
 {
     if (pcap_library)
     {
         // already loaded
-        return TRUE;
+        return true;
     }
 
     if (tfe_cannot_use)
     {
         // already failed
-        return FALSE;
+        return false;
     }
 
     // try to load
@@ -145,7 +145,7 @@ BOOL TfePcapLoadLibrary()
     {
         tfe_cannot_use = 1;
         if(g_fh) fprintf(g_fh, "LoadLibrary WPCAP.DLL failed!\n" );
-        return FALSE;
+        return false;
     }
 
     GET_PROC_ADDRESS_AND_TEST(pcap_open_live);
@@ -161,7 +161,7 @@ BOOL TfePcapLoadLibrary()
     LogOutput("%s\n", p_pcap_lib_version());
     LogFileOutput("%s\n", p_pcap_lib_version());
 
-    return TRUE;
+    return true;
 }
 
 #undef GET_PROC_ADDRESS_AND_TEST
@@ -180,7 +180,7 @@ BOOL TfePcapLoadLibrary()
 #define p_pcap_lib_version pcap_lib_version
 #define p_pcap_geterr pcap_geterr
 
-static BOOL TfePcapLoadLibrary()
+static bool TfePcapLoadLibrary()
 {
     static bool loaded = false;
     if (!loaded)
@@ -189,7 +189,7 @@ static BOOL TfePcapLoadLibrary()
         LogOutput("%s\n", p_pcap_lib_version());
         LogFileOutput("%s\n", p_pcap_lib_version());
     }
-    return TRUE;
+    return true;
 }
 
 #endif
@@ -257,33 +257,33 @@ void TfePcapCloseAdapter()
  TfeEnumAdapter() only fails if there is no more adpater; in this case, 
    *ppname and *ppdescription are not altered.
 */
-int tfe_arch_enumadapter_open()
+bool tfe_arch_enumadapter_open()
 {
     if (!TfePcapLoadLibrary()) {
-        return 0;
+        return false;
     }
 
     if ((*p_pcap_findalldevs)(&TfePcapAlldevs, TfePcapErrbuf) == -1)
     {
         if(g_fh) fprintf(g_fh, "ERROR in TfeEnumAdapterOpen: pcap_findalldevs: '%s'\n", TfePcapErrbuf);
-        return 0;
+        return false;
     }
 
 	if (!TfePcapAlldevs) {
         if(g_fh) fprintf(g_fh, "ERROR in TfeEnumAdapterOpen, finding all pcap devices - "
 			"Do we have the necessary privilege rights?\n");
-		return 0;
+		return false;
 	}
 
     TfePcapNextDev = TfePcapAlldevs;
 
-    return 1;
+    return true;
 }
 
-int tfe_arch_enumadapter(std::string & name, std::string & description)
+bool tfe_arch_enumadapter(std::string & name, std::string & description)
 {
     if (!TfePcapNextDev)
-        return 0;
+        return false;
 
     name = TfePcapNextDev->name;
     if (TfePcapNextDev->description)
@@ -293,16 +293,16 @@ int tfe_arch_enumadapter(std::string & name, std::string & description)
 
     TfePcapNextDev = TfePcapNextDev->next;
 
-    return 1;
+    return true;
 }
 
-int tfe_arch_enumadapter_close()
+bool tfe_arch_enumadapter_close()
 {
     if (TfePcapAlldevs) {
         (*p_pcap_freealldevs)(TfePcapAlldevs);
         TfePcapAlldevs = NULL;
     }
-    return 1;
+    return true;
 }
 
 
@@ -317,7 +317,7 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
         /* look if we can find the specified adapter */
         std::string name;
         std::string description;
-        BOOL  found = FALSE;
+        bool found = false;
 
         if (!interface_name.empty()) {
             /* we have an interface name, try it */
@@ -325,7 +325,7 @@ pcap_t * TfePcapOpenAdapter(const std::string & interface_name)
 
             while (tfe_arch_enumadapter(name, description)) {
                 if (name == interface_name) {
-                    found = TRUE;
+                    found = true;
                 }
                 if (found) break;
                 TfePcapDevice = TfePcapNextDev;
@@ -409,35 +409,37 @@ void tfe_arch_receive_remove_committed_frame()
 }
 */
 
-void tfe_arch_recv_ctl( int bBroadcast,   /* broadcast */
-                        int bIA,          /* individual address (IA) */
-                        int bMulticast,   /* multicast if address passes the hash filter */
-                        int bCorrect,     /* accept correct frames */
-                        int bPromiscuous, /* promiscuous mode */
-                        int bIAHash       /* accept if IA passes the hash filter */
+inline static const char* bool_to_cstring(bool b) { return b ? "true" : "false"; }
+
+void tfe_arch_recv_ctl( bool bBroadcast,   /* broadcast */
+                        bool bIA,          /* individual address (IA) */
+                        bool bMulticast,   /* multicast if address passes the hash filter */
+                        bool bCorrect,     /* accept correct frames */
+                        bool bPromiscuous, /* promiscuous mode */
+                        bool bIAHash       /* accept if IA passes the hash filter */
                       )
 {
 #if defined(TFE_DEBUG_ARCH) || defined(TFE_DEBUG_FRAMES)
 	if(g_fh) {
 		fprintf( g_fh, "tfe_arch_recv_ctl() called with the following parameters:" );
-		fprintf( g_fh, "\tbBroadcast   = %s", bBroadcast   ? "TRUE" : "FALSE" );
-		fprintf( g_fh, "\tbIA          = %s", bIA          ? "TRUE" : "FALSE" );
-		fprintf( g_fh, "\tbMulticast   = %s", bMulticast   ? "TRUE" : "FALSE" );
-		fprintf( g_fh, "\tbCorrect     = %s", bCorrect     ? "TRUE" : "FALSE" );
-		fprintf( g_fh, "\tbPromiscuous = %s", bPromiscuous ? "TRUE" : "FALSE" );
-		fprintf( g_fh, "\tbIAHash      = %s", bIAHash      ? "TRUE" : "FALSE" );
+		fprintf( g_fh, "\tbBroadcast   = %s", bool_to_cstring(bBroadcast) );
+		fprintf( g_fh, "\tbIA          = %s", bool_to_cstring(bIA) );
+		fprintf( g_fh, "\tbMulticast   = %s", bool_to_cstring(bMulticast) );
+		fprintf( g_fh, "\tbCorrect     = %s", bool_to_cstring(bCorrect) );
+		fprintf( g_fh, "\tbPromiscuous = %s", bool_to_cstring(bPromiscuous) );
+		fprintf( g_fh, "\tbIAHash      = %s", bool_to_cstring(bIAHash) );
 		fprintf( g_fh, "\n" );
 	}
 #endif
 }
 
-void tfe_arch_line_ctl(int bEnableTransmitter, int bEnableReceiver )
+void tfe_arch_line_ctl(bool bEnableTransmitter, bool bEnableReceiver)
 {
 #if defined(TFE_DEBUG_ARCH) || defined(TFE_DEBUG_FRAMES)
 	if(g_fh) {
 		fprintf( g_fh, "tfe_arch_line_ctl() called with the following parameters:" );
-		fprintf( g_fh, "\tbEnableTransmitter = %s", bEnableTransmitter ? "TRUE" : "FALSE" );
-		fprintf( g_fh, "\tbEnableReceiver    = %s", bEnableReceiver    ? "TRUE" : "FALSE" );
+		fprintf( g_fh, "\tbEnableTransmitter = %s", bool_to_cstring(bEnableTransmitter) );
+		fprintf( g_fh, "\tbEnableReceiver    = %s", bool_to_cstring(bEnableReceiver) );
 		fprintf( g_fh, "\n" );
 	}
 #endif
@@ -584,7 +586,7 @@ const char * tfe_arch_lib_version()
     return p_pcap_lib_version();
 }
 
-int tfe_arch_is_npcap_loaded()
+bool tfe_arch_is_npcap_loaded()
 {
     return TfePcapLoadLibrary();
 }

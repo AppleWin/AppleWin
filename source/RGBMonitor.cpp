@@ -671,10 +671,10 @@ void UpdateHiResRGBCell(int x, int y, uint16_t addr, bgra_t* pVideoAddress)
 	int color = 0;
 	uint32_t dwordval_tmp = dwordval;
 	dwordval_tmp = dwordval_tmp >> 7;
-	bool offset = (byteval2 & 0x80) ? true : false;
+	bool offset = (byteval2 & 0x80);
 	for (int i = 0; i < 14; i++)
 	{
-		if (i == 7) offset = (byteval3 & 0x80) ? true : false;
+		if (i == 7) offset = (byteval3 & 0x80);
 		color = dwordval_tmp & 0x3;
 		// Two cases because AppleWin's palette is in a strange order
 		if (offset)

@@ -196,15 +196,15 @@ void Uthernet1::Init()
     memset( tfe_ia_mac, 0, sizeof(tfe_ia_mac) );
     memset( tfe_hash_mask, 0, sizeof(tfe_hash_mask) );
 
-    tfe_recv_broadcast   = 0;
-    tfe_recv_mac         = 0;
-    tfe_recv_multicast   = 0;
-    tfe_recv_correct     = 0;
-    tfe_recv_promiscuous = 0;
-    tfe_recv_hashfilter  = 0;
+    tfe_recv_broadcast   = false;
+    tfe_recv_mac         = false;
+    tfe_recv_multicast   = false;
+    tfe_recv_correct     = false;
+    tfe_recv_promiscuous = false;
+    tfe_recv_hashfilter  = false;
 
 #ifdef TFE_DEBUG_WARN
-    tfe_started_tx       = 0;
+    tfe_started_tx       = false;
 #endif
 
     /* initialize visible IO register and PacketPage registers */
@@ -303,7 +303,7 @@ void Uthernet1::tfe_sideeffects_write_pp_on_txframe(WORD ppaddress)
 
 #ifdef TFE_DEBUG_WARN
             /* remember that the TXCMD has been completed */
-            tfe_started_tx = 0;
+            tfe_started_tx = false;
 #endif
         }
     }
@@ -338,12 +338,12 @@ void Uthernet1::tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress)
 
 
     case TFE_PP_ADDR_CC_RXCTL:
-        tfe_recv_broadcast   = content & 0x0800; /* broadcast */
-        tfe_recv_mac         = content & 0x0400; /* individual address (IA) */
-        tfe_recv_multicast   = content & 0x0200; /* multicast if address passes the hash filter */
-        tfe_recv_correct     = content & 0x0100; /* accept correct frames */
-        tfe_recv_promiscuous = content & 0x0080; /* promiscuous mode */
-        tfe_recv_hashfilter  = content & 0x0040; /* accept if IA passes the hash filter */
+        tfe_recv_broadcast   = (content & 0x0800); /* broadcast */
+        tfe_recv_mac         = (content & 0x0400); /* individual address (IA) */
+        tfe_recv_multicast   = (content & 0x0200); /* multicast if address passes the hash filter */
+        tfe_recv_correct     = (content & 0x0100); /* accept correct frames */
+        tfe_recv_promiscuous = (content & 0x0080); /* promiscuous mode */
+        tfe_recv_hashfilter  = (content & 0x0040); /* accept if IA passes the hash filter */
 
         tfe_arch_recv_ctl( tfe_recv_broadcast,
                            tfe_recv_mac,
@@ -355,8 +355,8 @@ void Uthernet1::tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress)
         break;
 
     case TFE_PP_ADDR_CC_LINECTL:
-        tfe_arch_line_ctl( content & 0x0080, /* enable transmitter */
-                           content & 0x0040  /* enable receiver    */
+        tfe_arch_line_ctl( (content & 0x0080), /* enable transmitter */
+                           (content & 0x0040)  /* enable receiver    */
                          );
         break;
 
@@ -381,7 +381,7 @@ void Uthernet1::tfe_sideeffects_write_pp(WORD ppaddress, int oddaddress)
         if (tfe_started_tx && !oddaddress) {
             if(g_fh) fprintf(g_fh, "WARNING! Early abort of transmitted frame\n");
         }
-        tfe_started_tx = 1;
+        tfe_started_tx = true;
 #endif
 
         /* make sure we put the octets to transmit at the right place */
@@ -778,12 +778,12 @@ void Uthernet1::tfe_store(WORD ioaddress, BYTE byte)
  This function is even allowed to be called in tfearch.c from tfe_arch_receive() if
  necessary, which is the reason why its prototype is included here in tfearch.h.
 */
-int Uthernet1::tfe_should_accept(unsigned char *buffer, int length, int *phashed, int *phash_index,
-                                 int *pcorrect_mac, int *pbroadcast, int *pmulticast)
+bool Uthernet1::tfe_should_accept(unsigned char *buffer, int length, int *phashed, int *phash_index,
+                                  int *pcorrect_mac, int *pbroadcast, int *pmulticast) const
 {
 	int hashreg; /* Hash Register (for hash computation) */
 
-    assert(length>=6); /* we need at least 6 octets since the DA has this length */
+    assert(length >= 6); /* we need at least 6 octets since the DA has this length */
 
     /* first of all, delete any status */
     *phashed      = 0;
@@ -817,7 +817,7 @@ int Uthernet1::tfe_should_accept(unsigned char *buffer, int length, int *phashed
          * that this address fits the hash index
          */
         if (tfe_recv_mac || tfe_recv_promiscuous)
-            return(1);
+            return true;
     }
 
     if (   buffer[0]==0xFF
@@ -831,7 +831,7 @@ int Uthernet1::tfe_should_accept(unsigned char *buffer, int length, int *phashed
         *pbroadcast = 1;
 
         /* broadcasts cannot be accepted by the hash filter */
-            return((tfe_recv_broadcast || tfe_recv_promiscuous) ? 1 : 0);
+            return (tfe_recv_broadcast || tfe_recv_promiscuous);
     }
 
 	/* now check if DA passes the hash filter */
@@ -851,12 +851,12 @@ int Uthernet1::tfe_should_accept(unsigned char *buffer, int length, int *phashed
              */
             *phashed = 0;
 
-            return((tfe_recv_multicast || tfe_recv_promiscuous) ? 1 : 0);
+            return (tfe_recv_multicast || tfe_recv_promiscuous);
         }
-        return((tfe_recv_hashfilter || tfe_recv_promiscuous) ? 1 : 0);
+        return (tfe_recv_hashfilter || tfe_recv_promiscuous);
     }
 
-    return(tfe_recv_promiscuous ? 1 : 0);
+    return tfe_recv_promiscuous;
 }
 
 #ifdef TFE_DEBUG_FRAMES
@@ -1069,11 +1069,11 @@ void Uthernet1::SaveSnapshot(class YamlSaveHelper& yamlSaveHelper)
 
     YamlSaveHelper::Label unit(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
 
-    yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, networkBackend->isValid() ? true : false);
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_ENABLED, networkBackend->isValid());
     yamlSaveHelper.SaveString(SS_YAML_KEY_NETWORK_INTERFACE, networkBackend->getInterfaceName());
 
-    yamlSaveHelper.SaveBool(SS_YAML_KEY_STARTED_TX, tfe_started_tx ? true : false);
-    yamlSaveHelper.SaveBool(SS_YAML_KEY_CANNOT_USE, PCapBackend::tfe_is_npcap_loaded() ? false : false);
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_STARTED_TX, tfe_started_tx);
+    yamlSaveHelper.SaveBool(SS_YAML_KEY_CANNOT_USE, PCapBackend::tfe_is_npcap_loaded());
 
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_TXCOLLECT_BUFFER, txcollect_buffer);
     yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_RX_BUFFER, rx_buffer);
@@ -1097,7 +1097,7 @@ bool Uthernet1::LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version)
     yamlLoadHelper.LoadBool(SS_YAML_KEY_ENABLED);  // FIXME: what is the point of this?
     PCapBackend::SetRegistryInterface(m_slot, yamlLoadHelper.LoadString(SS_YAML_KEY_NETWORK_INTERFACE));
 
-    tfe_started_tx = yamlLoadHelper.LoadBool(SS_YAML_KEY_STARTED_TX) ? true : false;
+    tfe_started_tx = yamlLoadHelper.LoadBool(SS_YAML_KEY_STARTED_TX);
 
     // it is meaningless to restore this boolean flag
     // as it depends on the availability of npcap on *this* pc

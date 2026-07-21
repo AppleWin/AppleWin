@@ -184,7 +184,7 @@ void CPropertySheetHelper::SaveStateUpdate()
 }
 
 // NB. OK'ing this property sheet will call SaveStateUpdate()->Snapshot_SetFilename() with this new path & filename
-int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, const char* pszTitle, bool bSave)
+bool CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, const char* pszTitle, bool bSave)
 {
 	// Whenever harddisks/disks are inserted (or removed) and *if path has changed* then:
 	// . Snapshot's path & Snapshot's filename will be updated to reflect the new defaults.
@@ -212,8 +212,8 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, const char* pszTitl
 	ofn.Flags           = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
 	ofn.lpstrTitle      = pszTitle;
 
-	int nRes = bSave ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
-	if (nRes)
+	const bool bRes = bSave ? GetSaveFileName(&ofn) : GetOpenFileName(&ofn);
+	if (bRes)
 	{
 		if (bSave)	// Only for saving (allow loading of any file for backwards compatibility)
 		{
@@ -253,8 +253,8 @@ int CPropertySheetHelper::SaveStateSelectImage(HWND hWindow, const char* pszTitl
 		m_szSSNewDirectory = szFilename;	// always set this, even if unchanged
 	}
 
-	m_bSSNewFilename = nRes ? true : false;
-	return nRes;
+	m_bSSNewFilename = bRes;
+	return bRes;
 }
 
 // On OK: Optionally post a single "uAfterClose" msg after last page closes

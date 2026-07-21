@@ -101,12 +101,12 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 		{
 		case IDC_AUTHENTIC_SPEED:	// Authentic Machine Speed
 			SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPOS, TRUE, SPEED_NORMAL);
-			EnableTrackbar(hWnd, FALSE);
+			EnableTrackbar(hWnd, false);
 			break;
 
 		case IDC_CUSTOM_SPEED:		// Select Custom Speed
 			SetFocus(GetDlgItem(hWnd, IDC_SLIDER_CPU_SPEED));
-			EnableTrackbar(hWnd, TRUE);
+			EnableTrackbar(hWnd, true);
 			break;
 
 		case IDC_MONOCOLOR:
@@ -164,7 +164,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 			if(HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				const VideoType_e newVideoType = (VideoType_e) SendDlgItemMessage(hWnd, IDC_VIDEOTYPE, CB_GETCURSEL, 0, 0);
-				EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (newVideoType == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (newVideoType == VT_COLOR_IDEALIZED));
 			}
 			break;
 
@@ -192,7 +192,7 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 				(pt.y >= rect.top) && (pt.y <= rect.bottom))
 			{
 				CheckRadioButton(hWnd, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, IDC_CUSTOM_SPEED);
-				EnableTrackbar(hWnd, TRUE);
+				EnableTrackbar(hWnd, true);
 				SetFocus(GetDlgItem(hWnd,IDC_SLIDER_CPU_SPEED));
 				ScreenToClient(GetDlgItem(hWnd,IDC_SLIDER_CPU_SPEED),&pt);
 				PostMessage(GetDlgItem(hWnd,IDC_SLIDER_CPU_SPEED),WM_LBUTTONDOWN,wparam,MAKELONG(pt.x,pt.y));
@@ -248,7 +248,7 @@ void CPageConfig::InitOptions(HWND hWnd)
 	const VideoStyle_e style = m_PropertySheetHelper.GetConfigNew().m_videoStyle;
 	CheckDlgButton(hWnd, IDC_CHECK_HALF_SCAN_LINES, GetVideo().IsVideoStyle(style, VS_HALF_SCANLINES) ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hWnd, IDC_CHECK_VERTICAL_BLEND, GetVideo().IsVideoStyle(style, VS_COLOR_VERTICAL_BLEND) ? BST_CHECKED : BST_UNCHECKED);
-	EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (m_PropertySheetHelper.GetConfigNew().m_videoType == VT_COLOR_IDEALIZED) ? TRUE : FALSE);
+	EnableWindow(GetDlgItem(hWnd, IDC_CHECK_VERTICAL_BLEND), (m_PropertySheetHelper.GetConfigNew().m_videoType == VT_COLOR_IDEALIZED));
 	CheckDlgButton(hWnd, IDC_CHECK_50HZ_VIDEO, (m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate == VR_50HZ) ? BST_CHECKED : BST_UNCHECKED);
 
 	CheckDlgButton(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS, m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus ? BST_CHECKED : BST_UNCHECKED);
@@ -263,7 +263,7 @@ void CPageConfig::InitOptions(HWND hWnd)
 	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETTICFREQ, 10, 0);
 	SendDlgItemMessage(hWnd, IDC_SLIDER_CPU_SPEED, TBM_SETPOS, TRUE, m_PropertySheetHelper.GetConfigNew().m_machineSpeed);
 
-	BOOL bCustom = m_PropertySheetHelper.GetConfigNew().m_machineSpeed != SPEED_NORMAL ? TRUE : FALSE;
+	const bool bCustom = m_PropertySheetHelper.GetConfigNew().m_machineSpeed != SPEED_NORMAL;
 	CheckRadioButton(hWnd, IDC_AUTHENTIC_SPEED, IDC_CUSTOM_SPEED, bCustom ? IDC_CUSTOM_SPEED : IDC_AUTHENTIC_SPEED);
 	SetFocus(GetDlgItem(hWnd, bCustom ? IDC_SLIDER_CPU_SPEED : IDC_AUTHENTIC_SPEED));
 	EnableTrackbar(hWnd, bCustom);
@@ -274,7 +274,7 @@ void CPageConfig::DlgOK(HWND hWnd)
 	// This GetConfigNew() has already been set:
 	// . m_Apple2Type, m_CpuType, m_monochromeRGB
 
-	m_PropertySheetHelper.GetConfigNew().m_confirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT) ? true : false;
+	m_PropertySheetHelper.GetConfigNew().m_confirmReboot = IsDlgButtonChecked(hWnd, IDC_CHECK_CONFIRM_REBOOT);
 
 	const uint32_t newMasterVolume = VOLUME_MAX - (uint32_t)SendDlgItemMessage(hWnd, IDC_SLIDER_MASTER_VOLUME, TBM_GETPOS, 0, 0);	// Invert: L=MIN, R=MAX
 	m_PropertySheetHelper.GetConfigNew().m_masterVolume = newMasterVolume;
@@ -290,11 +290,11 @@ void CPageConfig::DlgOK(HWND hWnd)
 
 	m_PropertySheetHelper.GetConfigNew().m_videoRefreshRate = IsDlgButtonChecked(hWnd, IDC_CHECK_50HZ_VIDEO) ? VR_50HZ : VR_60HZ;
 
-	m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS) ? true : false;
+	m_PropertySheetHelper.GetConfigNew().m_fullScreen_ShowSubunitStatus = IsDlgButtonChecked(hWnd, IDC_CHECK_FS_SHOW_SUBUNIT_STATUS);
 
 	// Emulation speed control
 
-	m_PropertySheetHelper.GetConfigNew().m_enhanceDiskAccessSpeed = IsDlgButtonChecked(hWnd, IDC_ENHANCE_DISK_ENABLE) ? true : false;
+	m_PropertySheetHelper.GetConfigNew().m_enhanceDiskAccessSpeed = IsDlgButtonChecked(hWnd, IDC_ENHANCE_DISK_ENABLE);
 	m_PropertySheetHelper.GetConfigNew().m_scrollLockToggle = IsDlgButtonChecked(hWnd, IDC_SCROLLLOCK_TOGGLE) ? 1 : 0;
 
 	m_PropertySheetHelper.GetConfigNew().m_machineSpeed = IsDlgButtonChecked(hWnd, IDC_AUTHENTIC_SPEED)	? SPEED_NORMAL
@@ -335,7 +335,7 @@ void CPageConfig::ApplyConfigAfterClose()
 		bVideoReinit = true;
 	}
 
-	const bool newHalfScanLines = ((UINT)m_PropertySheetHelper.GetConfigNew().m_videoStyle & (UINT)VS_HALF_SCANLINES) ? true : false;
+	const bool newHalfScanLines = ((UINT)m_PropertySheetHelper.GetConfigNew().m_videoStyle & (UINT)VS_HALF_SCANLINES);
 	const bool currentHalfScanLines = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
 	if (currentHalfScanLines != newHalfScanLines)
 	{
@@ -346,7 +346,7 @@ void CPageConfig::ApplyConfigAfterClose()
 		bVideoReinit = true;
 	}
 
-	const bool newVerticalBlend = ((UINT)m_PropertySheetHelper.GetConfigNew().m_videoStyle & (UINT)VS_COLOR_VERTICAL_BLEND) ? true : false;
+	const bool newVerticalBlend = ((UINT)m_PropertySheetHelper.GetConfigNew().m_videoStyle & (UINT)VS_COLOR_VERTICAL_BLEND);
 	const bool currentVerticalBlend = GetVideo().IsVideoStyle(VS_COLOR_VERTICAL_BLEND);
 	if (currentVerticalBlend != newVerticalBlend)
 	{
@@ -418,13 +418,13 @@ eApple2Type CPageConfig::GetApple2Type(uint32_t NewMenuItem)
 	}
 }
 
-void CPageConfig::EnableTrackbar(HWND hWnd, BOOL enable)
+void CPageConfig::EnableTrackbar(HWND hWnd, bool enable)
 {
-	EnableWindow(GetDlgItem(hWnd,IDC_SLIDER_CPU_SPEED),enable);
-	EnableWindow(GetDlgItem(hWnd,IDC_0_5_MHz),enable);
-	EnableWindow(GetDlgItem(hWnd,IDC_1_0_MHz),enable);
-	EnableWindow(GetDlgItem(hWnd,IDC_2_0_MHz),enable);
-	EnableWindow(GetDlgItem(hWnd,IDC_MAX_MHz),enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_SLIDER_CPU_SPEED), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_0_5_MHz), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_1_0_MHz), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_2_0_MHz), enable);
+	EnableWindow(GetDlgItem(hWnd, IDC_MAX_MHz), enable);
 }
 
 

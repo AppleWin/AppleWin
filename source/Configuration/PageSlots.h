@@ -42,7 +42,7 @@ private:
 	void ResetCardOptionsToDefault(UINT slot);
 	void DiskCardCleanup();
 	int CardTypeToComboItem(UINT slot);
-	BOOL CardTypeHasOptions(SS_CARDTYPE card);
+	bool CardTypeHasOptions(SS_CARDTYPE card);
 
 	static INT_PTR CALLBACK DlgProcDisk2(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
 	INT_PTR DlgProcDisk2Internal(HWND hWnd, UINT message, WPARAM wparam, LPARAM lparam);
@@ -66,13 +66,13 @@ private:
 	void InitComboFloppyDrive(HWND hWnd, UINT slot);
 	bool CheckFloppyPathnameInUse(const std::string& pathname, BYTE& inUseSlot, BYTE& inUseDrive);
 	void HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);
-	void EnableFloppyDrive(HWND hWnd, BOOL enable);
+	void EnableFloppyDrive(HWND hWnd, bool enable);
 	void HandleFloppyDriveSwap(HWND hWnd, UINT slot);
 
 	void InitComboHDD(HWND hWnd, UINT slot);
 	bool CheckHDDPathnameInUse(const std::string& pathname, BYTE& inUseSlot, BYTE& inUseDrive);
 	void HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelected, UINT slot);
-	void EnableHDD(HWND hWnd, BOOL enable);
+	void EnableHDD(HWND hWnd, bool enable);
 	void HandleHDDSwap(HWND hWnd, UINT slot);
 
 	void DlgDisk2OK(HWND hWnd);
