@@ -641,11 +641,13 @@ void SY6522::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SY6522_REG_DDRA, m_regs.DDRA);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SY6522_REG_T1_COUNTER, m_regs.TIMER1_COUNTER.w);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SY6522_REG_T1_LATCH, m_regs.TIMER1_LATCH.w);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_SY6522_TIMER1_IRQ_DELAY, m_timer1IrqDelay);	// v4
+	// SS_YAML_KEY_SY6522_TIMER1_IRQ_DELAY is saved/loaded as Uint for backward compatibility.
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SY6522_TIMER1_IRQ_DELAY, m_timer1IrqDelay);	// v4
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_SY6522_TIMER1_ACTIVE, m_timer1Active);		// v8
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SY6522_REG_T2_COUNTER, m_regs.TIMER2_COUNTER.w);
 	yamlSaveHelper.SaveHexUint16(SS_YAML_KEY_SY6522_REG_T2_LATCH, m_regs.TIMER2_LATCH.w);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY, m_timer2IrqDelay);	// v4
+	// SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY is saved/loaded as Uint for backward compatibility.
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY, m_timer2IrqDelay);	// v4
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_SY6522_TIMER2_ACTIVE, m_timer2Active);		// v8
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SY6522_REG_SERIAL_SHIFT, m_regs.SERIAL_SHIFT);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SY6522_REG_ACR, m_regs.ACR);
@@ -679,8 +681,10 @@ void SY6522::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	if (version >= 4)
 	{
-		m_timer1IrqDelay = yamlLoadHelper.LoadBool(SS_YAML_KEY_SY6522_TIMER1_IRQ_DELAY);
-		m_timer2IrqDelay = yamlLoadHelper.LoadBool(SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY);
+		// SS_YAML_KEY_SY6522_TIMER1_IRQ_DELAY|SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY are
+		// saved/loaded as Uint for backward compatibility.
+		m_timer1IrqDelay = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_TIMER1_IRQ_DELAY);
+		m_timer2IrqDelay = yamlLoadHelper.LoadUint(SS_YAML_KEY_SY6522_TIMER2_IRQ_DELAY);
 	}
 
 	if (version < 7)

@@ -2324,8 +2324,10 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_BIT_COUNT, m_floppyDrive[unit].m_disk.m_bitCount);		// v4
 	yamlSaveHelper.SaveDouble(SS_YAML_KEY_EXTRA_CYCLES, m_floppyDrive[unit].m_disk.m_extraCycles);	// v4
 	yamlSaveHelper.SaveBool(SS_YAML_KEY_WRITE_PROTECTED, m_floppyDrive[unit].m_disk.m_bWriteProtected);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_TRACK_IMAGE_DATA, m_floppyDrive[unit].m_disk.m_trackimagedata);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_TRACK_IMAGE_DIRTY, m_floppyDrive[unit].m_disk.m_trackimagedirty);
+	// SS_YAML_KEY_TRACK_IMAGE_DATA|SS_YAML_KEY_TRACK_IMAGE_DIRTY are saved/loaded
+	// as Uint for backward compatibility.
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DATA, m_floppyDrive[unit].m_disk.m_trackimagedata);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY, m_floppyDrive[unit].m_disk.m_trackimagedirty);
 
 	if (m_floppyDrive[unit].m_disk.m_trackimage)
 	{
@@ -2417,8 +2419,10 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 	yamlLoadHelper.LoadBool(SS_YAML_KEY_WRITE_PROTECTED);	// Consume
 	m_floppyDrive[unit].m_disk.m_byte = yamlLoadHelper.LoadUint(SS_YAML_KEY_BYTE);
 	m_floppyDrive[unit].m_disk.m_nibbles = yamlLoadHelper.LoadUint(SS_YAML_KEY_NIBBLES);
-	m_floppyDrive[unit].m_disk.m_trackimagedata = yamlLoadHelper.LoadBool(SS_YAML_KEY_TRACK_IMAGE_DATA);
-	m_floppyDrive[unit].m_disk.m_trackimagedirty = yamlLoadHelper.LoadBool(SS_YAML_KEY_TRACK_IMAGE_DIRTY);
+	// SS_YAML_KEY_TRACK_IMAGE_DATA|SS_YAML_KEY_TRACK_IMAGE_DIRTY are saved/loaded
+	// as Uint for backward compatibility.
+	m_floppyDrive[unit].m_disk.m_trackimagedata = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DATA);
+	m_floppyDrive[unit].m_disk.m_trackimagedirty = yamlLoadHelper.LoadUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY);
 
 	if (version >= 4)
 	{

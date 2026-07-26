@@ -257,13 +257,15 @@ const std::string& LanguageCardSlot0::GetSnapshotCardName()
 void LanguageCardSlot0::SaveLCState(YamlSaveHelper& yamlSaveHelper)
 {
 	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MEMORYMODE, GetLCMemMode() & MF_LANGCARD_MASK);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite());
+	// SS_YAML_KEY_LASTRAMWRITE is saved/loaded as Uint for backward compatibility.
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite());
 }
 
 void LanguageCardSlot0::LoadLCState(YamlLoadHelper& yamlLoadHelper)
 {
 	UINT memMode      = yamlLoadHelper.LoadUint(SS_YAML_KEY_MEMORYMODE) & MF_LANGCARD_MASK;
-	bool lastRamWrite = yamlLoadHelper.LoadBool(SS_YAML_KEY_LASTRAMWRITE);
+	// SS_YAML_KEY_LASTRAMWRITE is saved/loaded as Uint for backward compatibility.
+	bool lastRamWrite = yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE);
 	SetLCMemMode(memMode);
 	SetLastRamWrite(lastRamWrite);
 }

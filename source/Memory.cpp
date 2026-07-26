@@ -2841,10 +2841,12 @@ void MemSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		if (!IsApple2PlusOrClone(GetApple2Type()))	// NB. Thesed are set later for II,II+ by slot-0 LC or Saturn
 		{
 			yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_MMULCMODE, g_memmode & MF_LANGCARD_MASK);
-			yamlSaveHelper.SaveBool(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite());
+			// SS_YAML_KEY_LASTRAMWRITE is saved/loaded as Uint for backward compatibility.
+			yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTRAMWRITE, GetLastRamWrite());
 		}
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT, IO_SELECT);
-		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, INTC8ROM ? 1 : 0);
+		// SS_YAML_KEY_IOSELECT_INT is saved/loaded as HexUint8 for backward compatibility.
+		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_IOSELECT_INT, INTC8ROM);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_EXPANSIONROMTYPE, (UINT) g_eExpansionRomType);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_PERIPHERALROMSLOT, g_uPeripheralRomSlot);
 		yamlSaveHelper.SaveUint(SS_YAML_KEY_LASTSLOTTOSETMAINMEMLC, GetCardMgr().GetLanguageCardMgr().GetLastSlotToSetMainMemLC());
@@ -2880,7 +2882,8 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 	//
 
 	IO_SELECT = (BYTE) yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT);
-	INTC8ROM = yamlLoadHelper.LoadBool(SS_YAML_KEY_IOSELECT_INT);
+	// SS_YAML_KEY_IOSELECT_INT is saved/loaded as HexUint8 for backward compatibility.
+	INTC8ROM = yamlLoadHelper.LoadUint(SS_YAML_KEY_IOSELECT_INT);
 	g_eExpansionRomType = (eExpansionRomType) yamlLoadHelper.LoadUint(SS_YAML_KEY_EXPANSIONROMTYPE);
 	g_uPeripheralRomSlot = yamlLoadHelper.LoadUint(SS_YAML_KEY_PERIPHERALROMSLOT);
 
@@ -2892,7 +2895,8 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 		if (GetCardMgr().GetLanguageCardMgr().GetLanguageCard())
 			GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->SetLCMemMode(uMemMode & MF_LANGCARD_MASK);
 
-		SetLastRamWrite(yamlLoadHelper.LoadBool(SS_YAML_KEY_LASTRAMWRITE));
+		// SS_YAML_KEY_LASTRAMWRITE is saved/loaded as Uint for backward compatibility.
+		SetLastRamWrite(yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE));
 	}
 	else
 	{
@@ -2914,7 +2918,8 @@ bool MemLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT unitVersion)
 				UINT LCMemMode = yamlLoadHelper.LoadUint(SS_YAML_KEY_MMULCMODE);
 				GetCardMgr().GetLanguageCardMgr().GetLanguageCard()->SetLCMemMode(LCMemMode);
 			}
-			SetLastRamWrite(yamlLoadHelper.LoadBool(SS_YAML_KEY_LASTRAMWRITE));
+			// SS_YAML_KEY_LASTRAMWRITE is saved/loaded as Uint for backward compatibility.
+			SetLastRamWrite(yamlLoadHelper.LoadUint(SS_YAML_KEY_LASTRAMWRITE));
 		}
 	}
 
