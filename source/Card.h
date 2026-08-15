@@ -14,7 +14,7 @@ enum SS_CARDTYPE
 	CT_MouseInterface,
 	CT_Z80,				// Z80 SoftCard
 	CT_Phasor,			// Soundcard
-	CT_Echo,			// Soundcard
+	CT_EchoII,			// Soundcard
 	CT_SAM,				// Soundcard: Software Automated Mouth
 	CT_80Col,			// 80 column card (1K)
 	CT_Extended80Col,	// Extended 80-col card (64K)

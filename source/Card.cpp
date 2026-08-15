@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "BreakpointCard.h"
 #include "Mockingboard.h"
 #include "ParallelPrinter.h"
+#include "EchoII.h"
 #include "FourPlay.h"
 #include "LanguageCard.h"
 #include "Memory.h"
@@ -71,7 +72,6 @@ void DummyCard::InitializeIO(LPBYTE pCxRomPeripheral)
 	switch (QueryType())
 	{
 	case CT_GenericClock:
-	case CT_Echo:
 	default:
 		_ASSERT(0);
 	}
@@ -82,7 +82,6 @@ void DummyCard::Update(const ULONG nExecutedCycles)
 	switch (QueryType())
 	{
 	case CT_GenericClock:
-	case CT_Echo:
 	default:
 		_ASSERT(0);
 		break;
@@ -94,7 +93,6 @@ void DummyCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	switch (QueryType())
 	{
 	case CT_GenericClock:
-	case CT_Echo:
 	default:
 		_ASSERT(0);
 		break;
@@ -106,7 +104,6 @@ bool DummyCard::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	switch (QueryType())
 	{
 	case CT_GenericClock:
-	case CT_Echo:
 	default:
 		_ASSERT(0);
 	}
@@ -152,8 +149,8 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 		return Z80Card::GetSnapshotCardName();
 	case CT_Phasor:
 		return MockingboardCard::GetSnapshotCardNamePhasor();
-	case CT_Echo:
-		return "Echo";
+	case CT_EchoII:
+		return EchoII::GetSnapshotCardName();
 	case CT_SAM:
 		return SAMCard::GetSnapshotCardName();
 	case CT_80Col:
@@ -197,6 +194,8 @@ SS_CARDTYPE Card::GetCardType(const std::string & card)
 		return CT_MockingboardC;
 	else if (card == MockingboardCard::GetSnapshotCardNamePhasor())
 		return CT_Phasor;
+	else if (card == EchoII::GetSnapshotCardName())
+		return CT_EchoII;
 	else if (card == SAMCard::GetSnapshotCardName())
 		return CT_SAM;
 	else if (card == Disk2InterfaceCard::GetSnapshotCardName() || card == Disk2InterfaceCard::GetSnapshotCardNameOld())

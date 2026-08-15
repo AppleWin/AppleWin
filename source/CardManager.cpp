@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "BreakpointCard.h"
 #include "Disk.h"
+#include "EchoII.h"
 #include "FourPlay.h"
 #include "Harddisk.h"
 #include "Mockingboard.h"
@@ -95,8 +96,8 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 	case CT_Phasor:
 		m_slot[slot] = new MockingboardCard(slot, type);
 		break;
-	case CT_Echo:
-		m_slot[slot] = new DummyCard(type, slot);
+	case CT_EchoII:
+		m_slot[slot] = new EchoII(slot);
 		break;
 	case CT_SAM:
 		m_slot[slot] = new SAMCard(slot);
@@ -400,6 +401,7 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 	// Sound
 	CT_MockingboardC,
 	CT_Phasor,
+	CT_EchoII,
 	//	CT_MegaAudio,	// Exclude mb-audit test h/w for now
 	//	CT_SDMusic,		// Exclude mb-audit test h/w for now
 	CT_SAM,
