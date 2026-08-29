@@ -19,7 +19,7 @@ b) probably fix the problem with other processes having problems playing sound a
 same time as AppleWin. (Although I've not experienced this)
 c) hopefully simplify things :)
 
-. Run emulation (or message-pump?) in a seperate thread.
+. Run emulation (or message-pump?) in a separate thread.
 So that the sound is continuous when dragging the window or starting other applications, etc.
 
 . Add proper Votrax support (using PinMAME samples & code).
