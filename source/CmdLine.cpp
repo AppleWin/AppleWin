@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SNESMAX.h"
 #include "Interface.h"
 #include "Harddisk.h"
+#include "MCP/MCP.h"
 
 CmdLine g_cmdLine;
 std::string g_sConfigFile; // INI file to use instead of Registry
@@ -811,6 +812,9 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpNextArg = GetNextArg(lpNextArg);
 
 			g_cmdLine.debuggerAutoRunScriptFilename = lpCmdLine;
+		}
+		else if (MCP_ParseCmdLineArg(lpCmdLine))	// -mcp, -mcp=<port>
+		{
 		}
 		else	// unsupported
 		{

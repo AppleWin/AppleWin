@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug NoDX|Win32">
@@ -147,6 +147,13 @@
     <ClInclude Include="source\Windows\HookFilter.h" />
     <ClInclude Include="source\Windows\Win32Frame.h" />
     <ClInclude Include="source\YamlHelper.h" />
+    <ClInclude Include="source\MCP\MCP.h" />
+    <ClInclude Include="source\MCP\MCPEncode.h" />
+    <ClInclude Include="source\MCP\MCPHelpers.h" />
+    <ClInclude Include="source\MCP\MCPHttp.h" />
+    <ClInclude Include="source\MCP\MCPJson.h" />
+    <ClInclude Include="source\MCP\MCPServer.h" />
+    <ClInclude Include="source\MCP\MCPTools.h" />
     <ClInclude Include="source\z80emu.h" />
     <ClInclude Include="source\Z80VICE\daa.h" />
     <ClInclude Include="source\Z80VICE\z80.h" />
@@ -277,6 +284,12 @@
     <ClCompile Include="source\Windows\HookFilter.cpp" />
     <ClCompile Include="source\Windows\Win32Frame.cpp" />
     <ClCompile Include="source\Windows\WinFrame.cpp" />
+    <ClCompile Include="source\MCP\MCPEncode.cpp" />
+    <ClCompile Include="source\MCP\MCPHelpers.cpp" />
+    <ClCompile Include="source\MCP\MCPHttp.cpp" />
+    <ClCompile Include="source\MCP\MCPJson.cpp" />
+    <ClCompile Include="source\MCP\MCPServer.cpp" />
+    <ClCompile Include="source\MCP\MCPTools.cpp" />
     <ClCompile Include="source\YamlHelper.cpp" />
     <ClCompile Include="source\z80emu.cpp" />
     <ClCompile Include="source\Z80VICE\daa.cpp">

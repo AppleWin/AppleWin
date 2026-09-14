@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "Windows/AppleWin.h"
 #include "Windows/HookFilter.h"
+#include "MCP/MCP.h"
 #include "Interface.h"
 #include "Utilities.h"
 #include "CmdLine.h"
@@ -540,6 +541,7 @@ int APIENTRY WinMain(HINSTANCE passinstance, HINSTANCE, LPSTR lpCmdLine, int)
 			g_bRestart = false;
 
 			RepeatInitialization();
+			MCP_Initialize();
 
 			// ENTER THE MAIN MESSAGE LOOP
 			LogFileOutput("Main: EnterMessageLoop()\n");
@@ -1012,6 +1014,8 @@ static void RepeatInitialization()
 
 static void Shutdown()
 {
+	MCP_Destroy();
+
 	// NB. WM_CLOSE has already called SetNormalMode() to exit full screen mode & restore default resolution
 
 	// Release COM
