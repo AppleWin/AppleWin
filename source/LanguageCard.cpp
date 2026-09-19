@@ -93,6 +93,8 @@ void LanguageCardUnit::Reset(const bool powerCycle)
 	if (powerCycle || IsAppleIIeOrAbove(GetApple2Type()))
 	{
 		SetLCMemMode(LanguageCardUnit::kMemModeInitialState);
+		if (this->QueryType() == CT_Saturn128K)
+			SetLCMemMode(LanguageCardUnit::kMemModeInitialState & ~MF_WRITERAM);	// Hack: force Saturn to be write-protected at power-on/reset
 		SetLastRamWrite(0);
 	}
 }
