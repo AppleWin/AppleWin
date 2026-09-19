@@ -812,6 +812,18 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 
 			g_cmdLine.debuggerAutoRunScriptFilename = lpCmdLine;
 		}
+		else if (strcmp(lpCmdLine, "-ssc-tcp-port") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+
+			UINT port = atoi(lpCmdLine);
+
+			if (port <= 0xffff)
+				g_cmdLine.sscTcpPort = (USHORT) port;
+			else
+				LogFileOutput("ERROR: SSC TCP Port out of range: %s\n", lpCmdLine);
+		}
 		else	// unsupported
 		{
 			LogFileOutput("Unsupported arg: %s\n", lpCmdLine);

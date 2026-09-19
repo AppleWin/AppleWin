@@ -811,6 +811,11 @@ static void RepeatInitialization()
 			if (type != SSI263Unknown)
 				dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).SetSocketSC01(type);
 		}
+		else if (GetCardMgr().QuerySlot(i) == CT_SSC)
+		{
+			if (g_cmdLine.sscTcpPort)
+				dynamic_cast<CSuperSerialCard&>(GetCardMgr().GetRef(i)).SetTcpPort(g_cmdLine.sscTcpPort);
+		}
 	}
 
 	// Aux slot

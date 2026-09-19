@@ -45,9 +45,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "../resource/resource.h"
 
-#define TCP_SERIAL_PORT 1977
-
-const UINT CSuperSerialCard::SERIALPORTITEM_INVALID_COM_PORT = 0;
 
 // Default: 9600-8-N-1
 SSC_DIPSW CSuperSerialCard::m_DIPSWDefault =
@@ -72,7 +69,8 @@ CSuperSerialCard::CSuperSerialCard(UINT slot) :
 	m_uTCPChoiceItemIdx(0),
 	m_bCfgSupportDCD(false),
 	m_pExpansionRom(NULL),
-	m_hFrameWindow(NULL)
+	m_hFrameWindow(NULL),
+	m_tcpPort(TCP_SERIAL_PORT_DEFAULT)
 {
 	if (m_slot == SLOT0)
 		ThrowErrorInvalidSlot();
@@ -240,7 +238,7 @@ bool CSuperSerialCard::CheckComm()
 			SOCKADDR_IN saAddress;
 			memset(&saAddress, 0, sizeof(SOCKADDR_IN));
 			saAddress.sin_family = AF_INET;
-			saAddress.sin_port = htons(TCP_SERIAL_PORT); // TODO: get from registry / GUI
+			saAddress.sin_port = htons(m_tcpPort);
 			saAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 			if (bind(m_hCommListenSocket, (LPSOCKADDR)&saAddress, sizeof(saAddress)) == SOCKET_ERROR)
 			{

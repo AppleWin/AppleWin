@@ -42,6 +42,7 @@ public:
 	void RescanCOMPortsAndSetSerialPortItem(DWORD newSerialPortItem);
 	bool	IsActive() { return (m_hCommHandle != INVALID_HANDLE_VALUE) || (m_hCommListenSocket != INVALID_SOCKET); }
 	void	SupportDCD(bool bEnable) { m_bCfgSupportDCD = bEnable; }	// Status
+	void SetTcpPort(USHORT tcpPort) { m_tcpPort = tcpPort; }
 
 	void	CommTcpSerialAccept();
 	void	CommTcpSerialReceive();
@@ -88,7 +89,7 @@ private:
 	std::string m_currentSerialPortName;
 	DWORD	m_dwSerialPortItem;
 
-	static const UINT SERIALPORTITEM_INVALID_COM_PORT;
+	static const UINT SERIALPORTITEM_INVALID_COM_PORT = 0;
 	std::vector<UINT> m_vecSerialPortsItems;	// Includes "None" & "TCP" items
 	std::string m_strSerialPortChoices;
 	UINT	m_uTCPChoiceItemIdx;
@@ -145,4 +146,7 @@ private:
 	volatile DWORD m_dwModemStatus;	// Updated by CommThread when any of RLSD|DSR|CTS changes / Read by main thread - CommStatus()& CommDipSw()
 
 	UINT m_uRTS;
+
+	static const USHORT TCP_SERIAL_PORT_DEFAULT = 1977;
+	USHORT m_tcpPort;
 };

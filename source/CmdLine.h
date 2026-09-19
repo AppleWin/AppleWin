@@ -70,6 +70,7 @@ struct CmdLine
 		auxSlotCard = CT_Undefined;
 		sBootSectorFileName = "";
 		nBootSectorFileSize = 0;
+		sscTcpPort = 0;
 
 		for (UINT i = SLOT0; i < NUM_SLOTS; i++)
 		{
@@ -125,6 +126,7 @@ struct CmdLine
 	std::string sBootSectorFileName;
 	size_t nBootSectorFileSize;
 	std::string debuggerAutoRunScriptFilename;
+	USHORT sscTcpPort;
 };
 
 bool ProcessCmdLine(LPSTR lpCmdLine);
