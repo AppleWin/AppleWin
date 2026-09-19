@@ -994,6 +994,7 @@ UINT CPageSlots::RemovalConfirmation(HWND hWnd, UINT command)
 
 	if (bMsgBox)
 	{
+		// Use MessageBox() and not FrameMessageBox(), so that dialog is modal (GH#1507)
 		int nRes = MessageBox(hWnd, strText.c_str(), "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 			command = 0;
