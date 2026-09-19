@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="source\6821.cpp">
@@ -195,6 +195,24 @@
     </ClCompile>
     <ClCompile Include="source\Windows\WinFrame.cpp">
       <Filter>Source Files\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="source\MCP\MCPEncode.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="source\MCP\MCPHelpers.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="source\MCP\MCPHttp.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="source\MCP\MCPJson.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="source\MCP\MCPServer.cpp">
+      <Filter>Source Files\MCP</Filter>
+    </ClCompile>
+    <ClCompile Include="source\MCP\MCPTools.cpp">
+      <Filter>Source Files\MCP</Filter>
     </ClCompile>
     <ClCompile Include="source\Core.cpp">
       <Filter>Source Files</Filter>
@@ -521,6 +539,27 @@
     </ClInclude>
     <ClInclude Include="source\YamlHelper.h">
       <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MCP\MCP.h">
+      <Filter>Source Files\MCP</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MCP\MCPEncode.h">
+      <Filter>Source Files\MCP</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MCP\MCPHelpers.h">
+      <Filter>Source Files\MCP</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MCP\MCPHttp.h">
+      <Filter>Source Files\MCP</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MCP\MCPJson.h">
+      <Filter>Source Files\MCP</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MCP\MCPServer.h">
+      <Filter>Source Files\MCP</Filter>
+    </ClInclude>
+    <ClInclude Include="source\MCP\MCPTools.h">
+      <Filter>Source Files\MCP</Filter>
     </ClInclude>
     <ClInclude Include="source\RGBMonitor.h">
       <Filter>Source Files\Video</Filter>
@@ -911,6 +950,9 @@
     </Filter>
     <Filter Include="Source Files\Model">
       <UniqueIdentifier>{15b450e4-f89f-4d80-9c44-48b32f33f3e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MCP">
+      <UniqueIdentifier>{124216B6-331A-41C5-BACE-B064C617348A}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Windows">
       <UniqueIdentifier>{95d0abc3-4007-4eb0-8222-4579b565de23}</UniqueIdentifier>
