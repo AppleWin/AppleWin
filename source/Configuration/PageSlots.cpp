@@ -616,7 +616,7 @@ void CPageSlots::HandleFloppyDriveCombo(HWND hWnd, UINT driveSelected, UINT comb
 			m_PropertySheetHelper.GetConfigNew().m_slotInfoForFDC[ms_slot].pathname[driveSelected] = "";
 
 			std::string strText = StrFormat("%s already mounted in slot %d, drive %d.", pathname.c_str(), inUseSlot, inUseDrive + 1);
-			GetFrame().FrameMessageBox(hWnd, strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+			MessageBox(hWnd, strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 			return;
 		}
 
@@ -867,7 +867,7 @@ void CPageSlots::HandleHDDCombo(HWND hWnd, UINT driveSelected, UINT comboSelecte
 			m_PropertySheetHelper.GetConfigNew().m_slotInfoForHDC[ms_slot].pathname[driveSelected] = "";
 
 			std::string strText = StrFormat("%s already mounted in slot %d, drive %d.", pathname.c_str(), inUseSlot, inUseDrive + 1);
-			GetFrame().FrameMessageBox(hWnd, strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
+			MessageBox(hWnd, strText.c_str(), g_pAppTitle.c_str(), MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 			return;
 		}
 
@@ -994,7 +994,7 @@ UINT CPageSlots::RemovalConfirmation(HWND hWnd, UINT command)
 
 	if (bMsgBox)
 	{
-		int nRes = GetFrame().FrameMessageBox(hWnd, strText.c_str(), "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
+		int nRes = MessageBox(hWnd, strText.c_str(), "Eject/Unplug Warning", MB_ICONWARNING | MB_YESNO | MB_SETFOREGROUND);
 		if (nRes == IDNO)
 			command = 0;
 	}
