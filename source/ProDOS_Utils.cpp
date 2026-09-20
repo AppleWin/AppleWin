@@ -117,7 +117,7 @@ namespace
 			std::vector<uint8_t> pSource(pDiskBytes, pDiskBytes + nDiskSize);
 
 			const size_t nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
-			for( int iTrack = 0; iTrack < nTracks; iTrack++ )
+			for( size_t iTrack = 0; iTrack < nTracks; iTrack++ )
 			{
 				for( int iSector = 0; iSector < 16; iSector++ )
 				{
@@ -167,7 +167,7 @@ namespace
 			std::vector<uint8_t> pSource(pDiskBytes, pDiskBytes + nDiskSize);
 
 			const size_t nTracks = nDiskSize / TRACK_DENIBBLIZED_SIZE;
-			for( int iTrack = 0; iTrack < nTracks; iTrack++ )
+			for( size_t iTrack = 0; iTrack < nTracks; iTrack++ )
 			{
 				for( int iSector = 0; iSector < 16; iSector++ )
 				{
