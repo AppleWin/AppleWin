@@ -367,6 +367,21 @@ bool YamlLoadHelper::LoadBool(const std::string key)
 std::string YamlLoadHelper::LoadString_NoThrow(const std::string& key, bool& bFound)
 {
 	std::string value = m_yamlHelper.GetMapValue(*m_pMapYaml, key, bFound);
+
+	if (bFound)
+	{
+		// Undo any backslash-doubling from a previous save-state, so that UI only shows single-backslashes (GH#1510)
+		if (value.find("\\\\") != std::string::npos)	// String contains a double backslash?
+		{
+			size_t pos = 0;
+			while ((pos = value.find("\\\\", pos)) != std::string::npos)
+			{
+				value = value.replace(pos, 2, "\\");
+				pos += 1;
+			}
+		}
+	}
+
 	return value;
 }
 
