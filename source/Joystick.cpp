@@ -94,8 +94,10 @@ static uint32_t joytype[JN_NUM] = { kJoystick_Default[JN_JOYSTICK0], kJoystick_D
 
 static bool  setbutton[3]   = {false, false, false};	// Used when a mouse button is pressed/released
 
-static int   xpos[2]        = { PDL_MAX,PDL_MAX };
-static int   ypos[2]        = { PDL_MAX,PDL_MAX };
+// Start with joystick in central position so a mouse (as joystick) doesn't return 255 before WM_MOUSEMOVE events (GH#1522)
+// . NB. JoyReadPosition() handles the case when there's no joystick (DEVICE_NONE) to allow code to detect this.
+static int xpos[2] = { PDL_CENTRAL,PDL_CENTRAL };
+static int ypos[2] = { PDL_CENTRAL,PDL_CENTRAL };
 
 static UINT64 g_paddleInactiveCycle[4] = { 0 };	// Abs cycle that each paddle becomes inactive after PTRIG strobe
 
