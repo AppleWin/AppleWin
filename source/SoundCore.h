@@ -76,3 +76,6 @@ void SysClk_StartTimerUsec(uint32_t dwUsecPeriod);
 void SysClk_StopTimer();
 
 extern UINT g_uNumVoices;
+
+std::string GetAudioDeviceName();
+void SetAudioDeviceName(std::string deviceName);

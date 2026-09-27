@@ -34,6 +34,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Interface.h"
 #include "SoundCore.h"
 
+// All of this just to get the default audio device name!
+#include <mmdeviceapi.h>
+#include <functiondiscoverykeys_devpkey.h>
+#include <wrl/client.h> // For Microsoft::WRL::ComPtr
+using namespace Microsoft::WRL;
+
+#include <propvarutil.h>
+#pragma comment(lib, "Propsys.lib")
+
 //-----------------------------------------------------------------------------
 
 #define MAX_SOUND_DEVICES 10
@@ -169,6 +178,68 @@ static BOOL CALLBACK DSEnumProc(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrv
 	return TRUE;
 }
 
+std::string GetDefaultAudioDeviceName()
+{
+	static std::string g_deviceName;
+
+	if (!g_deviceName.empty())
+		return g_deviceName;
+
+	//
+
+	ComPtr<IMMDeviceEnumerator> pEnumerator;
+	HRESULT hr = CoCreateInstance(
+		__uuidof(MMDeviceEnumerator),
+		NULL,
+		CLSCTX_ALL,
+		__uuidof(IMMDeviceEnumerator),
+		reinterpret_cast<void**>(pEnumerator.GetAddressOf())
+	);
+
+	if (SUCCEEDED(hr))
+	{
+		// Get the default audio rendering (output) endpoint
+		ComPtr<IMMDevice> pDevice;
+		hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, pDevice.GetAddressOf());
+
+		if (SUCCEEDED(hr))
+		{
+			// Open the property store for the default device
+			ComPtr<IPropertyStore> pProps;
+			hr = pDevice->OpenPropertyStore(STGM_READ, pProps.GetAddressOf());
+
+			if (SUCCEEDED(hr))
+			{
+				PROPVARIANT varName;
+				PropVariantInit(&varName);
+
+				// Retrieve the friendly name property
+				hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
+				if (SUCCEEDED(hr) && varName.vt == VT_LPWSTR)
+				{
+					WCHAR deviceName[256];
+					hr = PropVariantToString(varName, deviceName, ARRAYSIZE(deviceName));
+					if (SUCCEEDED(hr))
+					{
+						std::wstring wstr = deviceName;
+
+						int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+						g_deviceName.resize(sizeNeeded, 0);
+						WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &g_deviceName[0], sizeNeeded, NULL, NULL);
+					}
+				}
+			}
+		}
+	}
+
+	if (!g_deviceName.empty())
+		LogFileOutput("Default audio endpoint: %s\n", g_deviceName.c_str());
+	else
+		LogFileOutput("Failed to get default audio endpoint name (%08X)\n", (uint32_t)hr);
+
+	return g_deviceName;
+}
+
 bool DSInit()
 {
 	if (g_bDSAvailable)
@@ -181,14 +252,11 @@ bool DSInit()
 	HRESULT hr = DirectSoundEnumerate((LPDSENUMCALLBACK)DSEnumProc, NULL);
 	if (FAILED(hr))
 	{
-		if (g_fh) fprintf(g_fh, "DSEnumerate failed (%08X)\n", (uint32_t)hr);
+		LogFileOutput("DSEnumerate failed (%08X)\n", (uint32_t)hr);
 		return false;
 	}
 
-	if (g_fh)
-	{
-		fprintf(g_fh, "Number of sound devices = %d\n", num_sound_devices);
-	}
+	LogFileOutput("Number of sound devices = %d\n", num_sound_devices);
 
 	bool bCreatedOK = false;
 	for (int x = 0; x < num_sound_devices; x++)
@@ -196,25 +264,27 @@ bool DSInit()
 		hr = DirectSoundCreate(&sound_device_guid[x], &g_lpDS, NULL);
 		if (SUCCEEDED(hr))
 		{
-			if (g_fh) fprintf(g_fh, "DSCreate succeeded for sound device #%d\n", x);
+			LogFileOutput("DSCreate succeeded for sound device #%d\n", x);
 			bCreatedOK = true;
 			break;
 		}
 
-		if (g_fh) fprintf(g_fh, "DSCreate failed for sound device #%d (%08X)\n", x, (uint32_t)hr);
+		LogFileOutput("DSCreate failed for sound device #%d (%08X)\n", x, (uint32_t)hr);
 	}
 	if (!bCreatedOK)
 	{
-		if (g_fh) fprintf(g_fh, "DSCreate failed for all sound devices\n");
+		LogFileOutput("DSCreate failed for all sound devices\n");
 		return false;
 	}
+
+	SetAudioDeviceName(GetDefaultAudioDeviceName());	// Set audio device name in SoundCore
 
 	HWND hwnd = GetFrame().g_hFrameWindow;
 	_ASSERT(hwnd);
 	hr = g_lpDS->SetCooperativeLevel(hwnd, DSSCL_NORMAL);
 	if (FAILED(hr))
 	{
-		if (g_fh) fprintf(g_fh, "SetCooperativeLevel failed (%08X)\n", (uint32_t)hr);
+		LogFileOutput("SetCooperativeLevel failed (%08X)\n", (uint32_t)hr);
 		return false;
 	}
 
@@ -224,7 +294,7 @@ bool DSInit()
 	hr = g_lpDS->GetCaps(&DSCaps);
 	if (FAILED(hr))
 	{
-		if (g_fh) fprintf(g_fh, "GetCaps failed (%08X)\n", (uint32_t)hr);
+		LogFileOutput("GetCaps failed (%08X)\n", (uint32_t)hr);
 		// Not fatal: so continue...
 	}
 
