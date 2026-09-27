@@ -46,6 +46,20 @@ static VOICE* g_pSpeakerVoice = NULL;
 
 //-----------------------------------------------------------------------------
 
+static std::string g_audioDeviceName;
+
+std::string GetAudioDeviceName()
+{
+	return g_audioDeviceName;
+}
+
+void SetAudioDeviceName(std::string deviceName)
+{
+	g_audioDeviceName = deviceName;
+}
+
+//-----------------------------------------------------------------------------
+
 // NB. Also similar is done by: MockingboardCardManager::Destroy()
 // - which is called from WM_DESTROY (when both restarting VM & exiting the app)
 

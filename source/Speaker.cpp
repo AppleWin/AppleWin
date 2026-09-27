@@ -280,13 +280,23 @@ void SpkrInitialize()
 		LogFileOutput("Spkr_DSInit(), res=%d\n", g_bSpkrAvailable ? 1 : 0);
 		if (!g_bSpkrAvailable)
 		{
-			GetFrame().FrameMessageBox(
+			std::string msg =
 				"The emulator is unable to initialize a waveform "
 				"output device.  Make sure you have a sound card "
 				"and a driver installed and that Windows is "
 				"correctly configured to use the driver.  Also "
 				"ensure that no other program is currently using "
-				"the device.",
+				"the device.";
+
+			std::string device = GetAudioDeviceName();
+			if (!device.empty())
+			{
+				msg += "\n\nDefault output device: ";
+				msg += device;
+			}
+
+			GetFrame().FrameMessageBox(
+				msg.c_str(),
 				"Configuration",
 				MB_ICONEXCLAMATION | MB_SETFOREGROUND);
 		}
