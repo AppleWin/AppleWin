@@ -578,7 +578,7 @@ static bool CheckButton0Pressed()
 {
 	bool pressed =	joybutton[0] ||
 					setbutton[0] ||
-					keydown[JK_OPENAPPLE];
+					keydown[JK_OPENAPPLE];		// Permit for Apple II (eg. needed for "Keyboard (cursors)")
 
 	if (joyinfo[joytype[1]] != DEVICE_KEYBOARD)	// NB. always joytype[1] regardless if button is 0 or 1
 		pressed = pressed || keydown[JK_BUTTON0];
@@ -590,7 +590,7 @@ static bool CheckButton1Pressed()
 {
 	bool pressed =	joybutton[1] ||
 					setbutton[1] ||
-					keydown[JK_CLOSEDAPPLE];
+					keydown[JK_CLOSEDAPPLE];	// Permit for Apple II (eg. needed for "Keyboard (cursors)")
 
 	if (joyinfo[joytype[1]] != DEVICE_KEYBOARD)	// NB. always joytype[1] regardless if button is 0 or 1
 		pressed = pressed || keydown[JK_BUTTON1];
@@ -626,6 +626,8 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 				DoAutofire(button0, pressed);
 				if (CopyProtectionDonglePB0() >= 0)				//If a copy protection dongle needs PB0, this overrides the joystick
 					pressed = CopyProtectionDonglePB0();
+				else if (IsApple2PlusOrClone(g_Apple2Type) && joyinfo[joytype[0]] == DEVICE_NONE)
+					pressed = 1;	// Apple II: PB0 floats high when nothing is connected to this switch (GH#1234)
 			}
 			break;
 
@@ -636,17 +638,22 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 				DoAutofire(button1, pressed);
 				if (CopyProtectionDonglePB1() >= 0)				//If a copy protection dongle needs PB1, this overrides the joystick
 					pressed = CopyProtectionDonglePB1();
-			}
+				else if (IsApple2PlusOrClone(g_Apple2Type) && joyinfo[joytype[0]] == DEVICE_NONE)
+					pressed = 1;	// Apple II: PB1 floats high when nothing is connected to this switch (GH#1234)
+		}
 			break;
 
 		case 0x63:
 			if (CopyProtectionDonglePB2() >= 0)					//If a copy protection dongle needs PB2, this overrides the joystick
-				pressed = CopyProtectionDonglePB2();
-			else if (IS_APPLE2 && (joyinfo[joytype[1]] == DEVICE_NONE))
 			{
-				// Apple II/II+ with no joystick has the "SHIFT key mod"
-				// See Sather's Understanding The Apple II p7-36
-				pressed = !(GetKeyState(VK_SHIFT) < 0);
+				pressed = CopyProtectionDonglePB2();
+			}
+			else if (joyinfo[joytype[1]] == DEVICE_NONE)
+			{
+				if (IsApple2PlusOrClone(g_Apple2Type))
+					pressed = !(GetKeyState(VK_SHIFT) < 0);		// Apple II/II+ with no joystick has the "SHIFT key mod" (UTAII:7-36)
+				else
+					pressed = 1;	// Apple //e: PB2 floats high when nothing is connected to this switch (GH#1234)
 			}
 			else
 			{
