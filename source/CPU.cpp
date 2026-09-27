@@ -398,7 +398,7 @@ static __forceinline void Fetch_alt(BYTE& iOpcode, ULONG uExecutedCycles)
 }
 
 //#define ENABLE_NMI_SUPPORT	// Not used - so don't enable
-static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline bool NMI(ULONG& uExecutedCycles, bool& flagc, bool& flagn, bool& flagv, bool& flagz)
 {
 #ifdef ENABLE_NMI_SUPPORT
 	if (!g_bNmiFlank)
@@ -445,7 +445,7 @@ static __forceinline void CheckSynchronousInterruptSources(UINT cycles, ULONG uE
 	g_SynchronousEventMgr.Update(cycles, uExecutedCycles);
 }
 
-static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline bool IRQ(ULONG& uExecutedCycles, bool& flagc, bool& flagn, bool& flagv, bool& flagz)
 {
 	bool irqTaken = false;
 

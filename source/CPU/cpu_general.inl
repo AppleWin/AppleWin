@@ -41,8 +41,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		  flagz = (regs.ps & AF_ZERO);
 #define EF_TO_AF  regs.ps = (regs.ps & ~(AF_CARRY | AF_SIGN |		    \
 					 AF_OVERFLOW | AF_ZERO))	    \
-			      | flagc 					    \
-			      | flagn					    \
+			      | (flagc ? AF_CARRY    : 0)		    \
+			      | (flagn ? AF_SIGN     : 0)		    \
 			      | (flagv ? AF_OVERFLOW : 0)		    \
 			      | (flagz ? AF_ZERO     : 0)		    \
 			      | AF_RESERVED | AF_BREAK;
