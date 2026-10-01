@@ -242,7 +242,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		const size_t size = (nDiskSize + 7) / 8;
 		int block  = 0;
 
-		for( int byte = 0; byte < size; byte++ )
+		for( size_t byte = 0; byte < size; byte++ )
 		{
 			int mask = 0x80;
 			do
