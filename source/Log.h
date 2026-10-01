@@ -14,6 +14,8 @@
 
 extern FILE* g_fh;	// File handle for log file
 
+std::string LogGetTimeStamp();
+
 void LogInit();
 void LogDone();
 

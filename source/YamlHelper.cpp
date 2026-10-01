@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "StdAfx.h"
 
+#include "Core.h"
 #include "YamlHelper.h"
 #include "Log.h"
 
@@ -434,6 +435,32 @@ void YamlLoadHelper::LoadMemory(std::vector<BYTE>& memory, const size_t size, co
 }
 
 //-------------------------------------
+
+YamlSaveHelper::YamlSaveHelper(const std::string& pathname) :
+	m_hFile(NULL),
+	m_indent(0),
+	m_pWcStr(NULL),
+	m_wcStrSize(0),
+	m_pMbStr(NULL),
+	m_mbStrSize(0)
+{
+	m_hFile = fopen(pathname.c_str(), "wt");
+
+	// todo: handle ERROR_ALREADY_EXISTS - ask if user wants to replace existing file
+	// - at this point any old file will have been truncated to zero
+
+	if (m_hFile == NULL)
+		throw std::runtime_error("Save error");
+
+	fprintf(m_hFile, "# Date-stamp: %s\n", LogGetTimeStamp().c_str());
+	fprintf(m_hFile, "# %s\n\n", GetAppleWinVersionAndBuild().c_str());
+
+	fprintf(m_hFile, "---\n");
+
+	//
+
+	memset(m_szIndent, ' ', kMaxIndent);
+}
 
 void YamlSaveHelper::Save(const char* format, ...)
 {

@@ -45,16 +45,17 @@ FILE* g_fh = NULL;
 
 //---------------------------------------------------------------------------
 
-inline std::string GetTimeStamp()
+std::string LogGetTimeStamp()
 {
 	time_t ltime;
 	time(&ltime);
 #ifdef _WIN32
-	char ct[32];
-	ctime_s(ct, sizeof(ct), &ltime);
+	char ct[32] = { 0 };
+	errno_t err = ctime_s(ct, sizeof(ct), &ltime);
 #else
-	char ctbuf[32];
+	char ctbuf[32] = { 0 };
 	const char* ct = ctime_r(&ltime, ctbuf);
+	if (ct == nullptr) ct = &ctbuf[0];
 #endif
 	return std::string(ct, 24);
 }
@@ -73,7 +74,7 @@ void LogInit()
 
 	setvbuf(g_fh, NULL, _IONBF, 0);			// No buffering (so implicit fflush after every fprintf)
 
-	fprintf(g_fh, "*** Logging started: %s\n", GetTimeStamp().c_str());
+	fprintf(g_fh, "*** Logging started: %s\n", LogGetTimeStamp().c_str());
 }
 
 void LogDone()

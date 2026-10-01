@@ -175,36 +175,7 @@ private:
 class YamlSaveHelper
 {
 public:
-	YamlSaveHelper(const std::string & pathname) :
-		m_hFile(NULL),
-		m_indent(0),
-		m_pWcStr(NULL),
-		m_wcStrSize(0),
-		m_pMbStr(NULL),
-		m_mbStrSize(0)
-	{
-		m_hFile = fopen(pathname.c_str(), "wt");
-
-		// todo: handle ERROR_ALREADY_EXISTS - ask if user wants to replace existing file
-		// - at this point any old file will have been truncated to zero
-
-		if(m_hFile == NULL)
-			throw std::runtime_error("Save error");
-
-		_tzset();
-		time_t ltime;
-		time(&ltime);
-		char timebuf[26];
-		errno_t err = ctime_s(timebuf, sizeof(timebuf), &ltime);	// includes newline at end of string
-		fprintf(m_hFile, "# Date-stamp: %s\n", err == 0 ? timebuf : "Error: Datestamp\n\n");
-
-		fprintf(m_hFile, "---\n");
-
-		//
-
-		memset(m_szIndent, ' ', kMaxIndent);
-	}
-
+	YamlSaveHelper(const std::string& pathname);
 	~YamlSaveHelper()
 	{
 		if (m_hFile)
