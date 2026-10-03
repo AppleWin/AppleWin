@@ -263,6 +263,22 @@ void HarddiskInterfaceCard::InitializeIO(LPBYTE pCxRomPeripheral)
 			if (m_useHdcFirmwareMode != HdcSmartPort)
 				pFirmwareBase[0x07] = 0x3C;	// Block mode (not SmartPort)
 		}
+
+		if (IsApple2PlusOrClone(g_Apple2Type))	// GH#1234
+		{
+			// For Apple II/II+, when there's no joystick connected, then PB0 floats high (ie. it appears the button is being pressed)
+			// . Change the f/w to detect shift key instead
+			// . NB. Only works when joystick-2 is unplugged (which enables the Shift key mod for II/II+)
+			for (int i = 0; i < APPLE_SLOT_SIZE-3; i++)
+			{
+				if (pFirmwareBase[i] == 0x2C && pFirmwareBase[i + 1] == 0x61 && pFirmwareBase[i + 2] == 0xC0 && pFirmwareBase[i + 3] == 0x30)	// BIT $C061; BMI nn ; PB0
+				{
+					pFirmwareBase[i + 1] = 0x63;	// BIT $C063 ; Shift key
+					pFirmwareBase[i + 3] = 0x10;	// BPL nn
+					break;
+				}
+			}
+		}
 	}
 
 	RegisterIoHandler(m_slot, IORead, IOWrite, NULL, NULL, this, NULL);
