@@ -16,7 +16,8 @@ the emulated Apple //e system.<br>
 <ul>
   <li>Joystick 1/2: Choose the emulation method for joysticks 1 and 2.</li>
   <ul>
-    <li>For Apple II/II Plus, set 'Joystick 2 = Disabled' to activate shift-key modification support.
+    <li>Set 'Joystick 2 = Disabled' to enable the 'SHIFT key mod' checkbox.</li>
+	<li>Otherwise the SHIFT key mod isn't supported (and this checkbox will be disabled).</li>
   </ul>
   <li>X/Y-trim: &nbsp;These controls&nbsp;add a trim value to the
 joystick X/Y offsets when the joystick is centered. Normally central
@@ -33,6 +34,10 @@ then you should leave these values at 0.</li>
   <li>Swap 0/1: Swap buttons 0 and 1 for all input devices.</li>
   <li>Auto-fire (all 3 buttons): For each button pressed, the button's state will be toggled when read.</li>
   <li>Keyboard auto-centering: When keys used for joystick emulation are released then the joystick will return to the central position.</li>
+  <li>SHIFT key mod: permit Game I/O Connector's PB2 (aka SW2) to read the state of the SHIFT key.</li>
+  <ul>
+    <li>NB. When reading PB2, AppleWin prioritises copy protection dongles (that use PB2) over the SHIFT key mod.</li>
+  </ul>
 </ul>
 
 <strong>Paste from clipboard:</strong><br>
