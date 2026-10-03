@@ -60,6 +60,7 @@ CConfigNeedingRestart::CConfigNeedingRestart()
 	m_centeringControl = 0;
 	m_cursorControl = 0;
 	m_swapButtons0and1 = false;
+	m_shiftKeyMod = false;
 
 	// Slots
 	for (UINT slot = SLOT0; slot < NUM_SLOTS; slot++)
@@ -127,6 +128,7 @@ void CConfigNeedingRestart::Reload()
 	m_centeringControl = GetPropertySheet().GetJoystickCenteringControl();
 	m_cursorControl = GetPropertySheet().GetJoystickCursorControl();
 	m_swapButtons0and1 = GetPropertySheet().GetButtonsSwapState();
+	m_shiftKeyMod = GetPropertySheet().GetShiftKeyMod();
 
 	// Slots
 	CardManager& cardManager = GetCardMgr();
@@ -226,6 +228,7 @@ const CConfigNeedingRestart& CConfigNeedingRestart::operator= (const CConfigNeed
 	m_centeringControl = other.m_centeringControl;
 	m_cursorControl = other.m_cursorControl;
 	m_swapButtons0and1 = other.m_swapButtons0and1;
+	m_shiftKeyMod = other.m_shiftKeyMod;
 
 	// Slots
 	memcpy(m_Slot, other.m_Slot, sizeof(m_Slot));
@@ -265,7 +268,7 @@ bool CConfigNeedingRestart::operator== (const CConfigNeedingRestart& other) cons
 	// . [Config] m_confirmReboot, m_masterVolume
 	// . [Config] m_videoType, m_videoStyle, m_monochromeRGB, m_fullScreen_ShowSubunitStatus
 	// . [Config] m_enhanceDiskAccessSpeed, m_scrollLockToggle, m_machineSpeed
-	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1
+	// . [Input] m_autofire, m_centeringControl, m_cursorControl, m_swapButtons0and1, m_shiftKeyMod
 	// . [Input] m_joystickType[], m_pdlXTrim, m_pdlYTrim
 	// . [Slots] m_parallelPrinterCard, m_mouseShowCrosshair, m_mouseRestrictToWindow
 	// . [Advanced] m_uSaveLoadStateMsg, m_saveStateOnExit, m_ciderPressPathname, m_gameIOConnectorType

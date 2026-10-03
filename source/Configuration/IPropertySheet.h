@@ -26,6 +26,8 @@ public:
 	virtual void SetAutofire(UINT uValue) = 0;
 	virtual bool GetButtonsSwapState() = 0;
 	virtual void SetButtonsSwapState(bool value) = 0;
+	virtual bool GetShiftKeyMod() = 0;
+	virtual void SetShiftKeyMod(bool value) = 0;
 	virtual UINT GetMouseShowCrosshair() = 0;
 	virtual void SetMouseShowCrosshair(UINT uValue) = 0;
 	virtual UINT GetMouseRestrictToWindow() = 0;

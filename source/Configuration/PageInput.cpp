@@ -169,6 +169,13 @@ void CPageInput::InitOptions(HWND hWnd)
 	CheckDlgButton(hWnd, IDC_CURSORCONTROL, m_PropertySheetHelper.GetConfigNew().m_cursorControl ? BST_CHECKED : BST_UNCHECKED);
 	CheckDlgButton(hWnd, IDC_SWAPBUTTONS0AND1, m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 ? BST_CHECKED : BST_UNCHECKED);
 
+	// Only allow shift key mod when there's no 2nd joystick
+	const bool enableShiftKeyMod = m_PropertySheetHelper.GetConfigNew().m_joystickType[JN_JOYSTICK1] == J1C_DISABLED;
+	if (!enableShiftKeyMod)
+		m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = false;
+	EnableWindow(GetDlgItem(hWnd, IDC_SHIFTKEYMOD), enableShiftKeyMod);
+	CheckDlgButton(hWnd, IDC_SHIFTKEYMOD, m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod ? BST_CHECKED : BST_UNCHECKED);
+
 	EnableWindow(GetDlgItem(hWnd, IDC_CURSORCONTROL), JoyUsingKeyboardCursors());
 	EnableWindow(GetDlgItem(hWnd, IDC_CENTERINGCONTROL), JoyUsingKeyboard());
 }
@@ -181,10 +188,11 @@ void CPageInput::DlgOK(HWND hWnd)
 	m_PropertySheetHelper.GetConfigNew().m_pdlXTrim = (short)SendDlgItemMessage(hWnd, IDC_SPIN_XTRIM, UDM_GETPOS, 0, 0);
 	m_PropertySheetHelper.GetConfigNew().m_pdlYTrim = (short)SendDlgItemMessage(hWnd, IDC_SPIN_YTRIM, UDM_GETPOS, 0, 0);
 
-	m_PropertySheetHelper.GetConfigNew().m_cursorControl = IsDlgButtonChecked(hWnd, IDC_CURSORCONTROL) ? 1 : 0;
 	m_PropertySheetHelper.GetConfigNew().m_autofire = IsDlgButtonChecked(hWnd, IDC_AUTOFIRE) ? 7 : 0;	// bitmap of 3 bits
-	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = IsDlgButtonChecked(hWnd, IDC_SWAPBUTTONS0AND1);
 	m_PropertySheetHelper.GetConfigNew().m_centeringControl = IsDlgButtonChecked(hWnd, IDC_CENTERINGCONTROL) ? 1 : 0;
+	m_PropertySheetHelper.GetConfigNew().m_cursorControl = IsDlgButtonChecked(hWnd, IDC_CURSORCONTROL) ? 1 : 0;
+	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = IsDlgButtonChecked(hWnd, IDC_SWAPBUTTONS0AND1);
+	m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = IsDlgButtonChecked(hWnd, IDC_SHIFTKEYMOD) ? 1 : 0;
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
@@ -214,10 +222,12 @@ void CPageInput::ApplyConfigAfterClose()
 	m_bmAutofire = m_PropertySheetHelper.GetConfigNew().m_autofire;
 	m_bSwapButtons0and1 = m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1;
 	m_uCenteringControl = m_PropertySheetHelper.GetConfigNew().m_centeringControl;
+	m_shiftKeyMod = m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod;
 	REGSAVE(REGVALUE_AUTOFIRE, m_bmAutofire);
 	REGSAVE(REGVALUE_CENTERING_CONTROL, m_uCenteringControl);
 	REGSAVE(REGVALUE_CURSOR_CONTROL, m_uCursorControl);
 	REGSAVE(REGVALUE_SWAP_BUTTONS_0_AND_1, m_bSwapButtons0and1);
+	REGSAVE(REGVALUE_SHIFT_KEY_MOD, m_shiftKeyMod);
 }
 
 void CPageInput::InitJoystickChoices(HWND hWnd, const int joyNum)
@@ -333,4 +343,7 @@ void CPageInput::ResetToDefault()
 	m_PropertySheetHelper.GetConfigNew().m_centeringControl = CPageInput::kCenteringControl_Default;
 	m_PropertySheetHelper.GetConfigNew().m_cursorControl = CPageInput::kCursorControl_Default;
 	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = CPageInput::kSwapButtons0and1_Default;
+	m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = IsApple2PlusOrClone(m_PropertySheetHelper.GetConfigNew().m_Apple2Type)
+																? CPageInput::kShiftKeyModForAppleII_Default
+																: CPageInput::kShiftKeyModForAppleIIe_Default;
 }

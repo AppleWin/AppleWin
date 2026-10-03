@@ -650,10 +650,10 @@ BYTE __stdcall JoyReadButton(WORD pc, WORD address, BYTE, BYTE, ULONG nExecutedC
 			}
 			else if (joyinfo[joytype[1]] == DEVICE_NONE)
 			{
-				if (IsApple2PlusOrClone(g_Apple2Type))
-					pressed = !(GetKeyState(VK_SHIFT) < 0);		// Apple II/II+ with no joystick has the "SHIFT key mod" (UTAII:7-36)
+				if (GetPropertySheet().GetShiftKeyMod())
+					pressed = !(GetKeyState(VK_SHIFT) < 0);		// With no joystick *and* has the "SHIFT key mod"
 				else
-					pressed = 1;	// Apple //e: PB2 floats high when nothing is connected to this switch (GH#1234)
+					pressed = 1;	// Apple II/II+ or //e: PB2 floats high when nothing is connected to this switch (GH#1234)
 			}
 			else
 			{

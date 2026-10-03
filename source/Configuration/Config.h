@@ -65,6 +65,7 @@ public:
 	UINT m_centeringControl;
 	UINT m_cursorControl;
 	bool m_swapButtons0and1;
+	bool m_shiftKeyMod;
 
 	// Slots
 	SS_CARDTYPE m_Slot[NUM_SLOTS];

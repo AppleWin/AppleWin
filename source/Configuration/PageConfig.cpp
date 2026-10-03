@@ -157,6 +157,14 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 					m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT0] = CT_LanguageCard;
 				else
 					m_PropertySheetHelper.GetConfigNew().m_Slot[SLOT0] = CT_LanguageCardIIe;
+
+				if (newApple2Type != A2TYPE_CLONE)
+				{
+					// Apple II/II+: Shift key mod / Apple IIe: no Shift key mod
+					// . Not really correct, as only the Platium Apple IIe had the shift key mod at manufacture.
+					// . But many Apple II/II+'s had this after market mod; so for convenience default them to having this mod (UTAII:7-36)
+					m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = IsApple2PlusOrClone(newApple2Type);
+				}
 			}
 			break;
 
@@ -228,6 +236,7 @@ void CPageConfig::InitOptions(HWND hWnd)
 	case A2TYPE_PRAVETS8A:		nCurrentChoice = MENUITEM_CLONE; break;
 	case A2TYPE_TK30002E:		nCurrentChoice = MENUITEM_CLONE; break;
 	case A2TYPE_BASE64A:		nCurrentChoice = MENUITEM_CLONE; break;
+	case A2TYPE_CLONE:			nCurrentChoice = MENUITEM_CLONE; break;
 	default: _ASSERT(0); break;
 	}
 

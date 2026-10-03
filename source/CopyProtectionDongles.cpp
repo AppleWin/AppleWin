@@ -35,6 +35,7 @@
 #include <sstream>
 
 #include "CopyProtectionDongles.h"
+#include "Interface.h"
 #include "Memory.h"
 #include "YamlHelper.h"
 
@@ -176,6 +177,7 @@ int CopyProtectionDonglePDL(UINT pdl)
 // 2: Add Cortechs Corp CodeWriter protection key
 //    Add Robocom Ltd - Robo 500/1000/1500 Interface Modules
 // 3: Add Hayden Compiler protection key
+// 4: Add Shift Key Mod
 
 static const std::string& GetSnapshotStructName_SDSSpeedStar()
 {
@@ -293,4 +295,30 @@ void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 	{
 		_ASSERT(0);
 	}
+}
+
+//===========================================================================
+
+#define SS_YAML_KEY_SHIFT_KEY_MOD "Shift Key Mod"
+
+void ShiftKeyModSaveSnapshot(YamlSaveHelper& yamlSaveHelper)
+{
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SHIFT_KEY_MOD, GetPropertySheet().GetShiftKeyMod());
+}
+
+void ShiftKeyModLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version, UINT kUNIT_VERSION)
+{
+	if (version < 1 || version > kUNIT_VERSION)
+	{
+		std::ostringstream msg;
+		msg << "Version " << version;
+		msg << " is not supported for game I/O device.";
+
+		throw std::runtime_error(msg.str());
+	}
+
+	if (version <= 3)
+		GetPropertySheet().SetShiftKeyMod(false);
+	else
+		GetPropertySheet().SetShiftKeyMod(yamlLoadHelper.LoadBool(SS_YAML_KEY_SHIFT_KEY_MOD));
 }

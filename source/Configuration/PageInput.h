@@ -32,11 +32,15 @@ public:
 	void SetAutofire(UINT uValue) { m_bmAutofire = uValue; }					// Set all buttons
 	bool GetButtonsSwapState() { return m_bSwapButtons0and1; }
 	void SetButtonsSwapState(bool value) { m_bSwapButtons0and1 = value; }
+	bool GetShiftKeyMod() { return m_shiftKeyMod; }
+	void SetShiftKeyMod(bool value) { m_shiftKeyMod = value; }
 
 	static const UINT kAutofire_Default = 0;
 	static const UINT kCenteringControl_Default = JOYSTICK_MODE_CENTERING;
 	static const UINT kCursorControl_Default = 1;
 	static const bool kSwapButtons0and1_Default = false;
+	static const bool kShiftKeyModForAppleII_Default = true;
+	static const bool kShiftKeyModForAppleIIe_Default = false;
 
 	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
 	virtual void ResetToDefault();			// IPropertySheetPage
@@ -77,4 +81,5 @@ private:
 	UINT m_uCenteringControl;	// 1 = Centering, 0=Floating (when using keyboard for joystick emu)
 	UINT m_bmAutofire;			// bitmask b2:0
 	bool m_bSwapButtons0and1;
+	bool m_shiftKeyMod;
 };

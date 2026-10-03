@@ -14,4 +14,7 @@ int CopyProtectionDonglePB2();
 int CopyProtectionDonglePDL(UINT pdl);
 
 void CopyProtectionDongleSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
-void CopyProtectionDongleLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT version, UINT kUNIT_VERSION);
+void CopyProtectionDongleLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, const UINT version, const UINT kUNIT_VERSION);
+
+void ShiftKeyModSaveSnapshot(class YamlSaveHelper& yamlSaveHelper);
+void ShiftKeyModLoadSnapshot(class YamlLoadHelper& yamlLoadHelper, const UINT version, const UINT kUNIT_VERSION);

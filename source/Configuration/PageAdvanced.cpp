@@ -127,12 +127,15 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 			break;
 
 		case IDC_CLONETYPE:
-			if(HIWORD(wparam) == CBN_SELCHANGE)
+			if (HIWORD(wparam) == CBN_SELCHANGE)
 			{
 				const uint32_t NewCloneMenuItem = (uint32_t) SendDlgItemMessage(hWnd, IDC_CLONETYPE, CB_GETCURSEL, 0, 0);
 				const eApple2Type NewCloneType = GetCloneType(NewCloneMenuItem);
 				m_PropertySheetHelper.GetConfigNew().m_Apple2Type = NewCloneType;
 				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewCloneType);
+
+				// Same as in PageConfig() for IDC_COMPUTER:
+				m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = IsApple2PlusOrClone(m_PropertySheetHelper.GetConfigNew().m_Apple2Type);
 			}
 			break;
 
@@ -246,8 +249,7 @@ eApple2Type CPageAdvanced::GetCloneType(uint32_t NewMenuItem)
 int CPageAdvanced::GetCloneMenuItem()
 {
 	const eApple2Type type = m_PropertySheetHelper.GetConfigNew().m_Apple2Type;
-	const bool bIsClone = IsClone(type);
-	if (!bIsClone)
+	if (!IsClone(type))
 		return MENUITEM_CLONEMIN;
 
 	int nMenuItem = MENUITEM_CLONEMIN;

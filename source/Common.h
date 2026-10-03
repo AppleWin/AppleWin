@@ -88,6 +88,7 @@ enum AppMode_e
 #define  REGVALUE_CENTERING_CONTROL		"Joystick Centering Control"
 #define  REGVALUE_AUTOFIRE           "Autofire"
 #define  REGVALUE_SWAP_BUTTONS_0_AND_1 "Swap buttons 0 and 1"
+#define  REGVALUE_SHIFT_KEY_MOD      "Shift Key Mod"
 #define  REGVALUE_MOUSE_CROSSHAIR    "Mouse crosshair"
 #define  REGVALUE_MOUSE_RESTRICT_TO_WINDOW "Mouse restrict to window"
 #define  REGVALUE_NO_SLOT_CLOCK      "No-Slot clock"
