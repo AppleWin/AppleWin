@@ -3545,8 +3545,7 @@ Update_t CmdCursorLineUp (int nArgs)
 		{
 			int iBest = NO_6502_TARGET;
 
-			int iCandidate = 0;
-			for ( ; iCandidate < nCandidates; iCandidate++ )
+			for (unsigned int iCandidate = 0; iCandidate < nCandidates; iCandidate++)
 			{
 				tCandidate = aTopCandidates.at( iCandidate );
 				iOpcode = tCandidate._iOpcode;
