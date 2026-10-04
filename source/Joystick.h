@@ -17,6 +17,7 @@ bool    JoyProcessKey(int, bool, bool, bool);
 void    JoyReset();
 void    JoySetButton(eBUTTON, eBUTTONSTATE);
 bool    JoySetEmulationType(HWND, uint32_t, int, const bool bMousecardActive);
+void    JoyUnplug(bool unplugJoystick0, bool unplugJoystick1);
 void    JoySetPosition(int, int, int, int);
 bool    JoyUsingMouse();
 bool    JoyUsingKeyboard();

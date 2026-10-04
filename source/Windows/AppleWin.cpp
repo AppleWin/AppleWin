@@ -737,6 +737,9 @@ static void RepeatInitialization()
 	JoyInitialize();
 	LogFileOutput("Main: JoyInitialize()\n");
 
+	JoyUnplug(g_cmdLine.noJoystick[0], g_cmdLine.noJoystick[1]);
+	g_cmdLine.noJoystick[0] = g_cmdLine.noJoystick[1] = false;
+
 	// Init palette color
 	VideoSwitchVideocardPalette(RGB_GetVideocard(), GetVideo().GetVideoType());
 

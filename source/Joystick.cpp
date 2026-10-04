@@ -885,6 +885,14 @@ bool JoySetEmulationType(HWND window, uint32_t newtype, int nJoystickNumber, con
   return true;
 }
 
+void JoyUnplug(bool unplugJoystick0, bool unplugJoystick1)
+{
+	if (unplugJoystick0)
+		joytype[JN_JOYSTICK0] = J0C_DISABLED;
+
+	if (unplugJoystick1)
+		joytype[JN_JOYSTICK1] = J1C_DISABLED;
+}
 
 //===========================================================================
 

@@ -20,7 +20,7 @@ Tom Charlesworth
 - [Bug #1502] Config support for SSC - wasn't cancelling correctly (not reverting to old state).
 - [Bug #1507] Fix UI so that "Unplug Hard Disk Image" is modal.
 - [Bug #1510] Fix UI so that it only shows paths with single-backslashs (eg. Printer dump filename).
-- [Bug #1520] Fix for Saturn card intefering with slot 0 language card (regression at 1.32.0.0).
+- [Bug #1520] Fix for Saturn card interfering with slot 0 language card (regression at 1.32.0.0).
 - [Bug #1522] Fix for mouse-as-joystick returning $FF before the user clicks into the window.
 
 

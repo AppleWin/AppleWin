@@ -567,6 +567,15 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			g_cmdLine.bSwapButtons0and1 = true;
 		}
+#define CMD_NO_JOYSTICK "-no-joystick"	// -no-joystick<1|2>
+		else if (strncmp(lpCmdLine, CMD_NO_JOYSTICK, sizeof(CMD_NO_JOYSTICK)-1) == 0)
+		{
+			const int n = lpCmdLine[sizeof(CMD_NO_JOYSTICK) - 1] - '1';	// NB. 1-based
+			if (n == 0 || n == 1)
+				g_cmdLine.noJoystick[n] = true;
+			else
+				LogFileOutput("-no-joystick: unsupported device: %s\n", lpCmdLine);
+		}
 		else if (strcmp(lpCmdLine, "-spkr-inc") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
