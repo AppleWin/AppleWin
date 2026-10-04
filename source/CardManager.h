@@ -73,6 +73,7 @@ public:
 	void Destroy();
 	void Reset(const bool powerCycle);
 	void Update(const ULONG nExecutedCycles);
+	bool AllSlotsEmpty();
 	void SaveSnapshot(YamlSaveHelper& yamlSaveHelper);
 
 private:

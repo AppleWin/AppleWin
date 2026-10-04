@@ -264,7 +264,10 @@ void CopyProtectionDongleLoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT versi
 		throw std::runtime_error(msg.str());
 	}
 
-	std::string device = yamlLoadHelper.LoadString(SS_YAML_KEY_DEVICE);
+	bool found;
+	std::string device = yamlLoadHelper.LoadString_NoThrow(SS_YAML_KEY_DEVICE, found);
+	if (!found)
+		return;
 
 	if (device == GetSnapshotStructName_SDSSpeedStar())
 	{

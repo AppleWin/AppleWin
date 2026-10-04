@@ -309,6 +309,19 @@ void CardManager::Update(const ULONG nExecutedCycles)
 	GetMockingboardCardMgr().Update(nExecutedCycles);
 }
 
+bool CardManager::AllSlotsEmpty()
+{
+	const UINT kFirstSlot = IsApple2PlusOrClone(g_Apple2Type) ? SLOT0 : SLOT1;
+
+	for (UINT i = kFirstSlot; i < NUM_SLOTS; ++i)
+	{
+		if (m_slot[i] && m_slot[i]->QueryType() != CT_Empty)
+			return false;
+	}
+
+	return true;
+}
+
 void CardManager::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
 	for (UINT i = SLOT0; i < NUM_SLOTS; ++i)

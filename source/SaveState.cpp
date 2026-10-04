@@ -529,6 +529,7 @@ void Snapshot_SaveState()
 		MemSaveSnapshotAux(yamlSaveHelper);
 
 		// Unit: Slots
+		if (!GetCardMgr().AllSlotsEmpty())
 		{
 			yamlSaveHelper.UnitHdr(GetSnapshotUnitSlotsName(), UNIT_SLOTS_VER);
 			YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_STATE);
