@@ -17,6 +17,7 @@ public:
 		m_bmAutofire(kAutofire_Default),
 		m_bSwapButtons0and1(kSwapButtons0and1_Default)
 	{
+		SetShiftKeyModDefault(g_Apple2Type);
 		CPageInput::ms_this = this;
 	}
 	virtual ~CPageInput(){}
@@ -34,13 +35,16 @@ public:
 	void SetButtonsSwapState(bool value) { m_bSwapButtons0and1 = value; }
 	bool GetShiftKeyMod() { return m_shiftKeyMod; }
 	void SetShiftKeyMod(bool value) { m_shiftKeyMod = value; }
+	bool GetShiftKeyModDefault(const eApple2Type type);
+	void SetShiftKeyModDefault(const eApple2Type type);
 
 	static const UINT kAutofire_Default = 0;
 	static const UINT kCenteringControl_Default = JOYSTICK_MODE_CENTERING;
 	static const UINT kCursorControl_Default = 1;
 	static const bool kSwapButtons0and1_Default = false;
 	static const bool kShiftKeyModForAppleII_Default = true;
-	static const bool kShiftKeyModForAppleIIe_Default = false;
+	static const bool kShiftKeyModForAppleIIc_Default = false;
+	static const bool kShiftKeyModForAppleIIe_Default = false;	// NB. Platinum IIe *does* have the shift key mod
 
 	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
 	virtual void ResetToDefault();			// IPropertySheetPage

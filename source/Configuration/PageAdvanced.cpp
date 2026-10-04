@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../SaveState.h"
 #include "../CardManager.h"
 #include "../CopyProtectionDongles.h"
+#include "../Interface.h"
 #include "../Memory.h"
 #include "../resource/resource.h"
 
@@ -135,7 +136,7 @@ INT_PTR CPageAdvanced::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, L
 				m_PropertySheetHelper.GetConfigNew().m_CpuType = ProbeMainCpuDefault(NewCloneType);
 
 				// Same as in PageConfig() for IDC_COMPUTER:
-				m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = IsApple2PlusOrClone(m_PropertySheetHelper.GetConfigNew().m_Apple2Type);
+				m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = GetPropertySheet().GetShiftKeyModDefault(m_PropertySheetHelper.GetConfigNew().m_Apple2Type);
 			}
 			break;
 

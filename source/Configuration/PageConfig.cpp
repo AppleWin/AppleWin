@@ -160,10 +160,10 @@ INT_PTR CPageConfig::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPA
 
 				if (newApple2Type != A2TYPE_CLONE)
 				{
-					// Apple II/II+: Shift key mod / Apple IIe: no Shift key mod
+					// Apple II/II+: Shift key mod; Apple IIc & Apple IIe: no Shift key mod
 					// . Not really correct, as only the Platium Apple IIe had the shift key mod at manufacture.
 					// . But many Apple II/II+'s had this after market mod; so for convenience default them to having this mod (UTAII:7-36)
-					m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = IsApple2PlusOrClone(newApple2Type);
+					m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = GetPropertySheet().GetShiftKeyModDefault(newApple2Type);
 				}
 			}
 			break;

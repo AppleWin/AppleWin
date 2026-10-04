@@ -28,6 +28,8 @@ public:
 	virtual void SetButtonsSwapState(bool value) = 0;
 	virtual bool GetShiftKeyMod() = 0;
 	virtual void SetShiftKeyMod(bool value) = 0;
+	virtual bool GetShiftKeyModDefault(eApple2Type type) = 0;
+	virtual void SetShiftKeyModDefault(eApple2Type type) = 0;
 	virtual UINT GetMouseShowCrosshair() = 0;
 	virtual void SetMouseShowCrosshair(UINT uValue) = 0;
 	virtual UINT GetMouseRestrictToWindow() = 0;

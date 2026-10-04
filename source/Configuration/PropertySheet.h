@@ -47,6 +47,8 @@ public:
 	virtual void SetButtonsSwapState(bool value) { m_PageInput.SetButtonsSwapState(value); }
 	virtual bool GetShiftKeyMod() { return m_PageInput.GetShiftKeyMod(); }
 	virtual void SetShiftKeyMod(bool value) { m_PageInput.SetShiftKeyMod(value); }
+	virtual bool GetShiftKeyModDefault(eApple2Type type) { return m_PageInput.GetShiftKeyModDefault(type); }
+	virtual void SetShiftKeyModDefault(eApple2Type type) { m_PageInput.SetShiftKeyModDefault(type); }
 	virtual UINT GetMouseShowCrosshair() { return m_PageSlots.GetMouseShowCrosshair(); }
 	virtual void SetMouseShowCrosshair(UINT uValue) { m_PageSlots.SetMouseShowCrosshair(uValue); }
 	virtual UINT GetMouseRestrictToWindow() { return m_PageSlots.GetMouseRestrictToWindow(); }

@@ -296,6 +296,8 @@ static void ParseUnitApple2(YamlLoadHelper& yamlLoadHelper, UINT version)
 	SpkrLoadSnapshot(yamlLoadHelper);
 	GetVideo().VideoLoadSnapshot(yamlLoadHelper, version);
 	MemLoadSnapshot(yamlLoadHelper, version);
+
+	GetPropertySheet().SetShiftKeyModDefault(g_Apple2Type);	// Set default based on type - for old save-states that don't contain a 'shift key mod' value
 }
 
 //---

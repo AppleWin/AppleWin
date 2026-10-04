@@ -332,6 +332,23 @@ bool CPageInput::IsMouseCardInAnySlot()
 	return false;
 }
 
+bool CPageInput::GetShiftKeyModDefault(const eApple2Type type)
+{
+	if (IsApple2PlusOrClone(type))
+		return CPageInput::kShiftKeyModForAppleII_Default;
+
+	if (IsAppleIIc(type))
+		return CPageInput::kShiftKeyModForAppleIIc_Default;
+
+	// Apple IIe
+	return CPageInput::kShiftKeyModForAppleIIe_Default;
+}
+
+void CPageInput::SetShiftKeyModDefault(const eApple2Type type)
+{
+	m_shiftKeyMod = GetShiftKeyModDefault(type);
+}
+
 void CPageInput::ResetToDefault()
 {
 	m_PropertySheetHelper.GetConfigNew().m_joystickType[JN_JOYSTICK0] = kJoystick_Default[JN_JOYSTICK0];
@@ -343,7 +360,5 @@ void CPageInput::ResetToDefault()
 	m_PropertySheetHelper.GetConfigNew().m_centeringControl = CPageInput::kCenteringControl_Default;
 	m_PropertySheetHelper.GetConfigNew().m_cursorControl = CPageInput::kCursorControl_Default;
 	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = CPageInput::kSwapButtons0and1_Default;
-	m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = IsApple2PlusOrClone(m_PropertySheetHelper.GetConfigNew().m_Apple2Type)
-																? CPageInput::kShiftKeyModForAppleII_Default
-																: CPageInput::kShiftKeyModForAppleIIe_Default;
+	m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = GetShiftKeyModDefault(m_PropertySheetHelper.GetConfigNew().m_Apple2Type);
 }
