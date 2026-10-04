@@ -14,15 +14,16 @@ struct regsrec
 };
 
 // 6502 Processor Status flags
-enum {
-	AF_SIGN = 0x80,
-	AF_OVERFLOW = 0x40,
-	AF_RESERVED = 0x20,
-	AF_BREAK = 0x10,
-	AF_DECIMAL = 0x08,
-	AF_INTERRUPT = 0x04,
-	AF_ZERO = 0x02,
-	AF_CARRY = 0x01
+enum psflag : BYTE
+{
+	AF_SIGN         = 1 << 7,
+	AF_OVERFLOW     = 1 << 6,
+	AF_RESERVED     = 1 << 5,
+	AF_BREAK        = 1 << 4,
+	AF_DECIMAL      = 1 << 3,
+	AF_INTERRUPT    = 1 << 2,
+	AF_ZERO         = 1 << 1,
+	AF_CARRY        = 1 << 0,
 };
 
 extern regsrec    regs;
