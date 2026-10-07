@@ -5,6 +5,7 @@ Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
 Copyright (C) 2006-2024, Tom Charlesworth, Michael Pohoreski, Nick Westgate
+Copyright (C) 2026, Henri Asseily (henri@asseily.com)
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -44,6 +45,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+#include "SSI263.h"
 
 #include "6522.h"
 #include "CardManager.h"
@@ -53,8 +55,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "Log.h"
 #include "Memory.h"
 #include "SoundCore.h"
-#include "SSI263.h"
-#include "SSI263Phonemes.h"
 
 #include "YamlHelper.h"
 
@@ -69,7 +69,19 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define SSI_CTTRAMP	0x03
 #define SSI_FILFREQ	0x04
 
-const uint32_t SAMPLE_RATE_SSI263 = 22050;
+// Historical SC01 compatibility durations, in 1/22050 second ticks.
+static const uint32_t kSpeechTimingRate = 22050;
+static const UINT kPhonemeTicks[62] =
+{
+	2656, 2636, 2594, 2707, 2746, 2630, 2644, 3203,
+	2639, 2709, 2593, 2577, 2548, 2705, 2620, 2655,
+	2731, 2639, 2735, 2676, 2606, 2633, 2674, 2653,
+	2555, 2578, 2635, 2650, 2663, 2595, 2512, 2657,
+	2618, 2609, 1012, 899, 2691, 896, 880, 905,
+	2575, 3199, 2615, 3373, 2539, 2618, 2603, 2648,
+	2642, 2600, 2656, 2574, 2720, 2661, 2638, 2731,
+	2643, 2594, 2584, 2643, 2564, 2582
+};
 
 //-----------------------------------------------------------------------------
 
@@ -129,6 +141,8 @@ BYTE SSI263::Read(ULONG nExecutedCycles)
 	if (m_type == SSI263Empty)
 		return MemReadFloatingBus(nExecutedCycles);
 
+	AdvanceSynthesis();
+	CommitResponse();
 	return MemReadFloatingBus(m_currentMode.D7, nExecutedCycles);
 }
 
@@ -144,11 +158,15 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 	if (m_type == SSI263Empty)
 		return;
 
+	AdvanceSynthesis();
+	m_synth.Write(nReg < SSI_FILFREQ ? nReg : SSI_FILFREQ, nValue);
+
 	// SSI263 datasheet is not clear, but a write to DURPHON de-asserts the IRQ and clears D7.
 	// . Empirically writes to regs 0,1,2 (and reg3.CTL=1) all de-assert the IRQ (and writes to reg3.CTL=0 and regs 4..7 don't) (GH#1197)
 	// NB. The same for Mockingboard as there's no automatic handshake from the 6522 (CA2 isn't connected to the SSI263). So writes to regs 0, 1 or 2 complete the "handshake".
 	if (nReg <= SSI_RATEINF)
 	{
+		m_responsePending = false;
 		CpuIrqDeassert(IS_SPEECH);
 		m_currentMode.D7 = 0;
 	}
@@ -182,6 +200,11 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		if (g_fh) fprintf(g_fh, "RATE  = 0x%02X, INF = 0x%02X\n", nValue>>4, nValue&0x0F);
 #endif
 		m_rateInflection = nValue;
+		// A RATE write on a slot boundary feeds that reload in the hardware.
+		if (m_responseReloaded)
+			m_responseTicksRemaining = GetResponsePeriod();
+		if (m_durationReloaded)
+			m_durationTicksRemaining = GetDurationPeriod();
 		break;
 	case SSI_CTTRAMP:
 #if LOG_SSI263
@@ -214,6 +237,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		// . this silences the phoneme - actually "turns off the excitation sources and analog circuits"
 		if (m_ctrlArtAmp & CONTROL_MASK)
 		{
+			m_responsePending = false;
 			CpuIrqDeassert(IS_SPEECH);
 			m_currentMode.D7 = 0;
 			// NB. Don't call Stop() - mb-audit ("Classic Adventure") cuts at end, Berzap! is choppy
@@ -227,6 +251,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		m_filterFreq = nValue;
 		break;
 	}
+	CommitResponse();
 }
 
 void SSI263::SetDeviceModeAndInts()
@@ -241,6 +266,7 @@ void SSI263::SetDeviceModeAndInts()
 		// "Disables A/!R output only; does not change previous A/!R response" (SSI263 datasheet)
 		m_currentMode.enableInts = 0;
 	}
+	m_synth.SetFunction(m_currentMode.function);
 }
 
 //-----------------------------------------------------------------------------
@@ -325,75 +351,40 @@ void SSI263::Votrax_Write(BYTE value)
 	if (!m_hasSC01)
 		return;
 
+	AdvanceSynthesis();
+	m_responsePending = false;
 	m_isVotraxPhoneme = true;
 	m_votraxPhoneme = value & PHONEME_MASK;
+	ConfigureVotrax();
 
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
 	UpdateIFR(m_device, SY6522::IxR_VOTRAX, 0);
 
-	// NB. Don't set reg0.DUR, as SC01's phoneme duration doesn't change with pitch (empirically determined from MAME's SC01 emulation)
-	//m_durationPhoneme = value;	// Set reg0.DUR = I1:0 (inflection or pitch)
-	m_durationPhoneme = 0;
+	// SC01 duration does not depend on pitch or SSI263 registers.
 	Play(m_Votrax2SSI263[m_votraxPhoneme]);
 }
 
 //-----------------------------------------------------------------------------
 
-void SSI263::Play(unsigned int nPhoneme)
+void SSI263::Play(unsigned int phoneme)
 {
 	if (m_dbgFirst)
-	{
 		m_dbgStartTime = g_nCumulativeCycles;
-#if LOG_SSI263 || LOG_SSI263B || LOG_SC01
-		LogOutput("1st phoneme = 0x%02X\n", nPhoneme);
-#endif
-	}
 
-#if LOG_SSI263 || LOG_SSI263B || LOG_SC01
-	if (m_currentActivePhoneme != -1 && !(m_currentActivePhoneme & kPhonemeLeadoutFlag))
-		LogOutput("Overlapping phonemes: current=%02X, next=%02X\n", m_currentActivePhoneme&0xff, nPhoneme&0xff);
-#endif
-	m_currentActivePhoneme = nPhoneme;
-
-	bool bPause = false;
-
-	if (nPhoneme == 1)
-		nPhoneme = 2;	// Missing this sample, so map to phoneme-2
-
-	if (nPhoneme == 0)
-		bPause = true;
-	else
-		nPhoneme-=2;	// Missing phoneme-1
-
-	m_phonemeLengthRemaining = g_nPhonemeInfo[nPhoneme].nLength;
-
-	m_phonemeAccurateLengthRemaining = m_phonemeLengthRemaining;
-	m_phonemePlaybackAndDebugger = (g_nAppMode == MODE_STEPPING || g_nAppMode == MODE_DEBUG);
-	m_phonemeCompleteByFullSpeed = false;
-	m_phonemeLeadoutLength = m_phonemeLengthRemaining / 10;	// Arbitrary! (TODO: determine a more accurate factor)
-
-	if (bPause)
+	m_currentActivePhoneme = phoneme;
+	if (!m_isVotraxPhoneme)
 	{
-		if (!m_pPhonemeData00)
-		{
-			// 'pause' length is length of 1st phoneme (arbitrary choice, since don't know real length)
-			m_pPhonemeData00 = new short [m_phonemeLengthRemaining];
-			memset(m_pPhonemeData00, 0x00, m_phonemeLengthRemaining*sizeof(short));
-		}
-
-		m_pPhonemeData = m_pPhonemeData00;
-	}
-	else
-	{
-		m_pPhonemeData = (const short*) &g_nPhonemeData[g_nPhonemeInfo[nPhoneme].nOffset];
+		m_phonemeLengthRemaining = 0;
+		m_phonemeLeadoutLength = 0;
+		StartResponseTiming();
+		return;
 	}
 
-	m_currSampleSum = 0;
-	m_currNumSamples = 0;
+	// The old timing table used the same duration for PA, E and E1.
+	const UINT index = phoneme <= 2 ? 0 : phoneme - 2;
+	m_phonemeLengthRemaining = kPhonemeTicks[index];
+	m_phonemeLeadoutLength = m_phonemeLengthRemaining / 10;
 	m_currSampleMod4 = 0;
-
-	// Set m_lastUpdateCycle, otherwise UpdateAccurateLength() can immediately complete phoneme! (GH#1104)
-	m_lastUpdateCycle = GetLastCumulativeCycles();
 }
 
 void SSI263::Stop()
@@ -404,8 +395,320 @@ void SSI263::Stop()
 
 //-----------------------------------------------------------------------------
 
+void SSI263::ResetSynthesis(bool resetClock)
+{
+	m_synth.Reset((uint32_t)(Get6502BaseClock() + 0.5));
+	ResetResponseTiming();
+	if (resetClock)
+	{
+		m_synthLastCycle = g_nCumulativeCycles;
+		m_synthCpuClock = (uint32_t)(g_fCurrentCLK6502 + 0.5);
+		m_synthCycleRemainder = 0;
+		m_synthSamplePhase = m_synth.GetClockHz();
+		m_speechSamplePhase = 0;
+	}
+	if (resetClock || !m_isVotraxPhoneme)
+		m_synthSamples = 0;
+	m_synth.Write(SSI_DURPHON, m_durationPhoneme);
+	m_synth.Write(SSI_INFLECT, m_inflection);
+	m_synth.Write(SSI_RATEINF, m_rateInflection);
+	m_synth.Write(SSI_FILFREQ, m_filterFreq);
+	m_synth.Write(SSI_CTTRAMP, m_ctrlArtAmp);
+}
+
+void SSI263::ResetVotraxSynthesis()
+{
+	m_votraxSynth.Reset((uint32_t)(Get6502BaseClock() + 0.5));
+	// Fixed surrogate voice: about 91 Hz, with immediate pitch and smooth articulation.
+	// These are SSI263 model settings, not an SC01 circuit model. Ignore SC01 pitch bits.
+	m_votraxSynth.Write(SSI_DURPHON, MODE_PHONEME_IMMEDIATE_INFLECTION);
+	m_votraxSynth.Write(SSI_INFLECT, 0x51);
+	m_votraxSynth.Write(SSI_RATEINF, 0x88);
+	m_votraxSynth.Write(SSI_FILFREQ, 0xE7);
+	m_votraxSynthStarted = false;
+}
+
+void SSI263::ConfigureVotrax()
+{
+	if (!m_votraxSynthStarted)
+	{
+		m_votraxSynth.Write(SSI_CTTRAMP, 0x5C);
+		m_votraxSynthStarted = true;
+	}
+	m_votraxSynth.Write(SSI_DURPHON, m_Votrax2SSI263[m_votraxPhoneme]);
+}
+
+void SSI263::AdvanceSynthesis()
+{
+	const UINT64 currentCycle = GetLastCumulativeCycles();
+	const UINT64 elapsedCycles = currentCycle >= m_synthLastCycle ? currentCycle - m_synthLastCycle : 0;
+	m_synthLastCycle = currentCycle;
+	if (elapsedCycles)
+	{
+		CommitResponse();
+		m_responseReloaded = false;
+		m_durationReloaded = false;
+	}
+	if (m_type == SSI263Empty && !m_votraxSynthStarted)
+		return;
+
+	const uint32_t chipClock = (uint32_t)(Get6502BaseClock() + 0.5);
+	const uint32_t cpuClock = (uint32_t)(g_fCurrentCLK6502 + 0.5);
+	if (chipClock != m_synth.GetClockHz())
+	{
+		m_synthSamplePhase = (uint32_t)((UINT64)m_synthSamplePhase * chipClock / m_synth.GetClockHz());
+		m_synth.SetClock(chipClock);
+		m_votraxSynth.SetClock(chipClock);
+	}
+	if (cpuClock != m_synthCpuClock)
+	{
+		m_synthCycleRemainder = (uint32_t)((UINT64)m_synthCycleRemainder * cpuClock / m_synthCpuClock);
+		m_synthCpuClock = cpuClock;
+	}
+
+	// The speed slider changes CPU throughput, not speech pitch.
+	const UINT64 scaledCycles = elapsedCycles * chipClock + m_synthCycleRemainder;
+	UINT64 ticks = scaledCycles / cpuClock;
+	m_synthCycleRemainder = (uint32_t)(scaledCycles % cpuClock);
+
+	while (ticks)
+	{
+		// Leave a sample due at the endpoint so writes there take effect first.
+		if (m_synthSamplePhase >= chipClock)
+		{
+			m_synthSamplePhase -= chipClock;
+			const short nativeSample = m_type != SSI263Empty ? m_synth.GetSample() : 0;
+			const short votraxSample = m_votraxSynthStarted ? m_votraxSynth.GetSample() : 0;
+			// PA0, PA1 and STOP retain the old silent output and IRQ timing.
+			const short sample = m_isVotraxPhoneme
+				? (m_Votrax2SSI263[m_votraxPhoneme] ? votraxSample : 0) : nativeSample;
+			m_speechSamplePhase += kSpeechTimingRate;
+			if (m_speechSamplePhase >= SSI263Synth::kSampleRate)
+			{
+				m_speechSamplePhase -= SSI263Synth::kSampleRate;
+				AdvanceSpeechTiming();
+			}
+
+			if (!g_bFullSpeed && !g_bDisableDirectSound && !g_bDisableDirectSoundMockingboard && IsPhonemeActive())
+			{
+				// A stalled audio device must not stop the emulated chip.
+				if (m_synthSamples == MAX_SAMPLES)
+					m_synthSamples = 0;
+				// Raise speech by 20 dB for AppleWin's mixer; keep the chip's gain unchanged.
+				const int output = sample * 10;
+				m_synthBuffer[m_synthSamples++] = (short)(output < -32768 ? -32768 : output > 32767 ? 32767 : output);
+			}
+		}
+
+		const uint32_t toSample = (chipClock - m_synthSamplePhase + SSI263Synth::kSampleRate - 1) / SSI263Synth::kSampleRate;
+		const uint32_t step = ticks < toSample ? (uint32_t)ticks : toSample;
+		if (m_type != SSI263Empty)
+		{
+			m_synth.Advance(step);
+			AdvanceResponseTiming(step);
+		}
+		if (m_votraxSynthStarted)
+			m_votraxSynth.Advance(step);
+		ticks -= step;
+		m_synthSamplePhase += step * SSI263Synth::kSampleRate;
+	}
+
+	if (m_synthCycleRemainder)
+	{
+		// The last XCK edge preceded this CPU boundary, so a later write cannot win it.
+		CommitResponse();
+		m_responseReloaded = false;
+		m_durationReloaded = false;
+	}
+}
+
+void SSI263::ResetResponseTiming()
+{
+	m_responseActive = false;
+	m_responsePending = false;
+	m_responseReloaded = false;
+	m_durationReloaded = false;
+	m_responseTicksRemaining = 0;
+	m_durationTicksRemaining = 0;
+	m_responsePhase = 0;
+	m_durationPhase = 0;
+}
+
+void SSI263::StartResponseTiming()
+{
+	m_responseActive = true;
+	m_responsePending = false;
+	m_responseReloaded = false;
+	m_durationReloaded = false;
+	m_responseTicksRemaining = GetResponsePeriod();
+	m_durationTicksRemaining = GetDurationPeriod();
+	m_responsePhase = 0;
+	m_durationPhase = 0;
+}
+
+void SSI263::CommitResponse()
+{
+	if (!m_responsePending)
+		return;
+	m_responsePending = false;
+	if (!m_isVotraxPhoneme)
+		SetSpeechIRQ();
+}
+
+void SSI263::AdvanceResponseTiming(uint32_t ticks)
+{
+	if (!m_responseActive)
+		return;
+
+	// Match the FPGA response counters: 16 slots per request. RATE is live
+	// at each reload; R1/R2 acknowledge a request without restarting the slots.
+	while (ticks)
+	{
+		CommitResponse();
+		m_responseReloaded = false;
+		m_durationReloaded = false;
+		UINT step = ticks;
+		if (step > m_responseTicksRemaining)
+			step = m_responseTicksRemaining;
+		if (step > m_durationTicksRemaining)
+			step = m_durationTicksRemaining;
+		ticks -= step;
+		m_responseTicksRemaining -= step;
+		m_durationTicksRemaining -= step;
+
+		if (!m_responseTicksRemaining)
+		{
+			m_responseTicksRemaining = GetResponsePeriod();
+			m_responseReloaded = true;
+			m_responsePhase = (m_responsePhase + 1) & 15;
+			if (!m_responsePhase && m_currentMode.function == 1)
+				m_responsePending = true;
+		}
+		if (!m_durationTicksRemaining)
+		{
+			m_durationTicksRemaining = GetDurationPeriod();
+			m_durationReloaded = true;
+			m_durationPhase = (m_durationPhase + 1) & 15;
+			if (!m_durationPhase && (m_currentMode.function == 2 || m_currentMode.function == 3))
+				m_responsePending = true;
+		}
+	}
+	// Keep a boundary request pending until the bus operation is known.
+	// An ACK on this same cycle must not latch an interrupt in the VIA.
+}
+
+void SSI263::AdvanceSpeechTiming()
+{
+	if (!m_isVotraxPhoneme || !IsPhonemeActive())
+		return;
+
+	// SC01 keeps its existing compatibility timing; native SSI uses response counters.
+	if (m_phonemeLengthRemaining)
+	{
+		m_currSampleMod4 = (m_currSampleMod4 + 1) & 3;
+		m_phonemeLengthRemaining--;
+		if (!m_phonemeLengthRemaining)
+			UpdateIRQ();
+	}
+	else if (m_phonemeLeadoutLength)
+	{
+		if (--m_phonemeLeadoutLength == 0)
+			RepeatPhoneme();
+	}
+}
+
+void SSI263::UpdateSynthesis()
+{
+	const UINT availableSamples = m_synthSamples;
+	m_synthSamples = 0;
+	if (!IsPhonemeActive() || g_bFullSpeed || !DSInit())
+	{
+		m_byteOffset = (uint32_t)-1;
+		return;
+	}
+
+	DWORD playCursor, writeCursor;
+	if (FAILED(SSI263SingleVoice.lpDSBvoice->GetCurrentPosition(&playCursor, &writeCursor)))
+		return;
+
+	const UINT targetBytes = m_kDSBufferByteSize / 4;
+	const bool prefill = m_byteOffset == (uint32_t)-1;
+	if (prefill)
+	{
+		m_byteOffset = writeCursor;
+		m_numSamplesError = 0;
+	}
+	else if (SoundCore_ValidateAndAlignWriteOffset(m_byteOffset, playCursor, writeCursor))
+	{
+		m_numSamplesError = 0;
+	}
+
+	UINT sampleCount = targetBytes / sizeof(short);
+	if (prefill)
+	{
+		memset(m_mixBufferSSI263, 0, sampleCount * sizeof(short));
+		m_synthSamples = availableSamples;	// Queue the first audio chunk after the silence.
+	}
+	else
+	{
+		if (!availableSamples)
+			return;
+		const UINT queuedBytes = (m_byteOffset + m_kDSBufferByteSize - playCursor) % m_kDSBufferByteSize;
+		// Limit clock drift correction to 0.5%. Carry the fraction between chunks.
+		if (queuedBytes < targetBytes)
+			m_numSamplesError += (int)availableSamples;
+		else if (queuedBytes > m_kDSBufferByteSize / 2)
+			m_numSamplesError -= (int)availableSamples;
+		else
+			m_numSamplesError = 0;
+		sampleCount = (UINT)((int)availableSamples + m_numSamplesError / 200);
+		m_numSamplesError %= 200;
+		if (sampleCount > MAX_SAMPLES)
+			sampleCount = MAX_SAMPLES;
+
+		// Buffer correction resamples completed audio; it never clocks the synth.
+		if (sampleCount == availableSamples)
+			memcpy(m_mixBufferSSI263, m_synthBuffer, sampleCount * sizeof(short));
+		else if (sampleCount == 1)
+			m_mixBufferSSI263[0] = m_synthBuffer[0];
+		else if (sampleCount > 1)
+		{
+			// Keep both endpoints so the next chunk starts at the next source sample.
+			const UINT span = sampleCount - 1;
+			for (UINT i = 0; i < span; i++)
+			{
+				const UINT64 position = (UINT64)i * (availableSamples - 1);
+				const UINT source = (UINT)(position / span);
+				const UINT fraction = (UINT)(position % span);
+				const int first = m_synthBuffer[source];
+				const int next = source + 1 < availableSamples ? m_synthBuffer[source + 1] : first;
+				m_mixBufferSSI263[i] = (short)(first + (next - first) * (int)fraction / (int)span);
+			}
+			m_mixBufferSSI263[span] = m_synthBuffer[availableSamples - 1];
+		}
+	}
+
+	if (!sampleCount)
+		return;
+
+	DWORD firstSize, secondSize;
+	short *firstBuffer, *secondBuffer;
+	if (FAILED(DSGetLock(SSI263SingleVoice.lpDSBvoice, m_byteOffset, sampleCount * sizeof(short),
+		&firstBuffer, &firstSize, &secondBuffer, &secondSize)))
+		return;
+	memcpy(firstBuffer, m_mixBufferSSI263, firstSize);
+	if (secondBuffer)
+		memcpy(secondBuffer, m_mixBufferSSI263 + firstSize / sizeof(short), secondSize);
+	if (SUCCEEDED(SSI263SingleVoice.lpDSBvoice->Unlock(firstBuffer, firstSize, secondBuffer, secondSize)))
+		m_byteOffset = (m_byteOffset + sampleCount * sizeof(short)) % m_kDSBufferByteSize;
+}
+
+//-----------------------------------------------------------------------------
+
 void SSI263::PeriodicUpdate(UINT executedCycles)
 {
+	AdvanceSynthesis();
+	CommitResponse();
 	const UINT kCyclesPerAudioFrame = 1000;
 	m_cyclesThisAudioFrame += executedCycles;
 	if (m_cyclesThisAudioFrame < kCyclesPerAudioFrame)
@@ -418,307 +721,13 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 
 //-----------------------------------------------------------------------------
 
-//#define DBG_SSI263_UPDATE		// NB. This outputs for all active SSI263 ring-buffers (eg. for mb-audit this may be 2 or 4)
-//#define DBG_SSI263_UPDATE_RETURN
-
 // Called by:
 // . PeriodicUpdate()
 void SSI263::Update()
 {
-	if (!IsPhonemeActive())
-		return;
-
-	if (!SSI263SingleVoice.lpDSBvoice || !SSI263SingleVoice.bActive)
-	{
-		if (!DSInit())
-			return;
-	}
-
-	UpdateAccurateLength();
-
-	if (g_bFullSpeed)	// NB. if true, then it's irrespective of IsPhonemeActive() - see MockingboardCard::IsActiveToPreventFullSpeed()
-	{
-		if (m_phonemeLengthRemaining)
-		{
-			// Willy Byte does SSI263 detection with drive motor on
-			m_phonemeLengthRemaining = 0;
-#if LOG_SSI263 || LOG_SSI263B || LOG_SC01
-			if (m_dbgFirst) LogOutput("1st phoneme short-circuited by fullspeed\n");
-#endif
-
-			if (m_phonemeAccurateLengthRemaining)
-				m_phonemeCompleteByFullSpeed = true;	// Let UpdateAccurateLength() call UpdateIRQ()
-			else
-				UpdateIRQ();
-		}
-
-		m_updateWasFullSpeed = true;
-		return;
-	}
-
-	//
-
-	const bool nowNormalSpeed = m_updateWasFullSpeed;	// Just transitioned from full-speed to normal speed
-	m_updateWasFullSpeed = false;
-
-	// NB. next call to this function: nowNormalSpeed = false
-	if (nowNormalSpeed)
-		m_byteOffset = (uint32_t)-1;	// ...which resets m_numSamplesError below
-
-	//-------------
-
-	DWORD dwCurrentPlayCursor, dwCurrentWriteCursor;
-	HRESULT hr = SSI263SingleVoice.lpDSBvoice->GetCurrentPosition(&dwCurrentPlayCursor, &dwCurrentWriteCursor);
-	if (FAILED(hr))
-	{
-		LogOutput("SSI263::Update() early return: GetCurrentPosition() failed\n");
-		return;
-	}
-
-	bool prefillBufferOnInit = false;
-
-	if (m_byteOffset == (uint32_t)-1)
-	{
-		// First time in this func (or transitioned from full-speed to normal speed, or a ring-buffer reset)
-#ifdef DBG_SSI263_UPDATE
-		double fTicksSecs = (double)GetTickCount() / 1000.0;
-		LogOutput("%010.3f: [SSUpdtInit%1d]PC=%08X, WC=%08X, Diff=%08X, Off=%08X xxx\n",
-			fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset);
-#endif
-		m_byteOffset = dwCurrentWriteCursor;
-		m_numSamplesError = 0;
-		prefillBufferOnInit = true;
-	}
-	else
-	{
-		// Check that our offset isn't between Play & Write positions
-		if (SoundCore_ValidateAndAlignWriteOffset(m_byteOffset, dwCurrentPlayCursor, dwCurrentWriteCursor))
-		{
-#ifdef DBG_SSI263_UPDATE
-			double fTicksSecs = (double)GetTickCount() / 1000.0;
-			const char* tag = (dwCurrentWriteCursor > dwCurrentPlayCursor) ? "xxx" : "XXX";
-			LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X %s\n",
-				fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset, tag);
-#endif
-			m_numSamplesError = 0;
-		}
-	}
-
-	//-------------
-
-	const UINT kMinBytesInBuffer = m_kDSBufferByteSize / 4;	// 25% full
-	int nNumSamples = 0;
-	double updateInterval = 0.0;
-
-	if (prefillBufferOnInit)
-	{
-		// Just prefill first 25% of buffer with zeros:
-		// . so we have a quarter buffer of silence/lag before the real sample data begins.
-		// . NB. this is fine, since it's the steady state; and it's likely that no actual data will ever occur during this initial time.
-		// This means that the '1st phoneme playback time' (in cycles) will be a bit longer for subsequent times.
-
-		m_lastUpdateCycle = GetLastCumulativeCycles();
-
-		nNumSamples = kMinBytesInBuffer / sizeof(short);
-		memset(&m_mixBufferSSI263[0], 0, nNumSamples);
-	}
-	else
-	{
-		// For small timer periods, wait for a period of 500cy before updating DirectSound ring-buffer.
-		// NB. A timer period of less than 24cy will yield nNumSamplesPerPeriod=0.
-		const double kMinimumUpdateInterval = 500.0;	// Arbitary (500 cycles = 21 samples)
-		const double kMaximumUpdateInterval = (double)(0xFFFF + 2);	// Max 6522 timer interval (1372 samples)
-
-		_ASSERT(GetLastCumulativeCycles() >= m_lastUpdateCycle);
-		updateInterval = (double)(GetLastCumulativeCycles() - m_lastUpdateCycle);
-		if (updateInterval < kMinimumUpdateInterval)
-		{
-#ifdef DBG_SSI263_UPDATE_RETURN
-			LogOutput("SSI263::Update() early return: updateInterval < kMinimumUpdateInterval\n");
-#endif
-			return;
-		}
-		if (updateInterval > kMaximumUpdateInterval)
-			updateInterval = kMaximumUpdateInterval;
-
-		m_lastUpdateCycle = GetLastCumulativeCycles();
-
-		const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
-		const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
-
-		nNumSamples = nNumSamplesPerPeriod + m_numSamplesError;						// Apply correction
-		if (nNumSamples <= 0)
-			nNumSamples = 0;
-		if (nNumSamples > 2 * nNumSamplesPerPeriod)
-			nNumSamples = 2 * nNumSamplesPerPeriod;
-
-		if (nNumSamples > m_kDSBufferByteSize / sizeof(short))
-			nNumSamples = m_kDSBufferByteSize / sizeof(short);	// Clamp to prevent buffer overflow
-
-//		if (nNumSamples)
-//		{ /* Generate new sample data - ie. could merge from all the SSI263 sources */ }
-
-		//
-
-		int nBytesRemaining = m_byteOffset - dwCurrentPlayCursor;
-		if (nBytesRemaining < 0)
-			nBytesRemaining += m_kDSBufferByteSize;
-
-		// Calc correction factor so that play-buffer doesn't under/overflow
-		const int nErrorInc = SoundCore_GetErrorInc();
-		if (nBytesRemaining < kMinBytesInBuffer)
-			m_numSamplesError += nErrorInc;				// < 0.25 of buffer remaining
-		else if (nBytesRemaining > m_kDSBufferByteSize / 2)
-			m_numSamplesError -= nErrorInc;				// > 0.50 of buffer remaining
-		else
-			m_numSamplesError = 0;						// Acceptable amount of data in buffer
-	}
-
-#if defined(DBG_SSI263_UPDATE)
-	double fTicksSecs = (double)GetTickCount() / 1000.0;
-	LogOutput("%010.3f: [SSUpdt%1d]    PC=%08X, WC=%08X, Diff=%08X, Off=%08X, NS=%08X, NSE=%08X, Interval=%f\n", fTicksSecs, m_device, dwCurrentPlayCursor, dwCurrentWriteCursor, dwCurrentWriteCursor - dwCurrentPlayCursor, m_byteOffset, nNumSamples, m_numSamplesError, updateInterval);
-#endif
-
-	if (nNumSamples == 0)
-	{
-		if (m_numSamplesError)
-		{
-			// Reset ring-buffer if we've had a major interruption, eg. F7 (enter debugger), F8 (configure), F11/12 (save-state), Pause, etc
-			// - this can cause Apple II SSI263 detection code to fail (when either timing one or a sequence of phonemes)
-			// When the AppleWin code restarts and reads the ring-buffer position it'll be at a random point, and maybe nearly full (>50% full)
-			// - so the code waits until it drains (nNumSamples=0 each time)
-			// - but it takes a large number of calls to this func to drain to an acceptable level
-			m_byteOffset = (uint32_t)-1;
-#if defined(DBG_SSI263_UPDATE)
-			double fTicksSecs = (double)GetTickCount() / 1000.0;
-			LogOutput("%010.3f: [SSUpdt%1d]    Reset ring-buffer\n", fTicksSecs, m_device);
-#endif
-		}
-#ifdef DBG_SSI263_UPDATE_RETURN
-		LogOutput("SSI263::Update() early return: nNumSamples == 0\n");
-#endif
-		return;
-	}
-
-	//-------------
-
-	const double amplitude = m_isVotraxPhoneme ? 1.0
-		: m_ctrlArtAmp & CONTROL_MASK ? 0.0		// Power-down / standby
-		: m_filterFreq == FILTER_FREQ_SILENCE ? 0.0
-		: (double)(m_ctrlArtAmp & AMPLITUDE_MASK) / (double)AMPLITUDE_MASK;
-
-	bool bSpeechIRQ = false;
-
-	{
-		const BYTE DUR = (m_currentMode.function == (MODE_FRAME_IMMEDIATE_INFLECTION >> DURATION_MODE_SHIFT)) ? 3	// Frame timing mode
-						: m_durationPhoneme >> DURATION_MODE_SHIFT;	// Phoneme timing mode
-		const BYTE numSamplesToAvg = (DUR <= 1) ? 1 :
-									 (DUR == 2) ? 2 :
-												  4;
-
-		short* pMixBuffer = &m_mixBufferSSI263[0];
-		UINT zeroSize = nNumSamples;
-
-		// NB. If SSI263.CONTROL=1 (Power-down) then zeroSize == nNumSamples, and eventually the ring-buffer gets filled with zero samples
-
-		if (m_phonemeLengthRemaining && !prefillBufferOnInit)
-		{
-			UINT samplesWritten = 0;
-			while (samplesWritten < (UINT)nNumSamples)
-			{
-				double sample = (double)*m_pPhonemeData * amplitude;
-				m_currSampleSum += (int)sample;
-				m_currNumSamples++;
-
-				m_pPhonemeData++;
-				m_phonemeLengthRemaining--;
-
-				if (m_currNumSamples == numSamplesToAvg)
-				{
-					*pMixBuffer++ = (short)(m_currSampleSum / numSamplesToAvg);
-					samplesWritten++;
-					m_currSampleSum = 0;
-					m_currNumSamples = 0;
-				}
-
-				m_currSampleMod4 = (m_currSampleMod4 + 1) & 3;
-				if (DUR == 1 && m_currSampleMod4 == 3 && m_phonemeLengthRemaining)
-				{
-					m_pPhonemeData++;
-					m_phonemeLengthRemaining--;
-				}
-
-				if (!m_phonemeLengthRemaining)
-				{
-					bSpeechIRQ = true;
-					break;
-				}
-			}
-
-			zeroSize = nNumSamples - samplesWritten;
-			_ASSERT(zeroSize >= 0);
-		}
-
-		if (zeroSize)
-		{
-			memset(pMixBuffer, 0, zeroSize * sizeof(short));
-
-			// Only dec m_phonemeLeadoutLength when m_phonemeAccurateLengthRemaining==0
-			// . otherwise when single-stepping can get into the situation where m_phonemeLengthRemaining==0 && m_phonemeAccurateLengthRemaining!=0
-			if (!prefillBufferOnInit && !m_phonemeAccurateLengthRemaining)
-				m_phonemeLeadoutLength -= (m_phonemeLeadoutLength > zeroSize) ? zeroSize : m_phonemeLeadoutLength;
-		}
-	}
-
-	//
-
-	DWORD dwDSLockedBufferSize0, dwDSLockedBufferSize1;
-	short *pDSLockedBuffer0, *pDSLockedBuffer1;
-
-	hr = DSGetLock(SSI263SingleVoice.lpDSBvoice,
-		m_byteOffset, (uint32_t)nNumSamples * sizeof(short) * m_kNumChannels,
-		&pDSLockedBuffer0, &dwDSLockedBufferSize0,
-		&pDSLockedBuffer1, &dwDSLockedBufferSize1);
-	if (FAILED(hr))
-	{
-		LogOutput("SSI263::Update() early return: DSGetLock() failed\n");
-		return;
-	}
-
-	memcpy(pDSLockedBuffer0, &m_mixBufferSSI263[0], dwDSLockedBufferSize0);
-	if (pDSLockedBuffer1)
-		memcpy(pDSLockedBuffer1, &m_mixBufferSSI263[dwDSLockedBufferSize0/sizeof(short)], dwDSLockedBufferSize1);
-
-	// Commit sound buffer
-	hr = SSI263SingleVoice.lpDSBvoice->Unlock((void*)pDSLockedBuffer0, dwDSLockedBufferSize0,
-											  (void*)pDSLockedBuffer1, dwDSLockedBufferSize1);
-	if (FAILED(hr))
-	{
-		LogOutput("SSI263::Update() early return: UnLock() failed\n");
-		return;
-	}
-
-	m_byteOffset = (m_byteOffset + (uint32_t)nNumSamples*sizeof(short)*m_kNumChannels) % m_kDSBufferByteSize;
-
-	//
-
-	if (bSpeechIRQ)
-	{
-		// NB. if m_phonemePlaybackAndDebugger==true, then "m_phonemeAccurateLengthRemaining!=0" must be true.
-		// Since in UpdateAccurateLength(), (when m_phonemePlaybackAndDebugger==true) then m_phonemeAccurateLengthRemaining decs to zero.
-#if _DEBUG
-		if (m_phonemePlaybackAndDebugger)
-		{
-			_ASSERT(m_phonemeAccurateLengthRemaining);	// Check this!
-		}
-#endif
-		if (!m_phonemePlaybackAndDebugger /*|| m_phonemeAccurateLengthRemaining*/)	// superfluous, so commented out (see above)
-		{
-			UpdateIRQ();
-		}
-	}
-
-	RepeatPhoneme();
+	AdvanceSynthesis();
+	CommitResponse();
+	UpdateSynthesis();
 }
 
 // Called by:
@@ -748,40 +757,10 @@ void SSI263::RepeatPhoneme()
 
 //-----------------------------------------------------------------------------
 
-// The primary way for phonemes to generate IRQ is via the ring-buffer in Update(),
-// but when single-stepping (eg. timing-sensitive SSI263 detection code), then this secondary method is used.
-void SSI263::UpdateAccurateLength()
-{
-	if (!m_phonemeAccurateLengthRemaining)
-		return;
-
-	double updateInterval = (double)(GetLastCumulativeCycles() - m_lastUpdateCycle);
-
-	const double nIrqFreq = g_fCurrentCLK6502 / updateInterval + 0.5;			// Round-up
-	const int nNumSamplesPerPeriod = (int)((double)(SAMPLE_RATE_SSI263) / nIrqFreq);	// Eg. For 60Hz this is 367
-
-	const BYTE DUR = m_durationPhoneme >> DURATION_MODE_SHIFT;
-
-	const UINT numSamples = nNumSamplesPerPeriod * (DUR+1);
-	if (m_phonemeAccurateLengthRemaining > numSamples)
-	{
-		m_phonemeAccurateLengthRemaining -= numSamples;
-	}
-	else
-	{
-		m_phonemeAccurateLengthRemaining = 0;
-		if (m_phonemePlaybackAndDebugger || m_phonemeCompleteByFullSpeed)
-			UpdateIRQ();
-	}
-}
-
-// Called by:
-// . Update() when m_phonemeLengthRemaining -> 0
-// . UpdateAccurateLength() when m_phonemeAccurateLengthRemaining -> 0
-// . LoadSnapshot()
+// Complete the current compatibility timing period.
 void SSI263::UpdateIRQ()
 {
-	m_phonemeLengthRemaining = m_phonemeAccurateLengthRemaining = 0;	// Prevent an IRQ from the other source
+	m_phonemeLengthRemaining = 0;
 
 	_ASSERT(m_currentActivePhoneme != -1);
 	_ASSERT((m_currentActivePhoneme & kPhonemeLeadoutFlag) == 0);
@@ -900,7 +879,7 @@ bool SSI263::Init()
 	if (!DSAvailable())
 		return false;
 
-	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, m_kDSBufferByteSize, SAMPLE_RATE_SSI263, m_kNumChannels, "SSI263");
+	HRESULT hr = DSGetSoundBuffer(&SSI263SingleVoice, m_kDSBufferByteSize, SSI263Synth::kSampleRate, m_kNumChannels, "SSI263");
 	LogFileOutput("SSI263: DSGetSoundBuffer(), hr=0x%08X\n", hr);
 	if (FAILED(hr))
 	{
@@ -931,7 +910,15 @@ void SSI263::DSUninit()
 // Votrax phoneme continues to play after CTRL+RESET (tested on MAME 0.262)
 void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 {
-	if (m_type == SSI263Empty)
+	if (m_type == SSI263Empty && !m_hasSC01)
+		return;
+
+	// Power-on reset can run before the card has a slot entry.
+	if (!powerCycle)
+		AdvanceSynthesis();
+	m_responsePending = false;
+
+	if (!powerCycle && m_type == SSI263Empty)
 		return;
 
 	if (!powerCycle && m_type == SSI263P)
@@ -949,7 +936,8 @@ void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 		return;
 	}
 
-	Stop();
+	if (powerCycle || !m_isVotraxPhoneme)
+		Stop();
 	ResetState(powerCycle);
 	CpuIrqDeassert(IS_SPEECH);
 }
@@ -1002,8 +990,112 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 #define TYPE_SSI263_P "SSI263P"
 #define TYPE_SSI263_AP "SSI263AP"
 
+void SSI263::SaveSynthesis(YamlSaveHelper& yamlSaveHelper)
+{
+	YamlSaveHelper::Label label(yamlSaveHelper, "Synthesis:\n");
+	yamlSaveHelper.SaveUint("CPU Clock", m_synthCpuClock);
+	yamlSaveHelper.SaveUint("Cycle Remainder", m_synthCycleRemainder);
+	yamlSaveHelper.SaveUint("Sample Phase", m_synthSamplePhase);
+	yamlSaveHelper.SaveUint("Speech Sample Phase", m_speechSamplePhase);
+	yamlSaveHelper.SaveInt("Active Phoneme", m_currentActivePhoneme);
+	yamlSaveHelper.SaveUint("Phoneme Remaining", m_phonemeLengthRemaining);
+	yamlSaveHelper.SaveUint("Leadout Remaining", m_phonemeLeadoutLength);
+	yamlSaveHelper.SaveUint("Sample Modulo", m_currSampleMod4);
+
+	{
+		const std::vector<uint32_t> words = m_synth.SaveState();
+		YamlSaveHelper::Label state(yamlSaveHelper, "Core State:\n");
+		for (size_t i = 0; i < words.size(); i++)
+			yamlSaveHelper.SaveHexUint32(StrFormat("%u", (UINT)i).c_str(), words[i]);
+	}
+
+	YamlSaveHelper::Label timing(yamlSaveHelper, "Response Timing:\n");
+	yamlSaveHelper.SaveBool("Active", m_responseActive);
+	yamlSaveHelper.SaveBool("Pending", m_responsePending);
+	yamlSaveHelper.SaveBool("Response Reloaded", m_responseReloaded);
+	yamlSaveHelper.SaveBool("Duration Reloaded", m_durationReloaded);
+	yamlSaveHelper.SaveUint("Response Remaining", m_responseTicksRemaining);
+	yamlSaveHelper.SaveUint("Duration Remaining", m_durationTicksRemaining);
+	yamlSaveHelper.SaveUint("Response Phase", m_responsePhase);
+	yamlSaveHelper.SaveUint("Duration Phase", m_durationPhase);
+}
+
+void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
+{
+	if (!yamlLoadHelper.GetSubMap("Synthesis"))
+		throw std::runtime_error("SSI263: Expected synthesis state");
+	const uint32_t cpuClock = yamlLoadHelper.LoadUint("CPU Clock");
+	const uint32_t cycleRemainder = yamlLoadHelper.LoadUint("Cycle Remainder");
+	const uint32_t samplePhase = yamlLoadHelper.LoadUint("Sample Phase");
+	const uint32_t speechSamplePhase = yamlLoadHelper.LoadUint("Speech Sample Phase");
+	const int activePhoneme = yamlLoadHelper.LoadInt("Active Phoneme");
+	const UINT phonemeRemaining = yamlLoadHelper.LoadUint("Phoneme Remaining");
+	const UINT leadoutRemaining = yamlLoadHelper.LoadUint("Leadout Remaining");
+	const UINT sampleModulo = yamlLoadHelper.LoadUint("Sample Modulo");
+
+	if (!yamlLoadHelper.GetSubMap("Core State"))
+		throw std::runtime_error("SSI263: Expected core state");
+	std::vector<uint32_t> words = m_synth.SaveState();
+	for (size_t i = 0; i < words.size(); i++)
+		words[i] = yamlLoadHelper.LoadUint(StrFormat("%u", (UINT)i));
+	SSI263Synth synth;
+	if (!synth.LoadState(words) || !cpuClock || cycleRemainder >= cpuClock
+		|| samplePhase >= synth.GetClockHz() + SSI263Synth::kSampleRate || speechSamplePhase >= SSI263Synth::kSampleRate
+		|| activePhoneme < -1 || activePhoneme > (int)(kPhonemeLeadoutFlag | PHONEME_MASK)
+		|| sampleModulo > 3)
+		throw std::runtime_error("SSI263: Invalid synthesis state");
+	yamlLoadHelper.PopMap();
+
+	// Earlier candidate snapshots did not save native response counters.
+	bool responseActive = m_type != SSI263Empty && activePhoneme >= 0 && !(m_ctrlArtAmp & CONTROL_MASK);
+	bool responsePending = false;
+	bool responseReloaded = false;
+	bool durationReloaded = false;
+	UINT responseRemaining = responseActive ? GetResponsePeriod() : 0;
+	UINT durationRemaining = responseActive ? GetDurationPeriod() : 0;
+	UINT responsePhase = 0;
+	UINT durationPhase = 0;
+	if (yamlLoadHelper.GetSubMap("Response Timing"))
+	{
+		responseActive = yamlLoadHelper.LoadBool("Active");
+		responsePending = yamlLoadHelper.LoadBool("Pending");
+		responseReloaded = yamlLoadHelper.LoadBool("Response Reloaded");
+		durationReloaded = yamlLoadHelper.LoadBool("Duration Reloaded");
+		responseRemaining = yamlLoadHelper.LoadUint("Response Remaining");
+		durationRemaining = yamlLoadHelper.LoadUint("Duration Remaining");
+		responsePhase = yamlLoadHelper.LoadUint("Response Phase");
+		durationPhase = yamlLoadHelper.LoadUint("Duration Phase");
+		if (responsePhase > 15 || durationPhase > 15 || responseRemaining > 4096 || durationRemaining > 16384
+			|| (responseActive && (!responseRemaining || !durationRemaining))
+			|| (!responseActive && (responsePending || responseReloaded || durationReloaded || responseRemaining || durationRemaining)))
+			throw std::runtime_error("SSI263: Invalid response timing");
+		yamlLoadHelper.PopMap();
+	}
+	yamlLoadHelper.PopMap();
+
+	m_synth = synth;
+	m_synthCpuClock = cpuClock;
+	m_synthCycleRemainder = cycleRemainder;
+	m_synthSamplePhase = samplePhase;
+	m_speechSamplePhase = speechSamplePhase;
+	m_currentActivePhoneme = activePhoneme;
+	m_phonemeLengthRemaining = phonemeRemaining;
+	m_phonemeLeadoutLength = leadoutRemaining;
+	m_currSampleMod4 = sampleModulo;
+	m_responseActive = responseActive;
+	m_responsePending = responsePending;
+	m_responseReloaded = responseReloaded;
+	m_durationReloaded = durationReloaded;
+	m_responseTicksRemaining = responseRemaining;
+	m_durationTicksRemaining = durationRemaining;
+	m_responsePhase = (BYTE)responsePhase;
+	m_durationPhase = (BYTE)durationPhase;
+}
+
 void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT subunit)
 {
+	AdvanceSynthesis();
+	CommitResponse();
 	// Scope for SSI263 subunit (so that SC01 has same indentation)
 	{
 		YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
@@ -1023,6 +1115,7 @@ void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT subunit)
 			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
 			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
 		}
+		SaveSynthesis(yamlSaveHelper);
 	}
 
 	if (subunit == 0)	// has SC01
@@ -1074,6 +1167,15 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 			m_currentActivePhoneme = m_durationPhoneme & PHONEME_MASK;
 	}
 
+	if (version >= 16)
+		LoadSynthesis(yamlLoadHelper);
+	else
+	{
+		// Older snapshots only stored registers, so start a fresh synth voice.
+		ResetSynthesis();
+		m_synth.SetFunction(m_currentMode.function);
+	}
+
 	yamlLoadHelper.PopMap();
 
 	//
@@ -1088,23 +1190,17 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	if (subunit == 0)	// has SC01
 		SC01_LoadSnapshot(yamlLoadHelper, version);
 
-	// Do this after loading both SSI263 & SC01 state, otherwise IsPhonemeActive() can indicate both are active!
-	// . EG. After loading SSI263, SSI263.CONTROL==0 (so active); and after loading SC01, m_isVotraxPhoneme==true (so active)
-
-	if (m_isVotraxPhoneme)
-		m_currentActivePhoneme = 0x00;	// For IsPhonemeActive() and SC01 chip
-
-	if (IsPhonemeActive())
+	if (version < 16 && (m_isVotraxPhoneme || IsPhonemeActive()))
 	{
-		// NB. Save-state doesn't preserve the play-position within the phoneme.
-		// It just sets IRQ (and SSI263.D7) for "phoneme complete"; and restarts it from the beginning.
-		// This may cause problems for timing sensitive code (eg. mb-audit).
-		m_currentActivePhoneme = 0x00;	// Not important which phoneme, since RepeatPhoneme()->Play() sets this
-		UpdateIRQ();		// Pre: m_device, m_cardMode
+		// Old snapshots lack timing state. Keep their completion-and-restart policy.
+		m_currentActivePhoneme = 0;
+		UpdateIRQ();
 		RepeatPhoneme();
 	}
 
-	m_lastUpdateCycle = GetLastCumulativeCycles();
+	m_synthLastCycle = GetLastCumulativeCycles();
+	m_synthSamples = 0;
+	m_byteOffset = (uint32_t)-1;
 }
 
 //=============================================================================
@@ -1130,31 +1226,64 @@ void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	{
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SC01_PHONEME, m_votraxPhoneme);
 		yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
+		YamlSaveHelper::Label state(yamlSaveHelper, "Synthesis:\n");
+		yamlSaveHelper.SaveBool("Started", m_votraxSynthStarted);
+		const std::vector<uint32_t> words = m_votraxSynth.SaveState();
+		YamlSaveHelper::Label core(yamlSaveHelper, "Core State:\n");
+		for (size_t i = 0; i < words.size(); i++)
+			yamlSaveHelper.SaveHexUint32(StrFormat("%u", (UINT)i).c_str(), words[i]);
 	}
 }
 
 void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
+	ResetVotraxSynthesis();
 	if (version < 12)
 	{
 		m_votraxPhoneme = 0;
-		// NB. m_isVotraxPhoneme already set by SetVotraxPhoneme() by parent
+		// The parent sets the active flag for these older snapshots.
+		if (m_isVotraxPhoneme)
+			ConfigureVotrax();
 		return;
 	}
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SC01))
 		throw std::runtime_error("Card: Expected key: " SS_YAML_KEY_SC01);
 
-	std::string type = TYPE_SC01;	// Default prior to v14
+	std::string type = TYPE_SC01;
 	if (version >= 14)
 		type = yamlLoadHelper.LoadString(SS_YAML_KEY_SC01_TYPE);
-
 	m_hasSC01 = (type == TYPE_SC01);
 
 	if (m_hasSC01)
 	{
 		m_votraxPhoneme = yamlLoadHelper.LoadUint(SS_YAML_KEY_SC01_PHONEME);
 		m_isVotraxPhoneme = yamlLoadHelper.LoadBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME);
+		if (m_votraxPhoneme > PHONEME_MASK)
+			throw std::runtime_error("SC01: Invalid phoneme");
+
+		if (version >= 16 && yamlLoadHelper.GetSubMap("Synthesis"))
+		{
+			const bool started = yamlLoadHelper.LoadBool("Started");
+			if (!yamlLoadHelper.GetSubMap("Core State"))
+				throw std::runtime_error("SC01: Expected core state");
+			std::vector<uint32_t> words = m_votraxSynth.SaveState();
+			for (size_t i = 0; i < words.size(); i++)
+				words[i] = yamlLoadHelper.LoadUint(StrFormat("%u", (UINT)i));
+			if (!m_votraxSynth.LoadState(words) || (m_isVotraxPhoneme && !started))
+				throw std::runtime_error("SC01: Invalid synthesis state");
+			m_votraxSynthStarted = started;
+			yamlLoadHelper.PopMap();
+			yamlLoadHelper.PopMap();
+		}
+		else if (m_isVotraxPhoneme)
+		{
+			ConfigureVotrax();
+		}
+	}
+	else
+	{
+		m_isVotraxPhoneme = false;
 	}
 
 	yamlLoadHelper.PopMap();

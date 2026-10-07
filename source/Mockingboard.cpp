@@ -5,6 +5,7 @@ Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
 Copyright (C) 2006-2007, Tom Charlesworth, Michael Pohoreski
+Copyright (C) 2026, Henri Asseily (henri@asseily.com)
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -1212,7 +1213,8 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE 
 //    Removed SS_YAML_KEY_VOTRAX_PHONEME (as this has been present in the SC01 subunit since v12!)
 //14: Added: SSI263: Type
 //15: Added: AY891x: Type
-const UINT kUNIT_VERSION = 15;
+//16: Added native SSI263 synthesis and timing state
+const UINT kUNIT_VERSION = 16;
 
 #define SS_YAML_KEY_MB_UNIT "Unit"
 #define SS_YAML_KEY_AY_CURR_REG "AY Current Register"
@@ -1262,6 +1264,10 @@ std::string MockingboardCard::GetSnapshotCardNameSDMusic()
 
 void MockingboardCard::SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 {
+	// Set speech IRQs before saving the 6522 interrupt flags.
+	for (UINT i = 0; i < NUM_SSI263; i++)
+		m_MBSubUnit[i].ssi263.Update();
+
 	if (QueryType() == CT_Phasor)
 		return Phasor_SaveSnapshot(yamlSaveHelper);
 

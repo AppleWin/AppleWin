@@ -39,9 +39,9 @@
 
 		<h4>Speech chips:</h4>
 		Both the Mockingboard C and Phasor cards support up to two SSI263s and an aftermarket hardware modification for a Votrax SC-01 (the predecessor to the SSI263).<br>
-		Emulation of the SSI263 is basic at the moment and only plays back phonemes at a fixed rate without any support for inflection or filters.<br>
+		SSI263 speech uses a circuit model with pitch, articulation, amplitude and filter controls. It does not use recorded phonemes.<br>
 		Two types of SSI263 are supported: SSI263P (original, with a reset bug) and SSI263AP (updated with the reset bug fixed).<br>
-		Additionally the Votrax SC-01 is <em>simply</em> emulated by remapping SC-01 phonemes to the SSI263's.<br>
+		Votrax SC-01 speech maps its phonemes to a separate SSI263 synth with a fixed voice. This is an approximation; SC-01 pitch inputs are not modelled.<br>
 
 		<br>
 		<p>There are a number of games and demos that support Mockingboard (or Phasor), eg:</p>
