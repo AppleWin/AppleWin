@@ -54,6 +54,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "CPU.h"
 #include "Log.h"
 #include "Memory.h"
+#include "Riff.h"
 #include "SoundCore.h"
 
 #include "YamlHelper.h"
@@ -701,6 +702,9 @@ void SSI263::UpdateSynthesis()
 		memcpy(secondBuffer, m_mixBufferSSI263 + firstSize / sizeof(short), secondSize);
 	if (SUCCEEDED(SSI263SingleVoice.lpDSBvoice->Unlock(firstBuffer, firstSize, secondBuffer, secondSize)))
 		m_byteOffset = (m_byteOffset + sampleCount * sizeof(short)) % m_kDSBufferByteSize;
+
+	if (m_outputToRiff)
+		RiffPutSamples(&m_mixBufferSSI263[0], sampleCount);
 }
 
 //-----------------------------------------------------------------------------

@@ -758,6 +758,12 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.wavFileMockingboard = lpCmdLine;
 		}
+		else if (strcmp(lpCmdLine, "-wav-speech") == 0)
+		{
+			lpCmdLine = GetCurrArg(lpNextArg);
+			lpNextArg = GetNextArg(lpNextArg);
+			g_cmdLine.wavFileSpeech = lpCmdLine;
+		}
 		else if (strcmp(lpCmdLine, "-mb-audit") == 0)	// enable selection of additional sound cards, eg. for mb-audit
 		{
 			g_cmdLine.supportExtraMBCardTypes = true;

@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
+#include "SSI263Synth.h"
 #include "Windows/Win32Frame.h"
 #include "Windows/DXSoundBuffer.h"
 #include "RGBMonitor.h"
@@ -636,6 +637,18 @@ static void OneTimeInitialization(HINSTANCE passinstance)
 		if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS))
 			GetCardMgr().GetMockingboardCardMgr().OutputToRiff();
 	}
+#if 0
+	else if (!g_cmdLine.wavFileSpeech.empty())
+	{
+		// Scan s1->s7
+		MockingboardCard* mb = dynamic_cast<MockingboardCard*>(GetCardMgr().GetMockingboardCardMgr().GetFirstMockingboardWithSpeech());
+		if (mb)
+		{
+			if (RiffInitWriteFile(g_cmdLine.wavFileSpeech.c_str(), SSI263Synth::kSampleRate, 1/*1 channel*/))
+				mb->SpeechOutputToRiff();	// SSI263 at $Cs40
+		}
+	}
+#endif
 
 	// Initialize COM - so we can use CoCreateInstance
 	// . DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
@@ -1016,6 +1029,22 @@ static void RepeatInitialization()
 			g_cmdLine.bBoot = false;
 		}
 	}
+
+#if 1
+	if (!g_cmdLine.wavFileSpeech.empty())
+	{
+		// Scan s1->s7
+		MockingboardCard* mb = dynamic_cast<MockingboardCard*>(GetCardMgr().GetMockingboardCardMgr().GetFirstMockingboardWithSpeech());
+		if (mb)
+		{
+			char startDir[_MAX_PATH];
+			GetCurrentDirectory(sizeof(startDir), startDir);
+
+			if (RiffInitWriteFile(g_cmdLine.wavFileSpeech.c_str(), SSI263Synth::kSampleRate, 1/*1 channel*/))
+				mb->SpeechOutputToRiff();	// SSI263 at $Cs40
+		}
+	}
+#endif
 }
 
 static void Shutdown()

@@ -23,6 +23,7 @@ public:
 	{}
 
 	bool IsMockingboard(UINT slot);
+	Card* GetFirstMockingboardWithSpeech();
 	void ReinitializeClock();
 	void InitializeForLoadingSnapshot();
 	void MuteControl(bool mute);

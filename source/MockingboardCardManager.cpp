@@ -50,6 +50,20 @@ bool MockingboardCardManager::IsMockingboardExtraCardType(UINT slot)
 	return type == CT_MegaAudio || type == CT_SDMusic;
 }
 
+
+Card* MockingboardCardManager::GetFirstMockingboardWithSpeech()
+{
+	for (int i = SLOT1; i <= SLOT7; i++)
+	{
+		if (IsMockingboard(i))
+		{
+			if (dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).GetSocketSSI263(1) != SSI263Empty)	// socket-1 -> SSI263 at $Cs40
+				return GetCardMgr().GetObj(i);
+		}
+	}
+	return nullptr;
+}
+
 void MockingboardCardManager::ReinitializeClock()
 {
 	for (UINT i = SLOT0; i < NUM_SLOTS; i++)

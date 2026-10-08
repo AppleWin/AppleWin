@@ -14,6 +14,8 @@ public:
 		m_cardMode = PH_Mockingboard;
 		m_hasSC01 = true;	// only for m_device==0
 
+		m_outputToRiff = false;
+
 		ResetState(true);
 	}
 
@@ -94,6 +96,8 @@ public:
 
 	void Votrax_Write(BYTE nValue);
 	void SetVotraxPhoneme(bool value) { m_isVotraxPhoneme = value; }
+
+	void OutputToRiff() { m_outputToRiff = true; }
 
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, UINT subunit);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit);
@@ -237,6 +241,8 @@ private:
 		};
 		BYTE mode;
 	} m_currentMode;
+
+	bool m_outputToRiff;
 
 	// Debug
 	bool m_dbgFirst;
