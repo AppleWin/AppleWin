@@ -124,7 +124,7 @@ std::string FrameBase::Util_MakeScreenShotFileName() const
 	const std::string sPrefixScreenShotFileName = "AppleWin_ScreenShot";
 	const std::string pPrefixFileName = !g_pLastDiskImageName.empty() ? g_pLastDiskImageName : sPrefixScreenShotFileName;
 	const std::string folder = Video_GetScreenShotFolder();
-	return StrFormat("%s%s_%09d.bmp", folder.c_str(), pPrefixFileName.c_str(), g_nLastScreenShot);
+	return StrFormat("%s%s_%09d.png", folder.c_str(), pPrefixFileName.c_str(), g_nLastScreenShot);
 }
 
 // Returns true if file exists, else false
