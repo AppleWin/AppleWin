@@ -585,9 +585,8 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 	}
 
 	spng_ctx *ctx = spng_ctx_new(SPNG_CTX_ENCODER);
-	if (!ctx) {
+	if (!ctx)
 		return;
-	}
 
 	spng_set_png_file(ctx, pFile);
 
@@ -598,7 +597,8 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 	ihdr.bit_depth = 8;
 
 	int ret = spng_set_ihdr(ctx, &ihdr);
-	if (ret) {
+	if (ret)
+	{
 		spng_ctx_free(ctx);
 		return;
 	}
@@ -611,7 +611,8 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 							png_scanline_size*height,
 		                    SPNG_FMT_PNG, 
 		                    SPNG_ENCODE_FINALIZE);
-	if (ret) {
+	if (ret)
+	{
 		spng_ctx_free(ctx);
 		return;
 	}
