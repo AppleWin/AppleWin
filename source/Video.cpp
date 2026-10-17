@@ -38,6 +38,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "RGBMonitor.h"
 #include "VidHD.h"
 #include "YamlHelper.h"
+#include "spng.h"
+#include "zlib.h"
 
 #define  SW_80COL         (g_uVideoMode & VF_80COL)
 #define  SW_DHIRES        (g_uVideoMode & VF_DHIRES)
@@ -528,39 +530,15 @@ void Video::Video_SetBitmapHeader(WinBmpHeader_t *pBmp, int nWidth, int nHeight,
 
 void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShotType)
 {
-	WinBmpHeader_t bmp, *pBmp = &bmp;
-
-	Video_SetBitmapHeader(
-		pBmp,
-		ScreenShotType == SCREENSHOT_280x192 ? GetFrameBufferBorderlessWidth()/2 : GetFrameBufferBorderlessWidth(),
-		ScreenShotType == SCREENSHOT_280x192 ? GetFrameBufferBorderlessHeight()/2 : GetFrameBufferBorderlessHeight(),
-		32
-	);
-
-#define EXPECTED_BMP_HEADER_SIZE (14 + 40)
-#ifdef _WIN32
-	char sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[ sizeof( WinBmpHeader_t ) == EXPECTED_BMP_HEADER_SIZE];
-	/**/ sIfSizeZeroOrUnknown_BadWinBmpHeaderPackingSize54[0]=0;
-#else
-	static_assert(sizeof( WinBmpHeader_t ) == EXPECTED_BMP_HEADER_SIZE, "BadWinBmpHeaderPackingSize");
-#endif
-
-	// Write Header
-	fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
-
-	uint32_t *pSrc;
-#if VIDEO_SCREENSHOT_PALETTE
-	// Write Palette Data
-	pSrc = ((uint8_t*)g_pFramebufferinfo) + sizeof(BITMAPINFOHEADER);
-	int nLen = g_tBmpHeader.nPaletteColors * sizeof(bgra_t); // RGBQUAD
-	fwrite( pSrc, nLen, 1, pFile );
-	pSrc += nLen;
-#endif
-
-	// Write Pixel Data
+	const uint32_t width = ScreenShotType == SCREENSHOT_280x192 ? GetFrameBufferBorderlessWidth() / 2 : GetFrameBufferBorderlessWidth();
+	const uint32_t height = ScreenShotType == SCREENSHOT_280x192 ? GetFrameBufferBorderlessHeight() / 2 : GetFrameBufferBorderlessHeight();
+	const uint32_t png_scanline_size = width * 3; // R8G8B8 format
+	std::vector<uint8_t> image_data(width * height * 3); // R8G8B8 format
+	
+	// Buffer Pixel Data
 	// No need to use GetDibBits() since we already have http://msdn.microsoft.com/en-us/library/ms532334.aspx
 	// @reference: "Storing an Image" http://msdn.microsoft.com/en-us/library/ms532340(VS.85).aspx
-	pSrc = (uint32_t*) g_pFramebufferbits;
+	uint32_t* pSrc = (uint32_t*)g_pFramebufferbits;
 
 	int xSrc = GetFrameBufferBorderWidth();
 	int ySrc = GetFrameBufferBorderHeight();
@@ -568,43 +546,76 @@ void Video::Video_MakeScreenShot(FILE *pFile, const VideoScreenShot_e ScreenShot
 	pSrc += xSrc;								// Skip left border
 	pSrc += ySrc * GetFrameBufferWidth();		// Skip top border
 
-	if( ScreenShotType == SCREENSHOT_280x192 )
+	if (ScreenShotType == SCREENSHOT_280x192)
 	{
 		pSrc += GetFrameBufferWidth();	// Start on odd scanline (otherwise for 50% scanline mode get an all black image!)
-
-		uint32_t  aScanLine[kVideoWidthIIgs / 2];	// Big enough to contain both a 280 or 320 line
-		uint32_t *pDst;
 
 		// 50% Half Scan Line clears every odd scanline.
 		// SHIFT+PrintScreen saves only the even rows.
 		// NOTE: Keep in sync with _Video_RedrawScreen() & Video_MakeScreenShot()
-		for( UINT y = 0; y < GetFrameBufferBorderlessHeight()/2; y++ )
+		for (UINT y = 0; y < GetFrameBufferBorderlessHeight() / 2; y++) 
 		{
-			pDst = aScanLine;
-			for( UINT x = 0; x < GetFrameBufferBorderlessWidth()/2; x++ )
+			uint8_t *pDst = image_data.data() + png_scanline_size * (height - y - 1);  // flip vertically
+			for (UINT x = 0; x < GetFrameBufferBorderlessWidth() / 2; x++)
 			{
-				*pDst++ = pSrc[1]; // correction for left edge loss of scaled scanline [Bill Buckel, B#18928]
+				const uint32_t pixel = pSrc[1];       // correction for left edge loss of scaled scanline [Bill Buckel, B#18928]
+				*pDst++ = (pixel >> 16) & 0xFF;       // Red
+				*pDst++ = (pixel >> 8) & 0xFF;        // Green
+				*pDst++ = (pixel >> 0) & 0xFF;        // Blue
 				pSrc += 2; // skip odd pixels
 			}
-			fwrite( aScanLine, sizeof(uint32_t), GetFrameBufferBorderlessWidth()/2, pFile );
-			pSrc += GetFrameBufferWidth();			// scan lines doubled - skip odd ones
-			pSrc += GetFrameBufferBorderWidth()*2;	// Skip right border & next line's left border
+			pSrc += GetFrameBufferWidth();			    // scan lines doubled - skip odd  ones
+			pSrc += GetFrameBufferBorderWidth() * 2;	// Skip right border & next line's left border
 		}
 	}
 	else
 	{
-		for( UINT y = 0; y < GetFrameBufferBorderlessHeight(); y++ )
+		for (UINT y = 0; y < GetFrameBufferBorderlessHeight(); y++)
 		{
-			fwrite( pSrc, sizeof(uint32_t), GetFrameBufferBorderlessWidth(), pFile );
+			uint8_t* pDst = image_data.data() + png_scanline_size * (height - y - 1); // flip vertically
+			for (UINT x = 0; x < GetFrameBufferBorderlessWidth(); x++)
+			{
+				const uint32_t pixel = pSrc[x];       // 0xAARRGGBB format
+				*pDst++ = (pixel >> 16) & 0xFF;       // Red
+				*pDst++ = (pixel >> 8) & 0xFF;        // Green
+				*pDst++ = (pixel >> 0) & 0xFF;        // Blue
+			}
 			pSrc += GetFrameBufferWidth();
 		}
 	}
 
-	// re-write the Header to include the file size (otherwise "file" does not recognise it)
-	pBmp->nSizeFile = ftell(pFile);
-	rewind(pFile);
-	fwrite( pBmp, sizeof( WinBmpHeader_t ), 1, pFile );
-	fseek(pFile, 0, SEEK_END);
+	spng_ctx *ctx = spng_ctx_new(SPNG_CTX_ENCODER);
+	if (!ctx) {
+		return;
+	}
+
+	spng_set_png_file(ctx, pFile);
+
+	struct spng_ihdr ihdr = { 0 };
+	ihdr.width = width;
+	ihdr.height = height;
+	ihdr.color_type = SPNG_COLOR_TYPE_TRUECOLOR;
+	ihdr.bit_depth = 8;
+
+	int ret = spng_set_ihdr(ctx, &ihdr);
+	if (ret) {
+		spng_ctx_free(ctx);
+		return;
+	}
+
+	spng_set_option(ctx, SPNG_IMG_COMPRESSION_LEVEL, Z_BEST_COMPRESSION);
+	spng_set_option(ctx, SPNG_IMG_WINDOW_BITS, 15);
+
+	// 5. Encode the image and finalize the PNG file
+	ret = spng_encode_image(ctx, image_data.data(),
+							png_scanline_size*height,
+		                    SPNG_FMT_PNG, 
+		                    SPNG_ENCODE_FINALIZE);
+	if (ret) {
+		spng_ctx_free(ctx);
+		return;
+	}
+
 }
 
 //===========================================================================

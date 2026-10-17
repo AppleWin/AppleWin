@@ -350,6 +350,9 @@
     <ProjectReference Include="minizip\zip_VS2022.vcxproj">
       <Project>{509739e7-0af3-4c09-a1a9-f0b1bc31b39d}</Project>
     </ProjectReference>
+    <ProjectReference Include="spng\spng-VS2022.vcxproj">
+      <Project>{98cc568c-45a5-42c4-899a-5d2334cd830a}</Project>
+    </ProjectReference>
     <ProjectReference Include="zlib\zlib-VS2022.vcxproj">
       <Project>{9b32a6e7-1237-4f36-8903-a3fd51df9c4e}</Project>
     </ProjectReference>
@@ -520,9 +523,9 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;SPNG_STATIC;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;spng;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -547,9 +550,9 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;SPNG_STATIC;SPNG_STATIC;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;spng;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
@@ -574,9 +577,9 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;NO_DIRECT_X;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;SPNG_STATIC;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;NO_DIRECT_X;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;spng;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ConformanceMode>true</ConformanceMode>
@@ -600,9 +603,9 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;NO_DIRECT_X;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;SPNG_STATIC;SPNG_STATIC;_DEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;NO_DIRECT_X;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;spng;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ConformanceMode>true</ConformanceMode>
@@ -628,9 +631,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;SPNG_STATIC;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;spng;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -660,9 +663,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;SPNG_STATIC;SPNG_STATIC;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;spng;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -692,9 +695,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;NO_DIRECT_X;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;SPNG_STATIC;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;NO_DIRECT_X;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;spng;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
@@ -724,9 +727,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;NO_DIRECT_X;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;SPNG_STATIC;SPNG_STATIC;NDEBUG;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;NO_DSHOW_STRSAFE;NO_DIRECT_X;YAML_DECLARE_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>source;source\cpu;source\debugger;zlib;spng;$(SolutionDir);libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
