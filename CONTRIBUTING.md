@@ -32,7 +32,7 @@ Thank you for wanting to make the project better! However, before you submit a P
 
 Firstly,
 
-# Do NOT submit one big patch!
+## Do NOT submit one big patch!
 
 The AppleWin developers work on AppleWin in their spare time. This means we have limited time to review PRs. Smaller PRs are highly desirable, as they should be simpler to review and approve. Large changes are likely to be rejected or not get looked at (resulting in them going stale, and ultimately diverging further from the mainline repo).
 
@@ -62,6 +62,16 @@ Trivial changes such as updating art are much easier to accept than rewriting th
 
 When discussing topics focus on the problem and potential solutions and not people.  Please keep things professional.
 
-Lasty, there are many reasons why we may reject a feature or PR.  This does NOT mean we aren't interested; it just means that the feature or PR doesn't meet the developer's expectations and project goals _at this time._
+Lastly, there are many reasons why we may reject a feature or PR.  This does NOT mean we aren't interested; it just means that the feature or PR doesn't meet the developer's expectations and project goals _at this time._
+
+## AI Tool Use Policy
+ 
+Contributors can use whatever tools they would like to craft their contributions, but there must be a human in the loop. (Contributions include issues, patches, PR's, comments etc.)
+ 
+Specifically: all AI generated contributions must be marked as such.
+ 
+Contributors are responsible for ensuring that they have the right to contribute code under the terms of our license, typically meaning that either they or their collaborators hold the copyright.
+
+---
 
 Thanks again for your interest in wanting to make AppleWin better.
