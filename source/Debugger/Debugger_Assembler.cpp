@@ -1105,7 +1105,7 @@ bool AssemblerPokeOpcodeAddress( const WORD nBaseAddress )
 
 	const size_t nOpcodes = m_vAsmOpcodes.size();
 
-	for ( unsigned int iOpcode = 0; iOpcode < nOpcodes; iOpcode++ )
+	for ( size_t iOpcode = 0; iOpcode < nOpcodes; iOpcode++ )
 	{
 		int nOpcode = m_vAsmOpcodes.at( iOpcode ); // m_iOpcode;
 		int nOpmode = g_aOpcodes[ nOpcode ].nAddressMode;

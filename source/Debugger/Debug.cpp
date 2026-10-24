@@ -3543,9 +3543,9 @@ Update_t CmdCursorLineUp (int nArgs)
 		size_t nCandidates = aTopCandidates.size();
 		if (nCandidates)
 		{
-			int iBest = NO_6502_TARGET;
+			size_t iBest = NO_6502_TARGET;
 
-			for (unsigned int iCandidate = 0; iCandidate < nCandidates; iCandidate++)
+			for (size_t iCandidate = 0; iCandidate < nCandidates; iCandidate++ )
 			{
 				tCandidate = aTopCandidates.at( iCandidate );
 				iOpcode = tCandidate._iOpcode;
