@@ -87,12 +87,12 @@ static __forceinline void CheckSynchronousInterruptSources(UINT cycles, ULONG uE
 {
 }
 
-static __forceinline bool NMI(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline bool NMI(ULONG& uExecutedCycles, bool& flagc, bool& flagn, bool& flagv, bool& flagz)
 {
 	return false;
 }
 
-static __forceinline bool IRQ(ULONG& uExecutedCycles, BOOL& flagc, BOOL& flagn, BOOL& flagv, BOOL& flagz)
+static __forceinline bool IRQ(ULONG& uExecutedCycles, bool& flagc, bool& flagn, bool& flagv, bool& flagz)
 {
 	return false;
 }
