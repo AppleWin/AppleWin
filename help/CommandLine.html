@@ -129,15 +129,18 @@
 		Enable the dialog box to display the last file saved to<br><br>
 		-no-printscreen-key<br>
 		Prevent the PrintScreen key from being registered<br><br>
+		-hook-system-key<br>
+		Allow certain system key combinations to be hooked (to allow the emulator to trap ALT+ESC, ALT+SPACE, ALT+TAB and CTRL+ESC).<br>
+		NB. Hooking ALT+TAB also requires -hook-alt-tab.<br><br>
 		-no-hook-system-key<br>
 		Prevent certain system key combinations from being hooked (to prevent the emulator from trapping ALT+ESC, ALT+SPACE, ALT+TAB and CTRL+ESC). This means that the equivalent Open Apple+&lt;key&gt; combinations won't work within the emulator.<br>
 		NB. This switch takes precedence over -hook-alt-tab and -hook-altgr-control.<br><br>
 		-no-hook-alt<br>
 		Prevent the left and right ALT keys from being hooked (eg. to prevent emulation of Open/Solid Apple keys via the ALT keys).<br><br>
 		-hook-alt-tab<br>
-		By default the emulator doesn't hook ALT+TAB. Use this to allow Open Apple+TAB to be readable by the emulated machine.<br><br>
+		By default the emulator doesn't hook ALT+TAB. Use this to allow Open Apple+TAB to be readable by the emulated machine. NB. Implicitly enables -hook-system-key.<br><br>
 		-hook-altgr-control<br>
-		By default the emulator doesn't suppress AltGr's (Right Alt's) fake LEFT CONTROL. Use this to suppress this fake LEFT CONTROL to allow Solid Apple+CTRL+&lt;key&gt; to be readable by the emulated machine.<br>
+		By default the emulator doesn't suppress AltGr's (Right Alt's) fake LEFT CONTROL. Use this to suppress this fake LEFT CONTROL to allow Solid Apple+CTRL+&lt;key&gt; to be readable by the emulated machine. NB. Implicitly enables -hook-system-key.<br>
 		NB. Suppressing this fake LEFT CONTROL seems to prevent international keyboards from being able to type certain keys.<br><br>
 		-altgr-sends-wmchar<br>
 		Use this switch to allow Solid Apple (AltGr) to be used in combination with regular keys.<br>

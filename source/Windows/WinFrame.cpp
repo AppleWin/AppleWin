@@ -98,11 +98,6 @@ static int Util_SelectDiskImage ( const HWND hwnd, const HINSTANCE hInstance, co
 	return nRes;
 }
 
-void Win32Frame::SetAltEnterToggleFullScreen(bool mode)
-{
-	g_bAltEnter_ToggleFullScreen = mode;
-}
-
 // ==========================================================================
 
 // Display construction:
@@ -1851,7 +1846,7 @@ LRESULT Win32Frame::WndProc(
 		KeybUpdateCtrlShiftStatus();
 
 		// http://msdn.microsoft.com/en-us/library/windows/desktop/gg153546(v=vs.85).aspx
-		if (g_bAltEnter_ToggleFullScreen && KeybGetAltStatus() && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
+		if (!GetPropertySheet().GetHookAltEnterForEmulation() && KeybGetAltStatus() && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
 			return 0; // NOP -- eat key
 
 		PostMessage(window,WM_KEYDOWN,wparam,lparam);
@@ -1868,7 +1863,7 @@ LRESULT Win32Frame::WndProc(
 		if (wparam == VK_F10)
 			return 0;
 
-		if (g_bAltEnter_ToggleFullScreen && KeybGetAltStatus() && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
+		if (!GetPropertySheet().GetHookAltEnterForEmulation() && KeybGetAltStatus() && (wparam == VK_RETURN)) // NB. VK_RETURN = 0x0D; Normally WM_CHAR will be 0x0A but ALT key triggers as WM_SYSKEYDOWN and VK_MENU
 			ScreenWindowResize(false);
 		else
 			PostMessage(window,WM_KEYUP,wparam,lparam);

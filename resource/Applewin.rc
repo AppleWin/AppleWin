@@ -132,14 +132,20 @@ BEGIN
     LTEXT           "&Y-trim:",IDC_STATIC,115,56,28,8
     CTEXT           "0",IDC_STATIC,137,49,24,20,SS_CENTERIMAGE
     CONTROL         "Spin1",IDC_SPIN_YTRIM,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY,161,53,10,14
-    CONTROL         "Allow cursor keys to be read from keyboard",IDC_CURSORCONTROL,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,75,150,10
+    CONTROL         "Allow cursor keys to be read from keyboard",IDC_CURSORCONTROL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,75,150,10
     CONTROL         "Swap 0/1",IDC_SWAPBUTTONS0AND1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,162,75,41,10
     CONTROL         "Auto-fire (all 3 buttons)",IDC_AUTOFIRE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,90,89,10
     CONTROL         "Keyboard auto-centering",IDC_CENTERINGCONTROL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,102,90,96,10
     CONTROL         "SHIFT key mod",IDC_SHIFTKEYMOD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,105,89,10
-    PUSHBUTTON      "Paste &From Clipboard",IDC_PASTE_FROM_CLIPBOARD,8,130,81,14
-    LTEXT           "(Shift+Insert during emulation)",IDC_STATIC,93,133,111,8
+
+    GROUPBOX        "Keyboard Control",IDC_STATIC,5,127,200,73
+    CONTROL         "Hook system keys (ALT+ESC, ALT+SPACE)",IDC_HOOK_SYSTEM_KEYS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,140,150,10
+    CONTROL         "Hook ALT+TAB",IDC_HOOK_ALT_TAB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,155,89,10
+    CONTROL         "Hook ALTGR CONTROL",IDC_HOOK_ALTGR_CONTROL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,170,89,10
+    CONTROL         "Hook ALT+ENTER for emulation (not toggle full screen)",IDC_HOOK_ALT_ENTER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,185,190,10
+
+    PUSHBUTTON      "Paste &From Clipboard",IDC_PASTE_FROM_CLIPBOARD,8,205,81,14
+    LTEXT           "(Shift+Insert during emulation)",IDC_STATIC,93,205,111,8
 END
 
 IDD_PROPPAGE_SLOTS DIALOGEX 0, 0, 210, 240

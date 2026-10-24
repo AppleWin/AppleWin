@@ -17,13 +17,14 @@ public:
 	{
 	}
 
-	bool InitHookThread();
+	void InitHookThread();
 	void UninitHookThread();
 
 private:
 	static LRESULT CALLBACK LowLevelKeyboardProc(_In_ int nCode, _In_ WPARAM wParam, _In_ LPARAM lParam);
 	bool HookFilterForKeyboard();
 	void UnhookFilterForKeyboard();
+	void ReinitHookVars();
 	static DWORD WINAPI HookThread(LPVOID lpParameter);
 
 	HWND m_hFrameWindow;

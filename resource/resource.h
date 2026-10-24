@@ -123,6 +123,10 @@
 #define IDC_CENTERINGCONTROL            1068
 #define IDC_SWAPBUTTONS0AND1            1069
 #define IDC_SHIFTKEYMOD                 1070
+#define IDC_HOOK_SYSTEM_KEYS            1071
+#define IDC_HOOK_ALT_TAB                1072
+#define IDC_HOOK_ALTGR_CONTROL          1073
+#define IDC_HOOK_ALT_ENTER              1074
 #define IDC_COMBO_HDD1                  1078
 #define IDC_COMBO_HDD2                  1079
 #define IDC_COMBO_DISK1                 1080

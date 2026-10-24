@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "../Keyboard.h"
 #include "../Registry.h"
 #include "../resource/resource.h"
+#include "../Windows/HookFilter.h"
 
 CPageInput* CPageInput::ms_this = 0;	// reinit'd in ctor
 
@@ -135,6 +136,13 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 			}
 			break;
 
+		case IDC_HOOK_SYSTEM_KEYS:
+			if (HIWORD(wparam) == BN_CLICKED)
+			{
+				SetHookSystemKeys(hWnd, false);
+			}
+			break;
+
 		case IDC_PASTE_FROM_CLIPBOARD:
 			ClipboardInitiatePaste();
 			break;
@@ -147,6 +155,26 @@ INT_PTR CPageInput::DlgProcInternal(HWND hWnd, UINT message, WPARAM wparam, LPAR
 	}
 
 	return FALSE;
+}
+
+void CPageInput::SetHookSystemKeys(HWND hWnd, bool init)
+{
+	bool hookSystemKeys = false;
+
+	if (init)
+	{
+		hookSystemKeys = m_PropertySheetHelper.GetConfigNew().m_hookSystemKeys;
+		CheckDlgButton(hWnd, IDC_HOOK_SYSTEM_KEYS, hookSystemKeys ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hWnd, IDC_HOOK_ALT_TAB, m_PropertySheetHelper.GetConfigNew().m_hookAltTab ? BST_CHECKED : BST_UNCHECKED);
+		CheckDlgButton(hWnd, IDC_HOOK_ALTGR_CONTROL, m_PropertySheetHelper.GetConfigNew().m_hookAltGrControl ? BST_CHECKED : BST_UNCHECKED);
+	}
+	else
+	{
+		hookSystemKeys = IsDlgButtonChecked(hWnd, IDC_HOOK_SYSTEM_KEYS);
+	}
+
+	EnableWindow(GetDlgItem(hWnd, IDC_HOOK_ALT_TAB), hookSystemKeys);
+	EnableWindow(GetDlgItem(hWnd, IDC_HOOK_ALTGR_CONTROL), hookSystemKeys);
 }
 
 //
@@ -178,6 +206,9 @@ void CPageInput::InitOptions(HWND hWnd)
 
 	EnableWindow(GetDlgItem(hWnd, IDC_CURSORCONTROL), JoyUsingKeyboardCursors());
 	EnableWindow(GetDlgItem(hWnd, IDC_CENTERINGCONTROL), JoyUsingKeyboard());
+
+	SetHookSystemKeys(hWnd, true);
+	CheckDlgButton(hWnd, IDC_HOOK_ALT_ENTER, m_PropertySheetHelper.GetConfigNew().m_hookAltEnter ? BST_CHECKED : BST_UNCHECKED);
 }
 
 void CPageInput::DlgOK(HWND hWnd)
@@ -192,7 +223,12 @@ void CPageInput::DlgOK(HWND hWnd)
 	m_PropertySheetHelper.GetConfigNew().m_centeringControl = IsDlgButtonChecked(hWnd, IDC_CENTERINGCONTROL) ? 1 : 0;
 	m_PropertySheetHelper.GetConfigNew().m_cursorControl = IsDlgButtonChecked(hWnd, IDC_CURSORCONTROL) ? 1 : 0;
 	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = IsDlgButtonChecked(hWnd, IDC_SWAPBUTTONS0AND1);
-	m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = IsDlgButtonChecked(hWnd, IDC_SHIFTKEYMOD) ? 1 : 0;
+	m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = IsDlgButtonChecked(hWnd, IDC_SHIFTKEYMOD);
+
+	m_PropertySheetHelper.GetConfigNew().m_hookSystemKeys = IsDlgButtonChecked(hWnd, IDC_HOOK_SYSTEM_KEYS);
+	m_PropertySheetHelper.GetConfigNew().m_hookAltTab = IsDlgButtonChecked(hWnd, IDC_HOOK_ALT_TAB);
+	m_PropertySheetHelper.GetConfigNew().m_hookAltGrControl = IsDlgButtonChecked(hWnd, IDC_HOOK_ALTGR_CONTROL);
+	m_PropertySheetHelper.GetConfigNew().m_hookAltEnter = IsDlgButtonChecked(hWnd, IDC_HOOK_ALT_ENTER);
 
 	m_PropertySheetHelper.PostMsgAfterClose(hWnd, m_Page);
 }
@@ -228,6 +264,18 @@ void CPageInput::ApplyConfigAfterClose()
 	REGSAVE(REGVALUE_CURSOR_CONTROL, m_uCursorControl);
 	REGSAVE(REGVALUE_SWAP_BUTTONS_0_AND_1, m_bSwapButtons0and1);
 	REGSAVE(REGVALUE_SHIFT_KEY_MOD, m_shiftKeyMod);
+
+	m_hookSystemKeys = m_PropertySheetHelper.GetConfigNew().m_hookSystemKeys;
+	m_hookAltTab = m_PropertySheetHelper.GetConfigNew().m_hookAltTab;
+	m_hookAltGrControl = m_PropertySheetHelper.GetConfigNew().m_hookAltGrControl;
+	m_hookAltEnter = m_PropertySheetHelper.GetConfigNew().m_hookAltEnter;
+	REGSAVE(REGVALUE_HOOK_SYSTEM_KEYS, m_hookSystemKeys);
+	REGSAVE(REGVALUE_HOOK_ALT_TAB, m_hookAltTab);
+	REGSAVE(REGVALUE_HOOK_ALTGR_CONTROL, m_hookAltGrControl);
+	REGSAVE(REGVALUE_HOOK_ALT_ENTER, m_hookAltEnter);
+
+	m_hookSystemKeys ? GetHookFilter().InitHookThread()
+					 : GetHookFilter().UninitHookThread();
 }
 
 void CPageInput::InitJoystickChoices(HWND hWnd, const int joyNum)
@@ -361,4 +409,9 @@ void CPageInput::ResetToDefault()
 	m_PropertySheetHelper.GetConfigNew().m_cursorControl = CPageInput::kCursorControl_Default;
 	m_PropertySheetHelper.GetConfigNew().m_swapButtons0and1 = CPageInput::kSwapButtons0and1_Default;
 	m_PropertySheetHelper.GetConfigNew().m_shiftKeyMod = GetShiftKeyModDefault(m_PropertySheetHelper.GetConfigNew().m_Apple2Type);
+
+	m_PropertySheetHelper.GetConfigNew().m_hookSystemKeys = CPageInput::kHookSystemKeys_Default;
+	m_PropertySheetHelper.GetConfigNew().m_hookAltTab = CPageInput::kHookAltTab_Default;
+	m_PropertySheetHelper.GetConfigNew().m_hookAltGrControl = CPageInput::kHookAltGrControl_Default;
+	m_PropertySheetHelper.GetConfigNew().m_hookAltEnter = CPageInput::kHookAltEnter_Default;
 }

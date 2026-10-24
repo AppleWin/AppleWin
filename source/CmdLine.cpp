@@ -45,9 +45,10 @@ std::string g_sConfigFile; // INI file to use instead of Registry
 
 bool g_bCapturePrintScreenKey = true;
 bool g_bRegisterFileTypes = true;
-bool g_bHookSystemKey = true;
+bool g_bHookSystemKey = false;
 bool g_bHookAltTab = false;
 bool g_bHookAltGrControl = false;
+bool g_configAltEnterForEmulation = false;	// Alt+Enter defaults to toggling full screen
 
 
 static LPSTR GetCurrArg(LPSTR lpCmdLine)
@@ -529,16 +530,22 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		{
 			GetFrame().SetShowPrintScreenWarningDialog(false);
 		}
+		else if (strcmp(lpCmdLine, "-hook-system-key") == 0)		// Hook the System keys (eg. Left-ALT+ESC/SPACE/TAB) GH#1532
+		{
+			g_bHookSystemKey = true;
+		}
 		else if (strcmp(lpCmdLine, "-no-hook-system-key") == 0)		// Don't hook the System keys (eg. Left-ALT+ESC/SPACE/TAB) GH#556
 		{
 			g_bHookSystemKey = false;
 		}
 		else if (strcmp(lpCmdLine, "-hook-alt-tab") == 0)			// GH#556
 		{
+			g_bHookSystemKey = true;
 			g_bHookAltTab = true;
 		}
 		else if (strcmp(lpCmdLine, "-hook-altgr-control") == 0)		// GH#556
 		{
+			g_bHookSystemKey = true;
 			g_bHookAltGrControl = true;
 		}
 		else if (strcmp(lpCmdLine, "-altgr-sends-wmchar") == 0)		// GH#625
@@ -608,11 +615,11 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 		}
 		else if (strcmp(lpCmdLine, "-alt-enter=toggle-full-screen") == 0)	// GH#556
 		{
-			GetFrame().SetAltEnterToggleFullScreen(true);
+			g_configAltEnterForEmulation = false;
 		}
 		else if (strcmp(lpCmdLine, "-alt-enter=open-apple-enter") == 0)		// GH#556
 		{
-			GetFrame().SetAltEnterToggleFullScreen(false);
+			g_configAltEnterForEmulation = true;
 		}
 		else if (strcmp(lpCmdLine, "-video-mode=idealized") == 0)			// GH#616
 		{

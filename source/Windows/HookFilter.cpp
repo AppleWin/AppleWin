@@ -101,6 +101,12 @@ LRESULT CALLBACK HookFilter::LowLevelKeyboardProc(_In_ int nCode, _In_ WPARAM wP
 
 //---------------------------------------------------------------------------
 
+void HookFilter::ReinitHookVars()
+{
+	m_bHookAltTab = GetPropertySheet().GetHookAltTab();
+	m_bHookAltGrControl = GetPropertySheet().GetHookAltGrControl();
+}
+
 // The hook filter code can be static (within the application) rather than in a DLL.
 // Pre: g_hFrameWindow must be valid
 bool HookFilter::HookFilterForKeyboard()
@@ -108,8 +114,7 @@ bool HookFilter::HookFilterForKeyboard()
 	_ASSERT(GetFrame().g_hFrameWindow);
 
 	m_hFrameWindow = GetFrame().g_hFrameWindow;
-	m_bHookAltTab = GetHookAltTab();
-	m_bHookAltGrControl = GetHookAltGrControl();
+	ReinitHookVars();
 
 	// Since no DLL gets injected anyway for low-level hooks, we can use, for example, GetModuleHandle("kernel32.dll")
 	HINSTANCE hinstDLL = GetModuleHandle("kernel32.dll");
@@ -159,8 +164,13 @@ DWORD WINAPI HookFilter::HookThread(LPVOID lpParameter)
 	return 0;
 }
 
-bool HookFilter::InitHookThread()
+void HookFilter::InitHookThread()
 {
+	ReinitHookVars();	// If already running, then update the hook vars (eg. if user changed the Input property sheet settings)
+
+	if (m_hHookThread)
+		return;
+
 	m_hHookThread = CreateThread(NULL,			// lpThreadAttributes
 		0,				// dwStackSize
 		(LPTHREAD_START_ROUTINE)HookThread,
@@ -168,36 +178,38 @@ bool HookFilter::InitHookThread()
 		0,				// dwCreationFlags : 0 = Run immediately
 		&m_HookThreadId);	// lpThreadId
 
-	if (m_hHookThread == NULL)
-		return false;
+	if (m_hHookThread == nullptr)
+		return;
 
-	return true;
+	LogFileOutput("HookFilterForKeyboard()\n");
+	return;
 }
 
 void HookFilter::UninitHookThread()
 {
-	if (m_hHookThread)
+	if (m_hHookThread == nullptr)
+		return;
+
+	if (!PostThreadMessage(m_HookThreadId, WM_QUIT, 0, 0))
 	{
-		if (!PostThreadMessage(m_HookThreadId, WM_QUIT, 0, 0))
-		{
-			_ASSERT(0);
-			return;
-		}
-
-		do
-		{
-			DWORD dwExitCode;
-			if (GetExitCodeThread(m_hHookThread, &dwExitCode))
-			{
-				if (dwExitCode == STILL_ACTIVE)
-					Sleep(10);
-				else
-					break;
-			}
-		} 		while (1);
-
-		CloseHandle(m_hHookThread);
-		m_hHookThread = NULL;
-		m_HookThreadId = 0;
+		_ASSERT(0);
+		return;
 	}
+
+	do
+	{
+		DWORD dwExitCode;
+		if (GetExitCodeThread(m_hHookThread, &dwExitCode))
+		{
+			if (dwExitCode == STILL_ACTIVE)
+				Sleep(10);
+			else
+				break;
+		}
+	} while (1);
+
+	LogFileOutput("UnhookFilterForKeyboard()\n");
+	CloseHandle(m_hHookThread);
+	m_hHookThread = nullptr;
+	m_HookThreadId = 0;
 }

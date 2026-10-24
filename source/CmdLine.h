@@ -139,4 +139,5 @@ extern bool g_bRegisterFileTypes;
 extern bool g_bHookSystemKey;
 extern bool g_bHookAltTab;
 extern bool g_bHookAltGrControl;
+extern bool g_configAltEnterForEmulation;
 extern CmdLine g_cmdLine;

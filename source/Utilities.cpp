@@ -210,7 +210,16 @@ void LoadConfiguration(bool loadImages)
 	if (REGLOAD_DEFAULT(REGVALUE_SHIFT_KEY_MOD, &dwTmp, false))
 		GetPropertySheet().SetShiftKeyMod(dwTmp);
 
-	if(REGLOAD(REGVALUE_MOUSE_CROSSHAIR, &dwTmp))
+	if (REGLOAD_DEFAULT(REGVALUE_HOOK_SYSTEM_KEYS, &dwTmp, false))
+		GetPropertySheet().SetHookSystemKeys(dwTmp);	// Can be overridden by cmd line -hook-system-key
+	if (REGLOAD_DEFAULT(REGVALUE_HOOK_ALT_TAB, &dwTmp, false))
+		GetPropertySheet().SetHookAltTab(dwTmp);		// Can be overridden by cmd line -hook-alt-tab
+	if (REGLOAD_DEFAULT(REGVALUE_HOOK_ALTGR_CONTROL, &dwTmp, false))
+		GetPropertySheet().SetHookAltGrControl(dwTmp);	// Can be overridden by cmd line -hook-altgr-control
+	if (REGLOAD_DEFAULT(REGVALUE_HOOK_ALT_ENTER, &dwTmp, false))
+		GetPropertySheet().SetHookAltEnterForEmulation(dwTmp);	// Can be overridden by cmd line -alt-enter=<...>
+
+	if (REGLOAD(REGVALUE_MOUSE_CROSSHAIR, &dwTmp))
 		GetPropertySheet().SetMouseShowCrosshair(dwTmp);
 	if(REGLOAD(REGVALUE_MOUSE_RESTRICT_TO_WINDOW, &dwTmp))
 		GetPropertySheet().SetMouseRestrictToWindow(dwTmp);

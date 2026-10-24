@@ -37,6 +37,14 @@ public:
 	void SetShiftKeyMod(bool value) { m_shiftKeyMod = value; }
 	bool GetShiftKeyModDefault(const eApple2Type type);
 	void SetShiftKeyModDefault(const eApple2Type type);
+	bool GetHookSystemKeys() { return m_hookSystemKeys; }
+	void SetHookSystemKeys(bool value) { m_hookSystemKeys = value; }
+	bool GetHookAltTab() { return m_hookAltTab; }
+	void SetHookAltTab(bool value) { m_hookAltTab = value; }
+	bool GetHookAltGrControl() { return m_hookAltGrControl; }
+	void SetHookAltGrControl(bool value) { m_hookAltGrControl = value; }
+	bool GetHookAltEnterForEmulation() { return m_hookAltEnter; }
+	void SetHookAltEnterForEmulation(bool value) { m_hookAltEnter = value; }
 
 	static const UINT kAutofire_Default = 0;
 	static const UINT kCenteringControl_Default = JOYSTICK_MODE_CENTERING;
@@ -45,6 +53,10 @@ public:
 	static const bool kShiftKeyModForAppleII_Default = true;
 	static const bool kShiftKeyModForAppleIIc_Default = false;
 	static const bool kShiftKeyModForAppleIIe_Default = false;	// NB. Platinum IIe *does* have the shift key mod
+	static const bool kHookSystemKeys_Default = false;
+	static const bool kHookAltTab_Default = false;
+	static const bool kHookAltGrControl_Default = false;
+	static const bool kHookAltEnter_Default = false;
 
 	virtual void ApplyConfigAfterClose();	// IPropertySheetPage
 	virtual void ResetToDefault();			// IPropertySheetPage
@@ -57,6 +69,7 @@ protected:
 
 private:
 	void InitOptions(HWND hWnd);
+	void SetHookSystemKeys(HWND hWnd, bool init);
 	void InitJoystickChoices(HWND hWnd, const int joyNum);
 	bool IsMouseCardInAnySlot();
 
@@ -86,4 +99,8 @@ private:
 	UINT m_bmAutofire;			// bitmask b2:0
 	bool m_bSwapButtons0and1;
 	bool m_shiftKeyMod;
+	bool m_hookSystemKeys;
+	bool m_hookAltTab;
+	bool m_hookAltGrControl;
+	bool m_hookAltEnter;
 };

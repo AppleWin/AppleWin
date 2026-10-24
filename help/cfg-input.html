@@ -40,6 +40,20 @@ then you should leave these values at 0.</li>
   </ul>
 </ul>
 
+<strong>Keyboard Control:</strong><br>
+<ul>
+  <li>Hook system keys: allow emulation to be able to read ALT+ESC and ALT+SPACE.</li>
+  <ul>
+    <li>NB. Development note: this can interfere with Windows Visual Studio debugging because it sets up a hook filter.</li>
+  </ul>
+  <li>Hook ALT+TAB: Optionally hook this to allow emulation to read it.</li>
+  <li>Hook ALTGR CONTROL: See -hook-altgr-control here:<a href="CommandLine.html">Command Line</a></li>
+  <li>Hook ALT+ENTER: allow emulation to be able to read ALT+ENTER.</li>
+  <ul>
+    <li>NB. This defaults to off, so ALT+ENTER will toggle windowed & full-screen modes.</li>
+  </ul>
+</ul>
+
 <strong>Paste from clipboard:</strong><br>
 Pressing this button will allow you to paste text from the
 Windows' clipboard into the emulated Apple //e.<br>

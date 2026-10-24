@@ -241,7 +241,7 @@ void KeybQueueKeypress (WPARAM key, Keystroke_e bASCII)
 				{
 					if ( (GetKeyState(VK_SHIFT) >= 0) && !g_bCapsLock )
 						newKey += 'a' - 'A';	// convert to lowercase key
-					else if (GetHookAltGrControl() && GetKeyState(VK_CONTROL) < 0)
+					else if (GetPropertySheet().GetHookAltGrControl() && GetKeyState(VK_CONTROL) < 0)
 						newKey -= 'A' - 1;		// convert to control-key
 				}
 

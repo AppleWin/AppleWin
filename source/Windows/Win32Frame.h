@@ -43,7 +43,6 @@ public:
 	virtual void SetWindowedModeShowDiskiiStatus(bool bShow);
 	virtual bool GetBestDisplayResolutionForFullScreen(UINT& bestWidth, UINT& bestHeight, UINT userSpecifiedWidth = 0, UINT userSpecifiedHeight = 0);
 	virtual int SetViewportScale(int nNewScale, bool bForce = false);
-	virtual void SetAltEnterToggleFullScreen(bool mode);
 
 	virtual void SetLoadedSaveStateFlag(const bool bFlag);
 
@@ -128,8 +127,7 @@ private:
 	void GetWidthHeight(int& nWidth, int& nHeight);
 	void SetSlotUIOffsets();
 
-	bool g_bAltEnter_ToggleFullScreen; // Default for ALT+ENTER is to toggle between windowed and full-screen modes
-	bool    g_bIsFullScreen;
+		bool    g_bIsFullScreen;
 	bool g_bShowingCursor;
 	bool g_bLastCursorInAppleViewport;
 	UINT_PTR	g_TimerIDEvent_100msec;

@@ -66,6 +66,10 @@ public:
 	UINT m_cursorControl;
 	bool m_swapButtons0and1;
 	bool m_shiftKeyMod;
+	bool m_hookSystemKeys;
+	bool m_hookAltTab;
+	bool m_hookAltGrControl;
+	bool m_hookAltEnter;
 
 	// Slots
 	SS_CARDTYPE m_Slot[NUM_SLOTS];

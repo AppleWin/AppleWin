@@ -49,6 +49,16 @@ public:
 	virtual void SetShiftKeyMod(bool value) { m_PageInput.SetShiftKeyMod(value); }
 	virtual bool GetShiftKeyModDefault(eApple2Type type) { return m_PageInput.GetShiftKeyModDefault(type); }
 	virtual void SetShiftKeyModDefault(eApple2Type type) { m_PageInput.SetShiftKeyModDefault(type); }
+
+	virtual bool GetHookSystemKeys() { return m_PageInput.GetHookSystemKeys(); }
+	virtual void SetHookSystemKeys(bool value) { m_PageInput.SetHookSystemKeys(value); }
+	virtual bool GetHookAltTab() { return m_PageInput.GetHookAltTab(); }
+	virtual void SetHookAltTab(bool value) { m_PageInput.SetHookAltTab(value); }
+	virtual bool GetHookAltGrControl() { return m_PageInput.GetHookAltGrControl(); }
+	virtual void SetHookAltGrControl(bool value) { m_PageInput.SetHookAltGrControl(value); }
+	virtual bool GetHookAltEnterForEmulation() { return m_PageInput.GetHookAltEnterForEmulation(); }
+	virtual void SetHookAltEnterForEmulation(bool value) { m_PageInput.SetHookAltEnterForEmulation(value); }
+
 	virtual UINT GetMouseShowCrosshair() { return m_PageSlots.GetMouseShowCrosshair(); }
 	virtual void SetMouseShowCrosshair(UINT uValue) { m_PageSlots.SetMouseShowCrosshair(uValue); }
 	virtual UINT GetMouseRestrictToWindow() { return m_PageSlots.GetMouseRestrictToWindow(); }

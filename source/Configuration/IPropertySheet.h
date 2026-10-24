@@ -30,6 +30,16 @@ public:
 	virtual void SetShiftKeyMod(bool value) = 0;
 	virtual bool GetShiftKeyModDefault(eApple2Type type) = 0;
 	virtual void SetShiftKeyModDefault(eApple2Type type) = 0;
+
+	virtual bool GetHookSystemKeys() = 0;
+	virtual void SetHookSystemKeys(bool value) = 0;
+	virtual bool GetHookAltTab() = 0;
+	virtual void SetHookAltTab(bool value) = 0;
+	virtual bool GetHookAltGrControl() = 0;
+	virtual void SetHookAltGrControl(bool value) = 0;
+	virtual bool GetHookAltEnterForEmulation() = 0;
+	virtual void SetHookAltEnterForEmulation(bool value) = 0;
+
 	virtual UINT GetMouseShowCrosshair() = 0;
 	virtual void SetMouseShowCrosshair(UINT uValue) = 0;
 	virtual UINT GetMouseRestrictToWindow() = 0;
