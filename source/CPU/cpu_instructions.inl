@@ -170,19 +170,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define RORc ROR_CMOS
 #define SBCc SBC_CMOS
 
+inline int CARRY_FORWARD(bool flagc) { return flagc ? 1 : 0; }
+inline int CARRY_BACKWARD(bool flagc) { return flagc ? 0 : 1; }
+
 // ==========
 
 #define ADC_NMOS /*bSlowerOnPagecross = 1;*/						    \
 		 temp = READ(addr);						    \
 		 if (regs.ps & AF_DECIMAL) {				    \
-		   val	  = (regs.a & 0x0F) + (temp & 0x0F) + (flagc ? 1 : 0);	    \
+		   val	  = (regs.a & 0x0F) + (temp & 0x0F) + CARRY_FORWARD(flagc);	    \
 		   if (val > 0x09)					    \
 		     val += 0x06;					    \
 		   if (val <= 0x0F)					    \
 		     val = (val & 0x0F) + (regs.a & 0xF0) + (temp & 0xF0);  \
 		   else							    \
 		     val = (val & 0x0F) + (regs.a & 0xF0) + (temp & 0xF0) + 0x10;\
-		   flagz = !((regs.a + temp + (flagc ? 1 : 0)) & 0xFF);		    \
+		   flagz = !((regs.a + temp + CARRY_FORWARD(flagc)) & 0xFF);		    \
 		   flagn = (val & 0x80);				    \
 		   flagv = ((regs.a ^ val) & 0x80) && !((regs.a ^ temp) & 0x80);\
 		   if ((val & 0x1F0) > 0x90)				    \
@@ -191,7 +194,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		   regs.a = val & 0xFF;                                     \
 		  }							    \
 		 else {							    \
-		   val	  = regs.a + temp + (flagc ? 1 : 0);			    \
+		   val	  = regs.a + temp + CARRY_FORWARD(flagc);			    \
 		   flagc  = (val > 0xFF);				    \
 		   flagv  = (((regs.a & 0x80) == (temp & 0x80)) &&	    \
 			     ((regs.a & 0x80) != (val & 0x80)));	    \
@@ -203,7 +206,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
                  flagv = !((regs.a ^ temp) & 0x80);			    \
 		 if (regs.ps & AF_DECIMAL) {				    \
 		    uExtraCycles++;					    \
-		    val = (regs.a & 0x0f) + (temp & 0x0f) + (flagc ? 1 : 0);          \
+		    val = (regs.a & 0x0f) + (temp & 0x0f) + CARRY_FORWARD(flagc);          \
 		    if (val >= 0x0A)					    \
 		       val = 0x10 | ((val + 6) & 0x0f);			    \
 		    val += (regs.a & 0xf0) + (temp & 0xf0);		    \
@@ -220,7 +223,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		    }							    \
 		 }							    \
 		 else {							    \
-		    val = regs.a + temp + (flagc ? 1 : 0);                            \
+		    val = regs.a + temp + CARRY_FORWARD(flagc);                            \
 		    if (val >= 0x100) {					    \
 		       flagc = true;					    \
 		       if (val >= 0x180) flagv = false;			    \
@@ -388,9 +391,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 val = READ(addr)+1;					\
 		 WRITE(val)						    \
 		 temp = val;                                                \
-		 temp2 = regs.a - temp - (flagc ? 0 : 1);			    \
+		 temp2 = regs.a - temp - CARRY_BACKWARD(flagc);			    \
 		 if (regs.ps & AF_DECIMAL) {				    \
-		   val  = (regs.a & 0x0F) - (temp & 0x0F) - (flagc ? 0 : 1);	    \
+		   val  = (regs.a & 0x0F) - (temp & 0x0F) - CARRY_BACKWARD(flagc);	    \
 		   if (val & 0x10)					    \
 		     val = ((val - 0x06) & 0x0F) | ((regs.a & 0xF0) - (temp & 0xF0) - 0x10);\
 		   else							    \
@@ -491,22 +494,22 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define PLY	 regs.y = POP;						    \
 		 SETNZ(regs.y)
 #define RLA	 /*bSlowerOnPagecross = 0;*/						    \
-		 val   = (READ(addr) << 1) | (flagc ? 1 : 0);				    \
+		 val   = (READ(addr) << 1) | CARRY_FORWARD(flagc);				    \
 		 flagc = (val > 0xFF);					    \
 		 WRITE(val)						    \
 		 regs.a &= val;						    \
 		 SETNZ(regs.a)
 #define ROL_NMOS /*bSlowerOnPagecross = 0;*/						    \
-		 val   = (READ(addr) << 1) | (flagc ? 1 : 0);				    \
+		 val   = (READ(addr) << 1) | CARRY_FORWARD(flagc);				    \
 		 flagc = (val > 0xFF);					    \
 		 SETNZ(val)						    \
 		 WRITE(val)
 #define ROL_CMOS /*bSlowerOnPagecross = 1;*/						    \
-		 val   = (READ(addr) << 1) | (flagc ? 1 : 0);				    \
+		 val   = (READ(addr) << 1) | CARRY_FORWARD(flagc);				    \
 		 flagc = (val > 0xFF);					    \
 		 SETNZ(val)						    \
 		 WRITE(val)
-#define ROLA	 val	= (((WORD)regs.a) << 1) | (flagc ? 1 : 0);		    \
+#define ROLA	 val	= (((WORD)regs.a) << 1) | CARRY_FORWARD(flagc);		    \
 		 flagc	= (val > 0xFF);					    \
 		 regs.a = val & 0xFF;					    \
 		 SETNZ(regs.a);
@@ -533,14 +536,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 WRITE(val)						    \
 		 temp = val;						    \
 		 if (regs.ps & AF_DECIMAL) {				    \
-		   val	  = (regs.a & 0x0F) + (temp & 0x0F) + (flagc ? 1 : 0);	    \
+		   val	  = (regs.a & 0x0F) + (temp & 0x0F) + CARRY_FORWARD(flagc);	    \
 		   if (val > 0x09)					    \
 		     val += 0x06;					    \
 		   if (val <= 0x0F)					    \
 		     val = (val & 0x0F) + (regs.a & 0xF0) + (temp & 0xF0);  \
 		   else							    \
 		     val = (val & 0x0F) + (regs.a & 0xF0) + (temp & 0xF0) + 0x10;\
-		   flagz = !((regs.a + temp + (flagc ? 1 : 0)) & 0xFF);		    \
+		   flagz = !((regs.a + temp + CARRY_FORWARD(flagc)) & 0xFF);		    \
 		   flagn = (val & 0x80);				    \
 		   flagv = ((regs.a ^ val) & 0x80) && !((regs.a ^ temp) & 0x80);\
 		   if ((val & 0x1F0) > 0x90)				    \
@@ -549,7 +552,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		   regs.a = val & 0xFF;                                     \
 		 }							    \
 		 else {							    \
-		   val	  = regs.a + temp + (flagc ? 1 : 0);			    \
+		   val	  = regs.a + temp + CARRY_FORWARD(flagc);			    \
 		   flagc  = (val > 0xFF);				    \
 		   flagv  = (((regs.a & 0x80) == (temp & 0x80)) &&	    \
 			     ((regs.a & 0x80) != (val & 0x80)));	    \
@@ -574,9 +577,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 WRITE(val)
 #define SBC_NMOS /*bSlowerOnPagecross = 1;*/						    \
 		 temp = READ(addr);						    \
-		 temp2 = regs.a - temp - (flagc ? 0 : 1);			    \
+		 temp2 = regs.a - temp - CARRY_BACKWARD(flagc);			    \
 		 if (regs.ps & AF_DECIMAL) {				    \
-		   val  = (regs.a & 0x0F) - (temp & 0x0F) - (flagc ? 0 : 1);	    \
+		   val  = (regs.a & 0x0F) - (temp & 0x0F) - CARRY_BACKWARD(flagc);	    \
 		   if (val & 0x10)					    \
 		     val = ((val - 0x06) & 0x0F) | ((regs.a & 0xF0) - (temp & 0xF0) - 0x10);\
 		   else							    \
@@ -601,7 +604,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		 flagv = ((regs.a ^ temp) & 0x80);			    \
 		 if (regs.ps & AF_DECIMAL) {				    \
 		    uExtraCycles++;					    \
-                    temp2 = 0x0F + (regs.a & 0x0F) - (temp & 0x0F) + (flagc ? 1 : 0); \
+                    temp2 = 0x0F + (regs.a & 0x0F) - (temp & 0x0F) + CARRY_FORWARD(flagc); \
 		    if (temp2 < 0x10) {					    \
 		       val = 0;						    \
 		       temp2 -= 0x06;					    \
@@ -625,7 +628,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 		    val += temp2;					    \
 		 }							    \
 		 else {							    \
-		    val = 0xff + regs.a - temp + (flagc ? 1 : 0);                     \
+		    val = 0xff + regs.a - temp + CARRY_FORWARD(flagc);                     \
 		    if (val < 0x100) {					    \
 		       flagc = false;					    \
 		       if (val < 0x80)					    \
