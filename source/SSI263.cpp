@@ -61,7 +61,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define LOG_SSI263 0
 #define LOG_SSI263B 0	// Alternate SSI263 logging (use in conjunction with CPU.cpp's LOG_IRQ_TAKEN_AND_RTI)
-#define LOG_SC01 0
+#define LOG_SC01 1
 
 // SSI263A registers:
 #define SSI_DURPHON	0x00
@@ -72,7 +72,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 // Historical SC01 compatibility durations, in 1/22050 second ticks.
 static const uint32_t kSpeechTimingRate = 22050;
-static const UINT kPhonemeTicks[62] =
+static const UINT kPhonemeTicks[62] =	// Votrax only
 {
 	2656, 2636, 2594, 2707, 2746, 2630, 2644, 3203,
 	2639, 2709, 2593, 2577, 2548, 2705, 2620, 2655,
@@ -343,6 +343,8 @@ const BYTE SSI263::m_Votrax2SSI263[/*64*/] =
 	0x00,	// 3F: STOP no sound -> PA
 };
 
+#define SC01_ORIGINAL 1
+static bool g_isVotraxPhoneme = false;
 void SSI263::Votrax_Write(BYTE value)
 {
 #if LOG_SC01
@@ -354,9 +356,24 @@ void SSI263::Votrax_Write(BYTE value)
 
 	AdvanceSynthesis();
 	m_responsePending = false;
-	m_isVotraxPhoneme = true;
 	m_votraxPhoneme = value & PHONEME_MASK;
+#if SC01_ORIGINAL
+//	_ASSERT(!m_votraxSynthStarted);	// Will fire for overlapping phoneme writes (play-sc01-using-ssi263 assert after every phoneme)
+	m_isVotraxPhoneme = true;
 	ConfigureVotrax();
+#else
+	m_isVotraxPhoneme = false;
+	g_isVotraxPhoneme = true;
+	m_durationPhoneme = m_Votrax2SSI263[m_votraxPhoneme];
+
+//	_ASSERT(!m_votraxSynthStarted);	// Will fire for overlapping phoneme writes
+	if (!m_votraxSynthStarted)
+	{
+		m_votraxSynth.Write(SSI_CTTRAMP, 0x5C);
+		m_votraxSynthStarted = true;
+	}
+	m_synth.Write(SSI_DURPHON, m_Votrax2SSI263[m_votraxPhoneme]);
+#endif
 
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
 	UpdateIFR(m_device, SY6522::IxR_VOTRAX, 0);
@@ -381,7 +398,7 @@ void SSI263::Play(unsigned int phoneme)
 		return;
 	}
 
-	// The old timing table used the same duration for PA, E and E1.
+	// The old timing table used the same duration for PA, E and E1. [From old AppleWin for Votrax]
 	const UINT index = phoneme <= 2 ? 0 : phoneme - 2;
 	m_phonemeLengthRemaining = kPhonemeTicks[index];
 	m_phonemeLeadoutLength = m_phonemeLengthRemaining / 10;
@@ -481,7 +498,11 @@ void SSI263::AdvanceSynthesis()
 			const short nativeSample = m_type != SSI263Empty ? m_synth.GetSample() : 0;
 			const short votraxSample = m_votraxSynthStarted ? m_votraxSynth.GetSample() : 0;
 			// PA0, PA1 and STOP retain the old silent output and IRQ timing.
+#if SC01_ORIGINAL
 			const short sample = m_isVotraxPhoneme
+#else
+			const short sample = g_isVotraxPhoneme
+#endif
 				? (m_Votrax2SSI263[m_votraxPhoneme] ? votraxSample : 0) : nativeSample;
 			m_speechSamplePhase += kSpeechTimingRate;
 			if (m_speechSamplePhase >= SSI263Synth::kSampleRate)
@@ -509,7 +530,14 @@ void SSI263::AdvanceSynthesis()
 			AdvanceResponseTiming(step);
 		}
 		if (m_votraxSynthStarted)
+		{
+#if SC01_ORIGINAL
 			m_votraxSynth.Advance(step);
+#else
+			m_votraxSynth.Advance(step);
+			AdvanceResponseTiming(step);
+#endif
+		}
 		ticks -= step;
 		m_synthSamplePhase += step * SSI263Synth::kSampleRate;
 	}
@@ -552,8 +580,13 @@ void SSI263::CommitResponse()
 	if (!m_responsePending)
 		return;
 	m_responsePending = false;
+#if SC01_ORIGINAL
 	if (!m_isVotraxPhoneme)
 		SetSpeechIRQ();
+#else
+	if (!g_isVotraxPhoneme)
+		SetSpeechIRQ();
+#endif
 }
 
 void SSI263::AdvanceResponseTiming(uint32_t ticks)
@@ -762,6 +795,7 @@ void SSI263::RepeatPhoneme()
 //-----------------------------------------------------------------------------
 
 // Complete the current compatibility timing period.
+// SC01 or old <v16 save-state
 void SSI263::UpdateIRQ()
 {
 	m_phonemeLengthRemaining = 0;
@@ -823,7 +857,11 @@ void SSI263::SetSpeechIRQ()
 
 	//
 
+#if SC01_ORIGINAL
 	if (m_isVotraxPhoneme && GetPCR(m_device) == 0xB0)
+#else
+	if (g_isVotraxPhoneme && GetPCR(m_device) == 0xB0)
+#endif
 	{
 		// !A/R: Time-out of old phoneme (signal goes from low to high)
 		UpdateIFR(m_device, 0, SY6522::IxR_VOTRAX);
