@@ -81,10 +81,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 static uint32_t Cpu65C02(uint32_t uTotalCycles, const bool bVideoUpdate)
 {
 	WORD addr;
-	BOOL flagc; // must always be 0 or 1, no other values allowed
-	BOOL flagn; // must always be 0 or 0x80.
-	BOOL flagv; // any value allowed
-	BOOL flagz; // any value allowed
+	bool flagc;
+	bool flagn;
+	bool flagv;
+	bool flagz;
 	WORD temp;
 	WORD temp2;
 	WORD val;
