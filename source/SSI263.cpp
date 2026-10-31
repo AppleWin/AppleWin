@@ -719,9 +719,6 @@ void SSI263::Update()
 // . LoadSnapshot()
 void SSI263::RepeatPhoneme()
 {
-//	if (m_phonemeLeadoutLength != 0)
-//		return;
-
 	if (!m_isVotraxPhoneme)
 	{
 		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
@@ -983,9 +980,6 @@ void SSI263::SaveSynthesis(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint("Sample Phase", m_synthSamplePhase);
 	yamlSaveHelper.SaveUint("Speech Sample Phase", m_speechSamplePhase);
 	yamlSaveHelper.SaveInt("Active Phoneme", m_currentActivePhoneme);
-//	yamlSaveHelper.SaveUint("Phoneme Remaining", m_phonemeLengthRemaining);
-//	yamlSaveHelper.SaveUint("Leadout Remaining", m_phonemeLeadoutLength);
-//	yamlSaveHelper.SaveUint("Sample Modulo", m_currSampleMod4);
 
 	{
 		const std::vector<uint32_t> words = m_synth.SaveState();

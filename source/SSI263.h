@@ -104,7 +104,6 @@ private:
 	void ConfigureVotrax();
 	void AdvanceSynthesis();
 	void UpdateSynthesis();
-	void AdvanceSpeechTiming();
 	void ResetResponseTiming();
 	void StartResponseTiming();
 	void AdvanceResponseTiming(uint32_t ticks);
@@ -195,7 +194,7 @@ private:
 	// SSI263.CONTROL 1->0 will call Play().
 	// NB. Can be used to detect overlapping phonemes in Play().
 	// NB. For SSI263 (and SC01) once >=0 then this remains the case (even when SSI263.CONTROL=1).
-	static const UINT kPhonemeLeadoutFlag = 0x100;
+	static const UINT kPhonemeLeadoutFlag = 0x100;	// FIXME: Check if this const is still needed
 	int m_currentActivePhoneme;				// -1 (if none) or SSI263/SC01 phoneme (& can be OR'd with kPhonemeLeadoutFlag)
 
 	bool m_isVotraxPhoneme;
