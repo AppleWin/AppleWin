@@ -146,7 +146,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		return;
 
 	AdvanceSynthesis();
-	m_synth.Write(nReg < SSI_FILFREQ ? nReg : SSI_FILFREQ, nValue);
+	m_synth.Write(nReg, nValue);
 
 	// SSI263 datasheet is not clear, but a write to DURPHON de-asserts the IRQ and clears D7.
 	// . Empirically writes to regs 0,1,2 (and reg3.CTL=1) all de-assert the IRQ (and writes to reg3.CTL=0 and regs 4..7 don't) (GH#1197)
@@ -699,9 +699,10 @@ void SSI263::Update()
 	UpdateSynthesis();
 }
 
+//-----------------------------------------------------------------------------
+
 // Called by:
-// . Update()
-// . LoadSnapshot()
+// . LoadSnapshot() and old <v16 save-state
 void SSI263::RepeatPhoneme()
 {
 	if (!m_isVotraxPhoneme)
@@ -717,13 +718,14 @@ void SSI263::RepeatPhoneme()
 	}
 	else
 	{
-		Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested in MAME 0.262)
+		Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested on SMS 'Sound/Speech I' card)
 	}
 }
 
 //-----------------------------------------------------------------------------
 
-// SC01 or old <v16 save-state
+// Called by:
+// . LoadSnapshot() and old <v16 save-state
 void SSI263::UpdateIRQ()
 {
 	_ASSERT(m_currentActivePhoneme != -1);
