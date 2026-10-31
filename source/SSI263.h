@@ -30,16 +30,6 @@ public:
 
 		m_cyclesThisAudioFrame = 0;
 
-		//
-		if (powerCycle || !m_isVotraxPhoneme)
-		{
-			m_phonemeLengthRemaining = 0;
-			m_phonemeLeadoutLength = 0;
-			m_currSampleMod4 = 0;
-		}
-
-		//
-
 		if (powerCycle || !m_isVotraxPhoneme)
 		{
 			m_numSamplesError = 0;
@@ -214,14 +204,8 @@ private:
 
 	//
 
-	UINT m_phonemeLengthRemaining;			// legacy IRQ ticks remaining
-	UINT m_phonemeLeadoutLength;			// legacy delay before the next IRQ period
-
-	//
-
 	int m_numSamplesError;
 	uint32_t m_byteOffset;
-	UINT m_currSampleMod4;
 
 	// Regs:
 	BYTE m_durationPhoneme;

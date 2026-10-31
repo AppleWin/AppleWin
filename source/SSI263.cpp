@@ -343,8 +343,6 @@ const BYTE SSI263::m_Votrax2SSI263[/*64*/] =
 	0x00,	// 3F: STOP no sound -> PA
 };
 
-#define SC01_ORIGINAL 0
-
 void SSI263::Votrax_Write(BYTE value)
 {
 #if LOG_SC01
@@ -357,19 +355,14 @@ void SSI263::Votrax_Write(BYTE value)
 	AdvanceSynthesis();
 	m_responsePending = false;
 	m_votraxPhoneme = value & PHONEME_MASK;
-#if SC01_ORIGINAL
-//	_ASSERT(!m_votraxSynthStarted);	// Will fire for overlapping phoneme writes (play-sc01-using-ssi263 assert after every phoneme)
-	m_isVotraxPhoneme = true;
-	ConfigureVotrax();
-#else
-	//	_ASSERT(!m_votraxSynthStarted);	// Will fire for overlapping phoneme writes
+
+//	_ASSERT(!m_votraxSynthStarted);	// Will fire for overlapping phoneme writes
 	m_isVotraxPhoneme = true;
 	m_durationPhoneme = m_Votrax2SSI263[m_votraxPhoneme];
 	ConfigureVotrax();
 
 	m_currentMode.function = MODE_PHONEME_IMMEDIATE_INFLECTION >> DURATION_MODE_SHIFT;
 	m_synth.SetFunction(m_currentMode.function);
-#endif
 
 	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
 	UpdateIFR(m_device, SY6522::IxR_VOTRAX, 0);
@@ -386,23 +379,7 @@ void SSI263::Play(unsigned int phoneme)
 		m_dbgStartTime = g_nCumulativeCycles;
 
 	m_currentActivePhoneme = phoneme;
-//	if (!m_isVotraxPhoneme)
-	{
-		m_phonemeLengthRemaining = 0;
-		m_phonemeLeadoutLength = 0;
-		StartResponseTiming();
-		return;
-	}
-
-#if !SC01_ORIGINAL
-	_ASSERT(0);
-#endif
-
-	// The old timing table used the same duration for PA, E and E1. [From old AppleWin for Votrax]
-	const UINT index = phoneme <= 2 ? 0 : phoneme - 2;
-	m_phonemeLengthRemaining = kPhonemeTicks[index];
-	m_phonemeLeadoutLength = m_phonemeLengthRemaining / 10;
-	m_currSampleMod4 = 0;
+	StartResponseTiming();
 }
 
 void SSI263::Stop()
@@ -507,10 +484,7 @@ void SSI263::AdvanceSynthesis()
 				? (m_Votrax2SSI263[m_votraxPhoneme] ? votraxSample : 0) : nativeSample;
 			m_speechSamplePhase += kSpeechTimingRate;
 			if (m_speechSamplePhase >= SSI263Synth::kSampleRate)
-			{
 				m_speechSamplePhase -= SSI263Synth::kSampleRate;
-//				AdvanceSpeechTiming();
-			}
 
 			if (!g_bFullSpeed && !g_bDisableDirectSound && !g_bDisableDirectSoundMockingboard && IsPhonemeActive())
 			{
@@ -532,12 +506,8 @@ void SSI263::AdvanceSynthesis()
 		}
 		if (m_votraxSynthStarted)
 		{
-#if SC01_ORIGINAL
-			m_votraxSynth.Advance(step);
-#else
 			m_votraxSynth.Advance(step);
 			AdvanceResponseTiming(step);
-#endif
 		}
 		ticks -= step;
 		m_synthSamplePhase += step * SSI263Synth::kSampleRate;
@@ -580,13 +550,9 @@ void SSI263::CommitResponse()
 {
 	if (!m_responsePending)
 		return;
+
 	m_responsePending = false;
-#if SC01_ORIGINAL
-	if (!m_isVotraxPhoneme)
-		SetSpeechIRQ();
-#else
 	SetSpeechIRQ();
-#endif
 }
 
 void SSI263::AdvanceResponseTiming(uint32_t ticks)
@@ -630,30 +596,6 @@ void SSI263::AdvanceResponseTiming(uint32_t ticks)
 	// Keep a boundary request pending until the bus operation is known.
 	// An ACK on this same cycle must not latch an interrupt in the VIA.
 }
-
-#if SC01_ORIGINAL
-void SSI263::AdvanceSpeechTiming()
-{
-	if (!m_isVotraxPhoneme || !IsPhonemeActive())
-		return;
-
-	_ASSERT(0);
-
-	// SC01 keeps its existing compatibility timing; native SSI uses response counters.
-	if (m_phonemeLengthRemaining)
-	{
-		m_currSampleMod4 = (m_currSampleMod4 + 1) & 3;
-		m_phonemeLengthRemaining--;
-		if (!m_phonemeLengthRemaining)
-			UpdateIRQ();
-	}
-	else if (m_phonemeLeadoutLength)
-	{
-		if (--m_phonemeLeadoutLength == 0)
-			RepeatPhoneme();
-	}
-}
-#endif
 
 void SSI263::UpdateSynthesis()
 {
@@ -777,8 +719,8 @@ void SSI263::Update()
 // . LoadSnapshot()
 void SSI263::RepeatPhoneme()
 {
-	if (m_phonemeLeadoutLength != 0)
-		return;
+//	if (m_phonemeLeadoutLength != 0)
+//		return;
 
 	if (!m_isVotraxPhoneme)
 	{
@@ -803,7 +745,7 @@ void SSI263::RepeatPhoneme()
 // SC01 or old <v16 save-state
 void SSI263::UpdateIRQ()
 {
-	m_phonemeLengthRemaining = 0;
+//	m_phonemeLengthRemaining = 0;
 
 	_ASSERT(m_currentActivePhoneme != -1);
 	_ASSERT((m_currentActivePhoneme & kPhonemeLeadoutFlag) == 0);
@@ -1041,9 +983,9 @@ void SSI263::SaveSynthesis(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint("Sample Phase", m_synthSamplePhase);
 	yamlSaveHelper.SaveUint("Speech Sample Phase", m_speechSamplePhase);
 	yamlSaveHelper.SaveInt("Active Phoneme", m_currentActivePhoneme);
-	yamlSaveHelper.SaveUint("Phoneme Remaining", m_phonemeLengthRemaining);
-	yamlSaveHelper.SaveUint("Leadout Remaining", m_phonemeLeadoutLength);
-	yamlSaveHelper.SaveUint("Sample Modulo", m_currSampleMod4);
+//	yamlSaveHelper.SaveUint("Phoneme Remaining", m_phonemeLengthRemaining);
+//	yamlSaveHelper.SaveUint("Leadout Remaining", m_phonemeLeadoutLength);
+//	yamlSaveHelper.SaveUint("Sample Modulo", m_currSampleMod4);
 
 	{
 		const std::vector<uint32_t> words = m_synth.SaveState();
@@ -1072,9 +1014,6 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 	const uint32_t samplePhase = yamlLoadHelper.LoadUint("Sample Phase");
 	const uint32_t speechSamplePhase = yamlLoadHelper.LoadUint("Speech Sample Phase");
 	const int activePhoneme = yamlLoadHelper.LoadInt("Active Phoneme");
-	const UINT phonemeRemaining = yamlLoadHelper.LoadUint("Phoneme Remaining");
-	const UINT leadoutRemaining = yamlLoadHelper.LoadUint("Leadout Remaining");
-	const UINT sampleModulo = yamlLoadHelper.LoadUint("Sample Modulo");
 
 	if (!yamlLoadHelper.GetSubMap("Core State"))
 		throw std::runtime_error("SSI263: Expected core state");
@@ -1084,8 +1023,7 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 	SSI263Synth synth;
 	if (!synth.LoadState(words) || !cpuClock || cycleRemainder >= cpuClock
 		|| samplePhase >= synth.GetClockHz() + SSI263Synth::kSampleRate || speechSamplePhase >= SSI263Synth::kSampleRate
-		|| activePhoneme < -1 || activePhoneme > (int)(kPhonemeLeadoutFlag | PHONEME_MASK)
-		|| sampleModulo > 3)
+		|| activePhoneme < -1 || activePhoneme > (int)(kPhonemeLeadoutFlag | PHONEME_MASK))
 		throw std::runtime_error("SSI263: Invalid synthesis state");
 	yamlLoadHelper.PopMap();
 
@@ -1122,9 +1060,6 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 	m_synthSamplePhase = samplePhase;
 	m_speechSamplePhase = speechSamplePhase;
 	m_currentActivePhoneme = activePhoneme;
-	m_phonemeLengthRemaining = phonemeRemaining;
-	m_phonemeLeadoutLength = leadoutRemaining;
-	m_currSampleMod4 = sampleModulo;
 	m_responseActive = responseActive;
 	m_responsePending = responsePending;
 	m_responseReloaded = responseReloaded;
