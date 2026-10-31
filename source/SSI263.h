@@ -142,7 +142,6 @@ private:
 	uint32_t m_synthCpuClock;
 	uint32_t m_synthCycleRemainder;
 	uint32_t m_synthSamplePhase;
-	uint32_t m_speechSamplePhase;
 	short m_synthBuffer[MAX_SAMPLES];
 	UINT m_synthSamples;
 

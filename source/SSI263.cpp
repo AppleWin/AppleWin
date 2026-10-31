@@ -61,7 +61,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #define LOG_SSI263 0
 #define LOG_SSI263B 0	// Alternate SSI263 logging (use in conjunction with CPU.cpp's LOG_IRQ_TAKEN_AND_RTI)
-#define LOG_SC01 1
+#define LOG_SC01 0
 
 // SSI263A registers:
 #define SSI_DURPHON	0x00
@@ -69,20 +69,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #define SSI_RATEINF	0x02
 #define SSI_CTTRAMP	0x03
 #define SSI_FILFREQ	0x04
-
-// Historical SC01 compatibility durations, in 1/22050 second ticks.
-static const uint32_t kSpeechTimingRate = 22050;
-static const UINT kPhonemeTicks[62] =	// Votrax only
-{
-	2656, 2636, 2594, 2707, 2746, 2630, 2644, 3203,
-	2639, 2709, 2593, 2577, 2548, 2705, 2620, 2655,
-	2731, 2639, 2735, 2676, 2606, 2633, 2674, 2653,
-	2555, 2578, 2635, 2650, 2663, 2595, 2512, 2657,
-	2618, 2609, 1012, 899, 2691, 896, 880, 905,
-	2575, 3199, 2615, 3373, 2539, 2618, 2603, 2648,
-	2642, 2600, 2656, 2574, 2720, 2661, 2638, 2731,
-	2643, 2594, 2584, 2643, 2564, 2582
-};
 
 //-----------------------------------------------------------------------------
 
@@ -393,6 +379,7 @@ void SSI263::Stop()
 void SSI263::ResetSynthesis(bool resetClock)
 {
 	m_synth.Reset((uint32_t)(Get6502BaseClock() + 0.5));
+
 	ResetResponseTiming();
 	if (resetClock)
 	{
@@ -400,10 +387,11 @@ void SSI263::ResetSynthesis(bool resetClock)
 		m_synthCpuClock = (uint32_t)(g_fCurrentCLK6502 + 0.5);
 		m_synthCycleRemainder = 0;
 		m_synthSamplePhase = m_synth.GetClockHz();
-		m_speechSamplePhase = 0;
 	}
+
 	if (resetClock || !m_isVotraxPhoneme)
 		m_synthSamples = 0;
+
 	m_synth.Write(SSI_DURPHON, m_durationPhoneme);
 	m_synth.Write(SSI_INFLECT, m_inflection);
 	m_synth.Write(SSI_RATEINF, m_rateInflection);
@@ -414,18 +402,18 @@ void SSI263::ResetSynthesis(bool resetClock)
 void SSI263::ResetVotraxSynthesis()
 {
 	m_votraxSynth.Reset((uint32_t)(Get6502BaseClock() + 0.5));
-	// Fixed surrogate voice: about 91 Hz, with immediate pitch and smooth articulation.
+
+	// Fixed surrogate voice: about 91Hz (for rate=8), with immediate pitch and smooth articulation.
 	// These are SSI263 model settings, not an SC01 circuit model. Ignore SC01 pitch bits.
 	m_votraxSynth.Write(SSI_CTTRAMP, CONTROL_MASK);
 	m_votraxSynth.Write(SSI_DURPHON, MODE_PHONEME_IMMEDIATE_INFLECTION);
 	m_votraxSynth.Write(SSI_CTTRAMP, 0x00);
 
+	m_rateInflection = 0xA8;
 	m_votraxSynth.Write(SSI_INFLECT, 0x51);
-	m_votraxSynth.Write(SSI_RATEINF, 0x88);
+	m_votraxSynth.Write(SSI_RATEINF, m_rateInflection);
 	m_votraxSynth.Write(SSI_FILFREQ, 0xE7);
 	m_votraxSynthStarted = false;
-
-	m_rateInflection = 0x88;
 }
 
 void SSI263::ConfigureVotrax()
@@ -435,6 +423,7 @@ void SSI263::ConfigureVotrax()
 		m_votraxSynth.Write(SSI_CTTRAMP, 0x5C);
 		m_votraxSynthStarted = true;
 	}
+
 	m_votraxSynth.Write(SSI_DURPHON, m_Votrax2SSI263[m_votraxPhoneme]);
 }
 
@@ -479,12 +468,8 @@ void SSI263::AdvanceSynthesis()
 			m_synthSamplePhase -= chipClock;
 			const short nativeSample = m_type != SSI263Empty ? m_synth.GetSample() : 0;
 			const short votraxSample = m_votraxSynthStarted ? m_votraxSynth.GetSample() : 0;
-			// PA0, PA1 and STOP retain the old silent output and IRQ timing.
 			const short sample = m_isVotraxPhoneme
 				? (m_Votrax2SSI263[m_votraxPhoneme] ? votraxSample : 0) : nativeSample;
-			m_speechSamplePhase += kSpeechTimingRate;
-			if (m_speechSamplePhase >= SSI263Synth::kSampleRate)
-				m_speechSamplePhase -= SSI263Synth::kSampleRate;
 
 			if (!g_bFullSpeed && !g_bDisableDirectSound && !g_bDisableDirectSoundMockingboard && IsPhonemeActive())
 			{
@@ -738,12 +723,9 @@ void SSI263::RepeatPhoneme()
 
 //-----------------------------------------------------------------------------
 
-// Complete the current compatibility timing period.
 // SC01 or old <v16 save-state
 void SSI263::UpdateIRQ()
 {
-//	m_phonemeLengthRemaining = 0;
-
 	_ASSERT(m_currentActivePhoneme != -1);
 	_ASSERT((m_currentActivePhoneme & kPhonemeLeadoutFlag) == 0);
 	m_currentActivePhoneme |= kPhonemeLeadoutFlag;
@@ -978,7 +960,6 @@ void SSI263::SaveSynthesis(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint("CPU Clock", m_synthCpuClock);
 	yamlSaveHelper.SaveUint("Cycle Remainder", m_synthCycleRemainder);
 	yamlSaveHelper.SaveUint("Sample Phase", m_synthSamplePhase);
-	yamlSaveHelper.SaveUint("Speech Sample Phase", m_speechSamplePhase);
 	yamlSaveHelper.SaveInt("Active Phoneme", m_currentActivePhoneme);
 
 	{
@@ -1052,7 +1033,6 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 	m_synthCpuClock = cpuClock;
 	m_synthCycleRemainder = cycleRemainder;
 	m_synthSamplePhase = samplePhase;
-	m_speechSamplePhase = speechSamplePhase;
 	m_currentActivePhoneme = activePhoneme;
 	m_responseActive = responseActive;
 	m_responsePending = responsePending;
