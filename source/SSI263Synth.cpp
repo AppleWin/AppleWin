@@ -179,8 +179,8 @@ void SSI263Synth::Reset(uint32_t clockHz)
 
 void SSI263Synth::SetFunction(uint8_t function)
 {
-	if (function > 3)
-		throw std::invalid_argument("SSI263 function must be 0..3");
+	if (function == 0 || function > 3)
+		throw std::invalid_argument("SSI263 function must be 1..3");
 	m_function = function;
 }
 
