@@ -171,6 +171,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 
 		m_durationPhoneme = nValue;
 		m_isVotraxPhoneme = false;
+		ResetVotraxSynthesis();
 
 		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
 			Play(m_durationPhoneme & PHONEME_MASK);		// Play phoneme when *not* in power-down / standby mode
@@ -215,6 +216,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 
 			// Device out of power down / "standby" mode, so play phoneme
 			m_isVotraxPhoneme = false;
+			ResetVotraxSynthesis();
 			Play(m_durationPhoneme & PHONEME_MASK);
 		}
 
@@ -342,7 +344,6 @@ void SSI263::Votrax_Write(BYTE value)
 	m_responsePending = false;
 	m_votraxPhoneme = value & PHONEME_MASK;
 
-//	_ASSERT(!m_votraxSynthStarted);	// Will fire for overlapping phoneme writes
 	m_isVotraxPhoneme = true;
 	m_durationPhoneme = m_Votrax2SSI263[m_votraxPhoneme];
 	ConfigureVotrax();
@@ -409,9 +410,7 @@ void SSI263::ResetVotraxSynthesis()
 	m_votraxSynth.Write(SSI_DURPHON, MODE_PHONEME_IMMEDIATE_INFLECTION);
 	m_votraxSynth.Write(SSI_CTTRAMP, 0x00);
 
-	m_rateInflection = 0xA8;
 	m_votraxSynth.Write(SSI_INFLECT, 0x51);
-	m_votraxSynth.Write(SSI_RATEINF, m_rateInflection);
 	m_votraxSynth.Write(SSI_FILFREQ, 0xE7);
 	m_votraxSynthStarted = false;
 }
@@ -420,7 +419,9 @@ void SSI263::ConfigureVotrax()
 {
 	if (!m_votraxSynthStarted)
 	{
-		m_votraxSynth.Write(SSI_CTTRAMP, 0x5C);
+		m_rateInflection = 0xA8;
+		m_votraxSynth.Write(SSI_RATEINF, m_rateInflection);
+		m_votraxSynth.Write(SSI_CTTRAMP, 0x5C);	// CTL=0 (ie. not power-down)
 		m_votraxSynthStarted = true;
 	}
 
@@ -466,10 +467,11 @@ void SSI263::AdvanceSynthesis()
 		if (m_synthSamplePhase >= chipClock)
 		{
 			m_synthSamplePhase -= chipClock;
+
+			// SC01 playback takes precedence over SSI263 playback. If the SC01 phoneme is active it's always played, and the SSI263 phoneme is silenced.
 			const short nativeSample = m_type != SSI263Empty ? m_synth.GetSample() : 0;
 			const short votraxSample = m_votraxSynthStarted ? m_votraxSynth.GetSample() : 0;
-			const short sample = m_isVotraxPhoneme
-				? (m_Votrax2SSI263[m_votraxPhoneme] ? votraxSample : 0) : nativeSample;
+			const short sample = m_isVotraxPhoneme ? votraxSample : nativeSample;
 
 			if (!g_bFullSpeed && !g_bDisableDirectSound && !g_bDisableDirectSoundMockingboard && IsPhonemeActive())
 			{
@@ -484,15 +486,13 @@ void SSI263::AdvanceSynthesis()
 
 		const uint32_t toSample = (chipClock - m_synthSamplePhase + SSI263Synth::kSampleRate - 1) / SSI263Synth::kSampleRate;
 		const uint32_t step = ticks < toSample ? (uint32_t)ticks : toSample;
-		if (m_type != SSI263Empty)
+		if (m_type != SSI263Empty || m_votraxSynthStarted)
 		{
-			m_synth.Advance(step);
-			AdvanceResponseTiming(step);
-		}
-		if (m_votraxSynthStarted)
-		{
-			m_votraxSynth.Advance(step);
-			AdvanceResponseTiming(step);
+			if (m_type != SSI263Empty)
+				m_synth.Advance(step);
+			if (m_votraxSynthStarted)
+				m_votraxSynth.Advance(step);
+			AdvanceResponseTiming(step);	// Only one set of response counters for both synths (so can't have two simultaneous SC01+SSI263 phonemes).
 		}
 		ticks -= step;
 		m_synthSamplePhase += step * SSI263Synth::kSampleRate;
