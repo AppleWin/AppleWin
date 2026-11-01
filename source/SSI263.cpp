@@ -4,8 +4,8 @@ AppleWin : An Apple //e emulator for Windows
 Copyright (C) 1994-1996, Michael O'Brien
 Copyright (C) 1999-2001, Oliver Schmidt
 Copyright (C) 2002-2005, Tom Charlesworth
-Copyright (C) 2006-2024, Tom Charlesworth, Michael Pohoreski, Nick Westgate
-Copyright (C) 2026, Henri Asseily (henri@asseily.com)
+Copyright (C) 2006-2025, Tom Charlesworth, Michael Pohoreski, Nick Westgate
+Copyright (C) 2026, Tom Charlesworth, Henri Asseily (henri@asseily.com)
 
 AppleWin is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -1110,7 +1110,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 		if (version >= 7 && version < 13)
 			yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_ACTIVE_PHONEME);	// Consume redundant data
 
-		if (version < 12)
+		if (version < 16)
 		{
 			if (m_currentMode.function == 0)	// invalid function (but in older versions this was accepted)
 			{
@@ -1128,7 +1128,9 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	}
 
 	if (version >= 16)
+	{
 		LoadSynthesis(yamlLoadHelper);
+	}
 	else
 	{
 		// Older snapshots only stored registers, so start a fresh synth voice.
