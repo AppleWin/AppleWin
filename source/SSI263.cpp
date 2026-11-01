@@ -995,7 +995,6 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 	const uint32_t cpuClock = yamlLoadHelper.LoadUint("CPU Clock");
 	const uint32_t cycleRemainder = yamlLoadHelper.LoadUint("Cycle Remainder");
 	const uint32_t samplePhase = yamlLoadHelper.LoadUint("Sample Phase");
-	const uint32_t speechSamplePhase = yamlLoadHelper.LoadUint("Speech Sample Phase");
 	const int activePhoneme = yamlLoadHelper.LoadInt("Active Phoneme");
 
 	if (!yamlLoadHelper.GetSubMap("Core State"))
@@ -1005,36 +1004,27 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 		words[i] = yamlLoadHelper.LoadUint(StrFormat("%u", (UINT)i));
 	SSI263Synth synth;
 	if (!synth.LoadState(words) || !cpuClock || cycleRemainder >= cpuClock
-		|| samplePhase >= synth.GetClockHz() + SSI263Synth::kSampleRate || speechSamplePhase >= SSI263Synth::kSampleRate
+		|| samplePhase >= synth.GetClockHz() + SSI263Synth::kSampleRate
 		|| activePhoneme < -1 || activePhoneme > (int)(kPhonemeLeadoutFlag | PHONEME_MASK))
 		throw std::runtime_error("SSI263: Invalid synthesis state");
 	yamlLoadHelper.PopMap();
 
-	// Earlier candidate snapshots did not save native response counters.
-	bool responseActive = m_type != SSI263Empty && activePhoneme >= 0 && !(m_ctrlArtAmp & CONTROL_MASK);
-	bool responsePending = false;
-	bool responseReloaded = false;
-	bool durationReloaded = false;
-	UINT responseRemaining = responseActive ? GetResponsePeriod() : 0;
-	UINT durationRemaining = responseActive ? GetDurationPeriod() : 0;
-	UINT responsePhase = 0;
-	UINT durationPhase = 0;
-	if (yamlLoadHelper.GetSubMap("Response Timing"))
-	{
-		responseActive = yamlLoadHelper.LoadBool("Active");
-		responsePending = yamlLoadHelper.LoadBool("Pending");
-		responseReloaded = yamlLoadHelper.LoadBool("Response Reloaded");
-		durationReloaded = yamlLoadHelper.LoadBool("Duration Reloaded");
-		responseRemaining = yamlLoadHelper.LoadUint("Response Remaining");
-		durationRemaining = yamlLoadHelper.LoadUint("Duration Remaining");
-		responsePhase = yamlLoadHelper.LoadUint("Response Phase");
-		durationPhase = yamlLoadHelper.LoadUint("Duration Phase");
-		if (responsePhase > 15 || durationPhase > 15 || responseRemaining > 4096 || durationRemaining > 16384
-			|| (responseActive && (!responseRemaining || !durationRemaining))
-			|| (!responseActive && (responsePending || responseReloaded || durationReloaded || responseRemaining || durationRemaining)))
-			throw std::runtime_error("SSI263: Invalid response timing");
-		yamlLoadHelper.PopMap();
-	}
+	if (!yamlLoadHelper.GetSubMap("Response Timing"))
+		throw std::runtime_error("SSI263: Expected response timing");
+	const bool responseActive = yamlLoadHelper.LoadBool("Active");
+	const bool responsePending = yamlLoadHelper.LoadBool("Pending");
+	const bool responseReloaded = yamlLoadHelper.LoadBool("Response Reloaded");
+	const bool durationReloaded = yamlLoadHelper.LoadBool("Duration Reloaded");
+	const UINT responseRemaining = yamlLoadHelper.LoadUint("Response Remaining");
+	const UINT durationRemaining = yamlLoadHelper.LoadUint("Duration Remaining");
+	const UINT responsePhase = yamlLoadHelper.LoadUint("Response Phase");
+	const UINT durationPhase = yamlLoadHelper.LoadUint("Duration Phase");
+	if (responsePhase > 15 || durationPhase > 15 || responseRemaining > 4096 || durationRemaining > 16384
+		|| (responseActive && (!responseRemaining || !durationRemaining))
+		|| (!responseActive && (responsePending || responseReloaded || durationReloaded || responseRemaining || durationRemaining)))
+		throw std::runtime_error("SSI263: Invalid response timing");
+	yamlLoadHelper.PopMap();
+
 	yamlLoadHelper.PopMap();
 
 	m_synth = synth;
