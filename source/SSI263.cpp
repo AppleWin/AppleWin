@@ -36,10 +36,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * . CTL=0 brings device out of "PD" mode, the mode will be set to DR1,DR0 and the phoneme P5-P0 will play.
  * . Setting mode to DR1:0 = %00 just disables A/!R (ie. disables interrupts), but otherwise retains the previous DR1:0 mode.
  *   . If an IRQ was previously asserted then to set DR1:0=%00, you must go via CTL=1, which de-asserts the IRQ.
- * . Mockingboard-C: CTRL+RESET is not connected to !PD/!RST pin 18.
+ * . SMS Mockingboard-C: TODO: Confirm that CTRL+RESET is not connected to !PD/!RST pin 18.
  *   . Phasor: TODO: check with a 'scope.
- *   . Phasor: with SSI263 ints disabled & reg0's DR1:0 != %00, then CTRL+RESET will cause SSI263 to enable ints & assert IRQ.
- *     . it's as if the SSI263 does a CTL H->L to pick-up the new DR1:0. (Bug in SSI263? Assume it should remain in PD mode.)
+ *   . Phasor: with SSI263P ints disabled & reg0's DR1:0 != %00, then CTRL+RESET will cause SSI263 to enable ints & assert IRQ.
+ *     . it's as if the SSI263P does a CTL H->L to pick-up the new DR1:0. (Bug in SSI263P? Assume it should remain in PD mode.)
  *     . but if CTL=1, then CTRL+RESET has no effect.
  * . Power-on: PD=1 (so D7=0), reg4 (Filter Freq)=0xFF (other regs are seemingly random?).
  */
@@ -872,8 +872,8 @@ void SSI263::DSUninit()
 
 //-----------------------------------------------------------------------------
 
-// MB-C/Phasor/SSI263P phoneme continues to play after CTRL+RESET, whereas Phasor/SSI263AP doesn't (tested on real h/w)
-// Votrax phoneme continues to play after CTRL+RESET (tested on MAME 0.262)
+// MB-C/Phasor/SSI263P phoneme continues to play after CTRL+RESET, whereas Phasor/SSI263AP doesn't (tested on real Phasor card)
+// Votrax phoneme continues to play after CTRL+RESET (tested on SMS 'Sound/Speech I' card)
 void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 {
 	if (m_type == SSI263Empty && !m_hasSC01)
@@ -894,12 +894,18 @@ void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 			// [SSI263P] Empirically observed it does CTL H->L to enable ints (and set the device mode?) (GH#175)
 			// NB. CTRL+RESET doesn't clear m_ctrlArtAmp.CTL (ie. if the device is in power-down/standby mode then ignore RST)
 			// There's a bug in the SSI263P and RST should put the device into power-down/standby mode (ie. silence the device)
-			// TODO: Stick a 'scope on !PD/!RST pin 18 to see what the Phasor h/w does.
+			// TODO: Stick a 'scope on !PD/!RST pin 18 to see what the Phasor card does.
 			if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
 				SetDeviceModeAndInts();
 		}
 
 		return;
+	}
+
+	if (!powerCycle && m_type == SSI263AP && !isPhasorCard)
+	{
+		// TODO: Confirm that the SSI263AP on an SMS Mockingboard-C (not RM clone) card is not reset by CTRL+RESET
+		//return;	// Until confirmed, keep current behaviour (ie. reset the SSI263AP on CTRL+RESET)
 	}
 
 	if (powerCycle || !m_isVotraxPhoneme)

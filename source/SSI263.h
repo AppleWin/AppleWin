@@ -48,7 +48,7 @@ public:
 		m_filterFreq = powerCycle ? FILTER_FREQ_POWER_ON : 0;		// Empirically observed at chip power-on (GH#1302)
 
 		m_currentMode.mode = 0;
-		m_currentMode.function = 0;		// Set at runtime when CTL=0
+		m_currentMode.function = m_durationPhoneme >> DURATION_MODE_SHIFT;
 		m_currentMode.enableInts = 0;	// Set at runtime when CTL=0
 		m_currentMode.D7 = 0;			// Since in power-down mode (as per SSI263 datasheet)
 
