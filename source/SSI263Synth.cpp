@@ -18,14 +18,8 @@ SSI263 speech synthesis from its parameter ROM and the SC-02 circuit model.
 Adapted from the Appletini ONE project at https://github.com/hasseily/appletini-one
 */
 
-#ifndef SSI263_SYNTH_TEST
 #include "StdAfx.h"
-#endif
 #include "SSI263Synth.h"
-
-#include <cassert>
-#include <climits>
-#include <stdexcept>
 
 // Native SSI-263 source and ideal SC-02 charge-transfer filters.
 // See docs/SSI263-synthesis.md for circuit sources and model limits.

@@ -20,10 +20,7 @@ Portable SSI263 sound state and interface.
 Adapted from the Appletini ONE project at https://github.com/hasseily/appletini-one
 */
 
-
 #include <array>
-#include <cstdint>
-#include <vector>
 
 // SSI-263 speech from its parameter ROM and an ideal SC-02 prototype circuit.
 // Pitch glide, cold state and source levels remain model approximations.
