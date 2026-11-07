@@ -946,9 +946,6 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 
 //=============================================================================
 
-#define FULL_SSI263_SAVE_STATE 0
-#define FULL_SC01_SAVE_STATE 0
-
 #define SS_YAML_KEY_SSI263 "SSI263"
 // NB. No version - this is determined by the parent "Mockingboard C" or "Phasor" unit
 
@@ -973,13 +970,6 @@ void SSI263::SaveSynthesis(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint("Sample Phase", m_synthSamplePhase);
 	yamlSaveHelper.SaveInt("Active Phoneme", m_currentActivePhoneme);
 
-	{
-		const std::vector<uint32_t> words = m_synth.SaveState();
-		YamlSaveHelper::Label state(yamlSaveHelper, "Core State:\n");
-		for (size_t i = 0; i < words.size(); i++)
-			yamlSaveHelper.SaveHexUint32(StrFormat("%u", (UINT)i).c_str(), words[i]);
-	}
-
 	YamlSaveHelper::Label timing(yamlSaveHelper, "Response Timing:\n");
 	yamlSaveHelper.SaveBool("Active", m_responseActive);
 	yamlSaveHelper.SaveBool("Pending", m_responsePending);
@@ -999,22 +989,7 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 	const uint32_t cycleRemainder = yamlLoadHelper.LoadUint("Cycle Remainder");
 	const uint32_t samplePhase = yamlLoadHelper.LoadUint("Sample Phase");
 	int activePhoneme = yamlLoadHelper.LoadInt("Active Phoneme");
-
-#if FULL_SSI263_SAVE_STATE
-	if (!yamlLoadHelper.GetSubMap("Core State"))
-		throw std::runtime_error("SSI263: Expected core state");
-	std::vector<uint32_t> words = m_synth.SaveState();
-	for (size_t i = 0; i < words.size(); i++)
-		words[i] = yamlLoadHelper.LoadUint(StrFormat("%u", (UINT)i));
-	SSI263Synth synth;
-	if (!synth.LoadState(words) || !cpuClock || cycleRemainder >= cpuClock
-		|| samplePhase >= synth.GetClockHz() + SSI263Synth::kSampleRate
-		|| activePhoneme < -1 || activePhoneme > (int)(kPhonemeLeadoutFlag | PHONEME_MASK))
-		throw std::runtime_error("SSI263: Invalid synthesis state");
-	yamlLoadHelper.PopMap();
-#else
 	activePhoneme = 0x00;	// silence
-#endif
 
 	if (!yamlLoadHelper.GetSubMap("Response Timing"))
 		throw std::runtime_error("SSI263: Expected response timing");
@@ -1034,11 +1009,7 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 
 	yamlLoadHelper.PopMap();
 
-#if FULL_SSI263_SAVE_STATE
-	m_synth = synth;
-#else
 	m_synth = SSI263Synth();
-#endif
 	m_synthCpuClock = cpuClock;
 	m_synthCycleRemainder = cycleRemainder;
 	m_synthSamplePhase = samplePhase;
@@ -1191,10 +1162,6 @@ void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
 		YamlSaveHelper::Label state(yamlSaveHelper, "Synthesis:\n");
 		yamlSaveHelper.SaveBool("Started", m_votraxSynthStarted);
-		const std::vector<uint32_t> words = m_votraxSynth.SaveState();
-		YamlSaveHelper::Label core(yamlSaveHelper, "Core State:\n");
-		for (size_t i = 0; i < words.size(); i++)
-			yamlSaveHelper.SaveHexUint32(StrFormat("%u", (UINT)i).c_str(), words[i]);
 	}
 }
 
@@ -1230,24 +1197,12 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		if (version >= 16 && yamlLoadHelper.GetSubMap("Synthesis"))
 		{
 			const bool started = yamlLoadHelper.LoadBool("Started");
-#if FULL_SC01_SAVE_STATE
-			if (!yamlLoadHelper.GetSubMap("Core State"))
-				throw std::runtime_error("SC01: Expected core state");
-			std::vector<uint32_t> words = m_votraxSynth.SaveState();
-			for (size_t i = 0; i < words.size(); i++)
-				words[i] = yamlLoadHelper.LoadUint(StrFormat("%u", (UINT)i));
-			if (!m_votraxSynth.LoadState(words) || (m_isVotraxPhoneme && !started))
-				throw std::runtime_error("SC01: Invalid synthesis state");
-			m_votraxSynthStarted = started;
-			yamlLoadHelper.PopMap();
-#else
 			if (m_isVotraxPhoneme && started)
 			{
 				m_votraxPhoneme = 0x3F;	// silence
 				m_votraxSynthStarted = false;
 				ConfigureVotrax();
 			}
-#endif
 			yamlLoadHelper.PopMap();
 		}
 		else if (m_isVotraxPhoneme)

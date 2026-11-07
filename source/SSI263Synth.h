@@ -45,10 +45,6 @@ public:
 	int16_t GetSample();
 	uint32_t GetClockHz() const { return m_clockHz; }
 
-	// Versioned words, independent of struct layout. A failed load changes nothing.
-	std::vector<uint32_t> SaveState() const;
-	bool LoadState(const std::vector<uint32_t>& words);
-
 private:
 	struct Ramp
 	{
