@@ -50,7 +50,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #ifdef USE_SPEECH_API
 #include "Speech.h"
 #endif
-#include "SSI263Synth.h"
 #include "Windows/Win32Frame.h"
 #include "Windows/DXSoundBuffer.h"
 #include "RGBMonitor.h"
@@ -626,30 +625,6 @@ static void GetAppleWinVersion()
 // DO ONE-TIME INITIALIZATION
 static void OneTimeInitialization(HINSTANCE passinstance)
 {
-	// Currently only support one RIFF file
-	if (!g_cmdLine.wavFileSpeaker.empty())
-	{
-		if (RiffInitWriteFile(g_cmdLine.wavFileSpeaker.c_str(), SPKR_SAMPLE_RATE, Spkr_GetNumChannels()))
-			Spkr_OutputToRiff();
-	}
-	else if (!g_cmdLine.wavFileMockingboard.empty())
-	{
-		if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS))
-			GetCardMgr().GetMockingboardCardMgr().OutputToRiff();
-	}
-#if 0
-	else if (!g_cmdLine.wavFileSpeech.empty())
-	{
-		// Scan s1->s7
-		MockingboardCard* mb = dynamic_cast<MockingboardCard*>(GetCardMgr().GetMockingboardCardMgr().GetFirstMockingboardWithSpeech());
-		if (mb)
-		{
-			if (RiffInitWriteFile(g_cmdLine.wavFileSpeech.c_str(), SSI263Synth::kSampleRate, 1/*1 channel*/))
-				mb->SpeechOutputToRiff();	// SSI263 at $Cs40
-		}
-	}
-#endif
-
 	// Initialize COM - so we can use CoCreateInstance
 	// . DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
 	// . DDInit() is done in RepeatInitialization() by GetVideo().Initialize()
@@ -1030,21 +1005,17 @@ static void RepeatInitialization()
 		}
 	}
 
-#if 1
-	if (!g_cmdLine.wavFileSpeech.empty())
-	{
-		// Scan s1->s7
-		MockingboardCard* mb = dynamic_cast<MockingboardCard*>(GetCardMgr().GetMockingboardCardMgr().GetFirstMockingboardWithSpeech());
-		if (mb)
-		{
-			char startDir[_MAX_PATH];
-			GetCurrentDirectory(sizeof(startDir), startDir);
+	// Currently only support one RIFF file
+	if (RiffInitWriteFile(g_cmdLine.wavFileSpeaker.c_str(), SPKR_SAMPLE_RATE, Spkr_GetNumChannels()))
+		Spkr_OutputToRiff();
+	g_cmdLine.wavFileSpeaker = "";		// Don't reapply after a restart
 
-			if (RiffInitWriteFile(g_cmdLine.wavFileSpeech.c_str(), SSI263Synth::kSampleRate, 1/*1 channel*/))
-				mb->SpeechOutputToRiff();	// SSI263 at $Cs40
-		}
-	}
-#endif
+	if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS))
+		GetCardMgr().GetMockingboardCardMgr().OutputAYToRiff();
+	g_cmdLine.wavFileMockingboard = "";	// Don't reapply after a restart
+
+	GetCardMgr().GetMockingboardCardMgr().OutputSpeechToRiff(g_cmdLine.wavFileSpeech);
+	g_cmdLine.wavFileSpeech = "";		// Don't reapply after a restart
 }
 
 static void Shutdown()

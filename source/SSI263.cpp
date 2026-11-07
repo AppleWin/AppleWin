@@ -946,6 +946,9 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 
 //=============================================================================
 
+#define FULL_SSI263_SAVE_STATE 0
+#define FULL_SC01_SAVE_STATE 0
+
 #define SS_YAML_KEY_SSI263 "SSI263"
 // NB. No version - this is determined by the parent "Mockingboard C" or "Phasor" unit
 
@@ -995,8 +998,9 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 	const uint32_t cpuClock = yamlLoadHelper.LoadUint("CPU Clock");
 	const uint32_t cycleRemainder = yamlLoadHelper.LoadUint("Cycle Remainder");
 	const uint32_t samplePhase = yamlLoadHelper.LoadUint("Sample Phase");
-	const int activePhoneme = yamlLoadHelper.LoadInt("Active Phoneme");
+	int activePhoneme = yamlLoadHelper.LoadInt("Active Phoneme");
 
+#if FULL_SSI263_SAVE_STATE
 	if (!yamlLoadHelper.GetSubMap("Core State"))
 		throw std::runtime_error("SSI263: Expected core state");
 	std::vector<uint32_t> words = m_synth.SaveState();
@@ -1008,6 +1012,9 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 		|| activePhoneme < -1 || activePhoneme > (int)(kPhonemeLeadoutFlag | PHONEME_MASK))
 		throw std::runtime_error("SSI263: Invalid synthesis state");
 	yamlLoadHelper.PopMap();
+#else
+	activePhoneme = 0x00;	// silence
+#endif
 
 	if (!yamlLoadHelper.GetSubMap("Response Timing"))
 		throw std::runtime_error("SSI263: Expected response timing");
@@ -1027,7 +1034,11 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 
 	yamlLoadHelper.PopMap();
 
+#if FULL_SSI263_SAVE_STATE
 	m_synth = synth;
+#else
+	m_synth = SSI263Synth();
+#endif
 	m_synthCpuClock = cpuClock;
 	m_synthCycleRemainder = cycleRemainder;
 	m_synthSamplePhase = samplePhase;
@@ -1189,11 +1200,13 @@ void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 
 void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 {
+	m_votraxSynth = SSI263Synth();
 	ResetVotraxSynthesis();
+
 	if (version < 12)
 	{
 		m_votraxPhoneme = 0;
-		// The parent sets the active flag for these older snapshots.
+		//  NB. m_isVotraxPhoneme already set by SetVotraxPhoneme() in MockingboardCard::LoadSnapshot()
 		if (m_isVotraxPhoneme)
 			ConfigureVotrax();
 		return;
@@ -1217,6 +1230,7 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		if (version >= 16 && yamlLoadHelper.GetSubMap("Synthesis"))
 		{
 			const bool started = yamlLoadHelper.LoadBool("Started");
+#if FULL_SC01_SAVE_STATE
 			if (!yamlLoadHelper.GetSubMap("Core State"))
 				throw std::runtime_error("SC01: Expected core state");
 			std::vector<uint32_t> words = m_votraxSynth.SaveState();
@@ -1226,6 +1240,14 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 				throw std::runtime_error("SC01: Invalid synthesis state");
 			m_votraxSynthStarted = started;
 			yamlLoadHelper.PopMap();
+#else
+			if (m_isVotraxPhoneme && started)
+			{
+				m_votraxPhoneme = 0x3F;	// silence
+				m_votraxSynthStarted = false;
+				ConfigureVotrax();
+			}
+#endif
 			yamlLoadHelper.PopMap();
 		}
 		else if (m_isVotraxPhoneme)

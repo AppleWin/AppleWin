@@ -50,18 +50,47 @@ bool MockingboardCardManager::IsMockingboardExtraCardType(UINT slot)
 	return type == CT_MegaAudio || type == CT_SDMusic;
 }
 
-
-Card* MockingboardCardManager::GetFirstMockingboardWithSpeech()
+// Scan s1->s7, and return the first Mockingboard card that has an SSI263 at socket-1
+MockingboardCard* MockingboardCardManager::FindCardForSpeechOutput()
 {
 	for (int i = SLOT1; i <= SLOT7; i++)
 	{
-		if (IsMockingboard(i))
-		{
-			if (dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i)).GetSocketSSI263(1) != SSI263Empty)	// socket-1 -> SSI263 at $Cs40
-				return GetCardMgr().GetObj(i);
-		}
+		if (!IsMockingboard(i))
+			continue;
+		MockingboardCard& mb = dynamic_cast<MockingboardCard&>(GetCardMgr().GetRef(i));
+		if (mb.GetSocketSSI263(1) == SSI263Empty)	// socket-1 -> SSI263 at $Cs40
+			continue;
+		return &mb;
 	}
 	return nullptr;
+}
+
+void MockingboardCardManager::OutputSpeechToRiff(std::string& wavFileName)
+{
+	if (wavFileName.empty())
+		return;
+
+	MockingboardCard* mb = FindCardForSpeechOutput();
+	if (!mb)
+		return;
+
+	if (RiffInitWriteFile(wavFileName.c_str(), SSI263Synth::kSampleRate, 1/*1 channel*/))
+	{
+		m_outputSpeechToRiff = true;
+		mb->SpeechOutputToRiff();	// Only SSI263 at $Cs40 (and not SC01 or other SSI263)
+	}
+}
+
+// Called by: Snapshot_LoadState()
+void MockingboardCardManager::ReenableSpeechToRiff()
+{
+	if (!m_outputSpeechToRiff)
+		return;
+
+	// New save-state loaded, so MB config may've changed
+	MockingboardCard* mb = FindCardForSpeechOutput();
+	if (mb)
+		mb->SpeechOutputToRiff();
 }
 
 void MockingboardCardManager::ReinitializeClock()
@@ -459,6 +488,6 @@ void MockingboardCardManager::MixAllAndCopyToRingBuffer(UINT nNumSamples)
 
 	m_byteOffset = (m_byteOffset + (uint32_t)nNumSamples * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS) % SOUNDBUFFER_SIZE;
 
-	if (m_outputToRiff)
+	if (m_outputAYToRiff)
 		RiffPutSamples(&m_mixBuffer[0], nNumSamples);
 }
