@@ -1,6 +1,8 @@
 #pragma once
 
 #include "MockingboardDefs.h"
+#include "SoundCore.h"
+#include "SSI263Synth.h"
 
 class SSI263
 {
@@ -11,13 +13,10 @@ public:
 		m_device = -1;	// undefined
 		m_cardMode = PH_Mockingboard;
 		m_hasSC01 = true;	// only for m_device==0
-		m_pPhonemeData00 = NULL;
+
+		m_outputToRiff = false;
 
 		ResetState(true);
-	}
-	~SSI263()
-	{
-		delete [] m_pPhonemeData00;
 	}
 
 	void ResetState(const bool powerCycle)
@@ -31,25 +30,11 @@ public:
 
 		m_cyclesThisAudioFrame = 0;
 
-		//
-
-		m_lastUpdateCycle = 0;
-		m_updateWasFullSpeed = false;
-
-		m_pPhonemeData = NULL;
-		m_phonemeLengthRemaining = 0;
-		m_phonemeAccurateLengthRemaining = 0;
-		m_phonemePlaybackAndDebugger = false;
-		m_phonemeCompleteByFullSpeed = false;
-		m_phonemeLeadoutLength = 0;
-
-		//
-
-		m_numSamplesError = 0;
-		m_byteOffset = (uint32_t)-1;
-		m_currSampleSum = 0;
-		m_currNumSamples = 0;
-		m_currSampleMod4 = 0;
+		if (powerCycle || !m_isVotraxPhoneme)
+		{
+			m_numSamplesError = 0;
+			m_byteOffset = (uint32_t)-1;
+		}
 
 		//
 
@@ -60,10 +45,10 @@ public:
 		m_inflection = 0;
 		m_rateInflection = 0;
 		m_ctrlArtAmp = (powerCycle || m_type == SSI263AP) ? CONTROL_MASK : 0;				// Chip power-on, so CTL=1 (power-down / standby)
-		m_filterFreq = powerCycle ? FILTER_FREQ_SILENCE : 0;		// Empirically observed at chip power-on (GH#1302)
+		m_filterFreq = powerCycle ? FILTER_FREQ_POWER_ON : 0;		// Empirically observed at chip power-on (GH#1302)
 
 		m_currentMode.mode = 0;
-		m_currentMode.function = 0;		// Set at runtime when CTL=0
+		m_currentMode.function = m_durationPhoneme >> DURATION_MODE_SHIFT;
 		m_currentMode.enableInts = 0;	// Set at runtime when CTL=0
 		m_currentMode.D7 = 0;			// Since in power-down mode (as per SSI263 datasheet)
 
@@ -71,6 +56,10 @@ public:
 
 		m_dbgFirst = true;
 		m_dbgStartTime = 0;
+
+		ResetSynthesis(powerCycle);
+		if (powerCycle)
+			ResetVotraxSynthesis();
 	}
 
 	void SetDevice(UINT device) { m_device = device; }
@@ -98,6 +87,8 @@ public:
 	void Votrax_Write(BYTE nValue);
 	void SetVotraxPhoneme(bool value) { m_isVotraxPhoneme = value; }
 
+	void OutputToRiff() { m_outputToRiff = true; }
+
 	void SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, UINT subunit);
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit);
 
@@ -108,11 +99,21 @@ private:
 		// Also valid regardless of m_isVotraxPhoneme state
 		return m_currentActivePhoneme >= 0;
 	}
+	void ResetSynthesis(bool resetClock = true);
+	void ResetVotraxSynthesis();
+	void ConfigureVotrax();
+	void AdvanceSynthesis();
+	void UpdateSynthesis();
+	void AdvanceResponseTiming(uint32_t ticks);
+	void CommitResponse();
+	UINT GetResponsePeriod() const { return (16 - (m_rateInflection >> 4)) * 256; }
+	UINT GetDurationPeriod() const { return (4 - (m_durationPhoneme >> 6)) * GetResponsePeriod(); }
+	void SaveSynthesis(class YamlSaveHelper& yamlSaveHelper);
+	void LoadSynthesis(class YamlLoadHelper& yamlLoadHelper);
 	void Play(unsigned int nPhoneme);
 	void Stop();
 	void UpdateIRQ();
 	void RepeatPhoneme();
-	void UpdateAccurateLength();
 	void SetDeviceModeAndInts();
 
 	UINT64 GetLastCumulativeCycles();
@@ -132,12 +133,56 @@ private:
 	short m_mixBufferSSI263[m_kDSBufferByteSize / sizeof(short)];
 	VOICE SSI263SingleVoice;
 
+	SSI263Synth m_synth;
+	SSI263Synth m_votraxSynth;
+	bool m_votraxSynthStarted;
+	UINT64 m_synthLastCycle;
+	uint32_t m_synthCpuClock;
+	uint32_t m_synthCycleRemainder;
+	uint32_t m_synthSamplePhase;
+	short m_synthBuffer[MAX_SAMPLES];
+	UINT m_synthSamples;
+
+	// Native A/!R (Ack/!Request) counters use effective SSI XCK, independent of audio samples.
+	struct Timing
+	{
+		Timing() { Reset(); }
+		void Reset()
+		{
+			responseActive = false;
+			responsePending = false;
+			responseReloaded = false;
+			durationReloaded = false;
+			responseTicksRemaining = 0;
+			durationTicksRemaining = 0;
+			responsePhase = 0;
+			durationPhase = 0;
+		}
+		void Start(UINT responsePeriod, UINT durationPeriod)
+		{
+			Reset();
+			responseActive = true;
+			responseTicksRemaining = responsePeriod;
+			durationTicksRemaining = durationPeriod;
+		}
+		bool responseActive;
+		bool responsePending;
+		bool responseReloaded;
+		bool durationReloaded;
+		UINT responseTicksRemaining;
+		UINT durationTicksRemaining;
+		BYTE responsePhase;
+		BYTE durationPhase;
+	} m_timing;
+
 	//
 
 	// Duration/Phonome
 	static const BYTE DURATION_MODE_MASK = 0xC0;
 	static const BYTE DURATION_MODE_SHIFT = 6;
 	static const BYTE PHONEME_MASK = 0x3F;
+	static const BYTE SSI263_PHONENE_SILENCE = 0x00;
+	static const BYTE SC01_PHONENE_SILENCE = 0x3F;
 
 	static const BYTE MODE_PHONEME_TRANSITIONED_INFLECTION = 0xC0;
 	static const BYTE MODE_PHONEME_IMMEDIATE_INFLECTION = 0x80;
@@ -154,15 +199,14 @@ private:
 	static const BYTE AMPLITUDE_MASK = 0x0F;
 	static const BYTE CONTROL_MASK = 0x80;
 
-	// Filter frequency range
-	static const BYTE FILTER_FREQ_SILENCE = 0xFF;
+	// Filter register after power-on
+	static const BYTE FILTER_FREQ_POWER_ON = 0xFF;
 
 	SSI263Type m_type;
 	UINT m_slot;
 	BYTE m_device;	// SSI263 device# which is generating phoneme-complete IRQ (and only required whilst Mockingboard isn't a class)
 	PHASOR_MODE m_cardMode;
 	bool m_hasSC01;
-	short* m_pPhonemeData00;
 
 	// ctor/power-cycle: Set to -1
 	// Play(): Set to [$00-$3F] on a write to DURPHON register.
@@ -171,7 +215,7 @@ private:
 	// SSI263.CONTROL 1->0 will call Play().
 	// NB. Can be used to detect overlapping phonemes in Play().
 	// NB. For SSI263 (and SC01) once >=0 then this remains the case (even when SSI263.CONTROL=1).
-	static const UINT kPhonemeLeadoutFlag = 0x100;
+	static const UINT kPhonemeLeadoutFlag = 0x100;	// FIXME: Check if this const is still needed
 	int m_currentActivePhoneme;				// -1 (if none) or SSI263/SC01 phoneme (& can be OR'd with kPhonemeLeadoutFlag)
 
 	bool m_isVotraxPhoneme;
@@ -180,23 +224,8 @@ private:
 
 	//
 
-	UINT64 m_lastUpdateCycle;
-	bool m_updateWasFullSpeed;
-
-	const short* m_pPhonemeData;
-	UINT m_phonemeLengthRemaining;			// length in samples, decremented as space becomes available in the ring-buffer
-	UINT m_phonemeAccurateLengthRemaining;	// length in samples, decremented by cycles executed
-	bool m_phonemePlaybackAndDebugger;
-	bool m_phonemeCompleteByFullSpeed;
-	UINT m_phonemeLeadoutLength;			// length in samples, decremented after \m_phonemeLengthRemaining\ goes to zero. Delay until phoneme repeats
-
-	//
-
 	int m_numSamplesError;
 	uint32_t m_byteOffset;
-	int m_currSampleSum;
-	int m_currNumSamples;
-	UINT m_currSampleMod4;
 
 	// Regs:
 	BYTE m_durationPhoneme;
@@ -216,6 +245,8 @@ private:
 		};
 		BYTE mode;
 	} m_currentMode;
+
+	bool m_outputToRiff;
 
 	// Debug
 	bool m_dbgFirst;

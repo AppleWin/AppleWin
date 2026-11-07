@@ -124,6 +124,7 @@ struct CmdLine
 	UINT userSpecifiedHeight;
 	std::string wavFileSpeaker;
 	std::string wavFileMockingboard;
+	std::string wavFileSpeech;
 	SS_CARDTYPE auxSlotCard;
 	std::string sBootSectorFileName;
 	size_t nBootSectorFileSize;

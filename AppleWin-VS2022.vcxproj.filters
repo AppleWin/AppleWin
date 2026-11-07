@@ -217,6 +217,9 @@
     <ClCompile Include="source\SSI263.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\SSI263Synth.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
     <ClCompile Include="source\Debugger\Debugger_Disassembler.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
@@ -465,9 +468,6 @@
     <ClInclude Include="source\Speech.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
-    <ClInclude Include="source\SSI263Phonemes.h">
-      <Filter>Source Files\_Headers</Filter>
-    </ClInclude>
     <ClInclude Include="source\StdAfx.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -562,6 +562,9 @@
       <Filter>Source Files\Windows</Filter>
     </ClInclude>
     <ClInclude Include="source\SSI263.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\SSI263Synth.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Debugger\Debugger_Disassembler.h">
