@@ -962,66 +962,67 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 #define TYPE_SSI263_P "SSI263P"
 #define TYPE_SSI263_AP "SSI263AP"
 
+#define SS_YAML_KEY_SSI263_SYNTHESIS "Synthesis"
+#define SS_YAML_KEY_SSI263_CPU_CLOCK "CPU Clock"
+#define SS_YAML_KEY_SSI263_CYCLE_REMAINDER "Cycle Remainder"
+#define SS_YAML_KEY_SSI263_SAMPLE_PHASE "Sample Phase"
+
+#define SS_YAML_KEY_SSI263_RESPONSE_TIMING "Response Timing"
+#define SS_YAML_KEY_SSI263_RESPONSE_ACTIVE "Active"
+#define SS_YAML_KEY_SSI263_RESPONSE_PENDING "Pending"
+#define SS_YAML_KEY_SSI263_RESPONSE_RELOADED "Response Reloaded"
+#define SS_YAML_KEY_SSI263_DURATION_RELOADED "Duration Reloaded"
+#define SS_YAML_KEY_SSI263_RESPONSE_REMAINING "Response Remaining"
+#define SS_YAML_KEY_SSI263_DURATION_REMAINING "Duration Remaining"
+#define SS_YAML_KEY_SSI263_RESPONSE_PHASE "Response Phase"
+#define SS_YAML_KEY_SSI263_DURATION_PHASE "Duration Phase"
+
+
 void SSI263::SaveSynthesis(YamlSaveHelper& yamlSaveHelper)
 {
-	YamlSaveHelper::Label label(yamlSaveHelper, "Synthesis:\n");
-	yamlSaveHelper.SaveUint("CPU Clock", m_synthCpuClock);
-	yamlSaveHelper.SaveUint("Cycle Remainder", m_synthCycleRemainder);
-	yamlSaveHelper.SaveUint("Sample Phase", m_synthSamplePhase);
-	yamlSaveHelper.SaveInt("Active Phoneme", m_currentActivePhoneme);
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n");
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_CPU_CLOCK, m_synthCpuClock);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_CYCLE_REMAINDER, m_synthCycleRemainder);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_SAMPLE_PHASE, m_synthSamplePhase);
 
-	YamlSaveHelper::Label timing(yamlSaveHelper, "Response Timing:\n");
-	yamlSaveHelper.SaveBool("Active", m_responseActive);
-	yamlSaveHelper.SaveBool("Pending", m_responsePending);
-	yamlSaveHelper.SaveBool("Response Reloaded", m_responseReloaded);
-	yamlSaveHelper.SaveBool("Duration Reloaded", m_durationReloaded);
-	yamlSaveHelper.SaveUint("Response Remaining", m_responseTicksRemaining);
-	yamlSaveHelper.SaveUint("Duration Remaining", m_durationTicksRemaining);
-	yamlSaveHelper.SaveUint("Response Phase", m_responsePhase);
-	yamlSaveHelper.SaveUint("Duration Phase", m_durationPhase);
+	YamlSaveHelper::Label timing(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263_RESPONSE_TIMING);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_RESPONSE_ACTIVE, m_responseActive);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_RESPONSE_PENDING, m_responsePending);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_RESPONSE_RELOADED, m_responseReloaded);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_DURATION_RELOADED, m_durationReloaded);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_RESPONSE_REMAINING, m_responseTicksRemaining);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_DURATION_REMAINING, m_durationTicksRemaining);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_RESPONSE_PHASE, m_responsePhase);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_DURATION_PHASE, m_durationPhase);
 }
 
 void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 {
-	if (!yamlLoadHelper.GetSubMap("Synthesis"))
-		throw std::runtime_error("SSI263: Expected synthesis state");
-	const uint32_t cpuClock = yamlLoadHelper.LoadUint("CPU Clock");
-	const uint32_t cycleRemainder = yamlLoadHelper.LoadUint("Cycle Remainder");
-	const uint32_t samplePhase = yamlLoadHelper.LoadUint("Sample Phase");
-	int activePhoneme = yamlLoadHelper.LoadInt("Active Phoneme");
-	activePhoneme = 0x00;	// silence
+	m_synth = SSI263Synth();
 
-	if (!yamlLoadHelper.GetSubMap("Response Timing"))
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263_SYNTHESIS))
+		throw std::runtime_error("SSI263: Expected synthesis state");
+	m_synthCpuClock = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_CPU_CLOCK);
+	m_synthCycleRemainder = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_CYCLE_REMAINDER);
+	m_synthSamplePhase = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_SAMPLE_PHASE);
+
+	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263_RESPONSE_TIMING))
 		throw std::runtime_error("SSI263: Expected response timing");
-	const bool responseActive = yamlLoadHelper.LoadBool("Active");
-	const bool responsePending = yamlLoadHelper.LoadBool("Pending");
-	const bool responseReloaded = yamlLoadHelper.LoadBool("Response Reloaded");
-	const bool durationReloaded = yamlLoadHelper.LoadBool("Duration Reloaded");
-	const UINT responseRemaining = yamlLoadHelper.LoadUint("Response Remaining");
-	const UINT durationRemaining = yamlLoadHelper.LoadUint("Duration Remaining");
-	const UINT responsePhase = yamlLoadHelper.LoadUint("Response Phase");
-	const UINT durationPhase = yamlLoadHelper.LoadUint("Duration Phase");
-	if (responsePhase > 15 || durationPhase > 15 || responseRemaining > 4096 || durationRemaining > 16384
-		|| (responseActive && (!responseRemaining || !durationRemaining))
-		|| (!responseActive && (responsePending || responseReloaded || durationReloaded || responseRemaining || durationRemaining)))
+	m_responseActive = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_RESPONSE_ACTIVE);
+	m_responsePending = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_RESPONSE_PENDING);
+	m_responseReloaded = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_RESPONSE_RELOADED);
+	m_durationReloaded = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_DURATION_RELOADED);
+	m_responseTicksRemaining = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_RESPONSE_REMAINING);
+	m_durationTicksRemaining = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_DURATION_REMAINING);
+	m_responsePhase = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_RESPONSE_PHASE);
+	m_durationPhase = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_DURATION_PHASE);
+	if (m_responsePhase > 15 || m_durationPhase > 15 || m_responseTicksRemaining > 4096 || m_durationTicksRemaining > 16384
+		|| (m_responseActive && (!m_responseTicksRemaining || !m_durationTicksRemaining))
+		|| (!m_responseActive && (m_responsePending || m_responseReloaded || m_durationReloaded || m_responseTicksRemaining || m_durationTicksRemaining)))
 		throw std::runtime_error("SSI263: Invalid response timing");
 	yamlLoadHelper.PopMap();
 
 	yamlLoadHelper.PopMap();
-
-	m_synth = SSI263Synth();
-	m_synthCpuClock = cpuClock;
-	m_synthCycleRemainder = cycleRemainder;
-	m_synthSamplePhase = samplePhase;
-	m_currentActivePhoneme = activePhoneme;
-	m_responseActive = responseActive;
-	m_responsePending = responsePending;
-	m_responseReloaded = responseReloaded;
-	m_durationReloaded = durationReloaded;
-	m_responseTicksRemaining = responseRemaining;
-	m_durationTicksRemaining = durationRemaining;
-	m_responsePhase = (BYTE)responsePhase;
-	m_durationPhase = (BYTE)durationPhase;
 }
 
 void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT subunit)
@@ -1046,8 +1047,8 @@ void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT subunit)
 			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_CTRL_ART_AMP, m_ctrlArtAmp);
 			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_REG_FILTER_FREQ, m_filterFreq);
 			yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SSI263_CURRENT_MODE, m_currentMode.mode);
+			SaveSynthesis(yamlSaveHelper);
 		}
-		SaveSynthesis(yamlSaveHelper);
 	}
 
 	if (subunit == 0)	// has SC01
@@ -1102,6 +1103,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	if (version >= 16)
 	{
 		LoadSynthesis(yamlLoadHelper);
+		m_currentActivePhoneme = SSI263_PHONENE_SILENCE;
 	}
 	else
 	{
@@ -1127,7 +1129,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	if (version < 16 && (m_isVotraxPhoneme || IsPhonemeActive()))
 	{
 		// Old snapshots lack timing state. Keep their completion-and-restart policy.
-		m_currentActivePhoneme = 0;
+		m_currentActivePhoneme = SSI263_PHONENE_SILENCE;
 		UpdateIRQ();
 		RepeatPhoneme();
 	}
@@ -1146,6 +1148,9 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 #define SS_YAML_KEY_SC01_ACTIVE_PHONEME "SC01 Active Phoneme"
 #define SS_YAML_KEY_SC01_TYPE "Type"	// v14
 
+#define SS_YAML_KEY_SC01_SYNTHESIS "Synthesis"
+#define SS_YAML_KEY_SC01_STARTED "Started"
+
 #define TYPE_SC01_EMPTY "Empty"
 #define TYPE_SC01 "SC01"
 
@@ -1160,8 +1165,8 @@ void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	{
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SC01_PHONEME, m_votraxPhoneme);
 		yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
-		YamlSaveHelper::Label state(yamlSaveHelper, "Synthesis:\n");
-		yamlSaveHelper.SaveBool("Started", m_votraxSynthStarted);
+		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SC01_SYNTHESIS);
+		yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_STARTED, m_votraxSynthStarted);
 	}
 }
 
@@ -1194,12 +1199,12 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		if (m_votraxPhoneme > PHONEME_MASK)
 			throw std::runtime_error("SC01: Invalid phoneme");
 
-		if (version >= 16 && yamlLoadHelper.GetSubMap("Synthesis"))
+		if (version >= 16 && yamlLoadHelper.GetSubMap(SS_YAML_KEY_SC01_SYNTHESIS))
 		{
-			const bool started = yamlLoadHelper.LoadBool("Started");
+			const bool started = yamlLoadHelper.LoadBool(SS_YAML_KEY_SC01_STARTED);
 			if (m_isVotraxPhoneme && started)
 			{
-				m_votraxPhoneme = 0x3F;	// silence
+				m_votraxPhoneme = SC01_PHONENE_SILENCE;
 				m_votraxSynthStarted = false;
 				ConfigureVotrax();
 			}
