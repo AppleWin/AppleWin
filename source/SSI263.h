@@ -104,8 +104,6 @@ private:
 	void ConfigureVotrax();
 	void AdvanceSynthesis();
 	void UpdateSynthesis();
-	void ResetResponseTiming();
-	void StartResponseTiming();
 	void AdvanceResponseTiming(uint32_t ticks);
 	void CommitResponse();
 	UINT GetResponsePeriod() const { return (16 - (m_rateInflection >> 4)) * 256; }
@@ -145,15 +143,37 @@ private:
 	short m_synthBuffer[MAX_SAMPLES];
 	UINT m_synthSamples;
 
-	// Native A/R counters use effective SSI XCK, independent of audio samples.
-	bool m_responseActive;
-	bool m_responsePending;
-	bool m_responseReloaded;
-	bool m_durationReloaded;
-	UINT m_responseTicksRemaining;
-	UINT m_durationTicksRemaining;
-	BYTE m_responsePhase;
-	BYTE m_durationPhase;
+	// Native A/!R (Ack/!Request) counters use effective SSI XCK, independent of audio samples.
+	struct Timing
+	{
+		Timing() { Reset(); }
+		void Reset()
+		{
+			responseActive = false;
+			responsePending = false;
+			responseReloaded = false;
+			durationReloaded = false;
+			responseTicksRemaining = 0;
+			durationTicksRemaining = 0;
+			responsePhase = 0;
+			durationPhase = 0;
+		}
+		void Start(UINT responsePeriod, UINT durationPeriod)
+		{
+			Reset();
+			responseActive = true;
+			responseTicksRemaining = responsePeriod;
+			durationTicksRemaining = durationPeriod;
+		}
+		bool responseActive;
+		bool responsePending;
+		bool responseReloaded;
+		bool durationReloaded;
+		UINT responseTicksRemaining;
+		UINT durationTicksRemaining;
+		BYTE responsePhase;
+		BYTE durationPhase;
+	} m_timing;
 
 	//
 

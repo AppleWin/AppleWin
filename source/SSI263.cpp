@@ -153,7 +153,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 	// NB. The same for Mockingboard as there's no automatic handshake from the 6522 (CA2 isn't connected to the SSI263). So writes to regs 0, 1 or 2 complete the "handshake".
 	if (nReg <= SSI_RATEINF)
 	{
-		m_responsePending = false;
+		m_timing.responsePending = false;
 		CpuIrqDeassert(IS_SPEECH);
 		m_currentMode.D7 = 0;
 	}
@@ -189,10 +189,10 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 #endif
 		m_rateInflection = nValue;
 		// A RATE write on a slot boundary feeds that reload in the hardware.
-		if (m_responseReloaded)
-			m_responseTicksRemaining = GetResponsePeriod();
-		if (m_durationReloaded)
-			m_durationTicksRemaining = GetDurationPeriod();
+		if (m_timing.responseReloaded)
+			m_timing.responseTicksRemaining = GetResponsePeriod();
+		if (m_timing.durationReloaded)
+			m_timing.durationTicksRemaining = GetDurationPeriod();
 		break;
 	case SSI_CTTRAMP:
 #if LOG_SSI263
@@ -226,7 +226,7 @@ void SSI263::Write(BYTE nReg, BYTE nValue)
 		// . this silences the phoneme - actually "turns off the excitation sources and analog circuits"
 		if (m_ctrlArtAmp & CONTROL_MASK)
 		{
-			m_responsePending = false;
+			m_timing.responsePending = false;
 			CpuIrqDeassert(IS_SPEECH);
 			m_currentMode.D7 = 0;
 			// NB. Don't call Stop() - mb-audit ("Classic Adventure") cuts at end, Berzap! is choppy
@@ -341,7 +341,7 @@ void SSI263::Votrax_Write(BYTE value)
 		return;
 
 	AdvanceSynthesis();
-	m_responsePending = false;
+	m_timing.responsePending = false;
 	m_votraxPhoneme = value & PHONEME_MASK;
 
 	m_isVotraxPhoneme = true;
@@ -351,7 +351,7 @@ void SSI263::Votrax_Write(BYTE value)
 	m_currentMode.function = MODE_PHONEME_IMMEDIATE_INFLECTION >> DURATION_MODE_SHIFT;
 	m_synth.SetFunction(m_currentMode.function);
 
-	// !A/R: Acknowledge receipt of phoneme data (signal goes from high to low)
+	// A/!R: Acknowledge receipt of phoneme data (signal goes from high to low)
 	UpdateIFR(m_device, SY6522::IxR_VOTRAX, 0);
 
 	// SC01 duration does not depend on pitch or SSI263 registers.
@@ -366,7 +366,7 @@ void SSI263::Play(unsigned int phoneme)
 		m_dbgStartTime = g_nCumulativeCycles;
 
 	m_currentActivePhoneme = phoneme;
-	StartResponseTiming();
+	m_timing.Start(GetResponsePeriod(), GetDurationPeriod());
 }
 
 void SSI263::Stop()
@@ -381,7 +381,7 @@ void SSI263::ResetSynthesis(bool resetClock)
 {
 	m_synth.Reset((uint32_t)(Get6502BaseClock() + 0.5));
 
-	ResetResponseTiming();
+	m_timing.Reset();
 	if (resetClock)
 	{
 		m_synthLastCycle = g_nCumulativeCycles;
@@ -436,8 +436,8 @@ void SSI263::AdvanceSynthesis()
 	if (elapsedCycles)
 	{
 		CommitResponse();
-		m_responseReloaded = false;
-		m_durationReloaded = false;
+		m_timing.responseReloaded = false;
+		m_timing.durationReloaded = false;
 	}
 	if (m_type == SSI263Empty && !m_votraxSynthStarted)
 		return;
@@ -502,47 +502,23 @@ void SSI263::AdvanceSynthesis()
 	{
 		// The last XCK edge preceded this CPU boundary, so a later write cannot win it.
 		CommitResponse();
-		m_responseReloaded = false;
-		m_durationReloaded = false;
+		m_timing.responseReloaded = false;
+		m_timing.durationReloaded = false;
 	}
-}
-
-void SSI263::ResetResponseTiming()
-{
-	m_responseActive = false;
-	m_responsePending = false;
-	m_responseReloaded = false;
-	m_durationReloaded = false;
-	m_responseTicksRemaining = 0;
-	m_durationTicksRemaining = 0;
-	m_responsePhase = 0;
-	m_durationPhase = 0;
-}
-
-void SSI263::StartResponseTiming()
-{
-	m_responseActive = true;
-	m_responsePending = false;
-	m_responseReloaded = false;
-	m_durationReloaded = false;
-	m_responseTicksRemaining = GetResponsePeriod();
-	m_durationTicksRemaining = GetDurationPeriod();
-	m_responsePhase = 0;
-	m_durationPhase = 0;
 }
 
 void SSI263::CommitResponse()
 {
-	if (!m_responsePending)
+	if (!m_timing.responsePending)
 		return;
 
-	m_responsePending = false;
+	m_timing.responsePending = false;
 	SetSpeechIRQ();
 }
 
 void SSI263::AdvanceResponseTiming(uint32_t ticks)
 {
-	if (!m_responseActive)
+	if (!m_timing.responseActive)
 		return;
 
 	// Match the FPGA response counters: 16 slots per request. RATE is live
@@ -550,32 +526,31 @@ void SSI263::AdvanceResponseTiming(uint32_t ticks)
 	while (ticks)
 	{
 		CommitResponse();
-		m_responseReloaded = false;
-		m_durationReloaded = false;
+		m_timing.responseReloaded = false;
+		m_timing.durationReloaded = false;
 		UINT step = ticks;
-		if (step > m_responseTicksRemaining)
-			step = m_responseTicksRemaining;
-		if (step > m_durationTicksRemaining)
-			step = m_durationTicksRemaining;
+		if (step > m_timing.responseTicksRemaining)
+			step = m_timing.responseTicksRemaining;
+		if (step > m_timing.durationTicksRemaining)
+			step = m_timing.durationTicksRemaining;
 		ticks -= step;
-		m_responseTicksRemaining -= step;
-		m_durationTicksRemaining -= step;
-
-		if (!m_responseTicksRemaining)
+		m_timing.responseTicksRemaining -= step;
+		m_timing.durationTicksRemaining -= step;
+		if (!m_timing.responseTicksRemaining)
 		{
-			m_responseTicksRemaining = GetResponsePeriod();
-			m_responseReloaded = true;
-			m_responsePhase = (m_responsePhase + 1) & 15;
-			if (!m_responsePhase && m_currentMode.function == 1)
-				m_responsePending = true;
+			m_timing.responseTicksRemaining = GetResponsePeriod();
+			m_timing.responseReloaded = true;
+			m_timing.responsePhase = (m_timing.responsePhase + 1) & 15;
+			if (!m_timing.responsePhase && m_currentMode.function == 1)
+				m_timing.responsePending = true;
 		}
-		if (!m_durationTicksRemaining)
+		if (!m_timing.durationTicksRemaining)
 		{
-			m_durationTicksRemaining = GetDurationPeriod();
-			m_durationReloaded = true;
-			m_durationPhase = (m_durationPhase + 1) & 15;
-			if (!m_durationPhase && (m_currentMode.function == 2 || m_currentMode.function == 3))
-				m_responsePending = true;
+			m_timing.durationTicksRemaining = GetDurationPeriod();
+			m_timing.durationReloaded = true;
+			m_timing.durationPhase = (m_timing.durationPhase + 1) & 15;
+			if (!m_timing.durationPhase && (m_currentMode.function == 2 || m_currentMode.function == 3))
+				m_timing.responsePending = true;
 		}
 	}
 	// Keep a boundary request pending until the bus operation is known.
@@ -787,7 +762,7 @@ void SSI263::SetSpeechIRQ()
 
 	if (m_isVotraxPhoneme && GetPCR(m_device) == 0xB0)
 	{
-		// !A/R: Time-out of old phoneme (signal goes from low to high)
+		// A/!R: Time-out of old phoneme (signal goes from low to high)
 		UpdateIFR(m_device, 0, SY6522::IxR_VOTRAX);
 	}
 }
@@ -882,7 +857,7 @@ void SSI263::Reset(const bool powerCycle, const bool isPhasorCard)
 	// Power-on reset can run before the card has a slot entry.
 	if (!powerCycle)
 		AdvanceSynthesis();
-	m_responsePending = false;
+	m_timing.responsePending = false;
 
 	if (!powerCycle && m_type == SSI263Empty)
 		return;
@@ -986,14 +961,14 @@ void SSI263::SaveSynthesis(YamlSaveHelper& yamlSaveHelper)
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_SAMPLE_PHASE, m_synthSamplePhase);
 
 	YamlSaveHelper::Label timing(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263_RESPONSE_TIMING);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_RESPONSE_ACTIVE, m_responseActive);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_RESPONSE_PENDING, m_responsePending);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_RESPONSE_RELOADED, m_responseReloaded);
-	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_DURATION_RELOADED, m_durationReloaded);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_RESPONSE_REMAINING, m_responseTicksRemaining);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_DURATION_REMAINING, m_durationTicksRemaining);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_RESPONSE_PHASE, m_responsePhase);
-	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_DURATION_PHASE, m_durationPhase);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_RESPONSE_ACTIVE, m_timing.responseActive);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_RESPONSE_PENDING, m_timing.responsePending);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_RESPONSE_RELOADED, m_timing.responseReloaded);
+	yamlSaveHelper.SaveBool(SS_YAML_KEY_SSI263_DURATION_RELOADED, m_timing.durationReloaded);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_RESPONSE_REMAINING, m_timing.responseTicksRemaining);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_DURATION_REMAINING, m_timing.durationTicksRemaining);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_RESPONSE_PHASE, m_timing.responsePhase);
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_DURATION_PHASE, m_timing.durationPhase);
 }
 
 void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
@@ -1008,17 +983,17 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 
 	if (!yamlLoadHelper.GetSubMap(SS_YAML_KEY_SSI263_RESPONSE_TIMING))
 		throw std::runtime_error("SSI263: Expected response timing");
-	m_responseActive = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_RESPONSE_ACTIVE);
-	m_responsePending = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_RESPONSE_PENDING);
-	m_responseReloaded = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_RESPONSE_RELOADED);
-	m_durationReloaded = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_DURATION_RELOADED);
-	m_responseTicksRemaining = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_RESPONSE_REMAINING);
-	m_durationTicksRemaining = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_DURATION_REMAINING);
-	m_responsePhase = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_RESPONSE_PHASE);
-	m_durationPhase = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_DURATION_PHASE);
-	if (m_responsePhase > 15 || m_durationPhase > 15 || m_responseTicksRemaining > 4096 || m_durationTicksRemaining > 16384
-		|| (m_responseActive && (!m_responseTicksRemaining || !m_durationTicksRemaining))
-		|| (!m_responseActive && (m_responsePending || m_responseReloaded || m_durationReloaded || m_responseTicksRemaining || m_durationTicksRemaining)))
+	m_timing.responseActive = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_RESPONSE_ACTIVE);
+	m_timing.responsePending = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_RESPONSE_PENDING);
+	m_timing.responseReloaded = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_RESPONSE_RELOADED);
+	m_timing.durationReloaded = yamlLoadHelper.LoadBool(SS_YAML_KEY_SSI263_DURATION_RELOADED);
+	m_timing.responseTicksRemaining = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_RESPONSE_REMAINING);
+	m_timing.durationTicksRemaining = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_DURATION_REMAINING);
+	m_timing.responsePhase = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_RESPONSE_PHASE);
+	m_timing.durationPhase = yamlLoadHelper.LoadUint(SS_YAML_KEY_SSI263_DURATION_PHASE);
+	if (m_timing.responsePhase > 15 || m_timing.durationPhase > 15 || m_timing.responseTicksRemaining > 4096 || m_timing.durationTicksRemaining > 16384
+		|| (m_timing.responseActive && (!m_timing.responseTicksRemaining || !m_timing.durationTicksRemaining))
+		|| (!m_timing.responseActive && (m_timing.responsePending || m_timing.responseReloaded || m_timing.durationReloaded || m_timing.responseTicksRemaining || m_timing.durationTicksRemaining)))
 		throw std::runtime_error("SSI263: Invalid response timing");
 	yamlLoadHelper.PopMap();
 
