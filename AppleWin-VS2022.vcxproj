@@ -228,9 +228,7 @@
     <ClCompile Include="source\Speaker.cpp" />
     <ClCompile Include="source\Speech.cpp" />
     <ClCompile Include="source\SSI263.cpp" />
-    <ClCompile Include="source\SSI263Synth.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="source\SSI263Synth.cpp" />
     <ClCompile Include="source\StdAfx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
