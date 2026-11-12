@@ -252,6 +252,16 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 				{
 					g_cmdLine.slotInfo[slot].card = CT_BreakpointCard;
 				}
+				else if (strcmp(lpCmdLine, "softcard") == 0)
+				{
+					if (!CardInstanceExists(CT_Z80) && !CardInstanceExists(CT_ALSCPM))
+						g_cmdLine.slotInfo[slot].card = CT_Z80;
+				}
+				else if (strcmp(lpCmdLine, "alscpmcard") == 0)	// ALS The CP/M Card
+				{
+					if (!CardInstanceExists(CT_Z80) && !CardInstanceExists(CT_ALSCPM))
+						g_cmdLine.slotInfo[slot].card = CT_ALSCPM;
+				}
 				else if (strcmp(lpCmdLine, "6522a-bad") == 0)
 				{
 					g_cmdLine.slotInfo[slot].useBad6522A = true;

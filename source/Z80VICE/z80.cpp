@@ -140,11 +140,26 @@ void z80_reset()
 #define STORE(addr, value) \
     (*_z80mem_write_tab_ptr[(addr) >> 8])((WORD)(addr), (BYTE)(value))
 
+static const Z80Board* g_z80Board = NULL;	// NULL: Microsoft Z-80 SoftCard
+
+static BYTE z80_io_read(WORD addr)
+{
+	return g_z80Board ? g_z80Board->in(addr) : (io_read_tab[addr >> 8])(addr);
+}
+
+static void z80_io_write(WORD addr, BYTE value)
+{
+	if (g_z80Board)
+		g_z80Board->out(addr, value);
+	else
+		(io_write_tab[addr >> 8])(addr, value);
+}
+
 #define IN(addr) \
-    (io_read_tab[(addr) >> 8])((WORD)(addr))
+    z80_io_read((WORD)(addr))
 
 #define OUT(addr, value) \
-    (io_write_tab[(addr) >> 8])((WORD)(addr), (BYTE)(value))
+    z80_io_write((WORD)(addr), (BYTE)(value))
 
 #define opcode_t DWORD
 #define FETCH_OPCODE(o) ((o) = (LOAD(z80_reg_pc)		\
@@ -5511,11 +5526,49 @@ static void opcode_fd(BYTE ip1, BYTE ip2, BYTE ip3, WORD ip12, WORD ip23)
 
 // The effective Z-80 clock rate is 2.041MHz
 // See: http://www.apple2info.net/hardware/softcard/SC-SWHW_a2in.pdf
-static const double uZ80ClockMultiplier = 2;
+static const double kSoftCardClockMultiplier = 2;
+static double uZ80ClockMultiplier = kSoftCardClockMultiplier;
 
 inline static ULONG ConvertZ80TStatesTo6502Cycles(UINT uTStates)
 {
 	return (uTStates < 0) ? 0 : (ULONG) ((double)uTStates / uZ80ClockMultiplier);
+}
+
+void Z80_SetBoard(const Z80Board* board)
+{
+	g_z80Board = board;
+	uZ80ClockMultiplier = board ? board->tStatesPer6502Cycle : kSoftCardClockMultiplier;
+}
+
+// A board's /INT, taken between instructions while IFF1 is set (not right
+// after EI). The acknowledge pushes PC and runs what the board puts on the
+// bus: in IM 0 an RST, in IM 1 RST 38h, in IM 2 the vector at I:byte.
+static BYTE z80_ei_delay = 0;
+
+static void z80_take_interrupt()
+{
+	if (LOAD(z80_reg_pc) == 0x76)	// HALT: return past it
+		z80_reg_pc = (z80_reg_pc + 1) & 0xffff;
+
+	const BYTE ack = g_z80Board->intAck();
+	iff1 = 0;
+	iff2 = 0;
+	--reg_sp;
+	STORE(reg_sp, (BYTE)(z80_reg_pc >> 8));
+	--reg_sp;
+	STORE(reg_sp, (BYTE)(z80_reg_pc & 0xff));
+
+	if (im_mode == 2)
+	{
+		const WORD vector = (WORD)((reg_i << 8) | ack);
+		JUMP(LOAD(vector) | (LOAD((WORD)(vector + 1)) << 8));
+		CLK += 19;
+	}
+	else
+	{
+		JUMP((im_mode == 0 && (ack & 0xc7) == 0xc7) ? (ack & 0x38) : 0x38);
+		CLK += 13;
+	}
 }
 
 //void z80_mainloop(interrupt_cpu_status_t *cpu_int_status,
@@ -5535,7 +5588,19 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 	uExecutedCycles = (ULONG) ((double)uExecutedCycles * uZ80ClockMultiplier);
 	maincpu_clk = uExecutedCycles;	// Must be signed int, as cycles can go -ve
 
+    static unsigned int m1HalfStates = 0;	// half T-states owed by a board's M1 stretch
+
     do {
+		const CLOCK clkInstructionStart = CLK;
+		const bool halfSpeed = g_z80Board && g_z80Board->halfSpeed();
+		const bool m1Stretch = g_z80Board && g_z80Board->m1Stretch();
+
+		if (g_z80Board && iff1 && !z80_ei_delay &&
+			g_z80Board->intLine(ConvertZ80TStatesTo6502Cycles(CLK)))
+		{
+			z80_take_interrupt();
+		}
+		z80_ei_delay = 0;
 
 		// [AppleWin-TC] Z80 IRQs not supported
         //while (CLK >= alarm_context_next_pending_clk(cpu_alarm_context))
@@ -6341,6 +6406,23 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 
         //cpu_int_status->num_dma_per_opcode = 0;	// [AppleWin-TC] Not used
 
+		if (g_z80Board)
+		{
+			if (p0 == 0xfb)		// EI: no interrupt before the next instruction
+				z80_ei_delay = 1;
+
+			if (m1Stretch)
+			{
+				// One M1 per opcode, two with a CB/DD/ED/FD prefix
+				m1HalfStates += (p0 == 0xcb || p0 == 0xdd || p0 == 0xed || p0 == 0xfd) ? 2 : 1;
+				CLK += m1HalfStates / 2;
+				m1HalfStates %= 2;
+			}
+
+			if (halfSpeed)		// the clock only runs half the time: twice as long
+				CLK += CLK - clkInstructionStart;
+		}
+
         if (GetActiveCpu() != CPU_Z80)				// [AppleWin-TC]
             break;
 
@@ -6358,6 +6440,9 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles)
 BYTE z80_RDMEM(WORD Addr)
 {
 	WORD addr;
+
+	if (g_z80Board)
+		return g_z80Board->read(Addr, ConvertZ80TStatesTo6502Cycles(maincpu_clk));
 
 	switch (Addr / 0x1000)
 	{
@@ -6403,6 +6488,12 @@ void z80_WRMEM(WORD Addr, BYTE Value)
 {
 	unsigned int laddr;
 	WORD addr;
+
+	if (g_z80Board)
+	{
+		g_z80Board->write(Addr, Value, ConvertZ80TStatesTo6502Cycles(maincpu_clk));
+		return;
+	}
 
 	laddr = Addr & 0x0FFF;
 	switch (Addr & 0xF000)
@@ -6490,6 +6581,11 @@ void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot)
 
 	yamlSaveHelper.Save("%s: %d\n", SS_YAML_KEY_ACTIVE, GetActiveCpu() == CPU_Z80 ? 1 : 0);
 
+	Z80_SaveRegisters(yamlSaveHelper);
+}
+
+void Z80_SaveRegisters(class YamlSaveHelper& yamlSaveHelper)
+{
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGA, reg_a);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGB, reg_b);
 	yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_REGC, reg_c);
@@ -6527,6 +6623,16 @@ bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT ver
 	if (version != 1)
 		Card::ThrowErrorInvalidVersion(CT_Z80, version);
 
+	Z80_LoadRegisters(yamlLoadHelper);
+
+	if ( yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVE) )
+		SetActiveCpu(CPU_Z80);	// Support MS SoftCard in multiple slots (only one Z80 can be active at any one time)
+
+	return true;
+}
+
+void Z80_LoadRegisters(class YamlLoadHelper& yamlLoadHelper)
+{
 	reg_a = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGA);
 	reg_b = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGB);
 	reg_c = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGC);
@@ -6560,9 +6666,4 @@ bool Z80_LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, UINT uSlot, UINT ver
 	reg_l2 = yamlLoadHelper.LoadUint(SS_YAML_KEY_REGL2);
 
 	export_registers();
-
-	if ( yamlLoadHelper.LoadUint(SS_YAML_KEY_ACTIVE) )
-		SetActiveCpu(CPU_Z80);	// Support MS SoftCard in multiple slots (only one Z80 can be active at any one time)
-
-	return true;
 }

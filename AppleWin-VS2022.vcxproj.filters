@@ -160,6 +160,9 @@
     <ClCompile Include="source\z80emu.cpp">
       <Filter>Source Files\Emulator</Filter>
     </ClCompile>
+    <ClCompile Include="source\ALSCPMCard.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
     <ClCompile Include="source\Debugger\Util_MemoryTextFile.cpp">
       <Filter>Source Files\Debugger</Filter>
     </ClCompile>
@@ -496,6 +499,9 @@
       <Filter>Source Files\Z80VICE</Filter>
     </ClInclude>
     <ClInclude Include="source\z80emu.h">
+      <Filter>Source Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="source\ALSCPMCard.h">
       <Filter>Source Files\Emulator</Filter>
     </ClInclude>
     <ClInclude Include="source\Debugger\Util_MemoryTextFile.h">
