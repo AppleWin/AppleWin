@@ -113,6 +113,16 @@ int    Disk2InterfaceCard::GetCurrentDrive      () { return m_currDrive; }
 BYTE   Disk2InterfaceCard::GetCurrentShiftReg   () { return m_shiftReg; }
 int    Disk2InterfaceCard::GetCurrentTrack      () { return ImagePhaseToTrack(m_floppyDrive[m_currDrive].m_disk.m_imagehandle, m_floppyDrive[m_currDrive].m_phasePrecise, false); }
 
+// Debugger: on a flux position there is no bit offset, so this is the byte offset of the current flux interval from the start of the loop
+UINT Disk2InterfaceCard::GetCurrentBitOrFluxByteOffset()
+{
+	const FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
+	const FluxImage* pFlux = ImageGetFlux(floppy.m_imagehandle);
+	if (floppy.m_flux.m_quarterTrack >= 0 && pFlux && pFlux->IsFlux(floppy.m_flux.m_quarterTrack))
+		return floppy.m_flux.m_intervalByte - pFlux->track[floppy.m_flux.m_quarterTrack].lapStart;
+	return floppy.m_bitOffset;
+}
+
 float Disk2InterfaceCard::GetPhase(const int drive) { return m_floppyDrive[drive].m_phasePrecise; }
 int   Disk2InterfaceCard::GetTrack(const int drive)  { return ImagePhaseToTrack(m_floppyDrive[drive].m_disk.m_imagehandle, m_floppyDrive[drive].m_phasePrecise, false); }
 
@@ -330,11 +340,22 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 
 	if (pFloppy->m_trackimage && pFloppy->m_imagehandle)
 	{
+		// The angle carried from a flux position (a fraction of one revolution), or -1 when the current track is a bit track
+		double fluxAngle = -1.0;
+		const int oldFluxQuarterTrack = pFloppy->m_flux.m_quarterTrack;
+
 		if (ImageIsWOZ(pFloppy->m_imagehandle))
 		{
-			// Update bitStream position for *current* track before re-calc'ing position for new track
-			UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
-			UpdateBitStreamPosition(*pFloppy, bitCellDelta);
+			if (UpdateBitStreamPositionFLUX(*pFloppy))
+			{
+				fluxAngle = pFloppy->m_flux.GetAngle(*ImageGetFlux(pFloppy->m_imagehandle));
+			}
+			else
+			{
+				// Update bitStream position for *current* track before re-calc'ing position for new track
+				UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
+				UpdateBitStreamPosition(*pFloppy, bitCellDelta);
+			}
 		}
 
 		if (ImageIsWOZ(pFloppy->m_imagehandle) && (pFloppy->m_bitCount == 0))
@@ -374,8 +395,34 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 				pFloppy->m_bitCount = 8;
 			}
 
-			pFloppy->m_bitOffset = (currentBitPosition * pFloppy->m_bitCount) / currentBitTrackLength;	// Ref: WOZ-1.01
-			pFloppy->m_bitOffset += 7;	// Round-up for sensitive cross-track sync check (GH#1022)
+			// Flux position (WOZ FLUX track): played by the flux player, not from m_trackimage
+			const FluxImage* pFlux = ImageGetFlux(pFloppy->m_imagehandle);
+			const int newFluxQuarterTrack = (BYTE)(pDrive->m_phasePrecise * 2);	// as CWOZ2Image::Read()
+			const bool onFlux = pFlux && pFlux->IsFlux(newFluxQuarterTrack);
+
+			if (onFlux)
+			{
+				// The angle carries as a fraction of one revolution
+				if (oldFluxQuarterTrack != newFluxQuarterTrack)
+				{
+					const double fraction = (fluxAngle >= 0.0) ? fluxAngle : (double)currentBitPosition / (double)currentBitTrackLength;
+					pFloppy->m_flux.Land(*pFlux, ImageGetImageBuffer(pFloppy->m_imagehandle), newFluxQuarterTrack, fraction, Get6502BaseClock());
+				}
+				pFloppy->m_bitOffset = 0;
+				pFloppy->m_longestSyncFFRunLength = 0;
+				pFloppy->m_longestSyncFFBitOffsetStart = -1;
+			}
+			else if (fluxAngle >= 0.0)
+			{
+				// From a flux position to a bit track: the angle carries as is (no round-up)
+				pFloppy->m_bitOffset = (UINT)(fluxAngle * pFloppy->m_bitCount);
+				pFloppy->m_flux.clear();
+			}
+			else
+			{
+				pFloppy->m_bitOffset = (currentBitPosition * pFloppy->m_bitCount) / currentBitTrackLength;	// Ref: WOZ-1.01
+				pFloppy->m_bitOffset += 7;	// Round-up for sensitive cross-track sync check (GH#1022)
+			}
 
 			if (pFloppy->m_bitOffset >= pFloppy->m_bitCount)
 				pFloppy->m_bitOffset = 0;
@@ -389,7 +436,8 @@ void Disk2InterfaceCard::ReadTrack(const int drive, ULONG uExecutedCycles)
 			pFloppy->m_extraCycles = 0.0;
 			pDrive->m_headWindow = 0;
 
-			FindTrackSeamWOZ(*pFloppy, pDrive->m_phasePrecise/2);
+			if (!onFlux)	// no synthetic seam jitter on a flux position
+				FindTrackSeamWOZ(*pFloppy, pDrive->m_phasePrecise/2);
 		}
 
 		pFloppy->m_trackimagedata = (pFloppy->m_nibbles != 0);
@@ -424,6 +472,7 @@ void Disk2InterfaceCard::EjectDiskInternal(const int drive)
 	pFloppy->m_fullname.clear();
 	pFloppy->m_strFilenameInZip = "";
 	pFloppy->m_bWriteProtected = false;	// GH#1433
+	pFloppy->m_flux.clear();	// an empty drive has no flux cursor
 }
 
 void Disk2InterfaceCard::EjectDisk(const int drive)
@@ -997,6 +1046,13 @@ void Disk2InterfaceCard::SetProtect(const int drive, const bool bWriteProtect)
 	if (!IsDriveValid(drive))
 		return;
 
+	// A WOZ with FLUX tracks is read only: write protect cannot be cleared
+	if (ImageGetFlux(m_floppyDrive[drive].m_disk.m_imagehandle))
+	{
+		m_floppyDrive[drive].m_disk.m_bWriteProtected = true;
+		return;
+	}
+
 	m_floppyDrive[drive].m_disk.m_bWriteProtected = bWriteProtect;
 }
 
@@ -1362,6 +1418,9 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 	if (!drive.m_spinning)	// GH#599
 		return;
 
+	if (floppy.m_flux.m_quarterTrack >= 0)
+		return DataLatchReadWriteFLUX(bWrite);
+
 	// Skipping forward a large amount of bitcells means the bitstream will very likely be out-of-sync.
 	// The first 1-bit will produce a latch nibble, and this 1-bit is unlikely to be the nibble's high bit.
 	// So we need to ensure we run enough bits through the sequencer to re-sync.
@@ -1407,6 +1466,159 @@ void __stdcall Disk2InterfaceCard::DataLatchReadWriteWOZ(WORD pc, WORD addr, BYT
 
 	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
 	if ((floppy.m_byte & 0xFF) == 0)
+		GetFrame().FrameDrawDiskStatus();
+}
+
+// Flux position: the cycles since the last disk access, in cycles of the real 6502 clock
+// Returns the flux image, or NULL if the current track is not a flux position
+const FluxImage* Disk2InterfaceCard::GetCycleDeltaFLUX(FloppyDisk& floppy, const BYTE*& pImageBufferOUT, double& cyclesOUT)
+{
+	if (floppy.m_flux.m_quarterTrack < 0)
+		return NULL;
+
+	const FluxImage* pFlux = ImageGetFlux(floppy.m_imagehandle);
+	pImageBufferOUT = ImageGetImageBuffer(floppy.m_imagehandle);
+	if (!pFlux || !pImageBufferOUT || !pFlux->IsFlux(floppy.m_flux.m_quarterTrack))
+	{
+		_ASSERT(0);
+		floppy.m_flux.clear();
+		return NULL;
+	}
+
+	// The video standard (so the base clock) changed: keep the angle
+	const double clock = Get6502BaseClock();
+	if (floppy.m_flux.m_clock != clock)
+		floppy.m_flux.Land(*pFlux, pImageBufferOUT, floppy.m_flux.m_quarterTrack, floppy.m_flux.GetAngle(*pFlux), clock);
+
+	cyclesOUT = (double)(g_nCumulativeCycles - m_diskLastCycle);
+	m_diskLastCycle = g_nCumulativeCycles;
+	floppy.m_extraCycles = 0.0;
+	return pFlux;
+}
+
+// Flux position: turn the platter to now, and drop the bits that passed (seek, write-protect check, writes)
+// Returns false if the current track is not a flux position
+bool Disk2InterfaceCard::UpdateBitStreamPositionFLUX(FloppyDisk& floppy)
+{
+	const BYTE* pImageBuffer = NULL;
+	double cycles = 0.0;
+	const FluxImage* pFlux = GetCycleDeltaFLUX(floppy, pImageBuffer, cycles);
+	if (!pFlux)
+		return false;
+
+	floppy.m_flux.AddTime(*pFlux, cycles);
+	floppy.m_flux.DropDue(*pFlux, pImageBuffer);
+	return true;
+}
+
+// Flux position: the flux player's timed bits go through the same latch as DataLatchReadWOZ(),
+// without its synthetic bits (the random bit after 4 zeros, AddJitter, AddTrackSeamJitter).
+// NB. Writes are dropped (the disk is read only) and the platter keeps turning.
+void Disk2InterfaceCard::DataLatchReadWriteFLUX(BYTE bWrite)
+{
+#if LOG_DISK_NIBBLES_READ
+	bool newLatchData = false;
+#endif
+
+	FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
+	FluxCursor& flux = floppy.m_flux;
+
+	const BYTE* pImageBuffer = NULL;
+	double cycles = 0.0;
+	const FluxImage* pFlux = GetCycleDeltaFLUX(floppy, pImageBuffer, cycles);
+	if (!pFlux)
+		return;
+
+	const UINT oldPage = flux.m_intervalByte >> 8;
+
+	if (bWrite || m_seqFunc.function != readSequencing)
+	{
+		_ASSERT(bWrite ? m_seqFunc.function == dataLoadWrite : m_seqFunc.function == checkWriteProtAndInitWrite);
+		flux.AddTime(*pFlux, cycles);
+		flux.DropDue(*pFlux, pImageBuffer);
+		return;
+	}
+
+	// As the bit path: after a big skip the stream is out of sync anyway, so only the last 100 cells go through the latch
+	const double keepCycles = 100 * flux.m_cellCycles;
+	if (cycles > keepCycles)
+	{
+		flux.AddTime(*pFlux, cycles - keepCycles);
+		flux.DropDue(*pFlux, pImageBuffer);
+		m_latchDelay = 0;
+		cycles = keepCycles;
+	}
+	flux.AddTime(*pFlux, cycles);
+
+	BYTE bit = 0;
+	while (flux.GetNextBit(*pFlux, pImageBuffer, bit))
+	{
+		m_shiftReg <<= 1;
+		m_shiftReg |= bit;
+
+		// The latch: as DataLatchReadWOZ()
+		if (m_latchDelay)
+		{
+			m_latchDelay -= 4;
+			if (m_latchDelay < 0)
+				m_latchDelay = 0;
+
+			if (m_shiftReg)
+			{
+				m_dbgLatchDelayedCnt = 0;
+			}
+			else // m_shiftReg==0
+			{
+				m_latchDelay += 4;	// extend by 4us (so 7us again) - GH#662
+
+				m_dbgLatchDelayedCnt++;
+#if LOG_DISK_NIBBLES_READ
+				if (m_dbgLatchDelayedCnt >= 3)
+				{
+					LOG_DISK("read: latch held due to 0: PC=%04X, cnt=%02X\r\n", regs.pc, m_dbgLatchDelayedCnt);
+				}
+#endif
+			}
+		}
+
+		if (!m_latchDelay)
+		{
+#if LOG_DISK_NIBBLES_READ
+			if (newLatchData)
+			{
+				LOG_DISK("read skipped latch data: %04X = %02X\r\n", flux.m_intervalByte, m_floppyLatch);
+				newLatchData = false;
+			}
+#endif
+			m_floppyLatch = m_shiftReg;
+
+			if (m_shiftReg & 0x80)
+			{
+				m_latchDelay = 7;
+				m_shiftReg = 0;
+#if LOG_DISK_NIBBLES_READ
+				// May not actually be read by 6502 (eg. Prologue's CHKSUM 4&4 nibble pair), but still pass to the log's nibble reader
+				m_formatTrack.DecodeLatchNibbleRead(m_floppyLatch);
+				newLatchData = true;
+#endif
+			}
+		}
+	} // while
+
+#if LOG_DISK_NIBBLES_READ
+	if (m_floppyLatch & 0x80)
+	{
+#if LOG_DISK_NIBBLES_USE_RUNTIME_VAR
+		if (m_bLogDisk_NibblesRW)
+#endif
+		{
+			LOG_DISK("read %04X = %02X\r\n", flux.m_intervalByte, m_floppyLatch);
+		}
+	}
+#endif
+
+	// Show track status (GH#201) - NB. Prevent flooding of forcing UI to redraw!!!
+	if ((flux.m_intervalByte >> 8) != oldPage)
 		GetFrame().FrameDrawDiskStatus();
 }
 
@@ -1539,6 +1751,9 @@ void Disk2InterfaceCard::DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCy
 
 	FloppyDrive& drive = m_floppyDrive[m_currDrive];
 	FloppyDisk& floppy = drive.m_disk;
+
+	if (UpdateBitStreamPositionFLUX(floppy))	// flux position: read only, the write is dropped and the platter keeps turning
+		return;
 
 	const UINT bitCellRemainder = GetBitCellDelta(uExecutedCycles);
 
@@ -1924,8 +2139,11 @@ void __stdcall Disk2InterfaceCard::LoadWriteProtect(WORD, WORD, BYTE write, BYTE
 		LOG_DISK("%08X: reset LSS: ~PC=%04X\r\n", (UINT32)g_nCumulativeCycles, regs.pc);
 #endif
 
-		const UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
-		UpdateBitStreamPosition(floppy, bitCellDelta);	// Fix E7-copy protection
+		if (!UpdateBitStreamPositionFLUX(floppy))
+		{
+			const UINT bitCellDelta = GetBitCellDelta(uExecutedCycles);
+			UpdateBitStreamPosition(floppy, bitCellDelta);	// Fix E7-copy protection
+		}
 
 		ResetLogicStateSequencer();	// "Set the sequencer to State 0" (UTAIIe page 9-21)
 	}
@@ -2144,7 +2362,7 @@ void Disk2InterfaceCard::SetSequencerFunction(WORD addr, ULONG executedCycles)
 		// Use up remaining cycles before switching out of "checkWriteProtAndInitWrite" mode
 		// Done when checking write-protect, but also for bit-slip (eg. E7) copy-protections
 		FloppyDisk& floppy = m_floppyDrive[m_currDrive].m_disk;
-		if (ImageIsWOZ(floppy.m_imagehandle))
+		if (ImageIsWOZ(floppy.m_imagehandle) && !UpdateBitStreamPositionFLUX(floppy))
 		{
 			const UINT bitCellDelta = GetBitCellDelta(executedCycles);
 			UpdateBitStreamPosition(floppy, bitCellDelta);
@@ -2258,7 +2476,8 @@ BYTE __stdcall Disk2InterfaceCard::IOWrite(WORD pc, WORD addr, BYTE bWrite, BYTE
 // 7: Deprecated SS_YAML_KEY_LSS_RESET_SEQUENCER, SS_YAML_KEY_DISK_ACCESSED
 // 8: Added: deferred stepper: event, address & cycle
 // 9: Added: absolute path
-static const UINT kUNIT_VERSION = 9;
+// 10: Added: flux player cursor (WOZ FLUX tracks)
+static const UINT kUNIT_VERSION = 10;
 
 #define SS_YAML_KEY_PHASES "Phases"
 #define SS_YAML_KEY_CURRENT_DRIVE "Current Drive"
@@ -2300,6 +2519,12 @@ static const UINT kUNIT_VERSION = 9;
 #define SS_YAML_KEY_TRACK_IMAGE_DATA "Track Image Data"
 #define SS_YAML_KEY_TRACK_IMAGE_DIRTY "Track Image Dirty"
 #define SS_YAML_KEY_TRACK_IMAGE "Track Image"
+#define SS_YAML_KEY_FLUX_QUARTER_TRACK "Flux Quarter Track"
+#define SS_YAML_KEY_FLUX_CLOCK "Flux Clock"
+#define SS_YAML_KEY_FLUX_INTERVAL_BYTE "Flux Interval Byte"
+#define SS_YAML_KEY_FLUX_INTERVAL_TICKS "Flux Interval Ticks"
+#define SS_YAML_KEY_FLUX_BITS_PLAYED "Flux Bits Played"
+#define SS_YAML_KEY_FLUX_NOW "Flux Now"
 
 const std::string& Disk2InterfaceCard::GetSnapshotCardNameOld()
 {
@@ -2328,6 +2553,15 @@ void Disk2InterfaceCard::SaveSnapshotFloppy(YamlSaveHelper& yamlSaveHelper, UINT
 	// as Uint for backward compatibility.
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DATA, m_floppyDrive[unit].m_disk.m_trackimagedata);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_TRACK_IMAGE_DIRTY, m_floppyDrive[unit].m_disk.m_trackimagedirty);
+
+	// NB. The rest of the flux cursor is rebuilt from the image on load (see LoadSnapshotDriveUnit())
+	const FluxCursor& flux = m_floppyDrive[unit].m_disk.m_flux;
+	yamlSaveHelper.SaveInt(SS_YAML_KEY_FLUX_QUARTER_TRACK, flux.m_quarterTrack);				// v10
+	yamlSaveHelper.SaveDouble(SS_YAML_KEY_FLUX_CLOCK, flux.m_clock);					// v10
+	yamlSaveHelper.SaveHexUint32(SS_YAML_KEY_FLUX_INTERVAL_BYTE, flux.m_intervalByte);		// v10
+	yamlSaveHelper.SaveHexUint64(SS_YAML_KEY_FLUX_INTERVAL_TICKS, flux.m_intervalTicks);	// v10
+	yamlSaveHelper.SaveUint(SS_YAML_KEY_FLUX_BITS_PLAYED, flux.m_bitsPlayed);					// v10
+	yamlSaveHelper.SaveDouble(SS_YAML_KEY_FLUX_NOW, flux.m_now);						// v10
 
 	if (m_floppyDrive[unit].m_disk.m_trackimage)
 	{
@@ -2437,6 +2671,17 @@ bool Disk2InterfaceCard::LoadSnapshotFloppy(YamlLoadHelper& yamlLoadHelper, UINT
 			UpdateBitStreamOffsets(m_floppyDrive[unit].m_disk);	// overwrites m_byte, inits m_bitMask
 	}
 
+	if (version >= 10)
+	{
+		FluxCursor& flux = m_floppyDrive[unit].m_disk.m_flux;
+		flux.m_quarterTrack = yamlLoadHelper.LoadInt(SS_YAML_KEY_FLUX_QUARTER_TRACK);
+		flux.m_clock = yamlLoadHelper.LoadDouble(SS_YAML_KEY_FLUX_CLOCK);
+		flux.m_intervalByte = yamlLoadHelper.LoadUint(SS_YAML_KEY_FLUX_INTERVAL_BYTE);
+		flux.m_intervalTicks = yamlLoadHelper.LoadUint64(SS_YAML_KEY_FLUX_INTERVAL_TICKS);
+		flux.m_bitsPlayed = yamlLoadHelper.LoadUint(SS_YAML_KEY_FLUX_BITS_PLAYED);
+		flux.m_now = yamlLoadHelper.LoadDouble(SS_YAML_KEY_FLUX_NOW);
+	}
+
 	if (yamlLoadHelper.GetSubMap(SS_YAML_KEY_TRACK_IMAGE))
 	{
 		yamlLoadHelper.LoadMemory(track, ImageGetMaxNibblesPerTrack(m_floppyDrive[unit].m_disk.m_imagehandle));
@@ -2529,6 +2774,26 @@ void Disk2InterfaceCard::LoadSnapshotDriveUnit(YamlLoadHelper& yamlLoadHelper, U
 		m_floppyDrive[unit].m_disk.m_trackimagedata = false;
 		m_floppyDrive[unit].m_disk.m_trackimagedirty = false;
 		m_floppyDrive[unit].m_disk.m_nibbles = 0;
+	}
+
+	// Flux: resolve the cursor against the image's flux table (m_phasePrecise is loaded only now)
+	FloppyDisk& floppy = m_floppyDrive[unit].m_disk;
+	const FluxImage* pFlux = bImageError ? NULL : ImageGetFlux(floppy.m_imagehandle);
+	if (floppy.m_flux.m_quarterTrack >= 0)
+	{
+		if (fabs(floppy.m_flux.m_clock - Get6502BaseClock()) < 0.01)	// the clock is saved with 6 decimals
+			floppy.m_flux.m_clock = Get6502BaseClock();
+
+		if (!pFlux || !floppy.m_flux.Restore(*pFlux, ImageGetImageBuffer(floppy.m_imagehandle)))
+		{
+			floppy.m_flux.clear();
+			floppy.m_trackimagedata = false;	// read the track again: the head lands at an arbitrary angle, as for a fresh insert
+		}
+	}
+	else if (pFlux && pFlux->IsFlux((BYTE)(m_floppyDrive[unit].m_phasePrecise * 2)))
+	{
+		// Saved by a version without flux playback, on a flux position: read the track again
+		floppy.m_trackimagedata = false;
 	}
 }
 

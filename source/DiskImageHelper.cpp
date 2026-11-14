@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 #include "CPU.h"
 #include "DiskImage.h"
+#include "DiskFlux.h"
 #include "Log.h"
 #include "Memory.h"
 #include "Interface.h"
@@ -62,6 +63,12 @@ ImageInfo::ImageInfo()
 	optimalBitTiming = 0;
 	bootSectorFormat = CWOZHelper::bootUnknown;
 	maxNibblesPerTrack = 0;
+	pFlux = NULL;
+}
+
+ImageInfo::~ImageInfo()
+{
+	delete pFlux;
 }
 
 CImageBase::CImageBase()
@@ -1300,6 +1307,10 @@ public:
 
 	virtual void Read(ImageInfo* pImageInfo, const float phase, LPBYTE pTrackImageBuffer, int* pNibbles, UINT* pBitCount, bool enhanceDisk)
 	{
+		// WOZ 2.1: a FLUX position wins over TMAP. It is played by the flux player (Disk.cpp), not from this buffer.
+		if (pImageInfo->pFlux && pImageInfo->pFlux->IsFlux((BYTE)(phase * 2)))
+			return ReadEmptyTrack(pTrackImageBuffer, pNibbles, pBitCount);
+
 		BYTE* pTrackMap = ((CWOZHelper::Tmap*)pImageInfo->pWOZTrackMap)->tmap;
 
 		const BYTE indexFromTMAP = pTrackMap[(BYTE)(phase * 2)];
@@ -1524,10 +1535,13 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, uint32_t& dwOffse
 	if (imageSizeRemaining < 0)
 		return eMismatch;
 
+	m_fluxMapOffset = 0;
+
 	// A valid WOZ must have exactly one of each of: INFO, TMAP & TRKS chunks (GH#1402)
 	bool gotINFO = false;
 	bool gotTMAP = false;
 	bool gotTRKS = false;
+	bool gotFLUX = false;
 
 	while(imageSizeRemaining >= sizeof(WOZChunkHdr))
 	{
@@ -1561,7 +1575,13 @@ eDetectResult CWOZHelper::ProcessChunks(ImageInfo* pImageInfo, uint32_t& dwOffse
 				gotTRKS = true;
 				dwOffset = pImageInfo->uOffset = pImageInfo->uImageSize - imageSizeRemaining;	// offset into image of track data
 				break;
-			case FLUX_CHUNK_ID:	// WOZ v3 (todo)
+			case FLUX_CHUNK_ID:	// WOZ 2.1: used only when INFO version >= 3 (see HasFluxChunk())
+				// At most one FLUX chunk: with two, neither is used and the TMAP tracks play
+				if (!gotFLUX && chunkSize >= MAX_QUARTER_TRACKS_5_25)
+					m_fluxMapOffset = (UINT32)((BYTE*)pImage32 - pImageInfo->pImageBuffer);
+				else
+					m_fluxMapOffset = 0;
+				gotFLUX = true;
 				break;
 			case WRIT_CHUNK_ID:	// WOZ v2 (optional)
 				break;
@@ -2029,6 +2049,9 @@ void CImageHelperBase::Close(ImageInfo* pImageInfo)
 
 	delete [] pImageInfo->pImageBuffer;
 	pImageInfo->pImageBuffer = NULL;
+
+	delete pImageInfo->pFlux;	// its offsets point into pImageBuffer
+	pImageInfo->pFlux = NULL;
 }
 
 //-------------------------------------
@@ -2047,6 +2070,31 @@ bool CImageHelperBase::WOZUpdateInfo(ImageInfo* pImageInfo, uint32_t& dwOffset)
 	pImageInfo->optimalBitTiming = m_WOZHelper.GetOptimalBitTiming();
 	pImageInfo->maxNibblesPerTrack = m_WOZHelper.GetMaxNibblesPerTrack();
 	pImageInfo->bootSectorFormat = m_WOZHelper.GetBootSectorFormat();
+
+	// WOZ 2.1 FLUX tracks: the table holds offsets into pImageBuffer, so it is rebuilt with it
+	delete pImageInfo->pFlux;
+	pImageInfo->pFlux = NULL;
+	if (m_WOZHelper.HasFluxChunk())
+	{
+		FluxImage* pFlux = new FluxImage;
+		const std::string reason = FluxParseWOZ(pImageInfo->pImageBuffer, pImageInfo->uImageSize, m_WOZHelper.GetFluxMapOffset(), pImageInfo->uOffset, *pFlux);
+		if (!reason.empty())
+		{
+			// As before FLUX support: the file plays its TMAP bit tracks, read/write
+			LogFileOutput("WOZ: FLUX chunk ignored (%s), using TMAP\n", reason.c_str());
+			delete pFlux;
+		}
+		else if (pFlux->NumFluxTracks() == 0)
+		{
+			delete pFlux;
+		}
+		else
+		{
+			// Flux tracks are read only: the whole disk is write protected and the user cannot clear it
+			pImageInfo->pFlux = pFlux;
+			pImageInfo->bWriteProtected = true;
+		}
+	}
 
 	m_WOZHelper.InvalidateInfo();
 	return true;

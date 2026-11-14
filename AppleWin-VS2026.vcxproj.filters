@@ -52,6 +52,9 @@
     <ClCompile Include="source\Disk.cpp">
       <Filter>Source Files\Disk</Filter>
     </ClCompile>
+    <ClCompile Include="source\DiskFlux.cpp">
+      <Filter>Source Files\Disk</Filter>
+    </ClCompile>
     <ClCompile Include="source\DiskFormatTrack.cpp">
       <Filter>Source Files\Disk</Filter>
     </ClCompile>
@@ -346,6 +349,9 @@
       <Filter>Source Files\Debugger</Filter>
     </ClInclude>
     <ClInclude Include="source\Disk.h">
+      <Filter>Source Files\Disk</Filter>
+    </ClInclude>
+    <ClInclude Include="source\DiskFlux.h">
       <Filter>Source Files\Disk</Filter>
     </ClInclude>
     <ClInclude Include="source\DiskFormatTrack.h">

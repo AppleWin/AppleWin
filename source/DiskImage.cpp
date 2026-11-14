@@ -271,6 +271,16 @@ bool ImageIsZeroTracksValidForThisType(ImageInfo* const pImageInfo)
 	return false;
 }
 
+const FluxImage* ImageGetFlux(ImageInfo* const pImageInfo)
+{
+	return pImageInfo ? pImageInfo->pFlux : NULL;
+}
+
+const BYTE* ImageGetImageBuffer(ImageInfo* const pImageInfo)
+{
+	return pImageInfo ? pImageInfo->pImageBuffer : NULL;
+}
+
 void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName)
 {
 	char   imagetitle[ MAX_DISK_FULL_NAME+1 ];

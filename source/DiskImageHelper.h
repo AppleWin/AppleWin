@@ -16,6 +16,7 @@ enum eDetectResult {eMismatch, ePossibleMatch, eMatch};
 
 class CImageBase;
 class CImageHelperBase;
+struct FluxImage;
 
 enum FileType_e {eFileNormal, eFileGZip, eFileZip};
 
@@ -40,8 +41,10 @@ struct ImageInfo
 	BYTE			optimalBitTiming;	// WOZ only
 	BYTE			bootSectorFormat;	// WOZ only
 	UINT			maxNibblesPerTrack;
+	FluxImage*		pFlux;				// WOZ 2.1 FLUX tracks (offsets into pImageBuffer), else NULL; set = always write protected
 
 	ImageInfo();
+	~ImageInfo();
 };
 
 //-------------------------------------
@@ -203,7 +206,8 @@ class CWOZHelper : public CHdrHelper
 {
 public:
 	CWOZHelper() :
-		m_pInfo(NULL)
+		m_pInfo(NULL),
+		m_fluxMapOffset(0)
 	{}
 	virtual ~CWOZHelper() {}
 	virtual eDetectResult DetectHdr(LPBYTE& pImage, uint32_t& dwImageSize, uint32_t& dwOffset) { _ASSERT(0); return eMismatch; }
@@ -213,6 +217,9 @@ public:
 	BYTE GetOptimalBitTiming() { return (m_pInfo->v1.version >= 2) ? m_pInfo->optimalBitTiming : InfoChunkv2::optimalBitTiming5_25; }
 	UINT GetMaxNibblesPerTrack() { return (m_pInfo->v1.version >= 2) ? m_pInfo->largestTrack*CWOZHelper::BLOCK_SIZE : WOZ1_TRACK_SIZE; }
 	BYTE GetBootSectorFormat() { return (m_pInfo->v1.version >= 2) ? m_pInfo->bootSectorFormat : bootUnknown; }
+	// WOZ 2.1: FLUX is read only when INFO v3 or later names a FLUX block
+	bool HasFluxChunk() { return m_pInfo->v1.version >= 3 && ((InfoChunkv3*)m_pInfo)->fluxBlock != 0 && m_fluxMapOffset != 0; }
+	UINT32 GetFluxMapOffset() { return m_fluxMapOffset; }
 	void InvalidateInfo() { m_pInfo = NULL; }
 	BYTE* CreateEmptyDisk(uint32_t& size);
 #if _DEBUG
@@ -323,6 +330,7 @@ private:
 	};
 
 	InfoChunkv2* m_pInfo;	// NB. image-specific - only valid during Detect(), which calls InvalidateInfo() when done
+	UINT32 m_fluxMapOffset;	// NB. image-specific, as m_pInfo: offset into the image of the FLUX chunk's map, or 0
 
 	//
 

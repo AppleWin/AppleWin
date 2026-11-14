@@ -84,6 +84,7 @@
     <ClInclude Include="source\Disk.h" />
     <ClInclude Include="source\Disk2CardManager.h" />
     <ClInclude Include="source\DiskDefs.h" />
+    <ClInclude Include="source\DiskFlux.h" />
     <ClInclude Include="source\DiskFormatTrack.h" />
     <ClInclude Include="source\DiskImage.h" />
     <ClInclude Include="source\DiskImageHelper.h" />
@@ -202,6 +203,7 @@
     <ClCompile Include="source\Debugger\Debugger_Symbols.cpp" />
     <ClCompile Include="source\Debugger\Util_MemoryTextFile.cpp" />
     <ClCompile Include="source\Disk.cpp" />
+    <ClCompile Include="source\DiskFlux.cpp" />
     <ClCompile Include="source\DiskFormatTrack.cpp" />
     <ClCompile Include="source\DiskImage.cpp" />
     <ClCompile Include="source\DiskImageHelper.cpp" />

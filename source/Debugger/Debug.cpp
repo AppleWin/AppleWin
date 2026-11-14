@@ -3991,7 +3991,7 @@ Update_t CmdDisk (int nArgs)
 			diskCard.GetCurrentDrive() + 1,
 			diskCard.GetCurrentTrackString().c_str(),
 			diskCard.GetCurrentPhaseString().c_str(),
-			diskCard.GetCurrentBitOffset(),
+			diskCard.GetCurrentBitOrFluxByteOffset(),
 			diskCard.GetCurrentExtraCycles(),
 			sDiskState,
 			nShiftReg
