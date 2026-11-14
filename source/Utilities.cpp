@@ -279,7 +279,10 @@ void LoadConfiguration(bool loadImages)
 			GetCardMgr().InsertAux(type, noUpdateRegistry);
 			SetExpansionMemType(type, noUpdateRegistry);
 
-			RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, true, &dwTmp, kDefaultExMemoryBanksRealRW3);
+			if (type == CT_RamWorksIII)
+				RegLoadValue(regSection.c_str(), REGVALUE_AUX_NUM_BANKS, true, &dwTmp, kDefaultExMemoryBanksRealRW3);
+			else
+				dwTmp = 1;	// 1x 64K bank for Empty/80Col/Extended80Col cards (as CardManager::InsertAux)
 			SetRamWorksMemorySize(dwTmp, noUpdateRegistry);
 		}
 		else	// new install or legacy
