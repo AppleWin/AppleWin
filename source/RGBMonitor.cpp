@@ -1123,13 +1123,13 @@ void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint
 
 	const bool bIsHalfScanLines = GetVideo().IsVideoStyle(VS_HALF_SCANLINES);
 	const UINT frameBufferWidth = GetVideo().GetFrameBufferWidth();
-	RGBQUAD colors[2];
+	UINT32 colors[2];
 	// use LoRes palette
 	background += 12;
 	foreground += 12;
 	// get bg/fg colors
-	colors[0] = g_pPaletteRGB[background];
-	colors[1] = g_pPaletteRGB[foreground];
+	colors[0] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[background]);
+	colors[1] = *reinterpret_cast<const UINT32*>(&g_pPaletteRGB[foreground]);
 	int nbits = bits;
 	int doublepixels = (w == 14); // Double pixel (HiRes or Text40)
 
@@ -1147,11 +1147,10 @@ void UpdateDuochromeCell(int h, int w, bgra_t* pVideoAddress, uint8_t bits, uint
 			{
 				int bit = (bits & 1);
 				bits >>= 1;
-				const RGBQUAD& rRGB = colors[bit];
-				*(pDst + nBytes) = *reinterpret_cast<const UINT32*>(&rRGB);
+				*(pDst + nBytes) = colors[bit];
 				if (doublepixels)
 				{
-					*(pDst + nBytes + 1) = *reinterpret_cast<const UINT32*>(&rRGB);
+					*(pDst + nBytes + 1) = colors[bit];
 				}
 			}
 		}
