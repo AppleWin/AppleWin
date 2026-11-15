@@ -445,6 +445,7 @@ static void Snapshot_LoadState_v2()
 		// Refresh the volume of any new Mockingboard card (and its SSI263 or SC01 chips)
 		mockingboardCardManager.SetVolume(mockingboardCardManager.GetVolume(), GetPropertySheet().GetVolumeMax());
 		mockingboardCardManager.SetCumulativeCycles();
+		mockingboardCardManager.ReenableSpeechToRiff();
 
 		frame.SetLoadedSaveStateFlag(true);
 

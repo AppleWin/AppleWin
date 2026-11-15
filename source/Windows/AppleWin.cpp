@@ -611,18 +611,6 @@ static void GetAppleWinVersion()
 // DO ONE-TIME INITIALIZATION
 static void OneTimeInitialization(HINSTANCE passinstance)
 {
-	// Currently only support one RIFF file
-	if (!g_cmdLine.wavFileSpeaker.empty())
-	{
-		if (RiffInitWriteFile(g_cmdLine.wavFileSpeaker.c_str(), SPKR_SAMPLE_RATE, Spkr_GetNumChannels()))
-			Spkr_OutputToRiff();
-	}
-	else if (!g_cmdLine.wavFileMockingboard.empty())
-	{
-		if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS))
-			GetCardMgr().GetMockingboardCardMgr().OutputToRiff();
-	}
-
 	// Initialize COM - so we can use CoCreateInstance
 	// . DSInit() & DIMouse::DirectInputInit are done when g_hFrameWindow is created (WM_CREATE)
 	// . DDInit() is done in RepeatInitialization() by GetVideo().Initialize()
@@ -1010,6 +998,18 @@ static void RepeatInitialization()
 			g_cmdLine.bBoot = false;
 		}
 	}
+
+	// Currently only support one RIFF file
+	if (RiffInitWriteFile(g_cmdLine.wavFileSpeaker.c_str(), SPKR_SAMPLE_RATE, Spkr_GetNumChannels()))
+		Spkr_OutputToRiff();
+	g_cmdLine.wavFileSpeaker = "";		// Don't reapply after a restart
+
+	if (RiffInitWriteFile(g_cmdLine.wavFileMockingboard.c_str(), MockingboardCard::SAMPLE_RATE, MockingboardCard::NUM_MB_CHANNELS))
+		GetCardMgr().GetMockingboardCardMgr().OutputAYToRiff();
+	g_cmdLine.wavFileMockingboard = "";	// Don't reapply after a restart
+
+	GetCardMgr().GetMockingboardCardMgr().OutputSpeechToRiff(g_cmdLine.wavFileSpeech);
+	g_cmdLine.wavFileSpeech = "";		// Don't reapply after a restart
 }
 
 static void Shutdown()

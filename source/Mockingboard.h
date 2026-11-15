@@ -55,6 +55,7 @@ public:
 	void SetSocketSSI263(BYTE socket, SSI263Type type);
 	SSI263Type GetSocketSC01() { return m_MBSubUnit[0].ssi263.GetSC01(); }
 	void SetSocketSC01(SSI263Type type);
+	void SpeechOutputToRiff() { m_MBSubUnit[1].ssi263.OutputToRiff(); }	// socket-1 -> SSI263 at $Cs40
 
 	struct DEBUGGER_MB_SUBUNIT
 	{
