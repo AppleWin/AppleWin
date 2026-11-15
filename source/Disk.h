@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "DiskLog.h"
 #include "DiskFormatTrack.h"
 #include "DiskImage.h"
+#include "DiskFlux.h"
 #include "SynchronousEventManager.h"
 
 enum Drive_e
@@ -75,6 +76,7 @@ public:
 		m_longestSyncFFBitOffsetStart = -1;
 		m_initialBitOffset = 0;
 		m_revs = 0;
+		m_flux.clear();
 	}
 
 public:
@@ -96,6 +98,7 @@ public:
 	int m_longestSyncFFBitOffsetStart;
 	UINT m_initialBitOffset;	// debug
 	UINT m_revs;				// debug
+	FluxCursor m_flux;			// the head on a flux position (WOZ FLUX track); m_flux.m_quarterTrack < 0 when the current track is a bit track
 };
 
 class FloppyDrive
@@ -164,6 +167,7 @@ public:
 	void NotifyInvalidImage(const int drive, const std::string & szImageFilename, const ImageError_e Error);
 
 	UINT GetCurrentBitOffset();
+	UINT GetCurrentBitOrFluxByteOffset();
 	UINT GetCurrentFirmware() { return m_is13SectorFirmware ? 13 : 16; }
 	double GetCurrentExtraCycles();
 	float GetCurrentPhase();
@@ -222,6 +226,9 @@ private:
 	void DataLatchReadWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataLoadWriteWOZ(WORD pc, WORD addr, UINT bitCellRemainder);
 	void DataShiftWriteWOZ(WORD pc, WORD addr, ULONG uExecutedCycles);
+	const FluxImage* GetCycleDeltaFLUX(FloppyDisk& floppy, const BYTE*& pImageBufferOUT, double& cyclesOUT);
+	bool UpdateBitStreamPositionFLUX(FloppyDisk& floppy);
+	void DataLatchReadWriteFLUX(BYTE bWrite);
 	void SetSequencerFunction(WORD addr, ULONG executedCycles);
 	void FindTrackSeamWOZ(FloppyDisk& floppy, float track);
 	void DumpTrackWOZ(FloppyDisk floppy);

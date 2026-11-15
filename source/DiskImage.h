@@ -77,6 +77,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 	const int MAX_DISK_FULL_NAME  = 127;
 
 struct ImageInfo;
+struct FluxImage;
 
 ImageError_e ImageOpen(const std::string & pszImageFilename, ImageInfo** ppImageInfo, bool* pWriteProtected, const bool bCreateIfNecessary, std::string& strFilenameInZip, const bool bExpectFloppy=true);
 void ImageClose(ImageInfo* const pImageInfo);
@@ -97,5 +98,7 @@ UINT ImagePhaseToTrack(ImageInfo* const pImageInfo, const float phase, const boo
 UINT ImageGetMaxNibblesPerTrack(ImageInfo* const pImageInfo);
 bool ImageIsBootSectorFormatSector13(ImageInfo* const pImageInfo);
 bool ImageIsZeroTracksValidForThisType(ImageInfo* const pImageInfo);
+const FluxImage* ImageGetFlux(ImageInfo* const pImageInfo);
+const BYTE* ImageGetImageBuffer(ImageInfo* const pImageInfo);
 
 void GetImageTitle(LPCTSTR pPathname, std::string & pImageName, std::string & pFullName);
