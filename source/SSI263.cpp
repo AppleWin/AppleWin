@@ -676,52 +676,6 @@ void SSI263::Update()
 
 //-----------------------------------------------------------------------------
 
-// Called by:
-// . LoadSnapshot() and old <v16 save-state
-void SSI263::RepeatPhoneme()
-{
-	if (!m_isVotraxPhoneme)
-	{
-		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
-		{
-			// Only check _ASSERT when SSI263.CONTROL=0 (otherwise kPhonemeLeadoutFlag will be clear 2nd time Update() is called)
-			_ASSERT(m_currentActivePhoneme & kPhonemeLeadoutFlag);
-			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
-		}
-
-		m_currentActivePhoneme &= PHONEME_MASK;			// Clear kPhonemeLeadoutFlag
-	}
-	else
-	{
-		Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested on SMS 'Sound/Speech I' card)
-	}
-}
-
-//-----------------------------------------------------------------------------
-
-// Called by:
-// . LoadSnapshot() and old <v16 save-state
-void SSI263::UpdateIRQ()
-{
-	_ASSERT(m_currentActivePhoneme != -1);
-	_ASSERT((m_currentActivePhoneme & kPhonemeLeadoutFlag) == 0);
-	m_currentActivePhoneme |= kPhonemeLeadoutFlag;
-
-	if (m_dbgFirst && m_dbgStartTime)
-	{
-#if LOG_SSI263 || LOG_SSI263B || LOG_SC01
-		UINT64 diff = g_nCumulativeCycles - m_dbgStartTime;
-		LogOutput("1st phoneme playback time = 0x%08X cy\n", (UINT32)diff);
-#endif
-		m_dbgFirst = false;
-	}
-
-	// Phoneme complete, so generate IRQ if necessary
-	SetSpeechIRQ();
-}
-
-//-----------------------------------------------------------------------------
-
 // Pre: m_isVotraxPhoneme, m_cardMode, m_device
 void SSI263::SetSpeechIRQ()
 {
@@ -764,6 +718,17 @@ void SSI263::SetSpeechIRQ()
 	{
 		// A/!R: Time-out of old phoneme (signal goes from low to high)
 		UpdateIFR(m_device, 0, SY6522::IxR_VOTRAX);
+	}
+
+	//
+
+	if (m_dbgFirst && m_dbgStartTime)
+	{
+#if LOG_SSI263 || LOG_SSI263B || LOG_SC01
+		UINT64 diff = g_nCumulativeCycles - m_dbgStartTime;
+		LogOutput("1st phoneme playback time = 0x%08X cy\n", (UINT32)diff);
+#endif
+		m_dbgFirst = false;
 	}
 }
 
@@ -1105,8 +1070,11 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	{
 		// Old snapshots lack timing state. Keep their completion-and-restart policy.
 		m_currentActivePhoneme = SSI263_PHONENE_SILENCE;
-		UpdateIRQ();
-		RepeatPhoneme();
+		SetSpeechIRQ();	// Phoneme complete, so generate IRQ if necessary
+		if (!m_isVotraxPhoneme && (m_ctrlArtAmp & CONTROL_MASK) == 0)
+			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
+		else if (m_isVotraxPhoneme)
+			Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested on SMS 'Sound/Speech I' card)
 	}
 
 	m_synthLastCycle = GetLastCumulativeCycles();
@@ -1152,7 +1120,7 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 
 	if (version < 12)
 	{
-		m_votraxPhoneme = 0;
+		m_votraxPhoneme = SC01_PHONENE_SILENCE;
 		//  NB. m_isVotraxPhoneme already set by SetVotraxPhoneme() in MockingboardCard::LoadSnapshot()
 		if (m_isVotraxPhoneme)
 			ConfigureVotrax();

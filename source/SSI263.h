@@ -112,8 +112,6 @@ private:
 	void LoadSynthesis(class YamlLoadHelper& yamlLoadHelper);
 	void Play(unsigned int nPhoneme);
 	void Stop();
-	void UpdateIRQ();
-	void RepeatPhoneme();
 	void SetDeviceModeAndInts();
 
 	UINT64 GetLastCumulativeCycles();
@@ -210,12 +208,9 @@ private:
 
 	// ctor/power-cycle: Set to -1
 	// Play(): Set to [$00-$3F] on a write to DURPHON register.
-	// UpdateIRQ(): OR'd with kPhonemeLeadoutFlag when phoneme ends.
-	// RepeatPhoneme(): AND'd with PHONEME_MASK, if SSI263.CONTROL==0 call Play() again.
 	// SSI263.CONTROL 1->0 will call Play().
 	// NB. Can be used to detect overlapping phonemes in Play().
 	// NB. For SSI263 (and SC01) once >=0 then this remains the case (even when SSI263.CONTROL=1).
-	static const UINT kPhonemeLeadoutFlag = 0x100;	// FIXME: Check if this const is still needed
 	int m_currentActivePhoneme;				// -1 (if none) or SSI263/SC01 phoneme (& can be OR'd with kPhonemeLeadoutFlag)
 
 	bool m_isVotraxPhoneme;
