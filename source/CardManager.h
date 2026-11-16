@@ -14,7 +14,8 @@ public:
 		m_pSSC(NULL),
 		m_pParallelPrinterCard(NULL),
 		m_pVidHDCard(NULL),
-		m_pZ80Card(NULL)
+		m_pZ80Card(NULL),
+		m_pALSCPMCard(NULL)
 	{
 		// LoadConfiguration() now sets up default cards for a new install
 		InsertInternal(SLOT0, CT_Empty);
@@ -93,4 +94,5 @@ private:
 	class ParallelPrinterCard* m_pParallelPrinterCard;
 	class VidHDCard* m_pVidHDCard;
 	class Z80Card* m_pZ80Card;
+	class ALSCPMCard* m_pALSCPMCard;
 };

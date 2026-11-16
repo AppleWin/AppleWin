@@ -43,6 +43,27 @@ DWORD z80_mainloop(ULONG uTotalCycles, ULONG uExecutedCycles);
 BYTE z80_RDMEM(WORD Addr);
 void z80_WRMEM(WORD Addr, BYTE Value);
 
+// The board the (single) Z80 sits on. None installed: Microsoft's Z-80
+// SoftCard, as before (fixed map, 2 T-states per 6502 cycle, no interrupts).
+// A card that brings its own memory, I/O ports, clock and /INT installs one.
+struct Z80Board
+{
+	BYTE (*read)(WORD addr, ULONG cycles);              // cycles: 6502 cycles into this burst
+	void (*write)(WORD addr, BYTE value, ULONG cycles);
+	BYTE (*in)(WORD port);
+	void (*out)(WORD port, BYTE value);
+	bool (*intLine)(ULONG cycles);                      // /INT asserted (a level)
+	BYTE (*intAck)();                                   // the data bus byte during the acknowledge
+	bool (*halfSpeed)();                                // clock runs at half rate now
+	bool (*m1Stretch)();                                // every M1 cycle is half a T-state longer now
+	double tStatesPer6502Cycle;                         // at full rate
+};
+void Z80_SetBoard(const Z80Board* board);
+
+// The registers alone, for a card that saves its own snapshot.
+void Z80_SaveRegisters(class YamlSaveHelper& yamlSaveHelper);
+void Z80_LoadRegisters(class YamlLoadHelper& yamlLoadHelper);
+
 const std::string& Z80_GetSnapshotCardNameOld();
 const std::string& Z80_GetSnapshotCardName();
 void Z80_SaveSnapshot(class YamlSaveHelper& yamlSaveHelper, const UINT uSlot);

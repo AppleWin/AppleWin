@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "SNESMAX.h"
 #include "VidHD.h"
 #include "z80emu.h"
+#include "ALSCPMCard.h"
 
 #include <sstream>
 
@@ -178,6 +179,8 @@ std::string Card::GetCardName(const SS_CARDTYPE cardType)
 		return MockingboardCard::GetSnapshotCardNameSDMusic();
 	case CT_BreakpointCard:
 		return BreakpointCard::GetSnapshotCardName();
+	case CT_ALSCPM:
+		return ALSCPMCard::GetSnapshotCardName();
 	default:
 		return "Unknown";
 	}
@@ -223,6 +226,8 @@ SS_CARDTYPE Card::GetCardType(const std::string & card)
 		return CT_SDMusic;
 	else if (card == BreakpointCard::GetSnapshotCardName())
 		return CT_BreakpointCard;
+	else if (card == ALSCPMCard::GetSnapshotCardName())
+		return CT_ALSCPM;
 	else
 		throw std::runtime_error("Slots: Unknown card: " + card);	// todo: don't throw - just ignore & continue
 }

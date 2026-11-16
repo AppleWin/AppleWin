@@ -30,6 +30,7 @@ enum SS_CARDTYPE
 	CT_MegaAudio,		// Soundcard
 	CT_SDMusic,			// Soundcard
 	CT_BreakpointCard,
+	CT_ALSCPM,			// Advanced Logic Systems "The CP/M Card" (Z80B, 64K)
 	CT_NUM_CARDS,
 	CT_Undefined = -1	// NB. Only for cmd line struct
 };

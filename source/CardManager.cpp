@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #include "LanguageCard.h"
 #include "Memory.h"
 #include "z80emu.h"
+#include "ALSCPMCard.h"
 
 void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 {
@@ -89,8 +90,15 @@ void CardManager::InsertInternal(UINT slot, SS_CARDTYPE type)
 		break;
 	case CT_Z80:
 		_ASSERT(m_pZ80Card == NULL);
-		if (m_pZ80Card) break;	// Only support one Z80 card
+		if (m_pZ80Card || m_pALSCPMCard) break;	// Only support one Z80 card
 		m_slot[slot] = m_pZ80Card = new Z80Card(slot);
+		break;
+	case CT_ALSCPM:
+		// One Z80 for both: the ALS CP/M Card or the SoftCard, never both (CP/M
+		// for either finds its card by writing every slot's $Cn00).
+		_ASSERT(m_pALSCPMCard == NULL);
+		if (m_pZ80Card || m_pALSCPMCard) break;
+		m_slot[slot] = m_pALSCPMCard = new ALSCPMCard(slot);
 		break;
 	case CT_Phasor:
 		m_slot[slot] = new MockingboardCard(slot, type);
@@ -184,6 +192,9 @@ void CardManager::RemoveInternal(UINT slot)
 			break;
 		case CT_Z80:
 			m_pZ80Card = NULL;
+			break;
+		case CT_ALSCPM:
+			m_pALSCPMCard = NULL;
 			break;
 		}
 
@@ -371,6 +382,7 @@ bool CardManager::IsSingleInstanceCard(SS_CARDTYPE card)
 	CT_SSC,
 	CT_GenericPrinter,
 	CT_Z80,
+	CT_ALSCPM,
 	CT_FourPlay,
 	CT_SNESMAX,
 	CT_Uthernet,
@@ -421,6 +433,7 @@ void CardManager::GetCardChoicesForSlot(const UINT slot, const SS_CARDTYPE currC
 	CT_Uthernet2,
 	CT_VidHD,
 	CT_Z80,
+	CT_ALSCPM,
 	//	CT_GenericClock,
 	//	CT_Echo,
 	//	CT_80Col,

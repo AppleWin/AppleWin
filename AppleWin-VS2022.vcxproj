@@ -148,6 +148,7 @@
     <ClInclude Include="source\Windows\Win32Frame.h" />
     <ClInclude Include="source\YamlHelper.h" />
     <ClInclude Include="source\z80emu.h" />
+    <ClInclude Include="source\ALSCPMCard.h" />
     <ClInclude Include="source\Z80VICE\daa.h" />
     <ClInclude Include="source\Z80VICE\z80.h" />
     <ClInclude Include="source\Z80VICE\z80mem.h" />
@@ -278,6 +279,7 @@
     <ClCompile Include="source\Windows\WinFrame.cpp" />
     <ClCompile Include="source\YamlHelper.cpp" />
     <ClCompile Include="source\z80emu.cpp" />
+    <ClCompile Include="source\ALSCPMCard.cpp" />
     <ClCompile Include="source\Z80VICE\daa.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
