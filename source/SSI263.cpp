@@ -397,7 +397,7 @@ void SSI263::ResetSynthesis(bool resetClock)
 	m_synth.Write(SSI_INFLECT, m_inflection);
 	m_synth.Write(SSI_RATEINF, m_rateInflection);
 	m_synth.Write(SSI_FILFREQ, m_filterFreq);
-	m_synth.Write(SSI_CTTRAMP, m_ctrlArtAmp);
+	m_synth.Write(SSI_CTTRAMP, m_ctrlArtAmp);	// Set CTL last
 }
 
 void SSI263::ResetVotraxSynthesis()
@@ -1045,17 +1045,17 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 		if (version >= 16)
 		{
 			LoadSynthesis(yamlLoadHelper);
-			m_currentActivePhoneme = SSI263_PHONENE_SILENCE;	// For IsChipActive()
+			m_synth.SetFunction(m_currentMode.function);
 
-			m_synth.Write(3, CONTROL_MASK);	// CTL=1
-			m_synth.Write(SSI_DURPHON, m_currentMode.function << DURATION_MODE_SHIFT);
-			m_synth.Write(3, 0x00);			// CTL=0
+			// Since not saving the low-level SSI263Synth state, then use SILENCE for remainder of current phoneme
+			m_durationPhoneme = (m_durationPhoneme & DURATION_MODE_MASK) | SSI263_PHONENE_SILENCE;
+			m_currentActivePhoneme = m_durationPhoneme & PHONEME_MASK;	// For IsChipActive()
 
 			m_synth.Write(SSI_DURPHON, m_durationPhoneme);
 			m_synth.Write(SSI_INFLECT, m_inflection);
 			m_synth.Write(SSI_RATEINF, m_rateInflection);
-			m_synth.Write(SSI_CTTRAMP, m_ctrlArtAmp);
 			m_synth.Write(SSI_FILFREQ, m_filterFreq);
+			m_synth.Write(SSI_CTTRAMP, m_ctrlArtAmp);	// Set CTL last - like ResetSynthesis()
 		}
 		else
 		{
@@ -1126,6 +1126,8 @@ void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 	{
 		yamlSaveHelper.SaveHexUint8(SS_YAML_KEY_SC01_PHONEME, m_votraxPhoneme);
 		yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
+
+		// Don't SaveSynthesis(), as SC01 emulation is just an approximation based on SSI263, and this state is shared with the 2nd SSI263
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SC01_SYNTHESIS);
 		yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_STARTED, m_votraxSynthStarted);
 	}
