@@ -407,7 +407,7 @@ void SSI263::ResetVotraxSynthesis()
 	// Fixed surrogate voice: about 91Hz (for rate=8), with immediate pitch and smooth articulation.
 	// These are SSI263 model settings, not an SC01 circuit model. Ignore SC01 pitch bits.
 	m_votraxSynth.Write(SSI_CTTRAMP, CONTROL_MASK);
-	m_votraxSynth.Write(SSI_DURPHON, MODE_PHONEME_IMMEDIATE_INFLECTION);
+	m_votraxSynth.Write(SSI_DURPHON, MODE_PHONEME_IMMEDIATE_INFLECTION | SSI263_PHONENE_SILENCE);
 	m_votraxSynth.Write(SSI_CTTRAMP, 0x00);
 
 	m_votraxSynth.Write(SSI_INFLECT, 0x51);
@@ -473,7 +473,7 @@ void SSI263::AdvanceSynthesis()
 			const short votraxSample = m_votraxSynthStarted ? m_votraxSynth.GetSample() : 0;
 			const short sample = m_isVotraxPhoneme ? votraxSample : nativeSample;
 
-			if (!g_bFullSpeed && !g_bDisableDirectSound && !g_bDisableDirectSoundMockingboard && IsPhonemeActive())
+			if (!g_bFullSpeed && !g_bDisableDirectSound && !g_bDisableDirectSoundMockingboard && IsChipActive())
 			{
 				// A stalled audio device must not stop the emulated chip.
 				if (m_synthSamples == MAX_SAMPLES)
@@ -559,13 +559,14 @@ void SSI263::AdvanceResponseTiming(uint32_t ticks)
 
 void SSI263::UpdateSynthesis()
 {
-	const UINT availableSamples = m_synthSamples;
-	m_synthSamples = 0;
-	if (!IsPhonemeActive() || g_bFullSpeed || !DSInit())
+	if (!IsChipActive() || g_bFullSpeed || !DSInit())
 	{
 		m_byteOffset = (uint32_t)-1;
 		return;
 	}
+
+	const UINT availableSamples = m_synthSamples;
+	m_synthSamples = 0;
 
 	DWORD playCursor, writeCursor;
 	if (FAILED(SSI263SingleVoice.lpDSBvoice->GetCurrentPosition(&playCursor, &writeCursor)))
@@ -659,18 +660,20 @@ void SSI263::PeriodicUpdate(UINT executedCycles)
 
 	m_cyclesThisAudioFrame %= kCyclesPerAudioFrame;
 
-	Update();	// FIXME: just repeats funcs called above, but also calls UpdateSynthesis() which is needed for DirectSound output
+	UpdateSynthesis();
 }
 
 //-----------------------------------------------------------------------------
 
 // Called by:
-// . PeriodicUpdate()
 // . MockingboardCard::SaveSnapshot()
+//   - Set speech IRQs before saving the 6522 interrupt flags.
+
+// On SaveSnapshot, need to advance synth to keep it aligned with current executed cycles
 void SSI263::Update()
 {
 	AdvanceSynthesis();
-	CommitResponse();
+	CommitResponse();	// calls SetSpeechIRQ(), which may set 6522 irq flags
 	UpdateSynthesis();
 }
 
@@ -920,7 +923,7 @@ void SSI263::SetVolume(uint32_t dwVolume, uint32_t dwVolumeMax)
 
 void SSI263::SaveSynthesis(YamlSaveHelper& yamlSaveHelper)
 {
-	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n");
+	YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263_SYNTHESIS);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_CPU_CLOCK, m_synthCpuClock);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_CYCLE_REMAINDER, m_synthCycleRemainder);
 	yamlSaveHelper.SaveUint(SS_YAML_KEY_SSI263_SAMPLE_PHASE, m_synthSamplePhase);
@@ -967,8 +970,8 @@ void SSI263::LoadSynthesis(YamlLoadHelper& yamlLoadHelper)
 
 void SSI263::SaveSnapshot(YamlSaveHelper& yamlSaveHelper, UINT subunit)
 {
-	AdvanceSynthesis();
-	CommitResponse();
+	// NB. Mockingboard::SaveSnapshot() has already called Update() to advance synth & update 6522 irq
+
 	// Scope for SSI263 subunit (so that SC01 has same indentation)
 	{
 		YamlSaveHelper::Label label(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SSI263);
@@ -1037,19 +1040,29 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 		}
 
 		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
-			m_currentActivePhoneme = m_durationPhoneme & PHONEME_MASK;
-	}
+			m_currentActivePhoneme = m_durationPhoneme & PHONEME_MASK;	// For IsChipActive()
 
-	if (version >= 16)
-	{
-		LoadSynthesis(yamlLoadHelper);
-		m_currentActivePhoneme = SSI263_PHONENE_SILENCE;
-	}
-	else
-	{
-		// Older snapshots only stored registers, so start a fresh synth voice.
-		ResetSynthesis();
-		m_synth.SetFunction(m_currentMode.function);
+		if (version >= 16)
+		{
+			LoadSynthesis(yamlLoadHelper);
+			m_currentActivePhoneme = SSI263_PHONENE_SILENCE;	// For IsChipActive()
+
+			m_synth.Write(3, CONTROL_MASK);	// CTL=1
+			m_synth.Write(SSI_DURPHON, m_currentMode.function << DURATION_MODE_SHIFT);
+			m_synth.Write(3, 0x00);			// CTL=0
+
+			m_synth.Write(SSI_DURPHON, m_durationPhoneme);
+			m_synth.Write(SSI_INFLECT, m_inflection);
+			m_synth.Write(SSI_RATEINF, m_rateInflection);
+			m_synth.Write(SSI_CTTRAMP, m_ctrlArtAmp);
+			m_synth.Write(SSI_FILFREQ, m_filterFreq);
+		}
+		else
+		{
+			// Older snapshots only stored registers, so start a fresh synth voice.
+			ResetSynthesis();
+			m_synth.SetFunction(m_currentMode.function);
+		}
 	}
 
 	yamlLoadHelper.PopMap();
@@ -1060,13 +1073,13 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	SetCardMode(mode);
 
 	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
-	if (m_cardMode == PH_Phasor && IsPhonemeActive() && m_currentMode.enableInts && m_currentMode.D7 == 1)
+	if (m_cardMode == PH_Phasor && IsChipActive() && m_currentMode.enableInts && m_currentMode.D7 == 1)
 		CpuIrqAssert(IS_SPEECH);
 
 	if (subunit == 0)	// has SC01
 		SC01_LoadSnapshot(yamlLoadHelper, version);
 
-	if (version < 16 && (m_isVotraxPhoneme || IsPhonemeActive()))
+	if (version < 16 && (m_isVotraxPhoneme || IsChipActive()))
 	{
 		// Old snapshots lack timing state. Keep their completion-and-restart policy.
 		m_currentActivePhoneme = SSI263_PHONENE_SILENCE;
@@ -1075,6 +1088,11 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
 		else if (m_isVotraxPhoneme)
 			Play(m_Votrax2SSI263[m_votraxPhoneme]);		// Votrax phoneme repeats too (tested on SMS 'Sound/Speech I' card)
+	}
+	else if (version >= 16 && m_isVotraxPhoneme)
+	{
+		// Missing synth timing state
+		Play(m_Votrax2SSI263[m_votraxPhoneme]);
 	}
 
 	m_synthLastCycle = GetLastCumulativeCycles();

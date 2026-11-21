@@ -25,7 +25,7 @@ public:
 		{
 			m_currentActivePhoneme = -1;
 			m_isVotraxPhoneme = false;	// SC01 has no RESET pin
-			m_votraxPhoneme = 0;		// SC01 has no RESET pin
+			m_votraxPhoneme = SC01_PHONENE_SILENCE;	// SC01 has no RESET pin
 		}
 
 		m_cyclesThisAudioFrame = 0;
@@ -41,7 +41,7 @@ public:
 		// After a chip power-on, if the first thing done is CTL=0, then empirically it can be observed that:
 		// . enableInts = 1 (mostly an SSI263 interrupt occurs, but not always)
 		// . DR1:0 != b#00 (since enableInts is set to 1, except when no interrupt => DR1:0 == b#00)
-		m_durationPhoneme = MODE_PHONEME_TRANSITIONED_INFLECTION;	// Typical function & phoneme=$00
+		m_durationPhoneme = MODE_PHONEME_TRANSITIONED_INFLECTION | SSI263_PHONENE_SILENCE;	// Typical function & phoneme
 		m_inflection = 0;
 		m_rateInflection = 0;
 		m_ctrlArtAmp = (powerCycle || m_type == SSI263AP) ? CONTROL_MASK : 0;				// Chip power-on, so CTL=1 (power-down / standby)
@@ -93,8 +93,9 @@ public:
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit);
 
 private:
-	bool IsPhonemeActive()
+	bool IsChipActive()
 	{
+		// Only ever "m_currentActivePhoneme < 0" if this SSI263 (or SC01) has never played a phoneme.
 		// If SSI263.CONTROL=1 then "m_currentActivePhoneme >= 0" is still true
 		// Also valid regardless of m_isVotraxPhoneme state
 		return m_currentActivePhoneme >= 0;
@@ -211,7 +212,7 @@ private:
 	// SSI263.CONTROL 1->0 will call Play().
 	// NB. Can be used to detect overlapping phonemes in Play().
 	// NB. For SSI263 (and SC01) once >=0 then this remains the case (even when SSI263.CONTROL=1).
-	int m_currentActivePhoneme;				// -1 (if none) or SSI263/SC01 phoneme (& can be OR'd with kPhonemeLeadoutFlag)
+	int m_currentActivePhoneme;				// -1 (if none) or SSI263/SC01 phoneme
 
 	bool m_isVotraxPhoneme;
 	BYTE m_votraxPhoneme;
