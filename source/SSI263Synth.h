@@ -200,7 +200,6 @@ private:
 	int LiveInflection() const;
 	void StartPitch();
 	void AdvancePitch();
-	template<class State> void VisitState(State& state);
 
 	uint32_t m_clockHz;
 	Control m_control;
