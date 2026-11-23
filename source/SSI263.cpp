@@ -365,7 +365,7 @@ void SSI263::Play(unsigned int phoneme)
 	if (m_dbgFirst)
 		m_dbgStartTime = g_nCumulativeCycles;
 
-	m_currentActivePhoneme = phoneme;
+	m_chipActive = true;
 	m_timing.Start(GetResponsePeriod(), GetDurationPeriod());
 }
 
@@ -1040,7 +1040,7 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 		}
 
 		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
-			m_currentActivePhoneme = m_durationPhoneme & PHONEME_MASK;	// For IsChipActive()
+			m_chipActive = true;	// SSI263.CTL=0 or m_isVotraxPhoneme
 
 		if (version >= 16)
 		{
@@ -1049,7 +1049,6 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 
 			// Since not saving the low-level SSI263Synth state, then use SILENCE for remainder of current phoneme
 			m_durationPhoneme = (m_durationPhoneme & DURATION_MODE_MASK) | SSI263_PHONENE_SILENCE;
-			m_currentActivePhoneme = m_durationPhoneme & PHONEME_MASK;	// For IsChipActive()
 
 			m_synth.Write(SSI_DURPHON, m_durationPhoneme);
 			m_synth.Write(SSI_INFLECT, m_inflection);
@@ -1082,7 +1081,6 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	if (version < 16 && (m_isVotraxPhoneme || IsChipActive()))
 	{
 		// Old snapshots lack timing state. Keep their completion-and-restart policy.
-		m_currentActivePhoneme = SSI263_PHONENE_SILENCE;
 		SetSpeechIRQ();	// Phoneme complete, so generate IRQ if necessary
 		if (!m_isVotraxPhoneme && (m_ctrlArtAmp & CONTROL_MASK) == 0)
 			Play(m_durationPhoneme & PHONEME_MASK);		// Repeat this phoneme again
@@ -1128,6 +1126,7 @@ void SSI263::SC01_SaveSnapshot(YamlSaveHelper& yamlSaveHelper)
 		yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME, m_isVotraxPhoneme);
 
 		// Don't SaveSynthesis(), as SC01 emulation is just an approximation based on SSI263, and this state is shared with the 2nd SSI263
+		// NB. The SC01 speech rate is controlled by a variable resister, so no need to save the response-timing state.
 		YamlSaveHelper::Label state(yamlSaveHelper, "%s:\n", SS_YAML_KEY_SC01_SYNTHESIS);
 		yamlSaveHelper.SaveBool(SS_YAML_KEY_SC01_STARTED, m_votraxSynthStarted);
 	}
@@ -1161,6 +1160,9 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 		m_isVotraxPhoneme = yamlLoadHelper.LoadBool(SS_YAML_KEY_SC01_ACTIVE_PHONEME);
 		if (m_votraxPhoneme > PHONEME_MASK)
 			throw std::runtime_error("SC01: Invalid phoneme");
+
+		if (m_isVotraxPhoneme)
+			m_chipActive = true;
 
 		if (version >= 16 && yamlLoadHelper.GetSubMap(SS_YAML_KEY_SC01_SYNTHESIS))
 		{

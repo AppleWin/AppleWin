@@ -1213,7 +1213,7 @@ UINT MockingboardCard::AY8910_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, BYTE 
 //    Removed SS_YAML_KEY_VOTRAX_PHONEME (as this has been present in the SC01 subunit since v12!)
 //14: Added: SSI263: Type
 //15: Added: AY891x: Type
-//16: Added native SSI263 synthesis and timing state
+//16: Added native SSI263 (high-level) synthesis and timing state
 const UINT kUNIT_VERSION = 16;
 
 #define SS_YAML_KEY_MB_UNIT "Unit"

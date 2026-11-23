@@ -23,7 +23,7 @@ public:
 	{
 		if (powerCycle)
 		{
-			m_currentActivePhoneme = -1;
+			m_chipActive = false;
 			m_isVotraxPhoneme = false;	// SC01 has no RESET pin
 			m_votraxPhoneme = SC01_PHONENE_SILENCE;	// SC01 has no RESET pin
 		}
@@ -95,10 +95,9 @@ public:
 private:
 	bool IsChipActive()
 	{
-		// Only ever "m_currentActivePhoneme < 0" if this SSI263 (or SC01) has never played a phoneme.
-		// If SSI263.CONTROL=1 then "m_currentActivePhoneme >= 0" is still true
-		// Also valid regardless of m_isVotraxPhoneme state
-		return m_currentActivePhoneme >= 0;
+		// Only inactive if this SSI263 (or SC01) has never played a phoneme.
+		// NB. Remains active even when SSI263.CONTROL=1 (power-down / standby).
+		return m_chipActive;
 	}
 	void ResetSynthesis(bool resetClock = true);
 	void ResetVotraxSynthesis();
@@ -207,12 +206,11 @@ private:
 	PHASOR_MODE m_cardMode;
 	bool m_hasSC01;
 
-	// ctor/power-cycle: Set to -1
-	// Play(): Set to [$00-$3F] on a write to DURPHON register.
+	// ctor/power-cycle: Set false
+	// Play(): Set true on a write to DURPHON register.
 	// SSI263.CONTROL 1->0 will call Play().
-	// NB. Can be used to detect overlapping phonemes in Play().
-	// NB. For SSI263 (and SC01) once >=0 then this remains the case (even when SSI263.CONTROL=1).
-	int m_currentActivePhoneme;				// -1 (if none) or SSI263/SC01 phoneme
+	// NB. Remains active even when SSI263.CONTROL=1 (power-down / standby).
+	bool m_chipActive;
 
 	bool m_isVotraxPhoneme;
 	BYTE m_votraxPhoneme;
