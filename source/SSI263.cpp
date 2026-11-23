@@ -473,7 +473,7 @@ void SSI263::AdvanceSynthesis()
 			const short votraxSample = m_votraxSynthStarted ? m_votraxSynth.GetSample() : 0;
 			const short sample = m_isVotraxPhoneme ? votraxSample : nativeSample;
 
-			if (!g_bFullSpeed && !g_bDisableDirectSound && !g_bDisableDirectSoundMockingboard && IsChipActive())
+			if (!g_bFullSpeed && !g_bDisableDirectSound && !g_bDisableDirectSoundMockingboard && m_chipActive)
 			{
 				// A stalled audio device must not stop the emulated chip.
 				if (m_synthSamples == MAX_SAMPLES)
@@ -559,7 +559,7 @@ void SSI263::AdvanceResponseTiming(uint32_t ticks)
 
 void SSI263::UpdateSynthesis()
 {
-	if (!IsChipActive() || g_bFullSpeed || !DSInit())
+	if (!m_chipActive || g_bFullSpeed || !DSInit())
 	{
 		m_byteOffset = (uint32_t)-1;
 		return;
@@ -1072,13 +1072,13 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	SetCardMode(mode);
 
 	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
-	if (m_cardMode == PH_Phasor && IsChipActive() && m_currentMode.enableInts && m_currentMode.D7 == 1)
+	if (m_cardMode == PH_Phasor && m_chipActive && m_currentMode.enableInts && m_currentMode.D7 == 1)
 		CpuIrqAssert(IS_SPEECH);
 
 	if (subunit == 0)	// has SC01
 		SC01_LoadSnapshot(yamlLoadHelper, version);
 
-	if (version < 16 && (m_isVotraxPhoneme || IsChipActive()))
+	if (version < 16 && (m_isVotraxPhoneme || m_chipActive))
 	{
 		// Old snapshots lack timing state. Keep their completion-and-restart policy.
 		SetSpeechIRQ();	// Phoneme complete, so generate IRQ if necessary

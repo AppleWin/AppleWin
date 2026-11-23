@@ -93,12 +93,6 @@ public:
 	void LoadSnapshot(class YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT version, UINT subunit);
 
 private:
-	bool IsChipActive()
-	{
-		// Only inactive if this SSI263 (or SC01) has never played a phoneme.
-		// NB. Remains active even when SSI263.CONTROL=1 (power-down / standby).
-		return m_chipActive;
-	}
 	void ResetSynthesis(bool resetClock = true);
 	void ResetVotraxSynthesis();
 	void ConfigureVotrax();
@@ -206,7 +200,7 @@ private:
 	PHASOR_MODE m_cardMode;
 	bool m_hasSC01;
 
-	// ctor/power-cycle: Set false
+	// ctor/power-cycle: Set false, indicating this SSI263 (or SC01) has never played a phoneme.
 	// Play(): Set true on a write to DURPHON register.
 	// SSI263.CONTROL 1->0 will call Play().
 	// NB. Remains active even when SSI263.CONTROL=1 (power-down / standby).
