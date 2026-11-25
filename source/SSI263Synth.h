@@ -1,25 +1,5 @@
 #pragma once
 
-/*
-AppleWin : An Apple //e emulator for Windows
-
-Copyright (C) 2026, Henri Asseily (henri@asseily.com)
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2 of the License, or (at your
-option) any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-for more details. You should have received a copy of the GNU General
-Public License along with this program; if not, see <https://www.gnu.org/licenses/>.
-
-Portable SSI263 sound state and interface.
-Adapted from the Appletini ONE project at https://github.com/hasseily/appletini-one
-*/
-
 #include <array>
 
 // SSI-263 speech from its parameter ROM and an ideal SC-02 prototype circuit.
