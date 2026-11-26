@@ -10,7 +10,7 @@ class SSI263Synth
 public:
 	static const uint32_t kSampleRate = 48000;
 
-	explicit SSI263Synth(uint32_t clockHz = 1015625);
+	SSI263Synth(uint32_t clockHz = 1015625);
 	void Reset(uint32_t clockHz);
 	void SetClock(uint32_t clockHz);
 	// Restore a saved mode, or relatch it on SSI263P reset, without a CTL edge.

@@ -1039,9 +1039,6 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 			}
 		}
 
-		if ((m_ctrlArtAmp & CONTROL_MASK) == 0)
-			m_chipActive = true;	// SSI263.CTL=0 or m_isVotraxPhoneme
-
 		if (version >= 16)
 		{
 			LoadSynthesis(yamlLoadHelper);
@@ -1071,14 +1068,24 @@ void SSI263::LoadSnapshot(YamlLoadHelper& yamlLoadHelper, PHASOR_MODE mode, UINT
 	_ASSERT(m_device != BYTE(-1));
 	SetCardMode(mode);
 
+	if (m_ctrlArtAmp & CONTROL_MASK)
+	{
+		_ASSERT(m_currentMode.D7 == 0);
+		m_currentMode.D7 = 0;
+	}
+
 	// Only need to directly assert IRQ for Phasor mode (for Mockingboard mode it's done via UpdateIFR() in parent)
-	if (m_cardMode == PH_Phasor && m_chipActive && m_currentMode.enableInts && m_currentMode.D7 == 1)
+	// NB. If D7==1 then m_chipActive==true.
+	if (m_cardMode == PH_Phasor && m_currentMode.enableInts && m_currentMode.D7 == 1)
 		CpuIrqAssert(IS_SPEECH);
 
 	if (subunit == 0)	// has SC01
 		SC01_LoadSnapshot(yamlLoadHelper, version);
 
-	if (version < 16 && (m_isVotraxPhoneme || m_chipActive))
+	if ((m_ctrlArtAmp & CONTROL_MASK) == 0 || m_isVotraxPhoneme)
+		m_chipActive = true;
+
+	if (version < 16 && m_chipActive)
 	{
 		// Old snapshots lack timing state. Keep their completion-and-restart policy.
 		SetSpeechIRQ();	// Phoneme complete, so generate IRQ if necessary
@@ -1140,7 +1147,7 @@ void SSI263::SC01_LoadSnapshot(YamlLoadHelper& yamlLoadHelper, UINT version)
 	if (version < 12)
 	{
 		m_votraxPhoneme = SC01_PHONENE_SILENCE;
-		//  NB. m_isVotraxPhoneme already set by SetVotraxPhoneme() in MockingboardCard::LoadSnapshot()
+		//  NB. m_isVotraxPhoneme already setup by SetVotraxPhoneme() in MockingboardCard::LoadSnapshot()
 		if (m_isVotraxPhoneme)
 			ConfigureVotrax();
 		return;

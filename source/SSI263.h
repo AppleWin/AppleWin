@@ -203,7 +203,8 @@ private:
 	// ctor/power-cycle: Set false, indicating this SSI263 (or SC01) has never played a phoneme.
 	// Play(): Set true on a write to DURPHON register.
 	// SSI263.CONTROL 1->0 will call Play().
-	// NB. Remains active even when SSI263.CONTROL=1 (power-down / standby).
+	// NB. Remains active even when SSI263.CTL=1 (power-down / standby).
+	// LoadSnapshot(): Set true if SSI263.CTL=0 or m_isVotraxPhoneme
 	bool m_chipActive;
 
 	bool m_isVotraxPhoneme;
