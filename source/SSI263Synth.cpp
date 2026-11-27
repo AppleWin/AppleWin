@@ -22,7 +22,7 @@ Adapted from the Appletini ONE project at https://github.com/hasseily/appletini-
 #include "SSI263Synth.h"
 
 // Native SSI-263 source and ideal SC-02 charge-transfer filters.
-// See docs/SSI263-synthesis.md for circuit sources and model limits.
+// See docs/SSI263_NATIVE_IMPLEMENTATION.md for circuit sources and model limits.
 
 const uint32_t SSI263Synth::kSampleRate;
 
@@ -82,8 +82,8 @@ namespace
 	// For example, HF ($2C) and HFC ($2D) have the same targets; only selector-2
 	// bit 1 differs, so their sound differs through source/envelope control.
 
-	// F1.2.5-d2: SSI-263P die targets with the existing SC-02 control bits.
-	// Active 512-byte SHA-256: ea494f047de11c533cb36a51d8686949206cedb91ab4855bdf9bde9500f828d9.
+	// F1.3.9: SSI-263P die targets with the existing SC-02 control bits.
+	// Active 512-byte SHA-256: 101D129A5F104E6190F2ECA518BBF9EF65BF4FF92684D29EBA56D9641AA02B0A.
 	const uint8_t phonemeRom[512] =
 	{
 		0x70, 0x90, 0x0A, 0xC0, 0x00, 0x00, 0x00, 0x00, // $00
@@ -119,7 +119,7 @@ namespace
 		0x20, 0x31, 0x0E, 0x40, 0x00, 0x80, 0x00, 0x00, // $1E
 		0x70, 0x61, 0x0E, 0x90, 0x00, 0x60, 0x00, 0x00, // $1F
 		0x30, 0x31, 0x0E, 0xE0, 0x00, 0x70, 0x00, 0x00, // $20
-		0x10, 0x51, 0x0E, 0xF0, 0x00, 0x80, 0x00, 0x00, // $21
+		0x10, 0x51, 0x0E, 0xF0, 0x00, 0xF0, 0x00, 0x00, // $21
 		0x50, 0x11, 0x0E, 0xE0, 0x00, 0x90, 0x00, 0x00, // $22
 		0x30, 0x01, 0x0E, 0x90, 0x00, 0x80, 0x00, 0x00, // $23
 		0x10, 0x31, 0x0C, 0xC0, 0x00, 0x80, 0x00, 0x00, // $24
@@ -133,23 +133,23 @@ namespace
 		0x71, 0x90, 0x0A, 0xC0, 0x00, 0x00, 0x80, 0x00, // $2C
 		0x71, 0x90, 0x08, 0xC0, 0x00, 0x00, 0x80, 0x00, // $2D
 		0x70, 0x91, 0x3A, 0xC0, 0x00, 0x40, 0x00, 0x00, // $2E
-		0x30, 0x20, 0x06, 0xD0, 0x00, 0x10, 0xA0, 0x00, // $2F
+		0x30, 0x20, 0x06, 0xD0, 0x00, 0x20, 0xF0, 0x00, // $2F
 		0x01, 0x70, 0x06, 0xC0, 0x00, 0x00, 0xF0, 0x00, // $30
-		0x20, 0xB0, 0x0E, 0xE0, 0x00, 0x10, 0xA0, 0x00, // $31
-		0x21, 0xB0, 0x0E, 0xE0, 0x00, 0x00, 0x60, 0x00, // $32
-		0x20, 0x30, 0x0E, 0x90, 0x00, 0x30, 0x40, 0x00, // $33
-		0x21, 0x30, 0x0E, 0x90, 0x00, 0x00, 0x40, 0x00, // $34
-		0x30, 0x70, 0x06, 0xE0, 0x00, 0x10, 0x20, 0x00, // $35
-		0x51, 0x80, 0x06, 0xA0, 0x00, 0x00, 0x20, 0x00, // $36
-		0x00, 0x31, 0x3E, 0x90, 0x00, 0xA0, 0x00, 0x00, // $37
-		0x00, 0x81, 0x3E, 0xD0, 0x00, 0x80, 0x00, 0x00, // $38
-		0x20, 0xC1, 0x3E, 0xE0, 0x00, 0x40, 0x00, 0x00, // $39
+		0x20, 0xB0, 0x0E, 0xE0, 0x00, 0x20, 0xF0, 0x00, // $31
+		0x21, 0xB0, 0x0E, 0xE0, 0x00, 0x00, 0x90, 0x00, // $32
+		0x20, 0x30, 0x0E, 0x90, 0x00, 0x60, 0x80, 0x00, // $33
+		0x21, 0x30, 0x0E, 0x90, 0x00, 0x00, 0x80, 0x00, // $34
+		0x30, 0x70, 0x06, 0xE0, 0x00, 0x20, 0x40, 0x00, // $35
+		0x51, 0x80, 0x06, 0xA0, 0x00, 0x00, 0x60, 0x00, // $36
+		0x00, 0x31, 0x3E, 0x90, 0x00, 0xF0, 0x00, 0x00, // $37
+		0x00, 0x81, 0x3E, 0xD0, 0x00, 0xF0, 0x00, 0x00, // $38
+		0x20, 0xC1, 0x3E, 0xE0, 0x00, 0x80, 0x00, 0x00, // $39
 		0x70, 0x91, 0x0E, 0xA0, 0x00, 0x80, 0x00, 0x00, // $3A
 		0x20, 0x81, 0x0E, 0x90, 0x00, 0x60, 0x00, 0x00, // $3B
 		0x10, 0x71, 0x0E, 0x90, 0x00, 0xA0, 0x00, 0x00, // $3C
 		0x00, 0x91, 0x0E, 0xA0, 0x00, 0xA0, 0x00, 0x00, // $3D
 		0x60, 0x71, 0x0E, 0xA0, 0x00, 0x70, 0x00, 0x00, // $3E
-		0x10, 0x11, 0x0E, 0xE0, 0x00, 0x80, 0x00, 0x00, // $3F
+		0x10, 0x11, 0x0E, 0xE0, 0x00, 0xF0, 0x00, 0x00, // $3F
 	};
 }
 
@@ -183,16 +183,23 @@ int SSI263Synth::LiveInflection() const
 	return ((m_control.m_regs[2] & 8) << 8) | (m_control.m_regs[1] << 3) | (m_control.m_regs[2] & 7);
 }
 
+int SSI263Synth::ActiveInflection() const
+{
+	// I11 and I2..I0 always act at once. Transitioned inflection replaces
+	// I10..I3 with the glide counter.
+	const int live = LiveInflection();
+	return m_function == 3 ? (live & 0x807) | (m_glide << 3) : live;
+}
+
 void SSI263Synth::StartPitch()
 {
-	int next = LiveInflection();
-	if (m_function == 3)
+	// The glide counter (U65/U64) has no reset. The first transitioned phone
+	// adopts its target once; later phones keep the running count.
+	if (m_function == 3 && !m_pitchSeeded)
 	{
-		if (m_pitchSeeded)
-			next = (next & ~0x7C0) | (m_inflection & 0x7C0);
+		m_glide = m_control.m_regs[1] & 0xF8;
 		m_pitchSeeded = true;
 	}
-	m_inflection = next;
 }
 
 void SSI263Synth::Write(uint8_t reg, uint8_t value)
@@ -215,42 +222,53 @@ void SSI263Synth::Write(uint8_t reg, uint8_t value)
 
 void SSI263Synth::Advance(uint32_t ticks)
 {
-	const int inflection = m_function == 3 ? m_inflection : LiveInflection();
 	while (ticks--)
 	{
 		// The controller sees the envelope before this edge; source and tract follow.
 		m_control.Tick(m_source.AmplitudeZero());
-		m_source.Tick(m_control, inflection);
+		AdvanceGlide();
+		m_source.Tick(m_control, ActiveInflection());
 		m_tract.Process(m_source.m_output);
 	}
 }
 
-void SSI263Synth::AdvancePitch()
+void SSI263Synth::AdvanceGlide()
 {
-	// Retain the listening model's 20 kHz glide. Its exact SSI timing is unknown.
-	m_pitchCadence += 5;
-	if (m_pitchCadence < 12)
+	// SC-02 prototype pitch glide (schematic sheet 3: U27, U21A, U66, U65/U64),
+	// called once per effective clock. SEL1 rises once per 64 clocks. U27
+	// divides by 16-RATE and U21A halves, so RATECLK has a period of
+	// 128*(16-RATE) clocks. U66 divides its rises by 8-I[5:3]. Each U66 output
+	// moves the 8-bit counter I[10:3] one count toward {I[10:6],000}. The
+	// result is one count per 128*(16-RATE)*(8-I[5:3]) clocks, which agrees
+	// with measurements of real chips. The counters run in all function modes.
+	if (++m_glideSel1 != 64)
 		return;
-	m_pitchCadence -= 12;
-	int next = LiveInflection();
-	if (m_function == 3)
+	m_glideSel1 = 0;
+	if (m_glideRateLeft != 1)
 	{
-		static const int steps[8] = {1, 2, 3, 4, 6, 8, 12, 16};
-		const int active = (m_inflection >> 6) & 31;
-		const int target = (next >> 6) & 31;
-		const int step = steps[(next >> 3) & 7];
-		const int delta = target - active;
-		const int moved = active + (delta < -step ? -step : delta > step ? step : delta);
-		next = (next & ~0x7C0) | (moved << 6);
+		--m_glideRateLeft;
+		return;
 	}
-	m_inflection = next;
+	m_glideRateLeft = 16 - (m_control.m_regs[2] >> 4);
+	m_glideRateClk = !m_glideRateClk;
+	if (!m_glideRateClk)
+		return;
+	if (m_glideMoveLeft != 1)
+	{
+		--m_glideMoveLeft;
+		return;
+	}
+	m_glideMoveLeft = 8 - (m_control.m_regs[1] & 7);
+	const int target = m_control.m_regs[1] & 0xF8;
+	if (m_glide < target)
+		++m_glide;
+	else if (m_glide > target)
+		--m_glide;
 }
 
 int16_t SSI263Synth::GetSample()
 {
-	const int16_t sample = m_tract.GetSample();
-	AdvancePitch();
-	return sample;
+	return m_tract.GetSample();
 }
 
 void SSI263Synth::Ramp::Retarget(int value)

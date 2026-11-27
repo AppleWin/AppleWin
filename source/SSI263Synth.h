@@ -3,7 +3,8 @@
 #include <array>
 
 // SSI-263 speech from its parameter ROM and an ideal SC-02 prototype circuit.
-// Pitch glide, cold state and source levels remain model approximations.
+// Pitch glide follows the SC-02 prototype counters. Cold state and source
+// levels remain model approximations.
 // The card owns bus timing and interrupts; this class only produces audio.
 class SSI263Synth
 {
@@ -178,15 +179,20 @@ private:
 	};
 
 	int LiveInflection() const;
+	int ActiveInflection() const;
 	void StartPitch();
-	void AdvancePitch();
+	void AdvanceGlide();
 
 	uint32_t m_clockHz;
 	Control m_control;
 	Source m_source;
 	Tract m_tract;
 	int m_function = 0;
-	int m_inflection = 0;
-	int m_pitchCadence = 0;
+	// Glide counter I[10:3] and its dividers.
+	int m_glide = 0;
+	int m_glideSel1 = 0;
+	int m_glideRateLeft = 16;
+	int m_glideMoveLeft = 8;
+	bool m_glideRateClk = false;
 	bool m_pitchSeeded = false;
 };
