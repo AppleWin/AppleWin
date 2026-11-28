@@ -758,7 +758,7 @@ bool ProcessCmdLine(LPSTR lpCmdLine)
 			lpNextArg = GetNextArg(lpNextArg);
 			g_cmdLine.wavFileMockingboard = lpCmdLine;
 		}
-		else if (strcmp(lpCmdLine, "-wav-speech") == 0)
+		else if (strcmp(lpCmdLine, "-wav-mb-speech") == 0)
 		{
 			lpCmdLine = GetCurrArg(lpNextArg);
 			lpNextArg = GetNextArg(lpNextArg);
