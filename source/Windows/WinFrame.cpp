@@ -2010,6 +2010,8 @@ bool Win32Frame::ConfirmReboot(bool bFromButtonUI)
 
 void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 {
+	// NB. Don't early return: must give opportunity to FADE_IN again.
+	// (Being in MODE_RUNNING and FADE_OUT will causes gitches in the speaker audio output)
 	SoundCore_SetFade(FADE_OUT);
 	bool bAllowFadeIn = true;
 
@@ -2042,7 +2044,7 @@ void Win32Frame::ProcessButtonClick(int button, bool bFromButtonUI /*=false*/)
 			CtrlReset();
 			if (g_nAppMode == MODE_DEBUG)
 				DebugDisplay(true);
-			return;
+			break;
 		}
 
 		if (g_nAppMode == MODE_LOGO)
