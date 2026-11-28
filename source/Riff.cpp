@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include "StdAfx.h"
+#include "Log.h"
 #include "Riff.h"
 
 static HANDLE g_hRiffFile = INVALID_HANDLE_VALUE;
@@ -36,10 +37,19 @@ static unsigned int g_NumChannels = 2;
 
 bool RiffInitWriteFile(const char* pszFile, unsigned int sample_rate, unsigned int NumChannels)
 {
+	if (pszFile == NULL || pszFile[0] == 0)
+		return false;
+
 	g_hRiffFile = CreateFile(pszFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 
 	if(g_hRiffFile == INVALID_HANDLE_VALUE)
 		return false;
+
+#if _DEBUG
+	char startDir[_MAX_PATH];
+	GetCurrentDirectory(sizeof(startDir), startDir);
+	LogOutput("RiffInitWriteFile() startDir=%s\n", startDir);
+#endif
 
 	g_NumChannels = NumChannels;
 

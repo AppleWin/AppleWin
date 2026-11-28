@@ -13,7 +13,8 @@ public:
 		m_byteOffset = (uint32_t)-1;
 		m_cyclesThisAudioFrame = 0;
 		m_userVolume = 0;
-		m_outputToRiff = false;
+		m_outputAYToRiff = false;
+		m_outputSpeechToRiff = false;
 		m_enableExtraCardTypes = false;
 
 		// NB. Cmd line has already been processed
@@ -32,7 +33,9 @@ public:
 	bool IsActiveToPreventFullSpeed();
 	uint32_t GetVolume();
 	void SetVolume(uint32_t volume, uint32_t volumeMax);
-	void OutputToRiff() { m_outputToRiff = true; }
+	void OutputAYToRiff() { m_outputAYToRiff = true; }
+	void OutputSpeechToRiff(std::string& wavFileName);
+	void ReenableSpeechToRiff();
 	void SetEnableExtraCardTypes(bool enable) { m_enableExtraCardTypes = enable; }
 	bool GetEnableExtraCardTypes();
 
@@ -54,6 +57,7 @@ private:
 	UINT GenerateAllSoundData();
 	void MixAllAndCopyToRingBuffer(UINT nNumSamples);
 	bool IsMockingboardExtraCardType(UINT slot);
+	MockingboardCard* FindCardForSpeechOutput();
 
 	static const uint32_t SOUNDBUFFER_SIZE = MAX_SAMPLES * sizeof(short) * MockingboardCard::NUM_MB_CHANNELS;
 
@@ -69,6 +73,7 @@ private:
 	uint32_t m_byteOffset;
 	UINT m_cyclesThisAudioFrame;
 	uint32_t m_userVolume;	// GUI's slide volume
-	bool m_outputToRiff;
+	bool m_outputAYToRiff;
+	bool m_outputSpeechToRiff;
 	bool m_enableExtraCardTypes;
 };
